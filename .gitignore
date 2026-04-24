@@ -1,0 +1,14 @@
+.next/
+node_modules/
+out/
+.omx/
+.env
+.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-server.log
+dev-server.err
+.next-dev*.log
+tsconfig.tsbuildinfo
+video-stack.en.vtt
