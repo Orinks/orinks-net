@@ -33,7 +33,7 @@ export default function EuroflyPage() {
         </p>
         <h2>Download</h2>
         <p>
-          <ButtonLink href="https://orinks.net/wp-content/uploads/2021/10/Eurofly-Enhanced-1.4.zip">
+          <ButtonLink href="/downloads/Eurofly-Enhanced-1.4.zip">
             Download Eurofly Enhanced Mod V1.4
           </ButtonLink>
         </p>
