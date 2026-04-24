@@ -12,10 +12,7 @@ export function Footer() {
             </a>
           ))}
         </nav>
-        <p className="text-sm text-slate-700">
-          Copyright 2026 Josh&apos;s Domain. Built with Next.js, React, Tailwind CSS, Neon, and
-          DigitalOcean App Platform.
-        </p>
+        <p className="text-sm text-slate-700">Copyright 2026 Josh&apos;s Domain.</p>
         <p className="mt-2 text-sm">
           <Link className="font-semibold text-action hover:text-action-dark" href="/api/health">
             System health
