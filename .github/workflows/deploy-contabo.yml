@@ -1,0 +1,105 @@
+name: Deploy to Contabo
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: contabo-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy
+    runs-on: [self-hosted, Linux, X64, orinks-net-prod]
+    needs: validate
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy local release
+        run: |
+          set -euo pipefail
+
+          app_name="orinks-net"
+          base="$HOME/apps/$app_name"
+          releases="$base/releases"
+          shared="$base/shared"
+          current="$base/current"
+          service="orinks-net.service"
+          keep_releases=5
+
+          mkdir -p "$releases" "$shared"
+
+          short_commit="${GITHUB_SHA:0:7}"
+          release="$(date -u +%Y%m%d%H%M%S)-$short_commit"
+          release_path="$releases/$release"
+
+          if [ -e "$release_path" ]; then
+            echo "Release already exists: $release_path"
+            exit 1
+          fi
+
+          mkdir -p "$release_path"
+          tar \
+            --exclude=".git" \
+            --exclude=".next" \
+            --exclude="node_modules" \
+            -C "$GITHUB_WORKSPACE" \
+            -cf - . | tar -xf - -C "$release_path"
+
+          cd "$release_path"
+          npm ci
+          npm run build
+
+          ln -sfn "$release_path" "$current"
+          printf '%s\n' "$release_path" > "$base/latest-release-path"
+          sudo systemctl restart "$service"
+
+          mapfile -t old_releases < <(
+            find "$releases" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +"$((keep_releases + 1))"
+          )
+
+          if [ "${#old_releases[@]}" -gt 0 ]; then
+            rm -rf "${old_releases[@]}"
+          fi
+
+          echo "Deployed $app_name $short_commit to $release_path"
+          systemctl is-active "$service"

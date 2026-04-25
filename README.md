@@ -32,7 +32,15 @@ The Contabo VPS has a read-only GitHub deploy key and a deploy script at:
 ~/bin/deploy-orinks-net
 ```
 
-After pushing to `main`, deploy with:
+Deployments run automatically from GitHub Actions after a successful push to `main`.
+The workflow validates the app on a GitHub-hosted runner, then deploys on the
+Contabo VPS through the repo's self-hosted runner labeled `orinks-net-prod`.
+
+The deploy job creates a timestamped release under `~/apps/orinks-net/releases`,
+runs `npm ci`, builds the app, updates the `current` symlink, restarts
+`orinks-net.service`, and keeps the newest five releases.
+
+To deploy manually, run:
 
 ```powershell
 ssh Contabo '~/bin/deploy-orinks-net'
