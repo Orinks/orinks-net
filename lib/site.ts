@@ -29,7 +29,7 @@ export const socialLinks = [
   { href: "http://youtube.com/@orin8722", label: "YouTube" },
   { href: "https://twitch.tv/orinks1", label: "Twitch" },
   { href: "https://storiesonline.net/a/orinks", label: "StoriesOnline" },
-  { href: "https://x.com/orinks33", label: "Twitter" },
+  { href: "https://x.com/orinks33", label: "X" },
   { href: "https://facebook.com/orinks", label: "Facebook" },
   { href: "https://github.com/Orinks", label: "GitHub" },
 ];
