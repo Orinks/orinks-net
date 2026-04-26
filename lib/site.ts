@@ -31,7 +31,6 @@ export const socialLinks = [
   { href: "https://storiesonline.net/a/orinks", label: "StoriesOnline" },
   { href: "https://x.com/orinks33", label: "Twitter" },
   { href: "https://facebook.com/orinks", label: "Facebook" },
-  { href: "https://linkedin.com/in/orinks", label: "LinkedIn" },
   { href: "https://github.com/Orinks", label: "GitHub" },
 ];
 
