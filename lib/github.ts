@@ -15,6 +15,27 @@ export type GitHubRelease = {
   assets: GitHubAsset[];
 };
 
+export type GitHubCommit = {
+  sha: string;
+  html_url: string;
+  commit: {
+    message: string;
+    author: {
+      name: string | null;
+      date: string | null;
+    } | null;
+  };
+};
+
+export type GitHubActivityItem = {
+  title: string;
+  description: string;
+  href: string;
+  source: string;
+  publishedAt: string;
+  kind: "release" | "commit";
+};
+
 const githubHeaders = (accept = "application/vnd.github+json") => {
   const headers: Record<string, string> = {
     Accept: accept,
@@ -65,6 +86,66 @@ export async function getReleases(repo: string): Promise<GitHubRelease[]> {
   }
 
   return response.json() as Promise<GitHubRelease[]>;
+}
+
+export async function getRecentReleaseActivity(repo: string): Promise<GitHubActivityItem[]> {
+  const releases = await getReleases(repo);
+
+  return releases.slice(0, 3).flatMap((release) => {
+    if (!release.published_at) {
+      return [];
+    }
+
+    return [
+      {
+        title: releaseTitle(release),
+        description: release.prerelease
+          ? `Prerelease published for ${repo}.`
+          : `Stable release published for ${repo}.`,
+        href: release.html_url,
+        source: `GitHub: ${repo}`,
+        publishedAt: release.published_at,
+        kind: "release" as const,
+      },
+    ];
+  });
+}
+
+const ignoredCommitPrefixes = ["chore:", "ci:", "style:"];
+
+function commitTitle(message: string) {
+  return message.split("\n")[0]?.trim() || "Repository update";
+}
+
+function isMeaningfulCommit(message: string) {
+  const title = commitTitle(message).toLowerCase();
+
+  return !ignoredCommitPrefixes.some((prefix) => title.startsWith(prefix));
+}
+
+export async function getRecentCommitActivity(repo: string): Promise<GitHubActivityItem[]> {
+  const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/commits?per_page=10`, {
+    headers: githubHeaders(),
+    next: { revalidate: 1800 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub commits request failed for ${repo}: ${response.status}`);
+  }
+
+  const commits = (await response.json()) as GitHubCommit[];
+
+  return commits
+    .filter((commit) => commit.commit.author?.date && isMeaningfulCommit(commit.commit.message))
+    .slice(0, 2)
+    .map((commit) => ({
+      title: commitTitle(commit.commit.message),
+      description: `Default branch update in ${repo}.`,
+      href: commit.html_url,
+      source: `GitHub: ${repo}`,
+      publishedAt: commit.commit.author?.date ?? "",
+      kind: "commit" as const,
+    }));
 }
 
 export async function getReleaseGroups(repo: string) {

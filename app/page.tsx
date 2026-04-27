@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHeader } from "@/components/PageHeader";
+import { RecentUpdates } from "@/components/RecentUpdates";
 import { Section } from "@/components/Section";
 import { projectSummaries, posts } from "@/lib/site";
 
@@ -30,6 +31,8 @@ export default function HomePage() {
           </ButtonLink>
         </div>
       </Section>
+
+      <RecentUpdates />
 
       <section className="py-8" aria-labelledby="featured-projects">
         <h2 className="mb-4 text-2xl font-bold text-ink" id="featured-projects">
