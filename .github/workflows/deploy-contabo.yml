@@ -16,7 +16,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: [self-hosted, Linux, X64, orinks-net-prod]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -40,12 +41,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          shared="$HOME/apps/orinks-net/shared"
-          if [ -f "$shared/.env.production" ]; then
-            ln -sfn "$shared/.env.production" .env.production
-          fi
-
           npm run build
+
+      - name: Package validated release
+        run: |
+          set -euo pipefail
+
+          release_archive="$RUNNER_TEMP/orinks-net-release.tar.gz"
+          tar \
+            --exclude=".git" \
+            --exclude="node_modules" \
+            --exclude=".next/cache" \
+            --exclude=".env.local" \
+            --exclude="dev-server*.log" \
+            --exclude="dev-server*.err" \
+            -czf "$release_archive" .
+          printf 'release_archive=%s\n' "$release_archive" >> "$GITHUB_ENV"
+
+      - name: Upload validated release
+        uses: actions/upload-artifact@v7
+        with:
+          name: orinks-net-release
+          path: ${{ env.release_archive }}
+          if-no-files-found: error
+          retention-days: 1
 
   deploy:
     name: Deploy
@@ -61,6 +80,12 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
+
+      - name: Download validated release
+        uses: actions/download-artifact@v7
+        with:
+          name: orinks-net-release
 
       - name: Deploy local release
         run: |
@@ -86,23 +111,35 @@ jobs:
           fi
 
           mkdir -p "$release_path"
-          tar \
-            --exclude=".git" \
-            --exclude=".next" \
-            --exclude="node_modules" \
-            -C "$GITHUB_WORKSPACE" \
-            -cf - . | tar -xf - -C "$release_path"
+          tar -xzf "$GITHUB_WORKSPACE/orinks-net-release.tar.gz" -C "$release_path"
 
           cd "$release_path"
           if [ -f "$shared/.env.production" ]; then
             ln -sfn "$shared/.env.production" .env.production
           fi
-          npm ci
-          npm run build
+          npm ci --omit=dev
 
           ln -sfn "$release_path" "$current"
           printf '%s\n' "$release_path" > "$base/latest-release-path"
           sudo systemctl restart "$service"
+          systemctl is-active "$service"
+
+          health_url="${ORINKS_NET_HEALTH_URL:-https://orinks.net/api/health}"
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --max-time 10 "$health_url" > /tmp/orinks-net-health.json; then
+              echo "Health check passed: $health_url"
+              cat /tmp/orinks-net-health.json
+              break
+            fi
+
+            if [ "$attempt" -eq 12 ]; then
+              echo "Health check failed after $attempt attempts: $health_url"
+              sudo systemctl status "$service" --no-pager || true
+              exit 1
+            fi
+
+            sleep 5
+          done
 
           mapfile -t old_releases < <(
             find "$releases" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +"$((keep_releases + 1))"
@@ -113,4 +150,3 @@ jobs:
           fi
 
           echo "Deployed $app_name $short_commit to $release_path"
-          systemctl is-active "$service"

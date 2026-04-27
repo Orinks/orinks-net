@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       database: "not configured",
-      stack: ["Next.js", "React", "Tailwind CSS", "Neon", "DigitalOcean App Platform"],
+      stack: ["Next.js", "React", "Tailwind CSS", "Neon", "Contabo VPS"],
     });
   }
 
@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       database: "connected",
-      stack: ["Next.js", "React", "Tailwind CSS", "Neon", "DigitalOcean App Platform"],
+      stack: ["Next.js", "React", "Tailwind CSS", "Neon", "Contabo VPS"],
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown database error";

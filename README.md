@@ -36,9 +36,12 @@ Deployments run automatically from GitHub Actions after a successful push to `ma
 The workflow validates the app on a GitHub-hosted runner, then deploys on the
 Contabo VPS through the repo's self-hosted runner labeled `orinks-net-prod`.
 
-The deploy job creates a timestamped release under `~/apps/orinks-net/releases`,
-runs `npm ci`, builds the app, updates the `current` symlink, restarts
-`orinks-net.service`, and keeps the newest five releases.
+The validation job installs dependencies with npm caching, lints, typechecks,
+builds once, and uploads a validated release artifact. The deploy job downloads
+that artifact on Contabo, creates a timestamped release under
+`~/apps/orinks-net/releases`, installs production dependencies, updates the
+`current` symlink, restarts `orinks-net.service`, verifies `/api/health`, and
+keeps the newest five releases.
 
 To deploy manually, run:
 
