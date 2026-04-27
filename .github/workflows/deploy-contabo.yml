@@ -86,6 +86,9 @@ jobs:
             -cf - . | tar -xf - -C "$release_path"
 
           cd "$release_path"
+          if [ -f "$shared/.env.production" ]; then
+            ln -s "$shared/.env.production" .env.production
+          fi
           npm ci
           npm run build
 
