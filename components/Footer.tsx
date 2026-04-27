@@ -8,7 +8,6 @@ export function Footer() {
         <h2 className="sr-only" id="site-footer-heading">
           Site footer
         </h2>
-        <HomeStatusPanel variant="footer" />
         <nav aria-label="Social links" className="mb-5 flex flex-wrap gap-3">
           {socialLinks.map((link) => (
             <a className="font-semibold text-action hover:text-action-dark" href={link.href} key={link.href}>
@@ -16,6 +15,7 @@ export function Footer() {
             </a>
           ))}
         </nav>
+        <HomeStatusPanel variant="footer" />
         <p className="text-sm text-slate-700">Copyright 2026 Josh&apos;s Domain.</p>
       </div>
     </footer>
