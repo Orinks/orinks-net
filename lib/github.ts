@@ -120,7 +120,10 @@ function commitTitle(message: string) {
 function isMeaningfulCommit(message: string) {
   const title = commitTitle(message).toLowerCase();
 
-  return !ignoredCommitPrefixes.some((prefix) => title.startsWith(prefix));
+  return (
+    !ignoredCommitPrefixes.some((prefix) => title.startsWith(prefix)) &&
+    !/^(chore|ci|style)\([^)]+\):/.test(title)
+  );
 }
 
 export async function getRecentCommitActivity(repo: string): Promise<GitHubActivityItem[]> {

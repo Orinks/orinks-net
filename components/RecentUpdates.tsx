@@ -64,7 +64,6 @@ export async function RecentUpdates() {
             <summary className="cursor-pointer list-none text-xl font-bold text-ink [&::-webkit-details-marker]:hidden">
               {category.title}
             </summary>
-            <p className="mt-2 leading-7 text-slate-700">{category.summary}</p>
             {category.items.length > 0 ? (
               <ul className="mt-4 p-0">
                 {category.items.map((item) => (
