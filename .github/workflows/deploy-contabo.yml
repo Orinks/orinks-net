@@ -42,7 +42,7 @@ jobs:
 
           shared="$HOME/apps/orinks-net/shared"
           if [ -f "$shared/.env.production" ]; then
-            ln -s "$shared/.env.production" .env.production
+            ln -sfn "$shared/.env.production" .env.production
           fi
 
           npm run build
@@ -95,7 +95,7 @@ jobs:
 
           cd "$release_path"
           if [ -f "$shared/.env.production" ]; then
-            ln -s "$shared/.env.production" .env.production
+            ln -sfn "$shared/.env.production" .env.production
           fi
           npm ci
           npm run build
