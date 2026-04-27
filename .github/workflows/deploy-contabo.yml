@@ -16,7 +16,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, orinks-net-prod]
 
     steps:
       - name: Check out repository
@@ -37,7 +37,15 @@ jobs:
         run: npm run typecheck
 
       - name: Build
-        run: npm run build
+        run: |
+          set -euo pipefail
+
+          shared="$HOME/apps/orinks-net/shared"
+          if [ -f "$shared/.env.production" ]; then
+            ln -s "$shared/.env.production" .env.production
+          fi
+
+          npm run build
 
   deploy:
     name: Deploy
