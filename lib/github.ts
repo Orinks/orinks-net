@@ -126,24 +126,42 @@ function isMeaningfulCommit(message: string) {
   );
 }
 
-export async function getRecentCommitActivity(repo: string): Promise<GitHubActivityItem[]> {
-  const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/commits?per_page=10`, {
+async function getBranchCommits(repo: string, branch: string) {
+  const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/commits?sha=${branch}&per_page=10`, {
     headers: githubHeaders(),
     next: { revalidate: 1800 },
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub commits request failed for ${repo}: ${response.status}`);
+    throw new Error(`GitHub commits request failed for ${repo}/${branch}: ${response.status}`);
   }
 
-  const commits = (await response.json()) as GitHubCommit[];
+  return ((await response.json()) as GitHubCommit[]).map((commit) => ({ branch, commit }));
+}
+
+export async function getRecentCommitActivity(repo: string): Promise<GitHubActivityItem[]> {
+  const branchResults = await Promise.allSettled(["main", "dev"].map((branch) => getBranchCommits(repo, branch)));
+  const seenShas = new Set<string>();
+  const commits = branchResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
 
   return commits
-    .filter((commit) => commit.commit.author?.date && isMeaningfulCommit(commit.commit.message))
+    .filter(({ commit }) => {
+      if (seenShas.has(commit.sha)) {
+        return false;
+      }
+
+      seenShas.add(commit.sha);
+      return commit.commit.author?.date && isMeaningfulCommit(commit.commit.message);
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.commit.commit.author?.date ?? "").getTime() -
+        new Date(a.commit.commit.author?.date ?? "").getTime(),
+    )
     .slice(0, 2)
-    .map((commit) => ({
+    .map(({ branch, commit }) => ({
       title: commitTitle(commit.commit.message),
-      description: `Default branch update in ${repo}.`,
+      description: `${branch} branch update in ${repo}.`,
       href: commit.html_url,
       source: `GitHub: ${repo}`,
       publishedAt: commit.commit.author?.date ?? "",
