@@ -16,7 +16,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: [self-hosted, Linux, X64, orinks-net-prod]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -38,13 +38,11 @@ jobs:
         run: npm run typecheck
 
       - name: Build
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_USERNAME: ${{ secrets.LASTFM_USERNAME }}
         run: |
           set -euo pipefail
-
-          shared="$HOME/apps/orinks-net/shared"
-          if [ -f "$shared/.env.production" ]; then
-            ln -sfn "$shared/.env.production" .env.production
-          fi
 
           npm run build
 
