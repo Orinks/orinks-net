@@ -16,7 +16,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, orinks-net-prod]
 
     steps:
       - name: Check out repository
@@ -41,6 +41,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          shared="$HOME/apps/orinks-net/shared"
+          if [ -f "$shared/.env.production" ]; then
+            ln -sfn "$shared/.env.production" .env.production
+          fi
+
           npm run build
 
       - name: Package validated release
@@ -53,6 +58,7 @@ jobs:
             --exclude="node_modules" \
             --exclude=".next/cache" \
             --exclude=".env.local" \
+            --exclude=".env.production" \
             --exclude="dev-server*.log" \
             --exclude="dev-server*.err" \
             -czf "$release_archive" .
