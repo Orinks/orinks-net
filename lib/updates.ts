@@ -12,7 +12,6 @@ export type UpdateItem = (GitHubActivityItem | LastFmTrackUpdate) & {
 export type UpdateCategory = {
   id: "code" | "music";
   title: string;
-  summary: string;
   defaultOpen: boolean;
   items: UpdateItem[];
   unavailableMessage?: string;
@@ -49,16 +48,14 @@ export async function getRecentUpdateCategories(): Promise<UpdateCategory[]> {
     {
       id: "code",
       title: "Code updates",
-      summary: "Higher-signal project activity from featured GitHub repositories.",
-      defaultOpen: true,
+      defaultOpen: false,
       items: sortByNewest(codeItems).slice(0, 5),
       unavailableMessage: "Code updates are temporarily unavailable.",
     },
     {
       id: "music",
       title: "Music updates",
-      summary: "Recent tracks scrobbled through Last.fm.",
-      defaultOpen: musicItems.length > 0,
+      defaultOpen: false,
       items: sortByNewest(musicItems).slice(0, 5),
       unavailableMessage:
         process.env.LASTFM_API_KEY && process.env.LASTFM_USERNAME

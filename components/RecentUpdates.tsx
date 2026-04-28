@@ -7,6 +7,26 @@ function formatUpdateDate(date: string) {
   }).format(new Date(date));
 }
 
+function formatScrobbleDate(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function updateTimestamp(item: UpdateItem) {
+  if (item.kind === "track") {
+    return `Scrobbled ${formatScrobbleDate(item.publishedAt)}`;
+  }
+
+  return formatUpdateDate(item.publishedAt);
+}
+
 function kindLabel(kind: UpdateItem["kind"]) {
   switch (kind) {
     case "release":
@@ -32,7 +52,7 @@ function UpdateRow({ item }: { item: UpdateItem }) {
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h4 className="text-base font-bold text-ink">{title}</h4>
         <p className="text-sm font-semibold text-slate-600">
-          {kindLabel(item.kind)} · {item.source} · {formatUpdateDate(item.publishedAt)}
+          {kindLabel(item.kind)} · {item.source} · {updateTimestamp(item)}
         </p>
       </div>
       <p className="mt-1 leading-7 text-slate-700">{item.description}</p>
