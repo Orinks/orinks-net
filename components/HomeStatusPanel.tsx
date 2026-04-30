@@ -120,10 +120,11 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
   }, []);
 
   const isFooter = variant === "footer";
+  const headingId = isFooter ? "footer-time-temperature" : "time-temperature";
 
   return (
-    <section aria-labelledby="time-temperature" className={isFooter ? "mb-8" : "py-8"}>
-      <h2 className={isFooter ? "mb-3 text-xl font-bold text-ink" : "mb-4 text-2xl font-bold text-ink"} id="time-temperature">
+    <section aria-labelledby={headingId} className={isFooter ? "mb-8" : "py-8"}>
+      <h2 className={isFooter ? "mb-3 text-xl font-bold text-ink" : "mb-4 text-2xl font-bold text-ink"} id={headingId}>
         Time &amp; Temperature
       </h2>
       <div className="rounded-lg border border-line bg-white p-5">

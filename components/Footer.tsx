@@ -10,7 +10,11 @@ export function Footer() {
         </h2>
         <nav aria-label="Social links" className="mb-5 flex flex-wrap gap-3">
           {socialLinks.map((link) => (
-            <a className="font-semibold text-action hover:text-action-dark" href={link.href} key={link.href}>
+            <a
+              className="inline-flex min-h-6 items-center font-semibold text-action hover:text-action-dark"
+              href={link.href}
+              key={link.href}
+            >
               {link.label}
             </a>
           ))}

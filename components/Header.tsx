@@ -32,7 +32,7 @@ export function Header() {
             width="56"
           />
           <div>
-            <Link className="text-xl font-bold text-ink hover:text-action" href="/">
+            <Link className="inline-flex min-h-6 items-center text-xl font-bold text-ink hover:text-action" href="/">
               {site.name}
             </Link>
             <p className="text-sm leading-6 text-slate-700">{site.description}</p>
@@ -44,19 +44,19 @@ export function Header() {
 
             return disclosure ? (
               <details className="group rounded-md" key={item.href}>
-                <summary className="cursor-pointer list-none rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300 [&::-webkit-details-marker]:hidden">
+                <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300 [&::-webkit-details-marker]:hidden">
                   {item.label}
                 </summary>
                 <div className="mt-2 flex min-w-52 flex-col rounded-md border border-line bg-white p-2 shadow-sm">
                   <Link
-                    className="rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
+                    className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
                     href={item.href}
                   >
                     {disclosure.overviewLabel}
                   </Link>
                   {disclosure.links.map((link) => (
                     <Link
-                      className="rounded-md px-3 py-2 text-sm font-semibold text-action hover:bg-sky-50 hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300"
+                      className="inline-flex min-h-10 items-center rounded-md px-3 py-2 text-sm font-semibold text-action hover:bg-sky-50 hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300"
                       href={link.href}
                       key={link.href}
                     >
@@ -67,7 +67,7 @@ export function Header() {
               </details>
             ) : (
               <Link
-                className="rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
+                className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
                 href={item.href}
                 key={item.href}
               >

@@ -95,6 +95,7 @@ function PlaylistEmbed({ playlist }: { playlist: Playlist }) {
         <h2 className="text-xl font-bold text-ink">{playlist.title}</h2>
         <p className="mt-2 leading-7 text-slate-700">{playlist.description}</p>
         <a
+          aria-label={`Open ${playlist.title} on Spotify`}
           className="mt-3 inline-block font-semibold text-action hover:text-action-dark"
           href={playlistUrl(playlist.id)}
         >
@@ -131,8 +132,7 @@ export default function PlaylistsPage() {
 
       <section className="border-t border-line py-8">
         <div className="mb-5 max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wide text-action">LastFM snapshots</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">Short-window charts</h2>
+          <h2 className="text-2xl font-bold text-ink">Short-window charts</h2>
           <p className="mt-2 leading-7 text-slate-700">
             These rotate more often, so they are linked separately instead of taking over the page with
             several similar embeds.
@@ -144,6 +144,7 @@ export default function PlaylistsPage() {
               <h3 className="text-lg font-bold text-ink">{playlist.title}</h3>
               <p className="mt-2 leading-7 text-slate-700">{playlist.description}</p>
               <a
+                aria-label={`Open ${playlist.title} on Spotify`}
                 className="mt-3 inline-block font-semibold text-action hover:text-action-dark"
                 href={playlistUrl(playlist.id)}
               >

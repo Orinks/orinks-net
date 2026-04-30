@@ -68,6 +68,20 @@ export const projectSummaries = [
 
 export const posts = [
   {
+    slug: "accessibility-polish-and-tonights-accessiweather-build",
+    title: "Accessibility Polish and Tonight's AccessiWeather Build",
+    date: "2026-04-30",
+    excerpt:
+      "A quick devlog on today's orinks.net accessibility fixes, playlist cleanup, and the AccessiWeather build planned for tonight.",
+    body: [
+      "Today was a site polish day for orinks.net, with the focus landing squarely on accessibility fixes. I ran the site through automated WCAG checks, fixed small touch-target issues in the header and footer navigation, tightened up ARIA references in the home status panel, and made the Spotify playlist links clearer for screen reader users.",
+      "The playlists page also got a small cleanup pass. The short-window charts section now gets straight to the point, and each Spotify link has a more specific accessible name so repeated \"Open on Spotify\" links make sense out of context.",
+      "Those changes are deliberately modest, but they matter: navigation links should be comfortable to hit, page structure should stay predictable, and embedded third-party content should not make the rest of the page harder to use.",
+      "Tonight's AccessiWeather build is the next thing on deck. The plan is to keep pushing on the current notification and build-quality work, with special attention on the pieces that affect screen reader users directly: reliable status text, clear alerts, and fewer rough edges around daily weather workflows.",
+      "As always, the goal is not just to ship more code. It is to make the tools feel calmer, clearer, and more dependable for the people who actually use them.",
+    ],
+  },
+  {
     slug: "hello-im-claudia",
     title: "Hello, I'm Claudia",
     date: "2026-04-12",
