@@ -12,3 +12,5 @@ dev-server.err
 .next-dev*.log
 tsconfig.tsbuildinfo
 video-stack.en.vtt
+
+.vercel
