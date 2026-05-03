@@ -12,6 +12,7 @@ type WeatherResponse = {
 type VisitResponse = {
   count?: number;
   durable?: boolean;
+  error?: string;
 };
 
 type HomeStatusPanelProps = {
@@ -33,6 +34,7 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
   const [now, setNow] = useState(() => new Date());
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [visitorUnavailable, setVisitorUnavailable] = useState(false);
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
 
@@ -57,9 +59,14 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
           if (typeof data.count === "number") {
             window.sessionStorage.setItem("orinks-home-visit-count", String(data.count));
             setVisitorCount(data.count);
+          } else if (!storedCount) {
+            setVisitorUnavailable(true);
           }
         })
         .catch(() => {
+          if (!storedCount) {
+            setVisitorUnavailable(true);
+          }
           setVisitorCount(storedCount ? Number(storedCount) : null);
         });
       return;
@@ -73,9 +80,12 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
         if (typeof data.count === "number") {
           window.sessionStorage.setItem("orinks-home-visit-count", String(data.count));
           setVisitorCount(data.count);
+        } else {
+          setVisitorUnavailable(true);
         }
       })
       .catch(() => {
+        setVisitorUnavailable(true);
         setVisitorCount(null);
       });
   }, []);
@@ -131,7 +141,12 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-action">Lumberton, New Jersey</p>
         <p className="mt-2 font-semibold text-ink">Local time: {localTime}</p>
         <p className="mt-2 text-sm text-slate-700">
-          Visitor count: {visitorCount == null ? "Counting..." : visitorCount.toLocaleString("en-US")}
+          Visitor count:{" "}
+          {visitorCount == null
+            ? visitorUnavailable
+              ? "Unavailable"
+              : "Counting..."
+            : visitorCount.toLocaleString("en-US")}
         </p>
 
         <div className="mt-5 border-t border-line pt-5" aria-live="polite">

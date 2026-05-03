@@ -8,7 +8,7 @@ Next.js port of orinks.net away from WordPress.
 - React
 - TypeScript
 - Tailwind CSS
-- Optional Neon serverless Postgres health check
+- Convex for persistent site data
 - GitHub release data for project downloads
 - Vercel hosting
 
@@ -19,7 +19,7 @@ npm install --no-audit --no-fund
 npm run dev
 ```
 
-Set `DATABASE_URL` if you want `/api/health` to verify Neon connectivity. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
+Run `npx convex dev` to connect the project to a Convex development deployment. The visitor counter API reads `CONVEX_URL` or `NEXT_PUBLIC_CONVEX_URL`. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
 
 ## Production
 
@@ -32,3 +32,9 @@ Vercel is connected to the GitHub repository and creates deployments automatical
 - `main` deploys to production.
 - `dev` and pull requests deploy as previews.
 - GitHub Actions runs lint, typecheck, and build validation only.
+
+Convex production deployments need `CONVEX_DEPLOY_KEY` configured in Vercel. The Vercel build command should run Convex before the Next.js build so the Convex functions are deployed with the site:
+
+```powershell
+npx convex deploy --cmd "npm run build"
+```
