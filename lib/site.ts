@@ -45,7 +45,7 @@ export const projectSummaries = [
     href: "/portkeydrop",
     title: "PortkeyDrop",
     summary:
-      "An accessible file transfer tool for Windows. Send and receive files with full screen reader support.",
+      "An accessible file transfer tool for Windows and macOS. Send and receive files with full screen reader support.",
   },
   {
     href: "/accessisky",
