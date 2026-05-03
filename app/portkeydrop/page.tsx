@@ -13,7 +13,7 @@ export default function PortkeyDropPage() {
     <>
       <PageHeader
         title="PortkeyDrop"
-        intro="An accessible file transfer application for Windows."
+        intro="An accessible file transfer application for Windows and macOS."
       />
       <Section>
         <p>

@@ -16,7 +16,7 @@ const manualSections = [
   {
     title: "Installing and starting AccessiWeather",
     body: [
-      "Prebuilt downloads are available from the AccessiWeather page and the GitHub releases page. Typical download options are Windows setup installer, Windows portable ZIP, and macOS DMG.",
+      "Prebuilt downloads are available from the AccessiWeather page and the GitHub releases page. Typical download options are Windows setup installer, Windows portable ZIP, and macOS ZIP.",
       "When you start AccessiWeather for the first time, an onboarding wizard can help add a location and optional provider keys.",
     ],
   },
