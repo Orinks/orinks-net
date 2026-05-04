@@ -69,7 +69,7 @@ export const projectSummaries = [
     href: "/audio-games",
     title: "Audio Games",
     summary:
-      "Browser-based audio game work using Syngen, with the first production prototype planned around Pipe Dream: Iron Valve.",
+      "Browser-based audio game work using Syngen, with the first production prototype planned around Space Colony Defense.",
   },
 ];
 

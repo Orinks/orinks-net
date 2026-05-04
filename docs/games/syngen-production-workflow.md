@@ -7,13 +7,13 @@ Use `nicross/syngen-template` as the base for real audio games. Keep each game a
 Recommended source project:
 
 ```text
-C:/Users/your-name\gh-projects\pipe-dream-syngen
+C:/Users/your-name\gh-projects\space-colony-syngen
 ```
 
 Recommended site deployment target:
 
 ```text
-C:/Users/your-name\gh-projects\orinks-net\public\games\pipe-dream-iron-valve
+C:/Users/your-name\gh-projects\orinks-net\public\games\space-colony-defense
 ```
 
 ## Template commands
@@ -39,4 +39,4 @@ Use `npx gulp dev` for local browser iteration. Use `npx gulp build` before copy
 
 ## First candidate
 
-Start with `Pipe Dream: Iron Valve`. Its mechanics are discrete, audio-readable, and easier to prototype in Syngen than a full transport sim or a larger arcade roguelite.
+Start with `Space Colony Defense`. It is an original Orinks project, avoids port-permission risk, and its wave combat plus management loop maps cleanly to Syngen spatial audio and accessible menu patterns.
