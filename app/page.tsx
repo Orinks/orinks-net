@@ -26,6 +26,9 @@ export default function HomePage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <ButtonLink href="/projects">Browse projects</ButtonLink>
+          <ButtonLink href="/audio-games" variant="secondary">
+            Audio games
+          </ButtonLink>
           <ButtonLink href="/blog" variant="secondary">
             Read the blog
           </ButtonLink>

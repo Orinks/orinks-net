@@ -12,6 +12,7 @@ export const navItems = [
   { href: "/playlists", label: "Playlists" },
   { href: "/blog", label: "Blog" },
   { href: "/projects", label: "Projects" },
+  { href: "/audio-games", label: "Audio Games" },
   { href: "/game-mods", label: "Game Mods" },
 ];
 
