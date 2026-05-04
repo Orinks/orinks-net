@@ -12,7 +12,7 @@ export const navItems = [
   { href: "/playlists", label: "Playlists" },
   { href: "/blog", label: "Blog" },
   { href: "/projects", label: "Projects" },
-  { href: "/audio-games", label: "Audio Games" },
+  { href: "/audio-games", label: "Games" },
   { href: "/game-mods", label: "Game Mods" },
 ];
 
@@ -26,6 +26,8 @@ export const projectNav = [
 ];
 
 export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enhanced Mod" }];
+
+export const gamesNav = [{ href: "/games/space-colony-defense/", label: "Space Colony Defense Preview" }];
 
 export const socialLinks = [
   { href: "http://youtube.com/@orin8722", label: "YouTube" },
