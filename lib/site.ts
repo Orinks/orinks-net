@@ -27,7 +27,9 @@ export const projectNav = [
 
 export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enhanced Mod" }];
 
-export const gamesNav = [{ href: "/games/space-colony-defense/", label: "Space Colony Defense Preview" }];
+export const gamesNav = [
+  { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense Preview" },
+];
 
 export const socialLinks = [
   { href: "http://youtube.com/@orin8722", label: "YouTube" },

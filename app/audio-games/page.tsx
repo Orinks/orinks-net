@@ -21,7 +21,7 @@ export default function AudioGamesPage() {
           game project, while orinks.net hosts playable web builds for preview and testing.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href="/games/space-colony-defense/">Play preview</ButtonLink>
+          <ButtonLink href="/games/space-colony-defense/index.html">Play preview</ButtonLink>
           <ButtonLink href="https://github.com/Orinks/space-colony-syngen" variant="secondary">
             Syngen prototype source
           </ButtonLink>
