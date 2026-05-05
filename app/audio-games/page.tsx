@@ -16,12 +16,12 @@ export default function AudioGamesPage() {
       <Section>
         <h2 className="text-2xl font-bold text-ink">Space Colony Defense</h2>
         <p className="mt-3 leading-7 text-slate-700">
-          A production-minded Syngen prototype is being planned around wave-based colony defense,
-          spatial enemy cues, and between-wave resource decisions. The source stays in a standalone
-          game project, while orinks.net hosts playable web builds for preview and testing.
+          A playable Syngen prototype built around wave-based colony defense, spatial enemy cues,
+          lane combat, and between-wave resource decisions. The hosted page explains the game,
+          Syngen browser-audio limits, and the basics before linking straight into play.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href="/games/space-colony-defense/index.html">Play preview</ButtonLink>
+          <ButtonLink href="/games/space-colony-defense/game.html">Play preview</ButtonLink>
           <ButtonLink href="https://github.com/Orinks/space-colony-syngen" variant="secondary">
             Syngen prototype source
           </ButtonLink>

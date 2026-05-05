@@ -22,7 +22,6 @@ export const projectNav = [
   { href: "/accessisky", label: "AccessiSky" },
   { href: "/accessiclock", label: "AccessiClock" },
   { href: "/spectra", label: "Spectra" },
-  { href: "/audio-games", label: "Audio Games" },
 ];
 
 export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enhanced Mod" }];
@@ -69,12 +68,6 @@ export const projectSummaries = [
     title: "Spectra",
     summary:
       "A screen-reader-first OpenAPI documentation browser and REST client. Coming soon.",
-  },
-  {
-    href: "/audio-games",
-    title: "Audio Games",
-    summary:
-      "Browser-based audio game work using Syngen, with the first production prototype planned around Space Colony Defense.",
   },
 ];
 
