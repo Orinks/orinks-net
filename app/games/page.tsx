@@ -3,15 +3,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 
 export const metadata = {
-  title: "Audio Games",
+  title: "Games",
 };
 
-export default function AudioGamesPage() {
+export default function GamesPage() {
   return (
     <>
       <PageHeader
-        title="Audio Games"
-        intro="Browser-based audio game experiments built around spatial sound, keyboard play, and screen reader-friendly status updates."
+        title="Games"
+        intro="Browser-based games built around spatial sound, keyboard play, and screen reader-friendly status updates."
       />
       <Section>
         <h2 className="text-2xl font-bold text-ink">Space Colony Defense</h2>

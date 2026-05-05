@@ -7,8 +7,8 @@ const disclosureNav = {
     overviewLabel: "Game Mods Overview",
     links: gameModNav,
   },
-  "/audio-games": {
-    overviewLabel: "Audio Games Overview",
+  "/games": {
+    overviewLabel: "Games Overview",
     links: gamesNav,
   },
   "/projects": {
