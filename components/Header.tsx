@@ -1,11 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { gameModNav, navItems, projectNav, site } from "@/lib/site";
+import { gameModNav, gamesNav, navItems, projectNav, site } from "@/lib/site";
 
 const disclosureNav = {
   "/game-mods": {
     overviewLabel: "Game Mods Overview",
     links: gameModNav,
+  },
+  "/audio-games": {
+    overviewLabel: "Audio Games Overview",
+    links: gamesNav,
   },
   "/projects": {
     overviewLabel: "Project Overview",
