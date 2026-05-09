@@ -3,6 +3,7 @@ export type Playlist = {
   description: string;
   id: string;
   featured?: boolean;
+  includeInUpdates?: boolean;
   publishedAt: string;
 };
 
@@ -12,6 +13,7 @@ export const playlists: Playlist[] = [
     description: "A playlist for underground country discoveries and favorites.",
     id: "0WcVpFqMZoLyXWsQRu1is5",
     featured: true,
+    includeInUpdates: true,
     publishedAt: "2026-04-25T00:00:00.000Z",
   },
   {
@@ -40,6 +42,7 @@ export const playlists: Playlist[] = [
     description: "My personal country favorites playlist.",
     id: "04ZdQaaTb50pt8yI6gTKuB",
     featured: true,
+    includeInUpdates: true,
     publishedAt: "2026-04-25T00:00:00.000Z",
   },
   {
@@ -47,6 +50,7 @@ export const playlists: Playlist[] = [
     description: "A personal favorites playlist with a wider mix of styles.",
     id: "0T4QH6Cb3FgvBnwyRAsReP",
     featured: true,
+    includeInUpdates: true,
     publishedAt: "2026-04-25T00:00:00.000Z",
   },
   {
@@ -54,6 +58,7 @@ export const playlists: Playlist[] = [
     description: "My playlist for favorite cover versions.",
     id: "5Q4oUBSzxuTBFEheV1V6lL",
     featured: true,
+    includeInUpdates: true,
     publishedAt: "2026-04-25T00:00:00.000Z",
   },
   {
@@ -61,6 +66,7 @@ export const playlists: Playlist[] = [
     description: "My role reversal / vanilla femdom playlist.",
     id: "1Q2GN18r7TIGjvzlFdDVOx",
     featured: true,
+    includeInUpdates: true,
     publishedAt: "2026-04-25T00:00:00.000Z",
   },
   {
@@ -84,6 +90,7 @@ export const playlists: Playlist[] = [
 ];
 
 export const featuredPlaylists = playlists.filter((playlist) => playlist.featured);
+export const updatePlaylists = playlists.filter((playlist) => playlist.includeInUpdates);
 export const snapshotPlaylists = playlists.filter((playlist) => !playlist.featured);
 
 export function playlistUrl(id: string) {

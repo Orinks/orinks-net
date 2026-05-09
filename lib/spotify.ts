@@ -1,4 +1,4 @@
-import { featuredPlaylists, playlistUrl, playlists } from "@/lib/playlists";
+import { playlistUrl, playlists, updatePlaylists } from "@/lib/playlists";
 
 const SPOTIFY_ACCOUNTS_URL = "https://accounts.spotify.com/api/token";
 const SPOTIFY_API_URL = "https://api.spotify.com/v1";
@@ -169,7 +169,7 @@ export async function getSpotifyPlaylistTrackUpdates() {
   }
 
   const results = await Promise.allSettled(
-    featuredPlaylists.map((playlist) => getPlaylistTrackUpdates(accessToken, playlist)),
+    updatePlaylists.map((playlist) => getPlaylistTrackUpdates(accessToken, playlist)),
   );
 
   return results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
