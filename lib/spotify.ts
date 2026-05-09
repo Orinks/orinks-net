@@ -29,6 +29,7 @@ type SpotifyPlaylistItem = {
 
 type SpotifyPlaylistItemsResponse = {
   items?: SpotifyPlaylistItem[];
+  total?: number;
 };
 
 export type SpotifyPlaylistTrackUpdate = {
@@ -118,26 +119,37 @@ async function getSpotifyAccessToken() {
 
 async function getPlaylistTrackUpdates(accessToken: string, playlist: (typeof playlists)[number]) {
   const fields =
-    "items(added_at,item(name,type,external_urls.spotify,artists(name)))";
-  const params = new URLSearchParams({
-    fields,
-    limit: "50",
-    market: "US",
-  });
+    "total,items(added_at,item(name,type,external_urls.spotify,artists(name)))";
+  const items: SpotifyPlaylistItem[] = [];
 
-  const data = await spotifyFetch<SpotifyPlaylistItemsResponse>(
-    `${SPOTIFY_API_URL}/playlists/${playlist.id}/items?${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      next: {
-        revalidate: 1800,
-      },
-    },
-  );
+  for (let offset = 0; ; offset += 100) {
+    const params = new URLSearchParams({
+      fields,
+      limit: "100",
+      market: "US",
+      offset: offset.toString(),
+    });
 
-  return (data.items ?? []).flatMap((item): SpotifyPlaylistTrackUpdate[] => {
+    const data = await spotifyFetch<SpotifyPlaylistItemsResponse>(
+      `${SPOTIFY_API_URL}/playlists/${playlist.id}/items?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        next: {
+          revalidate: 1800,
+        },
+      },
+    );
+
+    items.push(...(data.items ?? []));
+
+    if (items.length >= (data.total ?? 0) || (data.items ?? []).length === 0) {
+      break;
+    }
+  }
+
+  return items.flatMap((item): SpotifyPlaylistTrackUpdate[] => {
     const track = item.item;
     const addedAt = item.added_at;
 
