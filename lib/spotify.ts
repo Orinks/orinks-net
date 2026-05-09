@@ -191,20 +191,8 @@ export async function getSpotifyPlaylistTrackUpdates() {
     })),
   );
 
-  const playlistResults = results
+  return results
     .filter((result) => result.status === "fulfilled")
-    .map((result) => result.value)
-    .map(({ playlist, tracks }) => ({
-      playlist,
-      tracks: tracks.sort(
-        (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-      ),
-    }));
-
-  const latestPerPlaylist = playlistResults.flatMap(({ tracks }) => tracks.slice(0, 1));
-  const remainingTracks = playlistResults
-    .flatMap(({ tracks }) => tracks.slice(1))
+    .flatMap((result) => result.value.tracks)
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-
-  return [...latestPerPlaylist, ...remainingTracks];
 }
