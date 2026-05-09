@@ -35,6 +35,8 @@ export type SpotifyPlaylistTrackUpdate = {
   title: string;
   description: string;
   href: string;
+  playlistId: string;
+  playlistTitle: string;
   source: "Spotify";
   publishedAt: string;
   kind: "playlist-track";
@@ -119,7 +121,7 @@ async function getPlaylistTrackUpdates(accessToken: string, playlist: (typeof pl
     "items(added_at,item(name,type,external_urls.spotify,artists(name)))";
   const params = new URLSearchParams({
     fields,
-    limit: "10",
+    limit: "50",
     market: "US",
   });
 
@@ -153,6 +155,8 @@ async function getPlaylistTrackUpdates(accessToken: string, playlist: (typeof pl
         title: track.name,
         description,
         href: track.external_urls?.spotify ?? playlistUrl(playlist.id),
+        playlistId: playlist.id,
+        playlistTitle: playlist.title,
         source: "Spotify",
         publishedAt: addedAt,
         kind: "playlist-track",
@@ -169,8 +173,26 @@ export async function getSpotifyPlaylistTrackUpdates() {
   }
 
   const results = await Promise.allSettled(
-    updatePlaylists.map((playlist) => getPlaylistTrackUpdates(accessToken, playlist)),
+    updatePlaylists.map(async (playlist) => ({
+      playlist,
+      tracks: await getPlaylistTrackUpdates(accessToken, playlist),
+    })),
   );
 
-  return results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+  const playlistResults = results
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value)
+    .map(({ playlist, tracks }) => ({
+      playlist,
+      tracks: tracks.sort(
+        (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+      ),
+    }));
+
+  const latestPerPlaylist = playlistResults.flatMap(({ tracks }) => tracks.slice(0, 1));
+  const remainingTracks = playlistResults
+    .flatMap(({ tracks }) => tracks.slice(1))
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+  return [...latestPerPlaylist, ...remainingTracks];
 }

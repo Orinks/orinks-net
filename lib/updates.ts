@@ -86,7 +86,10 @@ export async function getRecentUpdateCategories({
     id: "music",
     title: "Music updates",
     defaultOpen: includeSpotifyPlaylists,
-    items: sortByNewest(musicItems).slice(0, includeSpotifyPlaylists ? 10 : 5),
+    items:
+      includeSpotifyPlaylists && !includeLastFmTracks
+        ? musicItems.slice(0, 10)
+        : sortByNewest(musicItems).slice(0, includeSpotifyPlaylists ? 10 : 5),
     unavailableMessage: includeSpotifyPlaylists
       ? "Spotify playlist updates are temporarily unavailable."
       : process.env.LASTFM_API_KEY && process.env.LASTFM_USERNAME
