@@ -19,6 +19,7 @@ export const navItems = [
 export const projectNav = [
   { href: "/accessiweather", label: "AccessiWeather" },
   { href: "/portkeydrop", label: "PortkeyDrop" },
+  { href: "/station-scout", label: "Station Scout" },
   { href: "/accessisky", label: "AccessiSky" },
   { href: "/accessiclock", label: "AccessiClock" },
   { href: "/spectra", label: "Spectra" },
@@ -51,6 +52,12 @@ export const projectSummaries = [
     title: "PortkeyDrop",
     summary:
       "An accessible file transfer tool for Windows and macOS. Send and receive files with full screen reader support.",
+  },
+  {
+    href: "/station-scout",
+    title: "Station Scout",
+    summary:
+      "An accessible desktop internet radio explorer for Windows, macOS, and Linux, built around Radio Browser and keyboard-first station discovery.",
   },
   {
     href: "/accessisky",

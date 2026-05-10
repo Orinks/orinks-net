@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/projects/station-scout",
+        destination: "/station-scout",
+        permanent: true,
+      },
+      {
         source: "/projects/accessisky",
         destination: "/accessisky",
         permanent: true,
