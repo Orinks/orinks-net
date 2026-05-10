@@ -51,16 +51,17 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiweather",
     title: "AccessiWeather",
-    tagline: "Accessible desktop weather for screen reader users.",
+    tagline: "A free desktop weather app. For the casual check-in or the deep dive.",
     summary:
-      "An accessible weather application for Windows and macOS, built from the ground up for screen reader users. Get current conditions, forecasts, alerts, and AI-powered weather explanations without leaving the keyboard.",
+      "AccessiWeather brings forecasts, alerts, and detailed weather data into one open-source desktop app for Windows, macOS, and Linux. Everything lives in clearly separated sections, so you can jump straight to what you need.",
     status: "Stable releases and nightly builds are available.",
-    audience:
-      "Built for people who want weather details, alerts, and forecast context in a keyboard-first desktop workflow.",
+    audience: "Tested with NVDA, JAWS, and VoiceOver.",
     features: [
-      "Current conditions, extended forecasts, severe weather alerts, and forecast discussions.",
-      "Weather history, provider-aware forecast data, and plain-language explanations.",
-      "Windows, macOS, and Linux builds with screen reader-focused navigation.",
+      "Current conditions, daily and hourly forecasts, and severe weather alerts, organized into focused sections that don't get in your way.",
+      "US and international coverage from the National Weather Service, Open-Meteo, and Pirate Weather, with an Automatic mode that fuses the best sources for your region.",
+      "For weather enthusiasts: air quality, UV index, aviation weather, weather history, marine forecasts, NOAA Weather Radio, and full NWS text products, including forecast discussions and hazardous weather outlooks.",
+      "Optional AI explanations and a Weather Assistant chat through OpenRouter, for when a forecast needs to be put in plain language.",
+      "Desktop notifications with optional sound packs, plus minute-by-minute precipitation timelines and adaptive rain alerts.",
     ],
     downloadsHref: "/accessiweather/downloads",
     manualHref: "/accessiweather/user-manual",
@@ -72,16 +73,17 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/portkeydrop",
     title: "PortkeyDrop",
-    tagline: "Accessible SFTP, FTP, and file transfer workflows.",
+    tagline: "A keyboard-first file transfer client that works the way you do.",
     summary:
-      "An accessible desktop file transfer client for working with remote servers over protocols such as SFTP and FTP.",
+      "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
     status: "Stable releases and nightly builds are available.",
-    audience:
-      "Built for screen reader users who need server browsing, uploads, downloads, transfer progress, and connection state to be clear from the keyboard.",
+    audience: "Tested with NVDA, JAWS, and VoiceOver.",
     features: [
-      "Connect to remote file servers with accessible SFTP and FTP workflows.",
-      "Browse local and remote folders, transfer files, and handle overwrite decisions from keyboard-friendly panes.",
-      "Follow transfer progress, activity history, and errors with screen reader-friendly status text.",
+      "One client for SFTP, FTP, FTPS, and WebDAV, so there's no juggling separate apps.",
+      "Dual-pane layout for local and remote files, with clear labels and full keyboard navigation throughout.",
+      "Quick Connect and Site Manager keep your saved servers a keystroke away.",
+      "Connection passwords are stored in your system's secure keyring, never written to disk in plaintext.",
+      "Transfer progress, queue, and errors are shown as plain, readable status text, so you always know where things stand.",
     ],
     downloadsHref: "/portkeydrop/downloads",
     links: [
@@ -92,16 +94,18 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/station-scout",
     title: "Station Scout",
-    tagline: "Accessible desktop internet radio discovery and playback.",
+    tagline: "Internet radio that remembers what you heard, when you want it to.",
     summary:
-      "A desktop internet radio explorer for finding, playing, favoriting, and tracking stations from the public Radio Browser directory.",
+      'Ever caught a song on an internet radio station and thought "what was that?" By the time you have reached for Shazam, the song is over. Station Scout is an internet radio player that catches every song so you do not have to. Find stations through Radio Browser, paste in a direct URL, or tune into your regulars.',
     status: "Station Scout v1.0.0 is available for Windows, macOS, and Linux.",
     audience:
-      "Built for listeners who want station search, playback, favorites, stream metadata, and playlist tracking in a desktop app that works well from the keyboard.",
+      "When you want a session logged, turn tracking on. When the session ends, choose whether to save it locally or turn it into a Spotify playlist. For the shows you actually plan around, set timers per station or per show. Tracking starts and stops on its own, so you can capture a favorite internet DJ's set without watching the clock.",
     features: [
-      "Search stations by name, country, language, and tag through Radio Browser.",
-      "Play streams, save favorites, review recent stations, and control playback from the tray.",
-      "Track now-playing metadata into readable session logs for later playlist or scrobbling workflows.",
+      "Browse thousands of stations through Radio Browser, or paste a direct stream URL to play anything.",
+      "Tracking is off by default, turn it on whenever you want a listening session logged.",
+      "At the end of a tracked session, choose to save it locally or turn it into a Spotify playlist.",
+      "Scrobbles to Last.fm in real time when you want it to.",
+      "Per-station and per-show timers that start and stop tracking automatically, so you can capture a specific DJ's set.",
     ],
     downloadsHref: "/station-scout/downloads",
     links: [
