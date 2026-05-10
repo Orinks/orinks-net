@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/audio-games",
+        destination: "/games",
+        permanent: true,
+      },
+      {
+        source: "/audio-games/downloads",
+        destination: "/games",
+        permanent: true,
+      },
+      {
         source: "/game-mods/eurofly-enhanced-mod",
         destination: "/eurofly-enhanced-mod",
         permanent: true,

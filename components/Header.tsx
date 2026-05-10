@@ -48,8 +48,11 @@ export function Header() {
 
             return disclosure ? (
               <details className="group rounded-md" key={item.href}>
-                <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300 [&::-webkit-details-marker]:hidden">
-                  {item.label}
+                <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300 [&::-webkit-details-marker]:hidden">
+                  <span>{item.label}</span>
+                  <span aria-hidden="true" className="text-xs transition-transform group-open:rotate-180">
+                    ▼
+                  </span>
                 </summary>
                 <div className="mt-2 flex min-w-52 flex-col rounded-md border border-line bg-white p-2 shadow-sm">
                   <Link
