@@ -46,7 +46,7 @@ export default function HomePage() {
                   {project.title}
                 </Link>
               </h3>
-              <p className="mt-2 leading-7 text-slate-700">{project.summary}</p>
+              <p className="mt-2 leading-7 text-slate-700">{project.tagline}</p>
             </article>
           ))}
         </div>

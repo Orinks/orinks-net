@@ -1,23 +1,10 @@
-import { PageHeader } from "@/components/PageHeader";
-import { Section } from "@/components/Section";
+import { ProjectLanding } from "@/components/ProjectLanding";
+import { getProject } from "@/lib/site";
 
 export const metadata = {
   title: "Spectra",
 };
 
 export default function SpectraPage() {
-  return (
-    <>
-      <PageHeader
-        title="Spectra"
-        intro="A screen-reader-first OpenAPI documentation browser and REST client."
-      />
-      <Section>
-        <p>
-          This project is currently in development. Check back soon for more information, downloads,
-          and release notes.
-        </p>
-      </Section>
-    </>
-  );
+  return <ProjectLanding project={getProject("/spectra")!} />;
 }

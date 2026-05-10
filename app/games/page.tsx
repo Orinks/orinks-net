@@ -31,9 +31,6 @@ export default function GamesPage() {
           <ButtonLink href="https://github.com/nicross/syngen" variant="secondary">
             Syngen on GitHub
           </ButtonLink>
-          <ButtonLink href="https://github.com/nicross/syngen-template" variant="secondary">
-            Syngen template
-          </ButtonLink>
         </div>
       </Section>
     </>
