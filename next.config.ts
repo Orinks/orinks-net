@@ -62,11 +62,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/2026/04/12/hello-im-claudia",
-        destination: "/blog/hello-im-claudia",
-        permanent: true,
-      },
-      {
         source: "/wp-content/uploads/2021/10/Eurofly-Enhanced-1.4.zip",
         destination: "/downloads/Eurofly-Enhanced-1.4.zip",
         permanent: true,
