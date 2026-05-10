@@ -1,4 +1,3 @@
-import { ButtonLink } from "@/components/ButtonLink";
 import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 
@@ -11,34 +10,27 @@ export default function AccessiSkyPage() {
     <>
       <PageHeader
         title="AccessiSky"
-        intro="An accessible sky and astronomy tool for Windows, designed for screen reader users."
+        intro="AccessiSky is no longer being actively maintained."
       />
       <Section>
-        <h2>AccessiSky v0.2.0 pre-release</h2>
         <p>
-          AccessiSky v0.2.0 added location search, tonight&apos;s summary, daily briefing data,
-          meteor shower calendars, planet visibility, eclipse calendars, dark sky times, viewing
-          condition scoring, weather integration, and USNO moon data.
+          AccessiSky remains available as an archived project, but it is no longer a current Orinks
+          project and should not be treated as maintained software.
         </p>
-        <h3>Highlights</h3>
+        <p>
+          Existing downloads and release notes remain on GitHub for people who still need the old
+          v0.2.0 pre-release.
+        </p>
         <ul>
-          <li>Search for cities by name using the Open-Meteo geocoding API.</li>
-          <li>Read a plain-language overview of tonight&apos;s sky conditions.</li>
-          <li>Review sunrise, sunset, moon phase, ISS passes, visible planets, and space weather.</li>
-          <li>Track 11 major annual meteor showers and all 7 observable planets.</li>
-          <li>Use accessible text summaries designed for screen reader workflows.</li>
+          <li>
+            <a href="https://github.com/Orinks/AccessiSky">Archived GitHub repository</a>
+          </li>
+          <li>
+            <a href="https://github.com/Orinks/AccessiSky/releases/tag/v0.2.0">
+              AccessiSky v0.2.0 release
+            </a>
+          </li>
         </ul>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href="https://github.com/Orinks/AccessiSky/releases/download/v0.2.0/AccessiSky_Portable_v0.2.0_Windows.zip">
-            Download Windows portable
-          </ButtonLink>
-          <ButtonLink
-            href="https://github.com/Orinks/AccessiSky/releases/download/v0.2.0/AccessiSky_v0.2.0_macOS.zip"
-            variant="secondary"
-          >
-            Download macOS build
-          </ButtonLink>
-        </div>
       </Section>
     </>
   );

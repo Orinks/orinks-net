@@ -47,6 +47,14 @@ export default function HomePage() {
                 </Link>
               </h3>
               <p className="mt-2 leading-7 text-slate-700">{project.summary}</p>
+              <p className="mt-4 text-sm font-semibold">
+                <Link
+                  className="text-action hover:text-action-dark"
+                  href={project.downloadsHref ?? project.href}
+                >
+                  Downloads and releases
+                </Link>
+              </p>
             </article>
           ))}
         </div>

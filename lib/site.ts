@@ -18,10 +18,9 @@ export const navItems = [
 export const projectNav = [
   { href: "/accessiweather", label: "AccessiWeather" },
   { href: "/portkeydrop", label: "PortkeyDrop" },
-  { href: "/accessisky", label: "AccessiSky" },
+  { href: "/station-scout", label: "Station Scout" },
   { href: "/accessiclock", label: "AccessiClock" },
   { href: "/spectra", label: "Spectra" },
-  { href: "/audio-games", label: "Audio Games" },
 ];
 
 export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enhanced Mod" }];
@@ -35,43 +34,119 @@ export const socialLinks = [
   { href: "https://github.com/Orinks", label: "GitHub" },
 ];
 
-export const projectSummaries = [
+export type ProjectPage = {
+  href: string;
+  title: string;
+  tagline: string;
+  summary: string;
+  status: string;
+  audience: string;
+  features: string[];
+  links: { href: string; label: string }[];
+  downloadsHref?: string;
+  manualHref?: string;
+};
+
+export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiweather",
     title: "AccessiWeather",
+    tagline: "Accessible desktop weather for screen reader users.",
     summary:
       "An accessible weather application for Windows and macOS, built from the ground up for screen reader users. Get current conditions, forecasts, alerts, and AI-powered weather explanations without leaving the keyboard.",
+    status: "Stable releases and nightly builds are available.",
+    audience:
+      "Built for people who want weather details, alerts, and forecast context in a keyboard-first desktop workflow.",
+    features: [
+      "Current conditions, extended forecasts, severe weather alerts, and forecast discussions.",
+      "Weather history, provider-aware forecast data, and plain-language explanations.",
+      "Windows, macOS, and Linux builds with screen reader-focused navigation.",
+    ],
+    downloadsHref: "/accessiweather/downloads",
+    manualHref: "/accessiweather/user-manual",
+    links: [
+      { href: "https://github.com/Orinks/AccessiWeather", label: "GitHub repository" },
+      { href: "https://github.com/Orinks/AccessiWeather/issues", label: "Report an issue" },
+    ],
   },
   {
     href: "/portkeydrop",
     title: "PortkeyDrop",
+    tagline: "Accessible file transfer without visual guesswork.",
     summary:
       "An accessible file transfer tool for Windows and macOS. Send and receive files with full screen reader support.",
+    status: "Stable releases and nightly builds are available.",
+    audience:
+      "Built for screen reader users who need file transfer flows that announce progress, state, and errors clearly.",
+    features: [
+      "Send and receive files through keyboard-friendly transfer panes.",
+      "Accessible progress, activity history, and overwrite decisions.",
+      "Desktop builds designed around practical screen reader workflows.",
+    ],
+    downloadsHref: "/portkeydrop/downloads",
+    links: [
+      { href: "https://github.com/Orinks/PortkeyDrop", label: "GitHub repository" },
+      { href: "https://github.com/Orinks/PortkeyDrop/issues", label: "Report an issue" },
+    ],
   },
   {
-    href: "/accessisky",
-    title: "AccessiSky",
+    href: "/station-scout",
+    title: "Station Scout",
+    tagline: "Accessible desktop internet radio discovery and playback.",
     summary:
-      "An accessible sky and astronomy tool for Windows, designed for screen reader users.",
+      "A desktop internet radio explorer for finding, playing, favoriting, and tracking stations from the public Radio Browser directory.",
+    status: "Station Scout v1.0.0 is available for Windows, macOS, and Linux.",
+    audience:
+      "Built for listeners who want station search, playback, favorites, stream metadata, and playlist tracking in a desktop app that works well from the keyboard.",
+    features: [
+      "Search stations by name, country, language, and tag through Radio Browser.",
+      "Play streams, save favorites, review recent stations, and control playback from the tray.",
+      "Track now-playing metadata into readable session logs for later playlist or scrobbling workflows.",
+    ],
+    downloadsHref: "/station-scout/downloads",
+    links: [
+      { href: "https://github.com/Orinks/station-scout", label: "GitHub repository" },
+      { href: "https://github.com/Orinks/station-scout/issues", label: "Report an issue" },
+    ],
   },
   {
     href: "/accessiclock",
     title: "AccessiClock",
+    tagline: "A planned accessible desktop clock.",
     summary: "An accessible clock application for Windows. Coming soon.",
+    status: "In development.",
+    audience:
+      "Planned for users who want a straightforward clock experience that works naturally with screen readers and the keyboard.",
+    features: [
+      "Screen reader-first time and clock surfaces.",
+      "A quiet desktop workflow for common clock tasks.",
+      "Downloads will be added after the first public build is ready.",
+    ],
+    downloadsHref: "/accessiclock/downloads",
+    links: [{ href: "https://github.com/Orinks", label: "Orinks on GitHub" }],
   },
   {
     href: "/spectra",
     title: "Spectra",
+    tagline: "A screen-reader-first OpenAPI documentation browser and REST client.",
     summary:
       "A screen-reader-first OpenAPI documentation browser and REST client. Coming soon.",
-  },
-  {
-    href: "/audio-games",
-    title: "Audio Games",
-    summary:
-      "Browser-based audio game work using Syngen, with the first production prototype planned around Space Colony Defense.",
+    status: "In development.",
+    audience:
+      "Built for developers who need to inspect OpenAPI descriptions, endpoints, and request details without fighting a visual-only docs UI.",
+    features: [
+      "OpenAPI navigation shaped around headings, lists, and predictable keyboard movement.",
+      "REST request workflows that keep response details readable.",
+      "Downloads will be added after the first public release is ready.",
+    ],
+    downloadsHref: "/spectra/downloads",
+    links: [{ href: "https://github.com/Orinks/spectra", label: "GitHub repository" }],
   },
 ];
+
+export function getProject(href: string) {
+  return projectSummaries.find((project) => project.href === href);
+}
 
 export const posts = [
   {

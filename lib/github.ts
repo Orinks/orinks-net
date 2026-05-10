@@ -220,7 +220,7 @@ export function releaseTitle(release: GitHubRelease) {
 }
 
 export function selectedDownloadAssets(assets: GitHubAsset[]) {
-  return assets.filter((asset) => /\.(exe|msi|zip|dmg)$/i.test(asset.name));
+  return assets.filter((asset) => /\.(exe|msi|zip|dmg|tar\.gz)$/i.test(asset.name));
 }
 
 export function downloadAssetLabel(assetName: string) {
@@ -235,6 +235,10 @@ export function downloadAssetLabel(assetName: string) {
 
   if (normalized.endsWith(".dmg") || normalized.includes("macos") || normalized.includes("darwin")) {
     return `macOS${architecture}`;
+  }
+
+  if (normalized.includes("linux") || normalized.endsWith(".tar.gz")) {
+    return `Linux${architecture}`;
   }
 
   if (normalized.includes("portable")) {
