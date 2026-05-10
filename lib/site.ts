@@ -72,16 +72,16 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/portkeydrop",
     title: "PortkeyDrop",
-    tagline: "Accessible file transfer without visual guesswork.",
+    tagline: "Accessible SFTP, FTP, and file transfer workflows.",
     summary:
-      "An accessible file transfer tool for Windows and macOS. Send and receive files with full screen reader support.",
+      "An accessible desktop file transfer client for working with remote servers over protocols such as SFTP and FTP.",
     status: "Stable releases and nightly builds are available.",
     audience:
-      "Built for screen reader users who need file transfer flows that announce progress, state, and errors clearly.",
+      "Built for screen reader users who need server browsing, uploads, downloads, transfer progress, and connection state to be clear from the keyboard.",
     features: [
-      "Send and receive files through keyboard-friendly transfer panes.",
-      "Accessible progress, activity history, and overwrite decisions.",
-      "Desktop builds designed around practical screen reader workflows.",
+      "Connect to remote file servers with accessible SFTP and FTP workflows.",
+      "Browse local and remote folders, transfer files, and handle overwrite decisions from keyboard-friendly panes.",
+      "Follow transfer progress, activity history, and errors with screen reader-friendly status text.",
     ],
     downloadsHref: "/portkeydrop/downloads",
     links: [
