@@ -63,7 +63,7 @@ export const projectSummaries: ProjectPage[] = [
     features: [
       "Current conditions, daily and hourly forecasts, and severe weather alerts, organized into focused sections that don't get in your way.",
       "US and international coverage from the National Weather Service, Open-Meteo, and Pirate Weather, with an Automatic mode that fuses the best sources for your region.",
-      "For weather enthusiasts: air quality, UV index, aviation weather, weather history, marine forecasts, NOAA Weather Radio, and full NWS text products, including forecast discussions and hazardous weather outlooks.",
+      "For weather enthusiasts: air quality, UV index, aviation weather, weather history, marine forecasts, NOAA Weather Radio, and Forecaster Notes for full NWS text products.",
       "Optional AI explanations and a Weather Assistant chat through OpenRouter, for when a forecast needs to be put in plain language.",
       "Desktop notifications with optional sound packs, plus minute-by-minute precipitation timelines and adaptive rain alerts.",
     ],

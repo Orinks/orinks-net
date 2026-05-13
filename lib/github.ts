@@ -49,7 +49,7 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
   return headers;
 };
 
-async function renderMarkdown(body: string | null, repo: string) {
+export async function renderMarkdown(body: string | null, repo: string) {
   if (!body?.trim()) {
     return null;
   }
