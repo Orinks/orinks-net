@@ -53,6 +53,7 @@ export default function PlaylistsPage() {
       <RecentUpdates
         includeCode={false}
         includeLastFmTracks={false}
+        includeMastodon={false}
         includeSpotifyPlaylists
         intro="Songs recently added to the Spotify playlists shared on this page."
       />

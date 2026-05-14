@@ -28,6 +28,10 @@ function updateTimestamp(item: UpdateItem) {
     return `Added ${formatScrobbleDate(item.publishedAt)}`;
   }
 
+  if (item.kind === "mastodon-post") {
+    return `Posted ${formatScrobbleDate(item.publishedAt)}`;
+  }
+
   return formatUpdateDate(item.publishedAt);
 }
 
@@ -41,6 +45,8 @@ function kindLabel(kind: UpdateItem["kind"]) {
       return "Track";
     case "playlist-track":
       return "Playlist add";
+    case "mastodon-post":
+      return "Post";
   }
 }
 
@@ -69,6 +75,7 @@ function UpdateRow({ item }: { item: UpdateItem }) {
 type RecentUpdatesProps = {
   includeCode?: boolean;
   includeLastFmTracks?: boolean;
+  includeMastodon?: boolean;
   includeSpotifyPlaylists?: boolean;
   intro?: string;
 };
@@ -76,12 +83,14 @@ type RecentUpdatesProps = {
 export async function RecentUpdates({
   includeCode = true,
   includeLastFmTracks = true,
+  includeMastodon = true,
   includeSpotifyPlaylists = false,
-  intro = "Public activity from featured projects and recent music scrobbles.",
+  intro = "Public activity from featured projects, recent music scrobbles, and Mastodon posts.",
 }: RecentUpdatesProps = {}) {
   const categories = await getRecentUpdateCategories({
     includeCode,
     includeLastFmTracks,
+    includeMastodon,
     includeSpotifyPlaylists,
   });
 

@@ -4,17 +4,23 @@ import {
   type GitHubActivityItem,
 } from "@/lib/github";
 import { getRecentLastFmTracks, type LastFmTrackUpdate } from "@/lib/lastfm";
+import { getRecentMastodonPosts, type MastodonPostUpdate } from "@/lib/mastodon";
 import {
   getSpotifyPlaylistTrackUpdates,
   type SpotifyPlaylistTrackUpdate,
 } from "@/lib/spotify";
 
-export type UpdateItem = (GitHubActivityItem | LastFmTrackUpdate | SpotifyPlaylistTrackUpdate) & {
-  kind: "release" | "commit" | "track" | "playlist-track";
+export type UpdateItem = (
+  | GitHubActivityItem
+  | LastFmTrackUpdate
+  | MastodonPostUpdate
+  | SpotifyPlaylistTrackUpdate
+) & {
+  kind: "release" | "commit" | "track" | "playlist-track" | "mastodon-post";
 };
 
 export type UpdateCategory = {
-  id: "code" | "music";
+  id: "code" | "music" | "social";
   title: string;
   defaultOpen: boolean;
   items: UpdateItem[];
@@ -26,6 +32,7 @@ const featuredRepos = ["AccessiWeather", "PortkeyDrop", "station-scout"];
 type RecentUpdateOptions = {
   includeCode?: boolean;
   includeLastFmTracks?: boolean;
+  includeMastodon?: boolean;
   includeSpotifyPlaylists?: boolean;
 };
 
@@ -60,14 +67,28 @@ async function getMusicItems({
   }
 }
 
+async function getMastodonItems({ includeMastodon = true }: RecentUpdateOptions = {}) {
+  if (!includeMastodon) {
+    return [];
+  }
+
+  try {
+    return await getRecentMastodonPosts();
+  } catch {
+    return [];
+  }
+}
+
 export async function getRecentUpdateCategories({
   includeCode = true,
   includeLastFmTracks = true,
+  includeMastodon = true,
   includeSpotifyPlaylists = false,
 }: RecentUpdateOptions = {}): Promise<UpdateCategory[]> {
-  const [codeItems, musicItems] = await Promise.all([
+  const [codeItems, musicItems, mastodonItems] = await Promise.all([
     includeCode ? getCodeItems() : Promise.resolve([]),
     getMusicItems({ includeLastFmTracks, includeSpotifyPlaylists }),
+    getMastodonItems({ includeMastodon }),
   ]);
 
   const categories: UpdateCategory[] = [];
@@ -93,6 +114,16 @@ export async function getRecentUpdateCategories({
         ? "Music updates are temporarily unavailable."
         : "Music updates need Last.fm credentials before they can appear here.",
   });
+
+  if (includeMastodon) {
+    categories.push({
+      id: "social",
+      title: "Social updates",
+      defaultOpen: false,
+      items: sortByNewest(mastodonItems).slice(0, 10),
+      unavailableMessage: "Mastodon updates are temporarily unavailable.",
+    });
+  }
 
   return categories;
 }
