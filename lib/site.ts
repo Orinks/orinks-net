@@ -21,6 +21,7 @@ export const projectNav = [
   { href: "/station-scout", label: "Station Scout" },
   { href: "/accessiclock", label: "AccessiClock" },
   { href: "/spectra", label: "Spectra" },
+  { href: "/freight-fate", label: "Freight Fate" },
 ];
 
 export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enhanced Mod" }];
@@ -149,6 +150,31 @@ export const projectSummaries: ProjectPage[] = [
     ],
     downloadsHref: "/spectra/downloads",
     links: [{ href: "https://github.com/Orinks/spectra", label: "GitHub repository" }],
+  },
+  // Keep Freight Fate last: the home page features only the first four
+  // projects, and this one is intentionally not featured.
+  {
+    href: "/freight-fate",
+    title: "Freight Fate",
+    tagline: "An audio trucking adventure across America.",
+    summary:
+      "Freight Fate is an audio-first trucking simulation for Windows and Linux. Build a freight career across 59 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
+    status: "Stable releases and developer snapshots are available.",
+    audience:
+      "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
+    features: [
+      "Truck physics you can hear: a ten-speed transmission (manual with clutch or automatic), torque, grades, traction limits, brake fade, and an engine note that tracks RPM in real time.",
+      "A living map: 59 cities and 106 legs along real interstates, regional freight identity, cargo markets that drift day by day, and multiple route options per job.",
+      "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world conditions.",
+      "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock while delivery deadlines keep counting.",
+      "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, and mid-trip save and resume.",
+      "Every sound and music track is procedurally synthesized and dedicated to the public domain.",
+    ],
+    downloadsHref: "/freight-fate/downloads",
+    links: [
+      { href: "https://github.com/Orinks/Freight-Fate", label: "GitHub repository" },
+      { href: "https://github.com/Orinks/Freight-Fate/issues", label: "Report an issue" },
+    ],
   },
 ];
 

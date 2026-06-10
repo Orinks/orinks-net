@@ -9,7 +9,7 @@ import {
 } from "@/lib/github";
 
 type ReleaseDownloadsProps = {
-  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout";
+  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate";
   productName: string;
 };
 
