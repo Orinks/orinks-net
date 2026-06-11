@@ -27,7 +27,7 @@ export type UpdateCategory = {
   unavailableMessage?: string;
 };
 
-const featuredRepos = ["AccessiWeather", "PortkeyDrop", "station-scout", "Freight-Fate"];
+const featuredRepos = ["AccessiWeather", "PortkeyDrop", "station-scout", "Freight-Fate", "saltwake"];
 
 type RecentUpdateOptions = {
   includeCode?: boolean;

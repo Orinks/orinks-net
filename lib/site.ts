@@ -28,6 +28,7 @@ export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enha
 export const gamesNav = [
   { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense" },
   { href: "/freight-fate", label: "Freight Fate" },
+  { href: "/saltwake", label: "Saltwake" },
 ];
 
 export const socialLinks = [
@@ -85,6 +86,30 @@ export const freightFate: ProjectPage = {
   ],
 };
 
+export const saltwake: ProjectPage = {
+  href: "/saltwake",
+  title: "Saltwake",
+  tagline: "A watersports roguelite where the sea remembers.",
+  summary:
+    "Saltwake is an audio-first watersports roguelite for Windows and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues, all played by ear. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
+  status: "Stable releases and developer snapshots are available.",
+  audience:
+    "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
+  features: [
+    "Six watersports contests driven by stereo-panned sound cues with spoken twins: racing, slalom, diving, storm runs, fishing, and rescue tows.",
+    "A roguelite structure that never wastes a run: branching sea charts, per-run boons, four regions with bosses, and a wreck that banks half your salvage while the story keeps everything.",
+    "A three-act mystery told across runs in over a hundred story scenes, with six characters whose arcs grow with your renown, your deeds, and your visits.",
+    "An eighteen-track soundtrack and every sound effect synthesized from code, so the audio is reproducible from source.",
+    "Meta progression: renown levels that open deeper water, six vessels, permanent gear, and post-victory difficulty marks.",
+    "Portable by design: saves live in the game's own folder. Unzip and run, no installer.",
+  ],
+  downloadsHref: "/saltwake/downloads",
+  links: [
+    { href: "https://github.com/Orinks/saltwake", label: "GitHub repository" },
+    { href: "https://github.com/Orinks/saltwake/issues", label: "Report an issue" },
+  ],
+};
+
 export const gameSummaries: GameSummary[] = [
   {
     href: "/games/space-colony-defense/index.html",
@@ -106,6 +131,14 @@ export const gameSummaries: GameSummary[] = [
     primaryHref: freightFate.downloadsHref!,
     primaryLabel: "Downloads",
     links: freightFate.links,
+  },
+  {
+    href: saltwake.href,
+    title: saltwake.title,
+    summary: saltwake.summary,
+    primaryHref: saltwake.downloadsHref!,
+    primaryLabel: "Downloads",
+    links: saltwake.links,
   },
 ];
 
@@ -215,5 +248,7 @@ export function getProject(href: string) {
 }
 
 export function getGame(href: string) {
-  return href === freightFate.href ? freightFate : undefined;
+  if (href === freightFate.href) return freightFate;
+  if (href === saltwake.href) return saltwake;
+  return undefined;
 }
