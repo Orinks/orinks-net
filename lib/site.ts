@@ -76,7 +76,7 @@ export const freightFate: ProjectPage = {
     "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world conditions.",
     "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock while delivery deadlines keep counting.",
     "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, and mid-trip save and resume.",
-    "Every sound and music track is procedurally synthesized and dedicated to the public domain.",
+    "Sound effects and music are generated from scripts, keeping the audio tightly matched to the simulation.",
   ],
   downloadsHref: "/freight-fate/downloads",
   links: [
