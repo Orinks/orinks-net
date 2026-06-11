@@ -67,7 +67,7 @@ export const freightFate: ProjectPage = {
   title: "Freight Fate",
   tagline: "An audio trucking adventure across America.",
   summary:
-    "Freight Fate is an audio-first trucking simulation for Windows and Linux. Build a freight career across 59 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
+    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Build a freight career across 59 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
   status: "Stable releases and developer snapshots are available.",
   audience:
     "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
@@ -91,7 +91,7 @@ export const saltwake: ProjectPage = {
   title: "Saltwake",
   tagline: "A watersports roguelite where the sea remembers.",
   summary:
-    "Saltwake is an audio-first watersports roguelite for Windows and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues, all played by ear. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
+    "Saltwake is an audio-first watersports roguelite for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues, all played by ear. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
   status: "Stable releases and developer snapshots are available.",
   audience:
     "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
