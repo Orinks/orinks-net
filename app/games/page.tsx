@@ -1,6 +1,6 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHeader } from "@/components/PageHeader";
-import { Section } from "@/components/Section";
+import { gameSummaries } from "@/lib/site";
 
 export const metadata = {
   title: "Games",
@@ -11,28 +11,27 @@ export default function GamesPage() {
     <>
       <PageHeader
         title="Games"
-        intro="Browser-based games built around spatial sound, keyboard play, and screen reader-friendly status updates."
+        intro="Games built around spatial sound, keyboard play, and screen reader-friendly status updates."
       />
-      <Section>
-        <h2 className="text-2xl font-bold text-ink">Space Colony Defense</h2>
-        <p className="mt-3 leading-7 text-slate-700">
-          A playable Syngen prototype built around wave-based colony defense, spatial enemy cues,
-          lane combat, and between-wave resource decisions. The hosted page explains the game,
-          Syngen browser-audio limits, and the basics before linking straight into play.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href="/games/space-colony-defense/game.html">Play preview</ButtonLink>
-          <ButtonLink href="https://github.com/Orinks/space-colony-syngen" variant="secondary">
-            Syngen prototype source
-          </ButtonLink>
-          <ButtonLink href="https://github.com/Orinks/space-colony-defense" variant="secondary">
-            Original project
-          </ButtonLink>
-          <ButtonLink href="https://github.com/nicross/syngen" variant="secondary">
-            Syngen on GitHub
-          </ButtonLink>
-        </div>
-      </Section>
+      <div className="grid gap-4 py-8 md:grid-cols-2">
+        {gameSummaries.map((game) => (
+          <article className="rounded-lg border border-line bg-white p-5" key={game.href}>
+            <h2 className="text-xl font-bold text-ink">{game.title}</h2>
+            <p className="mt-2 leading-7 text-slate-700">{game.summary}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href={game.primaryHref}>{game.primaryLabel}</ButtonLink>
+              <ButtonLink href={game.href} variant="secondary">
+                Details
+              </ButtonLink>
+              {game.links.map((link) => (
+                <ButtonLink href={link.href} key={link.href} variant="secondary">
+                  {link.label}
+                </ButtonLink>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
     </>
   );
 }
