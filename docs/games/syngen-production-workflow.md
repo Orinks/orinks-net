@@ -35,7 +35,7 @@ Use `npx gulp dev` for local browser iteration. Use `npx gulp build` before copy
 - Only add a playable route when a game has a real title, stable controls, and a repeatable build.
 - Keep game source outside the Next app unless the game intentionally becomes a React application.
 - Prefer one static folder per game under `public/games/<game-slug>`.
-- Add or update `app/audio-games/page.tsx` when a build is player-facing.
+- Add or update `app/games/page.tsx` when a build is player-facing.
 
 ## First candidate
 

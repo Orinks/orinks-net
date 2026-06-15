@@ -24,6 +24,14 @@ function updateTimestamp(item: UpdateItem) {
     return `Scrobbled ${formatScrobbleDate(item.publishedAt)}`;
   }
 
+  if (item.kind === "playlist-track") {
+    return `Added ${formatScrobbleDate(item.publishedAt)}`;
+  }
+
+  if (item.kind === "mastodon-post") {
+    return `Posted ${formatScrobbleDate(item.publishedAt)}`;
+  }
+
   return formatUpdateDate(item.publishedAt);
 }
 
@@ -35,6 +43,10 @@ function kindLabel(kind: UpdateItem["kind"]) {
       return "Commit";
     case "track":
       return "Track";
+    case "playlist-track":
+      return "Playlist add";
+    case "mastodon-post":
+      return "Post";
   }
 }
 
@@ -60,8 +72,27 @@ function UpdateRow({ item }: { item: UpdateItem }) {
   );
 }
 
-export async function RecentUpdates() {
-  const categories = await getRecentUpdateCategories();
+type RecentUpdatesProps = {
+  includeCode?: boolean;
+  includeLastFmTracks?: boolean;
+  includeMastodon?: boolean;
+  includeSpotifyPlaylists?: boolean;
+  intro?: string;
+};
+
+export async function RecentUpdates({
+  includeCode = true,
+  includeLastFmTracks = true,
+  includeMastodon = true,
+  includeSpotifyPlaylists = false,
+  intro = "Public activity from featured projects, recent music scrobbles, and Mastodon posts.",
+}: RecentUpdatesProps = {}) {
+  const categories = await getRecentUpdateCategories({
+    includeCode,
+    includeLastFmTracks,
+    includeMastodon,
+    includeSpotifyPlaylists,
+  });
 
   return (
     <section className="py-8" aria-labelledby="recent-updates">
@@ -69,9 +100,7 @@ export async function RecentUpdates() {
         <h2 className="text-2xl font-bold text-ink" id="recent-updates">
           Recent updates
         </h2>
-        <p className="mt-2 leading-7 text-slate-700">
-          Public activity from featured projects and recent music scrobbles.
-        </p>
+        <p className="mt-2 leading-7 text-slate-700">{intro}</p>
       </div>
 
       <div className="space-y-4">

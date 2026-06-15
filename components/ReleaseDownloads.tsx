@@ -9,7 +9,7 @@ import {
 } from "@/lib/github";
 
 type ReleaseDownloadsProps = {
-  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout";
+  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake";
   productName: string;
 };
 
@@ -120,7 +120,7 @@ export async function ReleaseDownloads({ repo, productName }: ReleaseDownloadsPr
                   <DownloadList release={release} />
                 </div>
                 <p className="mt-4">
-                  <a href={release.html_url}>Full release</a>
+                  <a href={release.html_url}>Full release: {releaseTitle(release)}</a>
                 </p>
                 <Notes release={release} />
               </article>

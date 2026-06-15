@@ -13,12 +13,16 @@ type NwsPoints = {
 type NwsStationList = {
   features?: Array<{
     id?: string;
+    properties?: {
+      name?: string | null;
+    };
   }>;
 };
 
 type NwsObservation = {
   properties?: {
     textDescription?: string | null;
+    timestamp?: string | null;
     temperature?: Quantity | null;
     dewpoint?: Quantity | null;
     windSpeed?: Quantity | null;
@@ -34,6 +38,11 @@ type NwsObservation = {
 type Quantity = {
   value?: number | null;
   unitCode?: string;
+};
+
+type StationObservation = {
+  stationName: string | null | undefined;
+  observation: NwsObservation;
 };
 
 export type CurrentConditions = {
@@ -60,18 +69,14 @@ export async function getCurrentConditions(): Promise<CurrentConditions> {
   }
 
   const stations = await getJson<NwsStationList>(stationUrl);
-  const firstStation = stations.features?.find((station) => station.id)?.id;
+  const observation = await getBestObservation(stations);
 
-  if (!firstStation) {
-    throw new Error("NWS did not return an observation station for Lumberton.");
-  }
-
-  const observation = await getJson<NwsObservation>(`${firstStation}/observations/latest`);
-  const props = observation.properties ?? {};
+  const props = observation.observation.properties ?? {};
+  const stationLine = observation.stationName ? ` (${observation.stationName})` : "";
 
   return {
     location: LUMBERTON.name,
-    updatedAt: new Date().toISOString(),
+    updatedAt: props.timestamp ?? new Date().toISOString(),
     source: "National Weather Service",
     lines: [
       `Current conditions for ${LUMBERTON.name}: ${props.textDescription || "Unavailable"}`,
@@ -82,9 +87,57 @@ export async function getCurrentConditions(): Promise<CurrentConditions> {
       `Pressure: ${formatPressure(props.barometricPressure)}`,
       `Visibility: ${formatMiles(props.visibility)}`,
       `Cloud cover: ${formatCloudCover(props.cloudLayers)}`,
-      "Data from: National Weather Service",
+      `Data from: National Weather Service${stationLine}`,
     ],
   };
+}
+
+async function getBestObservation(stations: NwsStationList): Promise<StationObservation> {
+  const stationCandidates = stations.features?.filter((station) => station.id).slice(0, 8) ?? [];
+
+  if (stationCandidates.length === 0) {
+    throw new Error("NWS did not return an observation station for Lumberton.");
+  }
+
+  const observationResults = await Promise.allSettled(
+    stationCandidates.map(async (station) => ({
+      stationName: station.properties?.name,
+      observation: await getJson<NwsObservation>(`${station.id}/observations/latest`),
+    })),
+  );
+  const observations: StationObservation[] = observationResults.flatMap((result) =>
+    result.status === "fulfilled" ? [result.value] : [],
+  );
+
+  const best = observations
+    .map((entry) => ({
+      ...entry,
+      score: scoreObservation(entry.observation),
+    }))
+    .sort((a, b) => b.score - a.score)[0];
+
+  if (!best || best.score === 0) {
+    throw new Error("NWS did not return usable current observations for nearby stations.");
+  }
+
+  return best;
+}
+
+function scoreObservation(observation: NwsObservation) {
+  const props = observation.properties;
+
+  if (!props) {
+    return 0;
+  }
+
+  return [
+    props.textDescription,
+    props.temperature?.value,
+    props.dewpoint?.value,
+    props.windSpeed?.value,
+    props.relativeHumidity?.value,
+    props.visibility?.value,
+  ].filter((value) => value !== null && value !== undefined && value !== "").length;
 }
 
 async function getJson<T>(url: string): Promise<T> {

@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/projects/station-scout",
+        destination: "/station-scout",
+        permanent: true,
+      },
+      {
         source: "/projects/accessisky",
         destination: "/accessisky",
         permanent: true,
@@ -37,18 +42,18 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/projects/station-scout",
-        destination: "/station-scout",
+        source: "/audio-games",
+        destination: "/games",
+        permanent: true,
+      },
+      {
+        source: "/audio-games/downloads",
+        destination: "/games",
         permanent: true,
       },
       {
         source: "/game-mods/eurofly-enhanced-mod",
         destination: "/eurofly-enhanced-mod",
-        permanent: true,
-      },
-      {
-        source: "/2026/04/12/hello-im-claudia",
-        destination: "/blog/hello-im-claudia",
         permanent: true,
       },
       {

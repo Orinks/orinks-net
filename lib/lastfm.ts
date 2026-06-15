@@ -32,6 +32,7 @@ type LastFmRecentTracksResponse = {
 };
 
 const LASTFM_API_URL = "https://ws.audioscrobbler.com/2.0/";
+const LASTFM_TIMEOUT_MS = 5000;
 
 function asTrackArray(track: LastFmRecentTrack | LastFmRecentTrack[] | undefined) {
   if (!track) {
@@ -88,6 +89,7 @@ export async function getRecentLastFmTracks(): Promise<LastFmTrackUpdate[]> {
 
   const response = await fetch(`${LASTFM_API_URL}?${params.toString()}`, {
     next: { revalidate: 1800 },
+    signal: AbortSignal.timeout(LASTFM_TIMEOUT_MS),
   });
 
   if (!response.ok) {

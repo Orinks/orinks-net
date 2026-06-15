@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Space Colony Defense</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Play Space Colony Defense, an accessible Syngen audio game about defending a space colony through lane combat and resource management."
+    />
+    <link rel="icon" type="image/png" href="/games/space-colony-defense/favicon.png" />
+    <style>
+      *, *::after, *::before {
+        box-sizing: border-box;
+      }
+
+      :root {
+        background: #05070A;
+        color: #F7FBFF;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      a {
+        color: #76E4FF;
+      }
+
+      a:focus,
+      button:focus {
+        outline: 3px solid #FFFFFF;
+        outline-offset: 0.25rem;
+      }
+
+      .hero {
+        background:
+          radial-gradient(circle at 20% 20%, rgba(118, 228, 255, 0.22), transparent 18rem),
+          radial-gradient(circle at 80% 10%, rgba(255, 214, 102, 0.18), transparent 20rem),
+          linear-gradient(135deg, #05070A 0%, #10212A 54%, #1A2630 100%);
+        min-height: 82vh;
+        padding: 2rem 1.25rem 4rem;
+      }
+
+      .hero__inner,
+      .section__inner {
+        margin: 0 auto;
+        max-width: 68rem;
+      }
+
+      .hero__nav {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+      }
+
+      .brand {
+        color: #FFFFFF;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      .hero__links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .hero__links a {
+        color: #E7F8FF;
+        font-weight: 700;
+        text-decoration-thickness: 0.12em;
+      }
+
+      .hero__content {
+        display: grid;
+        gap: 2.5rem;
+        grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+        padding-top: 8vh;
+      }
+
+      .eyebrow {
+        color: #FFD666;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        margin: 0 0 1rem;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: clamp(2.65rem, 9vw, 6.75rem);
+        line-height: 0.95;
+        margin: 0;
+        max-width: 9ch;
+      }
+
+      h2 {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        line-height: 1.08;
+        margin: 0 0 1rem;
+      }
+
+      h3 {
+        font-size: 1.15rem;
+        margin: 0 0 0.45rem;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .lede {
+        color: #D7E5EA;
+        font-size: 1.2rem;
+        margin-top: 1.5rem;
+        max-width: 44rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .button {
+        align-items: center;
+        border: 2px solid #FFFFFF;
+        color: #05070A;
+        display: inline-flex;
+        font-weight: 800;
+        justify-content: center;
+        min-height: 3.1rem;
+        padding: 0.75rem 1.1rem;
+        text-decoration: none;
+      }
+
+      .button--primary {
+        background: #FFFFFF;
+      }
+
+      .button--secondary {
+        background: transparent;
+        color: #FFFFFF;
+      }
+
+      .signal {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 1.25rem;
+      }
+
+      .signal p + p {
+        margin-top: 0.9rem;
+      }
+
+      .section {
+        padding: 4rem 1.25rem;
+      }
+
+      .section--light {
+        background: #F6FAFC;
+        color: #0B1114;
+      }
+
+      .section--steel {
+        background: #111A20;
+      }
+
+      .grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        border: 1px solid currentColor;
+        min-height: 100%;
+        padding: 1.15rem;
+      }
+
+      .section--light .panel {
+        background: #FFFFFF;
+        border-color: #C5D4DA;
+      }
+
+      .steps {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        list-style: none;
+        margin: 1.5rem 0 0;
+        padding: 0;
+      }
+
+      .steps li {
+        border-top: 4px solid #FFD666;
+        padding-top: 0.9rem;
+      }
+
+      .limitations {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        margin-top: 1.5rem;
+      }
+
+      footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        color: #B9C8CE;
+        padding: 1.5rem 1.25rem;
+      }
+
+      footer p {
+        margin: 0 auto;
+        max-width: 68rem;
+      }
+
+      @media (max-width: 48rem) {
+        .hero__content,
+        .grid,
+        .limitations,
+        .steps {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__inner">
+        <nav class="hero__nav" aria-label="Main">
+          <a class="brand" href="/games/space-colony-defense/">Space Colony Defense</a>
+          <div class="hero__links">
+            <a href="#about">About</a>
+            <a href="#how-to-play">How to play</a>
+            <a href="/games/space-colony-defense/game.html">Play</a>
+          </div>
+        </nav>
+
+        <div class="hero__content">
+          <div>
+            <p class="eyebrow">Accessible browser audio game</p>
+            <h1>Space Colony Defense</h1>
+            <p class="lede">
+              Defend a fragile colony by listening for incoming enemies, lining up turret shots, dodging lane attacks, and spending scarce energy, metal, and food between waves.
+            </p>
+            <div class="actions">
+              <a class="button button--primary" href="/games/space-colony-defense/game.html">Play in browser</a>
+              <a class="button button--secondary" href="#how-to-play">How to play</a>
+            </div>
+          </div>
+
+          <aside class="signal" aria-label="Current prototype notes">
+            <p><strong>Best with headphones.</strong> The battlefield is communicated through lane, proximity, music, and screen-reader-friendly status text.</p>
+            <p><strong>Prototype build.</strong> The core loop is playable, but balance, onboarding, and long-term progression are still evolving.</p>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section section--light" id="about">
+        <div class="section__inner">
+          <h2>Hear the invasion before it reaches the colony.</h2>
+          <div class="grid">
+            <article class="panel">
+              <h3>Lane combat</h3>
+              <p>Enemies approach from the left, center, and right. Move your turret by sound, fire when aligned, and move away from announced enemy shots before impact.</p>
+            </article>
+            <article class="panel">
+              <h3>Colony management</h3>
+              <p>Between waves, spend resources on repairs, shield charge, missiles, solar panels, hydroponics, scanners, and risk contracts that change the next wave.</p>
+            </article>
+            <article class="panel">
+              <h3>Audio-first design</h3>
+              <p>Syngen powers procedural sound, spatial cues, dynamic music, and accessible browser play without relying on a visual battlefield.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--steel" id="syngen">
+        <div class="section__inner">
+          <h2>What Syngen does here</h2>
+          <p>
+            Syngen is a JavaScript audio engine for interactive, procedural Web Audio scenes. In this game, it helps position threats in space, play synthesized cues, respond to combat pressure with music, and make a browser game that can be understood through listening.
+          </p>
+          <div class="limitations">
+            <article class="panel">
+              <h3>Browser audio limits</h3>
+              <p>Browsers require a player interaction before audio can start. Very old browsers, muted tabs, aggressive extensions, or unsupported Web Audio features may prevent the game from sounding right.</p>
+            </article>
+            <article class="panel">
+              <h3>Performance limits</h3>
+              <p>Real-time synthesis can be CPU intensive. If audio stutters, try closing heavy tabs, using a recent Chromium-based browser, and playing with headphones at a comfortable volume.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--light" id="how-to-play">
+        <div class="section__inner">
+          <h2>Quick how to play</h2>
+          <ol class="steps">
+            <li><strong>Start a new run.</strong> The first management phase recommends setup choices for the training wave.</li>
+            <li><strong>Plan between waves.</strong> Build, repair, charge shields, craft missiles, or select a risk contract before launching.</li>
+            <li><strong>Listen in combat.</strong> Move left or right to the enemy lane, fire when aligned, and dodge announced lane shots.</li>
+            <li><strong>Repeat status.</strong> Press <kbd>R</kbd> or <kbd>Tab</kbd> to hear the current menu item or game state again.</li>
+          </ol>
+          <div class="actions">
+            <a class="button button--primary" href="/games/space-colony-defense/game.html">Play Space Colony Defense</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Space Colony Defense is a public Syngen prototype by Orinks.</p>
+    </footer>
+  </body>
+</html>

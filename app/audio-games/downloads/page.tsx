@@ -29,7 +29,7 @@ export default function AudioGameDownloadsPage() {
           </li>
         </ul>
         <p>
-          <a href="/audio-games">Back to Audio Games</a>
+          <a href="/games">Back to Games</a>
         </p>
       </Section>
     </>

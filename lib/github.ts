@@ -49,7 +49,7 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
   return headers;
 };
 
-async function renderMarkdown(body: string | null, repo: string) {
+export async function renderMarkdown(body: string | null, repo: string) {
   if (!body?.trim()) {
     return null;
   }
@@ -220,7 +220,7 @@ export function releaseTitle(release: GitHubRelease) {
 }
 
 export function selectedDownloadAssets(assets: GitHubAsset[]) {
-  return assets.filter((asset) => /\.(exe|msi|zip|dmg|tar\.gz)$/i.test(asset.name));
+  return assets.filter((asset) => /\.(exe|msi|zip|dmg|pkg|appimage|deb|rpm|tar\.gz|tgz)$/i.test(asset.name));
 }
 
 export function downloadAssetLabel(assetName: string) {
@@ -233,24 +233,66 @@ export function downloadAssetLabel(assetName: string) {
         ? " x64"
         : "";
 
-  if (normalized.endsWith(".dmg") || normalized.includes("macos") || normalized.includes("darwin")) {
-    return `macOS${architecture}`;
+  if (normalized.endsWith(".dmg")) {
+    return `macOS disk image${architecture}`;
   }
 
-  if (normalized.includes("linux") || normalized.endsWith(".tar.gz")) {
-    return `Linux${architecture}`;
+  if (normalized.endsWith(".pkg")) {
+    return `macOS installer package${architecture}`;
+  }
+
+  if ((normalized.includes("macos") || normalized.includes("darwin")) && normalized.endsWith(".zip")) {
+    return `macOS ZIP archive${architecture}`;
+  }
+
+  if (normalized.endsWith(".appimage")) {
+    return `Linux AppImage${architecture}`;
+  }
+
+  if (normalized.endsWith(".deb")) {
+    return `Linux DEB package${architecture}`;
+  }
+
+  if (normalized.endsWith(".rpm")) {
+    return `Linux RPM package${architecture}`;
+  }
+
+  if (
+    (normalized.includes("macos") || normalized.includes("darwin")) &&
+    (normalized.endsWith(".tar.gz") || normalized.endsWith(".tgz"))
+  ) {
+    return `macOS tarball${architecture}`;
+  }
+
+  if (
+    (normalized.includes("linux") || normalized.includes("ubuntu")) &&
+    (normalized.endsWith(".tar.gz") || normalized.endsWith(".tgz"))
+  ) {
+    return `Linux tarball${architecture}`;
+  }
+
+  if (normalized.endsWith(".tar.gz") || normalized.endsWith(".tgz")) {
+    return `Tarball${architecture}`;
   }
 
   if (normalized.includes("portable")) {
     return `Windows portable${architecture}`;
   }
 
-  if (normalized.endsWith(".msi") || normalized.endsWith(".exe") || normalized.includes("setup")) {
+  if (normalized.endsWith(".msi") || normalized.includes("setup")) {
     return `Windows installer${architecture}`;
   }
 
+  if (normalized.endsWith(".exe")) {
+    return `Windows executable${architecture}`;
+  }
+
+  if ((normalized.includes("linux") || normalized.includes("ubuntu")) && normalized.endsWith(".zip")) {
+    return `Linux ZIP archive${architecture}`;
+  }
+
   if (normalized.endsWith(".zip")) {
-    return `Windows portable${architecture}`;
+    return `ZIP archive${architecture}`;
   }
 
   return assetName;
