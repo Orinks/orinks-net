@@ -32,15 +32,16 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const [visitorUnavailable, setVisitorUnavailable] = useState(false);
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
 
-  const localTime = useMemo(() => timeFormatter.format(now), [now]);
+  const localTime = useMemo(() => (now ? timeFormatter.format(now) : "Loading local time..."), [now]);
 
   useEffect(() => {
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -140,7 +141,7 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
       <div className="rounded-lg border border-line bg-white p-5">
         <p className="text-sm font-semibold uppercase tracking-wide text-action">Lumberton, New Jersey</p>
         <p className="mt-2 font-semibold text-ink">Local time: {localTime}</p>
-        <p className="mt-2 text-sm text-slate-700">
+        <p aria-atomic="true" className="mt-2 text-sm text-slate-700" role="status">
           Visitor count:{" "}
           {visitorCount == null
             ? visitorUnavailable

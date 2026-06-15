@@ -19,7 +19,7 @@ npm install --no-audit --no-fund
 npm run dev
 ```
 
-Run `npx convex dev` to connect the project to a Convex development deployment. The visitor counter API reads `CONVEX_URL` or `NEXT_PUBLIC_CONVEX_URL`. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
+Run `npx convex dev` to connect the project to a Convex development deployment. The visitor counter API reads `CONVEX_URL` or `NEXT_PUBLIC_CONVEX_URL`; set both for parity with hosted environments. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
 
 ## Production
 
@@ -33,7 +33,7 @@ Vercel is connected to the GitHub repository and creates deployments automatical
 - `dev` and pull requests deploy as previews.
 - GitHub Actions runs lint, typecheck, and build validation only.
 
-Convex production deployments need `CONVEX_DEPLOY_KEY` configured in Vercel. The Vercel build command should run Convex before the Next.js build so the Convex functions are deployed with the site:
+Convex production deployments need `CONVEX_DEPLOY_KEY` configured in Vercel or the build pipeline. The Vercel build command should run Convex before the Next.js build so the Convex functions are deployed with the site:
 
 ```powershell
 npx convex deploy --cmd "npm run build"
