@@ -3,13 +3,13 @@ import { getVisitCount, incrementVisitCount } from "@/lib/convex";
 
 export async function GET() {
   try {
-    const count = await getVisitCount();
+    const counts = await getVisitCount();
 
-    if (count == null) {
+    if (counts == null) {
       return NextResponse.json({ error: "Convex is not configured.", durable: false }, { status: 503 });
     }
 
-    return NextResponse.json({ count, durable: true });
+    return NextResponse.json({ ...counts, durable: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Convex error";
 
@@ -19,13 +19,13 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const count = await incrementVisitCount();
+    const counts = await incrementVisitCount();
 
-    if (count == null) {
+    if (counts == null) {
       return NextResponse.json({ error: "Convex is not configured.", durable: false }, { status: 503 });
     }
 
-    return NextResponse.json({ count, durable: true });
+    return NextResponse.json({ ...counts, durable: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Convex error";
 

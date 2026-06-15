@@ -19,7 +19,7 @@ npm install --no-audit --no-fund
 npm run dev
 ```
 
-Run `npx convex dev` to connect the project to a Convex development deployment. The visitor counter API reads `CONVEX_URL` or `NEXT_PUBLIC_CONVEX_URL`; set both for parity with hosted environments. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
+Run `npx convex dev` to connect the project to a Convex development deployment. The visitor counter API reads `CONVEX_URL` or `NEXT_PUBLIC_CONVEX_URL`; set both for parity with hosted environments. Visitor counters are separated by environment key so preview/dev traffic can share the same Convex deployment without changing production totals. The key is derived from Vercel (`production`, `preview-dev`, branch previews, or `local`) and can be overridden with `VISITOR_COUNTER_ENV` when needed. Set `GITHUB_TOKEN` to raise GitHub API rate limits for release data.
 
 ## Production
 

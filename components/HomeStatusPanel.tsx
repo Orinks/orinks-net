@@ -10,7 +10,10 @@ type WeatherResponse = {
 };
 
 type VisitResponse = {
-  count?: number;
+  lifetime?: number;
+  today?: number;
+  environmentKey?: string;
+  todayKey?: string;
   durable?: boolean;
   error?: string;
 };
@@ -31,9 +34,56 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZoneName: "short",
 });
 
+const visitCountsStorageKey = "orinks-home-visit-counts";
+const visitCountedStoragePrefix = "orinks-home-visit-counted";
+
+function isVisitCountResponse(data: VisitResponse): data is Required<Pick<VisitResponse, "lifetime" | "today" | "environmentKey" | "todayKey">> {
+  return (
+    typeof data.lifetime === "number" &&
+    typeof data.today === "number" &&
+    typeof data.environmentKey === "string" &&
+    typeof data.todayKey === "string"
+  );
+}
+
+function getVisitCountedStorageKey(data: Pick<VisitResponse, "environmentKey" | "todayKey">) {
+  return `${visitCountedStoragePrefix}:${data.environmentKey}:${data.todayKey}`;
+}
+
+function readStoredVisitCounts() {
+  const storedCounts = window.sessionStorage.getItem(visitCountsStorageKey);
+
+  if (!storedCounts) {
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(storedCounts) as VisitResponse;
+    return isVisitCountResponse(data) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeVisitCounts(data: VisitResponse) {
+  if (!isVisitCountResponse(data)) {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    visitCountsStorageKey,
+    JSON.stringify({
+      lifetime: data.lifetime,
+      today: data.today,
+      environmentKey: data.environmentKey,
+      todayKey: data.todayKey,
+    }),
+  );
+}
+
 export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
   const [now, setNow] = useState<Date | null>(null);
-  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [visitCounts, setVisitCounts] = useState<Pick<VisitResponse, "lifetime" | "today"> | null>(null);
   const [visitorUnavailable, setVisitorUnavailable] = useState(false);
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
@@ -47,48 +97,48 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
   }, []);
 
   useEffect(() => {
-    const storedCount = window.sessionStorage.getItem("orinks-home-visit-count");
+    const storedCounts = readStoredVisitCounts();
 
-    if (storedCount) {
-      setVisitorCount(Number(storedCount));
+    if (storedCounts) {
+      setVisitCounts({ lifetime: storedCounts.lifetime, today: storedCounts.today });
     }
 
-    if (window.sessionStorage.getItem("orinks-home-visit-counted")) {
-      void fetch("/api/visits")
-        .then((response) => response.json() as Promise<VisitResponse>)
-        .then((data) => {
-          if (typeof data.count === "number") {
-            window.sessionStorage.setItem("orinks-home-visit-count", String(data.count));
-            setVisitorCount(data.count);
-          } else if (!storedCount) {
-            setVisitorUnavailable(true);
-          }
-        })
-        .catch(() => {
-          if (!storedCount) {
-            setVisitorUnavailable(true);
-          }
-          setVisitorCount(storedCount ? Number(storedCount) : null);
-        });
-      return;
-    }
+    async function refreshVisitCounts() {
+      try {
+        const response = await fetch("/api/visits");
+        const data = (await response.json()) as VisitResponse;
 
-    window.sessionStorage.setItem("orinks-home-visit-counted", "true");
-
-    void fetch("/api/visits", { method: "POST" })
-      .then((response) => response.json() as Promise<VisitResponse>)
-      .then((data) => {
-        if (typeof data.count === "number") {
-          window.sessionStorage.setItem("orinks-home-visit-count", String(data.count));
-          setVisitorCount(data.count);
-        } else {
-          setVisitorUnavailable(true);
+        if (!isVisitCountResponse(data)) {
+          setVisitorUnavailable(!storedCounts);
+          return;
         }
-      })
-      .catch(() => {
-        setVisitorUnavailable(true);
-        setVisitorCount(null);
-      });
+
+        const countedStorageKey = getVisitCountedStorageKey(data);
+
+        if (window.sessionStorage.getItem(countedStorageKey)) {
+          storeVisitCounts(data);
+          setVisitCounts({ lifetime: data.lifetime, today: data.today });
+          return;
+        }
+
+        const postResponse = await fetch("/api/visits", { method: "POST" });
+        const postData = (await postResponse.json()) as VisitResponse;
+
+        if (!isVisitCountResponse(postData)) {
+          setVisitorUnavailable(!storedCounts);
+          return;
+        }
+
+        window.sessionStorage.setItem(getVisitCountedStorageKey(postData), "true");
+        storeVisitCounts(postData);
+        setVisitCounts({ lifetime: postData.lifetime, today: postData.today });
+      } catch {
+        setVisitorUnavailable(!storedCounts);
+        setVisitCounts(storedCounts ? { lifetime: storedCounts.lifetime, today: storedCounts.today } : null);
+      }
+    }
+
+    void refreshVisitCounts();
   }, []);
 
   useEffect(() => {
@@ -142,12 +192,14 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-action">Lumberton, New Jersey</p>
         <p className="mt-2 font-semibold text-ink">Local time: {localTime}</p>
         <p aria-atomic="true" className="mt-2 text-sm text-slate-700" role="status">
-          Visitor count:{" "}
-          {visitorCount == null
+          Site visits:{" "}
+          {visitCounts == null
             ? visitorUnavailable
               ? "Unavailable"
               : "Counting..."
-            : visitorCount.toLocaleString("en-US")}
+            : `${visitCounts.lifetime?.toLocaleString("en-US")} lifetime, ${visitCounts.today?.toLocaleString(
+                "en-US",
+              )} today`}
         </p>
 
         <div className="mt-5 border-t border-line pt-5" aria-live="polite">
