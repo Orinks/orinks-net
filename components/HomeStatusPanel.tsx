@@ -192,14 +192,14 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-action">Lumberton, New Jersey</p>
         <p className="mt-2 font-semibold text-ink">Local time: {localTime}</p>
         <p aria-atomic="true" className="mt-2 text-sm text-slate-700" role="status">
-          Site visits:{" "}
+          All-time visitors:{" "}
           {visitCounts == null
             ? visitorUnavailable
               ? "Unavailable"
               : "Counting..."
-            : `${visitCounts.lifetime?.toLocaleString("en-US")} lifetime, ${visitCounts.today?.toLocaleString(
+            : `${visitCounts.lifetime?.toLocaleString("en-US")}. Today: ${visitCounts.today?.toLocaleString(
                 "en-US",
-              )} today`}
+              )}`}
         </p>
 
         <div className="mt-5 border-t border-line pt-5" aria-live="polite">
