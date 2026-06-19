@@ -61,10 +61,15 @@ async function incrementCounter(
 
 export const getVisitCount = query({
   args: {
-    environmentKey: v.string(),
-    todayKey: v.string(),
+    environmentKey: v.optional(v.string()),
+    todayKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (!args.environmentKey || !args.todayKey) {
+      const legacyCounter = await getCounter(ctx, siteVisitsCounter);
+      return legacyCounter?.count ?? 0;
+    }
+
     const lifetimeCounter = await getCounter(ctx, counterName(args.environmentKey, "lifetime"));
     const dailyCounter = await getCounter(ctx, counterName(args.environmentKey, "daily", args.todayKey));
     const legacyCounter = args.environmentKey === "production" ? await getCounter(ctx, siteVisitsCounter) : null;
@@ -78,10 +83,28 @@ export const getVisitCount = query({
 
 export const incrementVisitCount = mutation({
   args: {
-    environmentKey: v.string(),
-    todayKey: v.string(),
+    environmentKey: v.optional(v.string()),
+    todayKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (!args.environmentKey || !args.todayKey) {
+      const counter = await getCounter(ctx, siteVisitsCounter);
+
+      if (!counter) {
+        await ctx.db.insert("siteCounters", {
+          name: siteVisitsCounter,
+          count: 1,
+        });
+
+        return 1;
+      }
+
+      const count = counter.count + 1;
+      await ctx.db.patch(counter._id, { count });
+
+      return count;
+    }
+
     const legacyCounter = args.environmentKey === "production" ? await getCounter(ctx, siteVisitsCounter) : null;
     const lifetime = await incrementCounter(ctx, {
       environmentKey: args.environmentKey,
