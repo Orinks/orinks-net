@@ -71,6 +71,17 @@ function Notes({ release }: { release: GitHubRelease }) {
   );
 }
 
+function titleCaseFirst(value: string) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
+function prereleaseTitle(release: GitHubRelease, singularLabel: string) {
+  return releaseTitle(release).replace(
+    /^Developer snapshot\b/u,
+    titleCaseFirst(singularLabel),
+  );
+}
+
 export async function ReleaseDownloads({
   repo,
   productName,
@@ -120,7 +131,9 @@ export async function ReleaseDownloads({
           <div className="space-y-4">
             {nightlies.map((release) => (
               <article className="rounded-lg border border-line bg-white p-5" key={release.tag_name}>
-                <h4 className="text-lg font-bold text-ink">{releaseTitle(release)}</h4>
+                <h4 className="text-lg font-bold text-ink">
+                  {prereleaseTitle(release, singularPrereleaseLabel)}
+                </h4>
                 <p className="mt-1 text-sm text-slate-700">
                   Published {formatDate(release.published_at)}
                 </p>
@@ -128,7 +141,9 @@ export async function ReleaseDownloads({
                   <DownloadList release={release} />
                 </div>
                 <p className="mt-4">
-                  <a href={release.html_url}>Full release: {releaseTitle(release)}</a>
+                  <a href={release.html_url}>
+                    Full {singularPrereleaseLabel}: {prereleaseTitle(release, singularPrereleaseLabel)}
+                  </a>
                 </p>
                 <Notes release={release} />
               </article>
