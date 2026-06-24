@@ -25,7 +25,11 @@ export default function FreightFateDownloadsPage() {
           <a href="/freight-fate">Back to Freight Fate</a>
         </p>
       </Section>
-      <ReleaseDownloads productName="Freight Fate" repo="Freight-Fate" />
+      <ReleaseDownloads
+        productName="Freight Fate"
+        repo="Freight-Fate"
+        prereleaseLabel="preview snapshots"
+      />
     </>
   );
 }

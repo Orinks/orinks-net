@@ -11,6 +11,7 @@ import {
 type ReleaseDownloadsProps = {
   repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake";
   productName: string;
+  prereleaseLabel?: string;
 };
 
 function DownloadList({ release }: { release: GitHubRelease }) {
@@ -70,9 +71,16 @@ function Notes({ release }: { release: GitHubRelease }) {
   );
 }
 
-export async function ReleaseDownloads({ repo, productName }: ReleaseDownloadsProps) {
+export async function ReleaseDownloads({
+  repo,
+  productName,
+  prereleaseLabel = "nightly builds",
+}: ReleaseDownloadsProps) {
   try {
     const { stable, nightlies } = await getReleaseGroups(repo);
+    const singularPrereleaseLabel = prereleaseLabel.endsWith("s")
+      ? prereleaseLabel.slice(0, -1)
+      : prereleaseLabel;
 
     return (
       <section className="space-y-6 py-8" aria-labelledby={`${repo.toLowerCase()}-downloads`}>
@@ -81,8 +89,8 @@ export async function ReleaseDownloads({ repo, productName }: ReleaseDownloadsPr
             Download {productName}
           </h2>
           <p className="mt-2 max-w-3xl text-slate-700">
-            Download the latest stable release directly, or choose a nightly build for the newest
-            fixes and features.
+            Download the latest stable release directly, or choose a {singularPrereleaseLabel} for
+            the newest fixes and features.
           </p>
         </div>
 
@@ -108,7 +116,7 @@ export async function ReleaseDownloads({ repo, productName }: ReleaseDownloadsPr
         )}
 
         <div>
-          <h3 className="mb-3 text-xl font-bold text-ink">Latest nightly builds</h3>
+          <h3 className="mb-3 text-xl font-bold text-ink">Latest {prereleaseLabel}</h3>
           <div className="space-y-4">
             {nightlies.map((release) => (
               <article className="rounded-lg border border-line bg-white p-5" key={release.tag_name}>
