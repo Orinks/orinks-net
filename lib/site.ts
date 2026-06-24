@@ -68,7 +68,7 @@ export const freightFate: ProjectPage = {
   tagline: "An audio trucking adventure across America.",
   summary:
     "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Build a freight career across 59 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
-  status: "Stable releases and developer snapshots are available.",
+  status: "Stable releases and preview snapshots are available.",
   audience:
     "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
   features: [
@@ -77,9 +77,10 @@ export const freightFate: ProjectPage = {
     "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world conditions.",
     "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock while delivery deadlines keep counting.",
     "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, and mid-trip save and resume.",
-    "Sound effects and music are generated from scripts, keeping the audio tightly matched to the simulation.",
+    "Layered sound effects and music keep speech, driving cues, weather, and the truck cab easy to balance.",
   ],
   downloadsHref: "/freight-fate/downloads",
+  manualHref: "/freight-fate/user-manual",
   links: [
     { href: "https://github.com/Orinks/Freight-Fate", label: "GitHub repository" },
     { href: "https://github.com/Orinks/Freight-Fate/issues", label: "Report an issue" },

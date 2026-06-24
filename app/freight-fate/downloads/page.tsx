@@ -13,11 +13,11 @@ export default function FreightFateDownloadsPage() {
     <>
       <PageHeader
         title="Freight Fate Downloads"
-        intro="Stable releases and developer snapshots for Freight Fate."
+        intro="Stable releases and preview snapshots for Freight Fate."
       />
       <Section>
         <p>
-          Use the stable release for everyday hauling, or choose a developer snapshot when you want
+          Use the stable release for everyday hauling, or choose a preview snapshot when you want
           the newest features and fixes before they reach a stable release. Both are portable
           builds for Windows, macOS, and Linux: unzip and run, no installer required.
         </p>
