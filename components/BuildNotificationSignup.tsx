@@ -59,8 +59,19 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
       }
 
       const publicKey = await getPublicKey();
-      const registration = await navigator.serviceWorker.register("/sw.js");
-      const existingSubscription = await registration.pushManager.getSubscription();
+      await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.ready;
+      let existingSubscription = await registration.pushManager.getSubscription();
+
+      if (existingSubscription) {
+        const existing = existingSubscription.toJSON();
+
+        if (!existing.endpoint || !existing.keys?.auth || !existing.keys?.p256dh) {
+          await existingSubscription.unsubscribe();
+          existingSubscription = null;
+        }
+      }
+
       const subscription =
         existingSubscription ??
         (await registration.pushManager.subscribe({
