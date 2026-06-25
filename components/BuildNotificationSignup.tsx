@@ -39,6 +39,11 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
   );
   const statusId = useId();
 
+  async function getRegistration() {
+    await navigator.serviceWorker.register("/sw.js");
+    return navigator.serviceWorker.ready;
+  }
+
   async function subscribe() {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
       setStatus("unsupported");
@@ -59,8 +64,7 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
       }
 
       const publicKey = await getPublicKey();
-      await navigator.serviceWorker.register("/sw.js");
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getRegistration();
       let existingSubscription = await registration.pushManager.getSubscription();
 
       if (existingSubscription) {
@@ -102,6 +106,48 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
     }
   }
 
+  async function unsubscribe() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setStatus("unsupported");
+      setMessage("This browser does not support build notifications.");
+      return;
+    }
+
+    setStatus("busy");
+    setMessage("Turning off build notifications...");
+
+    try {
+      const registration = await getRegistration();
+      const subscription = await registration.pushManager.getSubscription();
+      const serialized = subscription?.toJSON();
+
+      if (!serialized?.endpoint) {
+        setStatus("idle");
+        setMessage(`Build notifications are off for ${productName}.`);
+        return;
+      }
+
+      const response = await fetch("/api/notifications/subscribe", {
+        body: JSON.stringify({
+          endpoint: serialized.endpoint,
+          product: productName,
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("The subscription could not be removed.");
+      }
+
+      setStatus("idle");
+      setMessage(`Build notifications are off for ${productName}.`);
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Build notifications could not be turned off.");
+    }
+  }
+
   return (
     <section
       aria-labelledby={`${statusId}-heading`}
@@ -113,15 +159,26 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
       <p className="mt-2 max-w-3xl text-slate-700" id={statusId}>
         {message}
       </p>
-      <button
-        aria-describedby={statusId}
-        className="mt-4 rounded-md bg-action px-4 py-3 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:cursor-not-allowed disabled:bg-slate-500"
-        disabled={status === "busy" || status === "ready" || status === "unsupported"}
-        onClick={subscribe}
-        type="button"
-      >
-        {status === "busy" ? "Turning on notifications..." : "Notify me about new builds"}
-      </button>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          aria-describedby={statusId}
+          className="rounded-md bg-action px-4 py-3 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+          disabled={status === "busy" || status === "ready" || status === "unsupported"}
+          onClick={subscribe}
+          type="button"
+        >
+          {status === "busy" ? "Working..." : "Notify me about new builds"}
+        </button>
+        <button
+          aria-describedby={statusId}
+          className="rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:cursor-not-allowed disabled:text-slate-500"
+          disabled={status === "busy" || status === "unsupported"}
+          onClick={unsubscribe}
+          type="button"
+        >
+          Turn off build notifications
+        </button>
+      </div>
       <p className="sr-only" role="status" aria-live="polite">
         {message}
       </p>
