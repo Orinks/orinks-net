@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ButtonLink";
+import { BuildNotificationSignup } from "@/components/BuildNotificationSignup";
 import {
   formatDate,
   getReleaseGroups,
@@ -104,6 +105,7 @@ export async function ReleaseDownloads({
             the newest fixes and features.
           </p>
         </div>
+        <BuildNotificationSignup productName={productName} />
 
         {stable ? (
           <article className="rounded-lg border border-line bg-soft-green p-5">

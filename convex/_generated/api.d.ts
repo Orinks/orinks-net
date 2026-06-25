@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as notifications from "../notifications.js";
 import type * as visits from "../visits.js";
 
 import type {
@@ -17,6 +18,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  notifications: typeof notifications;
   visits: typeof visits;
 }>;
 

@@ -2,6 +2,17 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  buildNotificationSubscriptions: defineTable({
+    endpoint: v.string(),
+    expirationTime: v.optional(v.number()),
+    keys: v.object({
+      auth: v.string(),
+      p256dh: v.string(),
+    }),
+    product: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_endpoint_product", ["endpoint", "product"]),
   siteCounters: defineTable({
     name: v.string(),
     count: v.number(),
