@@ -65,7 +65,7 @@ export async function renderMarkdown(body: string | null, repo: string) {
       mode: "gfm",
       context: `Orinks/${repo}`,
     }),
-    next: { revalidate: 900 },
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -78,7 +78,7 @@ export async function renderMarkdown(body: string | null, repo: string) {
 export async function getReleases(repo: string): Promise<GitHubRelease[]> {
   const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/releases?per_page=20`, {
     headers: githubHeaders(),
-    next: { revalidate: 900 },
+    cache: "no-store",
   });
 
   if (!response.ok) {
