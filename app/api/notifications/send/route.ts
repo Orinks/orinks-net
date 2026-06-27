@@ -55,6 +55,8 @@ export async function POST(request: Request) {
 
   const payload = JSON.stringify({
     body: body.body || `A new ${product} build is available.`,
+    product,
+    sentAt: Date.now(),
     title: body.title || `${product} build available`,
     url: body.url || `/${product.toLowerCase().replace(/[^a-z0-9]+/g, "-")}/downloads`,
   });

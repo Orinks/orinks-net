@@ -1,11 +1,17 @@
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   const title = data.title || "New build available";
+  const body = data.body || "A new software build is ready to download.";
+  const url = data.url || "/projects";
+  const tagSource = data.product || url || title;
+  const tagId = data.sentAt || Date.now();
   const options = {
-    body: data.body || "A new software build is ready to download.",
+    body,
     data: {
-      url: data.url || "/projects",
+      url,
     },
+    silent: false,
+    tag: `build:${String(tagSource).toLowerCase().replace(/[^a-z0-9:-]+/g, "-")}:${tagId}`,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
