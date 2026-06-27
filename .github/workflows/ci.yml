@@ -10,6 +10,32 @@ on:
       - main
       - dev
   workflow_dispatch:
+    inputs:
+      send_notification:
+        description: "Send a manual build notification"
+        required: false
+        type: boolean
+        default: false
+      notification_product:
+        description: "Product name"
+        required: false
+        type: string
+        default: "AccessiWeather"
+      notification_title:
+        description: "Notification title"
+        required: false
+        type: string
+        default: "AccessiWeather discussion update"
+      notification_body:
+        description: "Notification body"
+        required: false
+        type: string
+        default: "New forecast discussion update available."
+      notification_url:
+        description: "Notification URL"
+        required: false
+        type: string
+        default: "/accessiweather/downloads"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -19,8 +45,52 @@ permissions:
   contents: read
 
 jobs:
+  send-notification:
+    name: Send notification
+    if: ${{ inputs.send_notification == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send notification
+        env:
+          ORINKS_BUILD_NOTIFICATION_TOKEN: ${{ secrets.ORINKS_BUILD_NOTIFICATION_TOKEN }}
+          NOTIFICATION_BODY: ${{ inputs.notification_body }}
+          NOTIFICATION_PRODUCT: ${{ inputs.notification_product }}
+          NOTIFICATION_TITLE: ${{ inputs.notification_title }}
+          NOTIFICATION_URL: ${{ inputs.notification_url }}
+        run: |
+          if [ -z "$ORINKS_BUILD_NOTIFICATION_TOKEN" ]; then
+            echo "ORINKS_BUILD_NOTIFICATION_TOKEN is not configured."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          payload = {
+              "product": os.environ["NOTIFICATION_PRODUCT"],
+              "title": os.environ["NOTIFICATION_TITLE"],
+              "body": os.environ["NOTIFICATION_BODY"],
+              "url": os.environ["NOTIFICATION_URL"],
+          }
+          request = urllib.request.Request(
+              "https://orinks.net/api/notifications/send/",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Authorization": f"Bearer {os.environ['ORINKS_BUILD_NOTIFICATION_TOKEN']}",
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              print(response.read().decode("utf-8"))
+          PY
+
   validate:
     name: Validate
+    if: ${{ inputs.send_notification != true }}
     runs-on: ubuntu-latest
 
     steps:
