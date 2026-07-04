@@ -113,6 +113,15 @@ export const saltwake: ProjectPage = {
 
 export const gameSummaries: GameSummary[] = [
   {
+    href: "/midnight-signal",
+    title: "The Midnight Signal",
+    summary:
+      "A music trivia roguelite broadcast from somewhere past channel 99. Survive the rounds, recover the master tapes, and keep the signal warm. Plays right in the browser, built screen-reader-first.",
+    primaryHref: "/midnight-signal",
+    primaryLabel: "Play now",
+    links: [],
+  },
+  {
     href: "/games/space-colony-defense/index.html",
     title: "Space Colony Defense",
     summary:

@@ -497,10 +497,12 @@ export const getLeaderboard = query({
     scope: v.union(v.literal("alltime"), v.literal("daily"), v.literal("weekly")),
     periodKey: v.optional(v.string()),
     limit: v.optional(v.number()),
+    playerKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 20, 1), LEADERBOARD_LIMIT_MAX);
     const now = Date.now();
+    const viewer = args.playerKey ? await getPlayer(ctx, args.playerKey) : null;
     let runs: Doc<"triviaRuns">[];
     if (args.scope === "alltime") {
       runs = await ctx.db
@@ -532,6 +534,7 @@ export const getLeaderboard = query({
           score: run.score,
           round: run.round,
           isDaily: run.isDaily,
+          isYou: viewer !== null && run.playerId === viewer._id,
           endedAt: run.endedAt ?? run.startedAt,
         };
       }),
