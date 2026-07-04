@@ -9,6 +9,8 @@
  */
 
 import type * as notifications from "../notifications.js";
+import type * as questionBank from "../questionBank.js";
+import type * as trivia from "../trivia.js";
 import type * as visits from "../visits.js";
 
 import type {
@@ -19,6 +21,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
+  questionBank: typeof questionBank;
+  trivia: typeof trivia;
   visits: typeof visits;
 }>;
 

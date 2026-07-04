@@ -24,24 +24,9 @@ export default defineSchema({
 
   // --- Music trivia roguelite ---
 
-  // Synced from data/trivia/questions/*.json (repo is the authoring source of
-  // truth). correctIndex and explanation must never be returned by public
-  // queries — answers are checked server-side so leaderboard scores stay honest.
-  triviaQuestions: defineTable({
-    questionKey: v.string(),
-    minigame: v.union(v.literal("general-trivia"), v.literal("name-that-tune")),
-    prompt: v.string(),
-    choices: v.array(v.string()),
-    correctIndex: v.number(),
-    explanation: v.optional(v.string()),
-    category: v.string(),
-    difficulty: v.number(),
-    promptAudioPath: v.optional(v.string()),
-    tuneId: v.optional(v.string()),
-    active: v.boolean(),
-  })
-    .index("by_questionKey", ["questionKey"])
-    .index("by_minigame_difficulty", ["minigame", "difficulty"]),
+  // The question bank is NOT a table: convex/questionBank.ts imports the JSON
+  // from data/trivia/questions/ directly into the server bundle, so answers
+  // never leave the server and question edits ship with a normal deploy.
 
   // playerKey is an anonymous client-generated key for now; when real auth is
   // added, map the auth subject onto the same row and keep the key as a legacy
@@ -64,19 +49,23 @@ export default defineSchema({
     .index("by_playerKey", ["playerKey"])
     .index("by_displayName", ["displayName"]),
 
-  // One row per run. The server picks and stores currentQuestionId so the
+  // One row per run. The server picks and stores currentQuestionKey so the
   // client never sees answers ahead of time; askedQuestionKeys prevents
   // repeats within a run. dateKey/weekKey enable daily and weekly leaderboards.
   triviaRuns: defineTable({
     playerId: v.id("triviaPlayers"),
     seed: v.string(),
     status: v.union(v.literal("active"), v.literal("dead"), v.literal("abandoned")),
+    isDaily: v.boolean(),
     score: v.number(),
     round: v.number(),
     lives: v.number(),
     streak: v.number(),
+    answeredInRound: v.number(),
+    wrongInRound: v.number(),
+    tapeDropped: v.boolean(),
     modifiers: v.array(v.string()),
-    currentQuestionId: v.optional(v.id("triviaQuestions")),
+    currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
     dateKey: v.string(),
     weekKey: v.string(),
@@ -84,6 +73,7 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
   })
     .index("by_playerId", ["playerId"])
+    .index("by_player_date", ["playerId", "dateKey"])
     .index("by_leaderboard", ["status", "score"])
     .index("by_daily_leaderboard", ["status", "dateKey", "score"])
     .index("by_weekly_leaderboard", ["status", "weekKey", "score"]),

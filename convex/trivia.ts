@@ -1,0 +1,585 @@
+import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { v } from "convex/values";
+import type { Doc, Id } from "./_generated/dataModel";
+import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import story from "../data/trivia/story.json";
+import achievementDefs from "../data/trivia/achievements.json";
+
+// --- Game rules ---
+const QUESTIONS_PER_ROUND = 5;
+const START_LIVES = 3;
+const MAX_LIVES = 3;
+const LIFE_EVERY_ROUNDS = 3; // completing every 3rd round restores a life
+const BASE_POINTS = 100; // per question, multiplied by difficulty
+const STREAK_BONUS = 25; // per prior consecutive correct answer
+const STREAK_BONUS_CAP = 10;
+const LEADERBOARD_LIMIT_MAX = 100;
+
+const TAPES = [...story.tapes].sort((a, b) => a.order - b.order);
+const FINALE_UNLOCK = story.finale.unlock;
+
+// --- Helpers ---
+
+function dateKeyOf(now: number) {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+/** ISO 8601 week, e.g. "2026-W27". Weeks start Monday. */
+function weekKeyOf(now: number) {
+  const date = new Date(now);
+  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNumber = (target.getUTCDay() + 6) % 7; // Monday = 0
+  target.setUTCDate(target.getUTCDate() - dayNumber + 3); // nearest Thursday decides the week's year
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const firstDayNumber = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNumber + 3);
+  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
+  return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** Deterministic PRNG so daily runs serve every player the same questions. */
+function seededRandom(seedText: string) {
+  let h = 2166136261;
+  for (let i = 0; i < seedText.length; i++) {
+    h ^= seedText.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  let state = h >>> 0;
+  return () => {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function difficultyRange(round: number): [number, number] {
+  if (round <= 2) return [1, 2];
+  if (round <= 4) return [1, 3];
+  if (round <= 7) return [2, 4];
+  return [3, 5];
+}
+
+function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
+  const asked = new Set(run.askedQuestionKeys);
+  const [min, max] = difficultyRange(run.round);
+  let candidates = questionBank.filter(
+    (q) => !asked.has(q.id) && q.difficulty >= min && q.difficulty <= max,
+  );
+  if (candidates.length === 0) {
+    candidates = questionBank.filter((q) => !asked.has(q.id));
+  }
+  if (candidates.length === 0) return null;
+  const roll = run.isDaily
+    ? seededRandom(`${run.seed}:${run.askedQuestionKeys.length}`)()
+    : Math.random();
+  return candidates[Math.floor(roll * candidates.length)];
+}
+
+async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+  return ctx.db
+    .query("triviaPlayers")
+    .withIndex("by_playerKey", (q) => q.eq("playerKey", playerKey))
+    .unique();
+}
+
+async function requirePlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+  const player = await getPlayer(ctx, playerKey);
+  if (!player) throw new Error("Unknown player. Call ensurePlayer first.");
+  return player;
+}
+
+async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {
+  const runs = await ctx.db
+    .query("triviaRuns")
+    .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+    .order("desc")
+    .take(5);
+  return runs.find((run) => run.status === "active") ?? null;
+}
+
+async function unlockAchievement(
+  ctx: MutationCtx,
+  playerId: Id<"triviaPlayers">,
+  achievementKey: string,
+  events: GameEvent[],
+) {
+  const existing = await ctx.db
+    .query("triviaAchievements")
+    .withIndex("by_player_achievement", (q) =>
+      q.eq("playerId", playerId).eq("achievementKey", achievementKey),
+    )
+    .unique();
+  if (existing) return;
+  await ctx.db.insert("triviaAchievements", {
+    playerId,
+    achievementKey,
+    unlockedAt: Date.now(),
+  });
+  const def = achievementDefs.achievements.find((a) => a.key === achievementKey);
+  events.push({ type: "achievement", key: achievementKey, name: def?.name ?? achievementKey });
+}
+
+type GameEvent =
+  | { type: "achievement"; key: string; name: string }
+  | { type: "roundComplete"; round: number }
+  | { type: "lifeGained"; lives: number }
+  | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
+  | { type: "finaleReady" }
+  | { type: "gameOver"; score: number; round: number; isPersonalBest: boolean }
+  | { type: "bankExhausted" };
+
+function publicRunState(run: Doc<"triviaRuns">) {
+  return {
+    runId: run._id,
+    status: run.status,
+    isDaily: run.isDaily,
+    score: run.score,
+    round: run.round,
+    lives: run.lives,
+    streak: run.streak,
+    answeredInRound: run.answeredInRound,
+    questionsPerRound: QUESTIONS_PER_ROUND,
+    questionNumber: run.askedQuestionKeys.length,
+  };
+}
+
+// --- Player lifecycle ---
+
+export const ensurePlayer = mutation({
+  args: { playerKey: v.string(), displayName: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    if (args.playerKey.length < 8 || args.playerKey.length > 64) {
+      throw new Error("playerKey must be 8-64 characters");
+    }
+    const now = Date.now();
+    const existing = await getPlayer(ctx, args.playerKey);
+    if (existing) {
+      const patch: Partial<Doc<"triviaPlayers">> = { lastSeenAt: now };
+      if (args.displayName !== undefined) {
+        patch.displayName = cleanDisplayName(args.displayName);
+      }
+      await ctx.db.patch(existing._id, patch);
+      return { created: false, displayName: patch.displayName ?? existing.displayName };
+    }
+    const displayName = cleanDisplayName(args.displayName ?? `Contestant ${args.playerKey.slice(0, 4)}`);
+    await ctx.db.insert("triviaPlayers", {
+      playerKey: args.playerKey,
+      displayName,
+      createdAt: now,
+      lastSeenAt: now,
+      totalRuns: 0,
+      bestScore: 0,
+      deepestRound: 0,
+      totalCorrect: 0,
+      totalAnswered: 0,
+      tapesUnlocked: [],
+    });
+    return { created: true, displayName };
+  },
+});
+
+function cleanDisplayName(raw: string) {
+  const cleaned = raw.replace(/[\p{C}]/gu, "").trim().slice(0, 24);
+  if (cleaned.length === 0) throw new Error("Display name cannot be empty");
+  return cleaned;
+}
+
+// --- Run lifecycle ---
+
+export const startRun = mutation({
+  args: { playerKey: v.string(), daily: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const now = Date.now();
+    const dateKey = dateKeyOf(now);
+    const isDaily = args.daily ?? false;
+
+    const existing = await getActiveRunDoc(ctx, player._id);
+    if (existing) {
+      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
+    }
+
+    if (isDaily) {
+      const todaysRuns = await ctx.db
+        .query("triviaRuns")
+        .withIndex("by_player_date", (q) => q.eq("playerId", player._id).eq("dateKey", dateKey))
+        .collect();
+      if (todaysRuns.some((run) => run.isDaily && run.status === "dead")) {
+        throw new Error("Tonight's broadcast has already aired for you. Come back tomorrow!");
+      }
+    }
+
+    const runId = await ctx.db.insert("triviaRuns", {
+      playerId: player._id,
+      seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
+      status: "active",
+      isDaily,
+      score: 0,
+      round: 1,
+      lives: START_LIVES,
+      streak: 0,
+      answeredInRound: 0,
+      wrongInRound: 0,
+      tapeDropped: false,
+      modifiers: [],
+      askedQuestionKeys: [],
+      dateKey,
+      weekKey: weekKeyOf(now),
+      startedAt: now,
+    });
+
+    const run = (await ctx.db.get(runId))!;
+    const question = pickQuestion(run);
+    if (!question) throw new Error("The question bank is empty.");
+    await ctx.db.patch(runId, {
+      currentQuestionKey: question.id,
+      askedQuestionKeys: [question.id],
+    });
+
+    await ctx.db.patch(player._id, { lastSeenAt: now });
+    return {
+      run: { ...publicRunState(run), questionNumber: 1 },
+      question: sanitizeQuestion(question),
+      runNumber: player.totalRuns + 1,
+      epilogueActive: player.finaleCompletedAt !== undefined,
+    };
+  },
+});
+
+export const submitAnswer = mutation({
+  args: {
+    playerKey: v.string(),
+    runId: v.id("triviaRuns"),
+    choiceIndex: v.number(),
+    clientHour: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    if (run.status !== "active" || !run.currentQuestionKey) throw new Error("Run is not active");
+    const question = questionByKey.get(run.currentQuestionKey);
+    if (!question) throw new Error("Current question missing from bank (was it removed?)");
+    if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
+      throw new Error("choiceIndex out of range");
+    }
+
+    const events: GameEvent[] = [];
+    const correct = args.choiceIndex === question.answer;
+    let { score, streak, lives, round, answeredInRound, wrongInRound, tapeDropped } = run;
+    let scoreDelta = 0;
+    let tapesUnlocked = player.tapesUnlocked;
+
+    if (correct) {
+      scoreDelta = BASE_POINTS * question.difficulty + STREAK_BONUS * Math.min(streak, STREAK_BONUS_CAP);
+      score += scoreDelta;
+      streak += 1;
+      if (streak === 5) await unlockAchievement(ctx, player._id, "streak-5", events);
+    } else {
+      lives -= 1;
+      streak = 0;
+      wrongInRound += 1;
+    }
+    answeredInRound += 1;
+
+    const playerPatch: Partial<Doc<"triviaPlayers">> = {
+      lastSeenAt: Date.now(),
+      totalAnswered: player.totalAnswered + 1,
+      totalCorrect: player.totalCorrect + (correct ? 1 : 0),
+    };
+
+    let nextQuestion: BankQuestion | null = null;
+    const dead = lives <= 0;
+
+    if (dead) {
+      // Finalize the run and roll aggregates into the player profile.
+      events.push({
+        type: "gameOver",
+        score,
+        round,
+        isPersonalBest: score > player.bestScore,
+      });
+      playerPatch.totalRuns = player.totalRuns + 1;
+      playerPatch.bestScore = Math.max(player.bestScore, score);
+      playerPatch.deepestRound = Math.max(player.deepestRound, round);
+      await ctx.db.patch(args.runId, {
+        status: "dead",
+        score,
+        streak,
+        lives: 0,
+        answeredInRound,
+        wrongInRound,
+        currentQuestionKey: undefined,
+        endedAt: Date.now(),
+      });
+      if (player.totalRuns === 0) await unlockAchievement(ctx, player._id, "first-run", events);
+      if (args.clientHour !== undefined && args.clientHour >= 0 && args.clientHour < 4) {
+        await unlockAchievement(ctx, player._id, "night-shift", events);
+      }
+    } else {
+      if (answeredInRound >= QUESTIONS_PER_ROUND) {
+        // Round complete.
+        const completedRound = round;
+        events.push({ type: "roundComplete", round: completedRound });
+        if (wrongInRound === 0) await unlockAchievement(ctx, player._id, "perfect-round", events);
+        if (lives === 1) await unlockAchievement(ctx, player._id, "comeback", events);
+        round += 1;
+        answeredInRound = 0;
+        wrongInRound = 0;
+        if (round === 10) await unlockAchievement(ctx, player._id, "round-10", events);
+        if (completedRound % LIFE_EVERY_ROUNDS === 0 && lives < MAX_LIVES) {
+          lives += 1;
+          events.push({ type: "lifeGained", lives });
+        }
+
+        // Master tape drop: at most one per run, in story order, round-gated.
+        const nextTape = TAPES[tapesUnlocked.length];
+        if (!tapeDropped && nextTape && round >= nextTape.minRound) {
+          tapesUnlocked = [...tapesUnlocked, nextTape.id];
+          playerPatch.tapesUnlocked = tapesUnlocked;
+          tapeDropped = true;
+          events.push({
+            type: "tapeUnlocked",
+            id: nextTape.id,
+            title: nextTape.title,
+            order: nextTape.order,
+            total: TAPES.length,
+          });
+          if (tapesUnlocked.length === 1) await unlockAchievement(ctx, player._id, "first-tape", events);
+          if (tapesUnlocked.length === TAPES.length) {
+            await unlockAchievement(ctx, player._id, "all-tapes", events);
+          }
+        }
+
+        if (
+          tapesUnlocked.length === TAPES.length &&
+          round >= FINALE_UNLOCK.minRound &&
+          player.finaleCompletedAt === undefined
+        ) {
+          events.push({ type: "finaleReady" });
+        }
+      }
+
+      nextQuestion = pickQuestion({ ...run, round, askedQuestionKeys: run.askedQuestionKeys });
+      if (!nextQuestion) {
+        // Ran the entire bank dry — end the run as a victory lap.
+        events.push({ type: "bankExhausted" });
+        events.push({ type: "gameOver", score, round, isPersonalBest: score > player.bestScore });
+        playerPatch.totalRuns = player.totalRuns + 1;
+        playerPatch.bestScore = Math.max(player.bestScore, score);
+        playerPatch.deepestRound = Math.max(player.deepestRound, round);
+        await ctx.db.patch(args.runId, {
+          status: "dead",
+          score,
+          streak,
+          lives,
+          round,
+          answeredInRound,
+          wrongInRound,
+          currentQuestionKey: undefined,
+          endedAt: Date.now(),
+        });
+      } else {
+        await ctx.db.patch(args.runId, {
+          score,
+          streak,
+          lives,
+          round,
+          answeredInRound,
+          wrongInRound,
+          tapeDropped,
+          currentQuestionKey: nextQuestion.id,
+          askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
+        });
+      }
+    }
+
+    await ctx.db.patch(player._id, playerPatch);
+    const updatedRun = (await ctx.db.get(args.runId))!;
+
+    return {
+      correct,
+      correctIndex: question.answer,
+      explanation: question.explanation ?? null,
+      scoreDelta,
+      events,
+      run: publicRunState(updatedRun),
+      nextQuestion: nextQuestion ? sanitizeQuestion(nextQuestion) : null,
+    };
+  },
+});
+
+export const abandonRun = mutation({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await getActiveRunDoc(ctx, player._id);
+    if (run) await ctx.db.patch(run._id, { status: "abandoned", endedAt: Date.now() });
+    return { abandoned: run !== null };
+  },
+});
+
+/** Called after the client has played the finale sequence. */
+export const completeFinale = mutation({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    if (player.finaleCompletedAt !== undefined) {
+      return { alreadyCompleted: true, lines: story.finale.lines };
+    }
+    const activeRun = await getActiveRunDoc(ctx, player._id);
+    const eligible =
+      player.tapesUnlocked.length === TAPES.length &&
+      (player.deepestRound >= FINALE_UNLOCK.minRound ||
+        (activeRun !== null && activeRun.round >= FINALE_UNLOCK.minRound));
+    if (!eligible) throw new Error("The signal isn't strong enough yet.");
+    const events: GameEvent[] = [];
+    await unlockAchievement(ctx, player._id, "channel-100", events);
+    await ctx.db.patch(player._id, { finaleCompletedAt: Date.now() });
+    return { alreadyCompleted: false, lines: story.finale.lines, events };
+  },
+});
+
+// --- Queries ---
+
+export const getActiveRun = query({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    if (!player) return null;
+    const run = await getActiveRunDoc(ctx, player._id);
+    if (!run || !run.currentQuestionKey) return null;
+    const question = questionByKey.get(run.currentQuestionKey);
+    if (!question) return null;
+    return {
+      run: publicRunState(run),
+      question: sanitizeQuestion(question),
+      epilogueActive: player.finaleCompletedAt !== undefined,
+    };
+  },
+});
+
+export const getProfile = query({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    if (!player) return null;
+    const unlocked = await ctx.db
+      .query("triviaAchievements")
+      .withIndex("by_player_achievement", (q) => q.eq("playerId", player._id))
+      .collect();
+    const unlockedKeys = new Set(unlocked.map((a) => a.achievementKey));
+    return {
+      displayName: player.displayName,
+      totalRuns: player.totalRuns,
+      bestScore: player.bestScore,
+      deepestRound: player.deepestRound,
+      totalCorrect: player.totalCorrect,
+      totalAnswered: player.totalAnswered,
+      tapesUnlocked: player.tapesUnlocked.length,
+      tapesTotal: TAPES.length,
+      epilogueActive: player.finaleCompletedAt !== undefined,
+      achievements: achievementDefs.achievements.map((def) => ({
+        key: def.key,
+        name: unlockedKeys.has(def.key) || !def.secret ? def.name : "???",
+        description: unlockedKeys.has(def.key) || !def.secret ? def.description : "???",
+        secret: def.secret,
+        unlockedAt: unlocked.find((a) => a.achievementKey === def.key)?.unlockedAt ?? null,
+      })),
+    };
+  },
+});
+
+export const getLeaderboard = query({
+  args: {
+    scope: v.union(v.literal("alltime"), v.literal("daily"), v.literal("weekly")),
+    periodKey: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit ?? 20, 1), LEADERBOARD_LIMIT_MAX);
+    const now = Date.now();
+    let runs: Doc<"triviaRuns">[];
+    if (args.scope === "alltime") {
+      runs = await ctx.db
+        .query("triviaRuns")
+        .withIndex("by_leaderboard", (q) => q.eq("status", "dead"))
+        .order("desc")
+        .take(limit);
+    } else if (args.scope === "daily") {
+      const dateKey = args.periodKey ?? dateKeyOf(now);
+      runs = await ctx.db
+        .query("triviaRuns")
+        .withIndex("by_daily_leaderboard", (q) => q.eq("status", "dead").eq("dateKey", dateKey))
+        .order("desc")
+        .take(limit);
+    } else {
+      const weekKey = args.periodKey ?? weekKeyOf(now);
+      runs = await ctx.db
+        .query("triviaRuns")
+        .withIndex("by_weekly_leaderboard", (q) => q.eq("status", "dead").eq("weekKey", weekKey))
+        .order("desc")
+        .take(limit);
+    }
+    return Promise.all(
+      runs.map(async (run, index) => {
+        const player = await ctx.db.get(run.playerId);
+        return {
+          rank: index + 1,
+          displayName: player?.displayName ?? "Lost to static",
+          score: run.score,
+          round: run.round,
+          isDaily: run.isDaily,
+          endedAt: run.endedAt ?? run.startedAt,
+        };
+      }),
+    );
+  },
+});
+
+/** Unlocked story content only — tape text is never sent before it's earned. */
+export const getStory = query({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    const unlockedIds = new Set(player?.tapesUnlocked ?? []);
+    const epilogueActive = player?.finaleCompletedAt !== undefined;
+    return {
+      showTitle: story.show.title,
+      tapesTotal: TAPES.length,
+      tapes: TAPES.filter((tape) => unlockedIds.has(tape.id)).map((tape) => ({
+        id: tape.id,
+        order: tape.order,
+        title: tape.title,
+        text: tape.text,
+      })),
+      finaleLines: epilogueActive ? story.finale.lines : null,
+      epilogueLines: epilogueActive ? story.epilogueLines : null,
+      epilogueActive,
+    };
+  },
+});
+
+// --- Test utilities (admin-only; not callable from clients) ---
+
+export const wipePlayer = internalMutation({
+  args: { playerKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    if (!player) return { wiped: false };
+    const runs = await ctx.db
+      .query("triviaRuns")
+      .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
+      .collect();
+    for (const run of runs) await ctx.db.delete(run._id);
+    const achievements = await ctx.db
+      .query("triviaAchievements")
+      .withIndex("by_player_achievement", (q) => q.eq("playerId", player._id))
+      .collect();
+    for (const achievement of achievements) await ctx.db.delete(achievement._id);
+    await ctx.db.delete(player._id);
+    return { wiped: true, runs: runs.length, achievements: achievements.length };
+  },
+});

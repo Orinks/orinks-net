@@ -2,7 +2,7 @@
   "apiBase": "https://api.elevenlabs.io/v1",
   "modelId": "eleven_flash_v2_5",
   "outputDir": "public/audio/trivia",
-  "manifestPath": "data/trivia/audio-manifest.json",
+  "manifestPath": "public/audio/trivia/manifest.json",
   "defaultVoice": "clide",
   "voices": {
     "clide": {
