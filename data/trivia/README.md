@@ -29,8 +29,11 @@ MP3s, so players can never spend ElevenLabs credits.
   secret). Unlocks are stored per player in Convex.
 - `story.json` — the show bible for "The Midnight Signal": premise, the ten
   master tapes (lore collectibles unlocked in order, each gated by
-  `minRound`), and season milestone lines. Tapes flow through the same TTS
-  pipeline as barks (`npm run tts -- --only story`).
+  `minRound`), the five-part Channel 100 finale (gated by all ten tapes +
+  `minRound` 18), the post-finale epilogue barks (triggers ending in
+  `-epilogue` replace their normal counterparts once a player's
+  `finaleCompletedAt` is set), and season milestone lines. All of it flows
+  through the same TTS pipeline (`npm run tts -- --only story`).
 - `producer.json` — the Producer's line templates. The Producer is the
   show's second host, deliberately voiced by the free Web Speech API so it
   can speak dynamic values (names, scores, ranks) — the robotic delivery is

@@ -56,6 +56,10 @@ export default defineSchema({
     deepestRound: v.number(),
     totalCorrect: v.number(),
     totalAnswered: v.number(),
+    // Story progress: tape ids from data/trivia/story.json, unlocked in
+    // order. A set finaleCompletedAt switches the host to epilogue barks.
+    tapesUnlocked: v.array(v.string()),
+    finaleCompletedAt: v.optional(v.number()),
   })
     .index("by_playerKey", ["playerKey"])
     .index("by_displayName", ["displayName"]),

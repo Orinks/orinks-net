@@ -77,6 +77,47 @@
       "text": "One last tape, and this one frightens me a little, so let's hear it together. Vernon believed there was a channel past this one. Channel one hundred. A place where every forgotten song still plays — every B-side, every lullaby nobody wrote down. He believed that's where the signal comes from. Win enough nights, friend, and I will try to boost us up there. I'd like to see him again."
     }
   ],
+  "finale": {
+    "unlock": { "tapesRequired": 10, "minRound": 18 },
+    "lines": [
+      {
+        "id": "finale-01",
+        "title": "The Boost",
+        "text": "Friend — tonight's the night. Every tape found, every light green. Producer! Full power to the mast, and don't pretend you haven't been waiting — I can hear that hum from here. Sixty hertz of pure determination. We are going up past the top of the dial, you and me. If anyone asks, this was your idea. Hold on to your answers. And whatever happens — keep singing."
+      },
+      {
+        "id": "finale-02",
+        "title": "The Static",
+        "text": "Here it is — the static between channels. And oh, friend, it isn't empty. It was never empty. Listen. A soap jingle from 1958. A lullaby somebody's grandmother never wrote down. Every B-side, every demo, every song hummed once at a bus stop and lost forever. It's all still playing. Vernon was right. And underneath it all — applause. Real applause. It sounds genuinely delighted."
+      },
+      {
+        "id": "finale-03",
+        "title": "Channel 100",
+        "text": "We're through. And it's — it's the studio. Our studio, but the seats are full. Every face that ever stopped arriving, still watching, three rows deep in a balcony we have never had. And at the host desk, tie straight, cue cards squared — Vernon Vale. He looks at me and says: you're late, kid. And of course. Of course he sounds exactly like me. Where do you think I got this voice?"
+      },
+      {
+        "id": "finale-04",
+        "title": "The Final Question",
+        "text": "Vernon has one question left, and it isn't about Elvis. He asks: why does the signal stay warm? And I know this one. I have known it since 1979. Because somewhere it's midnight, and somebody's awake with a song stuck between their heart and their teeth, and they need one more before tomorrow. Correct, he says. You were never keeping it warm for me, kid. You were keeping it warm for them."
+      },
+      {
+        "id": "finale-05",
+        "title": "Sign-Off",
+        "text": "He asked me to stay. Up there, with every forgotten song and an audience that never leaves. And I almost did. But somewhere below, a television is hissing past midnight, and somebody needs one more tune. So — Producer, take us home. Vernon straightened my tie, the way he used to straighten his, and said: keep the signal warm, kid. And you, friend. You didn't just find this show. You kept it on the air. That's the broadcast. Same time tomorrow."
+      }
+    ]
+  },
+  "epilogueLines": [
+    { "id": "ep-intro-01", "trigger": "run-intro-epilogue", "text": "Welcome back to The Midnight Signal, broadcasting warm as ever. The seats upstairs are full tonight. Vernon used to open with Elvis — let's open with you instead." },
+    { "id": "ep-intro-02", "trigger": "run-intro-epilogue", "text": "Another night, another broadcast. Somewhere out there it's midnight, and you know exactly what that means now. Places, everyone." },
+    { "id": "ep-correct-01", "trigger": "correct-epilogue", "text": "Correct! Somewhere up on channel one hundred, a man in a very straight tie is smiling." },
+    { "id": "ep-wrong-01", "trigger": "wrong-epilogue", "text": "Not quite. Vernon missed one once — 1968. He blamed the cue cards. We move on!" },
+    { "id": "ep-gameover-01", "trigger": "game-over-epilogue", "text": "And the signal fades — but never far, and never for long. Vernon taught me that. Same time tomorrow, friend." },
+    { "id": "ep-gameover-02", "trigger": "game-over-epilogue", "text": "That's tonight's broadcast. The static will hold your place. It always does." },
+    { "id": "ep-muse-01", "trigger": "vernon-memory", "text": "I built a balcony this week. We have never had a balcony. I want them to have somewhere to sit when they visit." },
+    { "id": "ep-muse-02", "trigger": "vernon-memory", "text": "The Producer printed a page this morning that said, simply: good show. It claims it was a paper jam. I have framed it anyway." },
+    { "id": "ep-highscore-01", "trigger": "high-score-epilogue", "text": "A new high score! Send that one upstairs, Producer — top of the dial. He watches, you know." }
+  ],
   "seasonLines": [
     {
       "id": "season-renewed-01",

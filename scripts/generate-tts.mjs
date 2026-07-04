@@ -105,6 +105,12 @@ function collectItems(config) {
     for (const line of story.seasonLines ?? []) {
       addItem("story", line.id, line.text, line.voice ?? storyVoice, "story.json");
     }
+    for (const line of story.finale?.lines ?? []) {
+      addItem("story", line.id, line.text, line.voice ?? storyVoice, "story.json");
+    }
+    for (const line of story.epilogueLines ?? []) {
+      addItem("story", line.id, line.text, line.voice ?? storyVoice, "story.json");
+    }
   }
 
   const questionsDir = path.join(root, "data/trivia/questions");
