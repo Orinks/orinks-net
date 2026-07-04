@@ -1,0 +1,58 @@
+{
+  "achievements": [
+    {
+      "key": "first-run",
+      "name": "Opening Act",
+      "description": "Complete your first run.",
+      "secret": false
+    },
+    {
+      "key": "streak-5",
+      "name": "Hot Streak",
+      "description": "Answer five questions correctly in a row.",
+      "secret": false
+    },
+    {
+      "key": "round-10",
+      "name": "Headliner",
+      "description": "Reach round ten in a single run.",
+      "secret": false
+    },
+    {
+      "key": "comeback",
+      "name": "Encore",
+      "description": "Clear a full round while on your last life.",
+      "secret": false
+    },
+    {
+      "key": "perfect-round",
+      "name": "Pitch Perfect",
+      "description": "Finish a round without a single wrong answer.",
+      "secret": false
+    },
+    {
+      "key": "night-shift",
+      "name": "After Hours",
+      "description": "Finish a run between midnight and four in the morning.",
+      "secret": true
+    },
+    {
+      "key": "first-tape",
+      "name": "Archivist",
+      "description": "Recover your first master tape.",
+      "secret": false
+    },
+    {
+      "key": "all-tapes",
+      "name": "Keep the Signal Warm",
+      "description": "Recover every master tape and hear the whole story.",
+      "secret": false
+    },
+    {
+      "key": "channel-100",
+      "name": "Channel 100",
+      "description": "???",
+      "secret": true
+    }
+  ]
+}

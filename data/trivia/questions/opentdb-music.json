@@ -1,0 +1,219 @@
+{
+  "minigame": "general-trivia",
+  "voice": "clide",
+  "source": "Open Trivia Database (https://opentdb.com)",
+  "license": "CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)",
+  "curated": false,
+  "questions": [
+    {
+      "id": "otdb-c1ef2cf0",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "What M83 was featured in Grand Theft Auto V's radio?",
+      "choices": [
+        "Reunion",
+        "Wait",
+        "Outro",
+        "Midnight City"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-992909b3",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which member of the Wu-Tang Clan had only one verse in their debut album Enter the Wu-Tang (36 Chambers)?",
+      "choices": [
+        "Inspectah Deck",
+        "GZA",
+        "Method Man",
+        "Masta Killa"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-7c4be4f0",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "\"Some people call me the space cowboy\" is the first line from what song?",
+      "choices": [
+        "Fly Like an Eagle",
+        "The Joker",
+        "Fandango",
+        "Take The Money and Run"
+      ],
+      "answer": 1,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-34c18e52",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "What is the real name of prominent electronic musician Aphex Twin?",
+      "choices": [
+        "Richard W. Wright",
+        "Richard D. James",
+        "Richard H. Blackmore",
+        "Richard M. Hall"
+      ],
+      "answer": 1,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-ca611a02",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Who was the youngest member of The Beatles?",
+      "choices": [
+        "Ringo Starr",
+        "George Harrison",
+        "Paul McCartney",
+        "John Lennon"
+      ],
+      "answer": 1,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-9fbab70b",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which brass instrument has the lowest pitch in an orchestra?",
+      "choices": [
+        "Trombone",
+        "Saxophone",
+        "Trumpet",
+        "Tuba"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-2fa481cf",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these is NOT a song featured on the Lockjaw EP released in 2013 by Flume & Chet Faker?",
+      "choices": [
+        "Left Alone",
+        "What About Us",
+        "This Song Is Not About A Girl",
+        "Drop The Game"
+      ],
+      "answer": 0,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-63c04113",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Ozzy Osbourne was the lead singer for what metal band?",
+      "choices": [
+        "AC/DC",
+        "Iron Maiden",
+        "Black Sabbath",
+        "Judas Priest"
+      ],
+      "answer": 2,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-a94f1024",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "The song \"Caramelldansen\" is commonly mistaken as a Japanese song, what language is the song actually sung in?",
+      "choices": [
+        "Finnish",
+        "Chinese",
+        "Hungarian",
+        "Swedish"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-6ccd555b",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "What is the real name of American rapper Eminem, also known as Slim Shady?",
+      "choices": [
+        "Shawn Carter",
+        "Calvin Broadus",
+        "Nasir Jones",
+        "Marshall Mathers"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-cde72aa1",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "What is not a wind instrument?",
+      "choices": [
+        "Oboe",
+        "Duduk",
+        "Viola",
+        "Trombone"
+      ],
+      "answer": 2,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-6bc2b07f",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Finish these lyrics from the 2016 song \"Panda\" by Desiigner: \"I got broads in _______\".",
+      "choices": [
+        "Augusta",
+        "Savannah",
+        "Atlanta",
+        "Marietta"
+      ],
+      "answer": 2,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-440ddecf",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of the following guitarists recorded an album as a member of the Red Hot Chili Peppers?",
+      "choices": [
+        "Billy Corgan",
+        "Tom Morello",
+        "Ed O'Brien",
+        "Dave Navarro"
+      ],
+      "answer": 3,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-ddf02ba8",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year did \"Caravan Palace\" release their first album?",
+      "choices": [
+        "2008",
+        "2000",
+        "2015",
+        "2004"
+      ],
+      "answer": 0,
+      "source": "opentdb"
+    },
+    {
+      "id": "otdb-4cc2ab2d",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which famous 90's rap album is commonly referred to as \"The Bible of Hip Hop\"?",
+      "choices": [
+        "Illmatic",
+        "Enter The Wu-Tang (36 Chambers)",
+        "The Chronic",
+        "The Low End Theory"
+      ],
+      "answer": 0,
+      "source": "opentdb"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "voice": "clide",
+  "lines": [
+    { "id": "run-intro-01", "trigger": "run-intro", "text": "Welcome back to the show! Let's see how long you survive this time." },
+    { "id": "run-intro-02", "trigger": "run-intro", "text": "Lights up, volume up! Another brave contestant steps into the booth." },
+    { "id": "run-intro-03", "trigger": "run-intro", "text": "The stage is set and the jukebox is loaded. Let's make some noise!" },
+
+    { "id": "lead-in-01", "trigger": "question-lead-in", "text": "Here comes your next question." },
+    { "id": "lead-in-02", "trigger": "question-lead-in", "text": "Ears open. This one counts." },
+    { "id": "lead-in-03", "trigger": "question-lead-in", "text": "Alright, listen close now." },
+
+    { "id": "correct-01", "trigger": "correct", "text": "That's the one! Nicely done." },
+    { "id": "correct-02", "trigger": "correct", "text": "Correct! You've got a good ear." },
+    { "id": "correct-03", "trigger": "correct", "text": "Bang on! The crowd loves it." },
+    { "id": "correct-04", "trigger": "correct", "text": "Yes! Somebody's done their homework." },
+
+    { "id": "wrong-01", "trigger": "wrong", "text": "Ooh, so close! But no." },
+    { "id": "wrong-02", "trigger": "wrong", "text": "Not this time, I'm afraid." },
+    { "id": "wrong-03", "trigger": "wrong", "text": "Ouch. That one's going to sting." },
+    { "id": "wrong-04", "trigger": "wrong", "text": "Wrong note, my friend. Wrong note entirely." },
+
+    { "id": "streak-01", "trigger": "streak", "text": "You're on fire! Keep it rolling!" },
+    { "id": "streak-02", "trigger": "streak", "text": "That's a streak! The band is getting nervous." },
+
+    { "id": "last-life-01", "trigger": "last-life", "text": "One life left. No pressure. Okay, maybe a little pressure." },
+    { "id": "last-life-02", "trigger": "last-life", "text": "This is it. One wrong answer and the music stops." },
+
+    { "id": "round-up-01", "trigger": "round-transition", "text": "Round complete! Things get tougher from here." },
+    { "id": "round-up-02", "trigger": "round-transition", "text": "On to the next round. The questions bite harder now." },
+
+    { "id": "game-over-01", "trigger": "game-over", "text": "And that's the final curtain! Thanks for playing." },
+    { "id": "game-over-02", "trigger": "game-over", "text": "The music stops there. But hey, what a run!" },
+
+    { "id": "high-score-01", "trigger": "high-score", "text": "Stop the presses! That's a new high score!" },
+    { "id": "high-score-02", "trigger": "high-score", "text": "Incredible! Your name goes up in lights on the leaderboard!" },
+
+    { "id": "return-intro-01", "trigger": "run-intro-returning", "text": "You again! My favorite recurring guest. The signal brightens when you tune in, you know." },
+    { "id": "return-intro-02", "trigger": "run-intro-returning", "text": "Back for another episode! I told the Producer you'd return. It printed a receipt. I'm choosing to read that as enthusiasm." },
+    { "id": "return-intro-03", "trigger": "run-intro-veteran", "text": "Ladies and gentlemen of the static, a legend walks the studio floor tonight. Places, everyone! All none of you!" },
+
+    { "id": "banter-01", "trigger": "producer-banter", "text": "Producer, the scores, please. ... Riveting delivery, as always. Truly, the Olivier of office equipment." },
+    { "id": "banter-02", "trigger": "producer-banter", "text": "Thank you, Producer. It says such warm things about you, folks, when it thinks I'm unplugged." },
+    { "id": "banter-03", "trigger": "producer-banter", "text": "What my colleague means to say is: you're doing wonderfully, and it is legally unable to express joy." },
+
+    { "id": "tape-found-01", "trigger": "tape-found", "text": "Well now — the archive coughed something up. A master tape! Shall we hear it together after this round?" },
+    { "id": "tape-found-02", "trigger": "tape-found", "text": "Hold on. There's a tape on my desk that was not there a moment ago. The studio does this sometimes. Let's give it a listen." },
+
+    { "id": "daily-intro-01", "trigger": "daily-intro", "text": "It's tonight's broadcast, friend — same questions for every soul tuned in past midnight. Make your answers count. The whole frequency is listening." }
+  ]
+}

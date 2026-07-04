@@ -1,0 +1,17 @@
+{
+  "apiBase": "https://api.elevenlabs.io/v1",
+  "modelId": "eleven_flash_v2_5",
+  "outputDir": "public/audio/trivia",
+  "manifestPath": "data/trivia/audio-manifest.json",
+  "defaultVoice": "clide",
+  "voices": {
+    "clide": {
+      "voiceId": "REPLACE_WITH_CLIDE_VOICE_ID",
+      "settings": {
+        "stability": 0.4,
+        "similarity_boost": 0.75,
+        "style": 0.3
+      }
+    }
+  }
+}
