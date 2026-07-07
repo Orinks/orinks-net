@@ -8,7 +8,8 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { useAnnounce } from "./Announcer";
 import { pickBark, producerLine, type Bark } from "../_lib/barks";
 import { fetchManifest, HostAudioPlayer, initSpeech, speakProducer, stopProducer, type AudioManifest } from "../_lib/audio";
-import { getPlayerKey, getStoredName, loadSettings, storeName, type GameSettings } from "../_lib/settings";
+import { MusicEngine, MUSIC_TRACKS, STINGS } from "../_lib/music";
+import { getPlayerKey, getStoredName, loadSettings, saveSettings, storeName, type GameSettings } from "../_lib/settings";
 
 // --- Shared styles ---
 const focusRing =
@@ -95,6 +96,8 @@ export function GameApp() {
 
   const manifestRef = useRef<AudioManifest>({ barks: {}, questions: {}, story: {} });
   const playerRef = useRef<HostAudioPlayer | null>(null);
+  const musicRef = useRef<MusicEngine | null>(null);
+  const [musicMuted, setMusicMuted] = useState(false);
   const captionSeq = useRef(0);
 
   const story = useQuery(api.trivia.getStory, playerKey ? { playerKey } : "skip");
@@ -108,16 +111,45 @@ export function GameApp() {
     const loaded = loadSettings();
     setSettings(loaded);
     playerRef.current = new HostAudioPlayer(loaded.hostVolume);
+    musicRef.current = new MusicEngine({
+      volume: loaded.musicVolume,
+      muted: loaded.musicMuted,
+      effectsEnabled: loaded.soundEffects,
+    });
+    setMusicMuted(loaded.musicMuted);
     fetchManifest().then((manifest) => {
       manifestRef.current = manifest;
     });
-    return () => playerRef.current?.stop();
+    return () => {
+      playerRef.current?.stop();
+      musicRef.current?.dispose();
+    };
   }, []);
 
   const addCaption = useCallback((speaker: CaptionLine["speaker"], text: string) => {
     captionSeq.current += 1;
     const seq = captionSeq.current;
     setCaptions((prev) => [...prev.slice(-9), { seq, speaker, text }]);
+  }, []);
+
+  /** Plays a Clide clip with music ducked; the duck can never stick (safety timeout). */
+  const playHostClip = useCallback(async (audioPath: string) => {
+    const release = musicRef.current?.duck() ?? (() => {});
+    try {
+      await playerRef.current?.play(audioPath);
+    } finally {
+      release();
+    }
+  }, []);
+
+  /** Replay ducks too — the user explicitly asked to re-hear the line. */
+  const replayHostClip = useCallback(async () => {
+    const release = musicRef.current?.duck() ?? (() => {});
+    try {
+      await playerRef.current?.replayLast();
+    } finally {
+      release();
+    }
   }, []);
 
   /**
@@ -129,14 +161,14 @@ export function GameApp() {
     (text: string, audioPath: string | undefined, bundle: string[] | null) => {
       addCaption("Clide", text);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
-        void playerRef.current.play(audioPath);
+        void playHostClip(audioPath);
       } else if (bundle) {
         bundle.push(`Clide: ${text}`);
       } else {
         announce(`Clide: ${text}`);
       }
     },
-    [addCaption, announce],
+    [addCaption, announce, playHostClip],
   );
 
   const playBark = useCallback(
@@ -155,7 +187,9 @@ export function GameApp() {
       if (!text) return;
       addCaption("Producer", text);
       if (settings?.producerVoice) {
-        speakProducer(text);
+        // Duck music under the Producer; release on end/error/safety timeout.
+        const release = musicRef.current?.duck() ?? (() => {});
+        void speakProducer(text).then(release);
       } else if (bundle) {
         bundle.push(`Producer: ${text}`);
       } else {
@@ -191,13 +225,40 @@ export function GameApp() {
       const audioPath = manifestRef.current.questions[questionKey];
       if (!audioPath || !playerRef.current) return;
       if (settings?.autoPlayQuestionAudio && !playerRef.current.paused) {
-        void playerRef.current.play(audioPath);
+        void playHostClip(audioPath);
       } else {
         playerRef.current.prime(audioPath);
       }
     },
-    [settings?.autoPlayQuestionAudio],
+    [playHostClip, settings?.autoPlayQuestionAudio],
   );
+
+  // Phase → music mapping. Silent until ensureStarted() runs from a real
+  // button activation; changes are ambient and deliberately unannounced —
+  // music is never the sole carrier of game state (a11y review).
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music?.started) return;
+    if (phase.kind === "title") {
+      void music.playLoop(MUSIC_TRACKS.title);
+    } else if (phase.kind === "question" || phase.kind === "feedback" || phase.kind === "tape") {
+      void music.playLoop(MUSIC_TRACKS.bed);
+    } else if (phase.kind === "finale") {
+      void music.playOnce(MUSIC_TRACKS.finale);
+    } else if (phase.kind === "gameover") {
+      void music.playOnce(MUSIC_TRACKS.signoff);
+    }
+  }, [phase.kind]);
+
+  const toggleMusicMuted = useCallback(() => {
+    setMusicMuted((prev) => {
+      const next = !prev;
+      musicRef.current?.setMuted(next);
+      const current = loadSettings();
+      saveSettings({ ...current, musicMuted: next });
+      return next;
+    });
+  }, []);
 
   // --- Run flow ---
 
@@ -209,6 +270,7 @@ export function GameApp() {
       announce("Starting the broadcast…");
       try {
         initSpeech(); // user gesture: unlock speechSynthesis
+        musicRef.current?.ensureStarted(); // same gesture unlocks the AudioContext
         const trimmed = name.trim();
         await ensurePlayer({ playerKey, displayName: trimmed.length > 0 ? trimmed : undefined });
         if (trimmed.length > 0) storeName(trimmed);
@@ -244,6 +306,7 @@ export function GameApp() {
   const resumeRun = useCallback(() => {
     if (!resumable) return;
     initSpeech(); // user gesture: unlock speechSynthesis for the resumed run too
+    musicRef.current?.ensureStarted();
     setRun(resumable.run as RunState);
     setQuestion(resumable.question);
     setQuestionNumber(resumable.run.questionNumber);
@@ -267,6 +330,19 @@ export function GameApp() {
         setRun(result.run);
 
         const bundle: string[] = [];
+        // Earcons fire immediately, at low gain, outside the ducking chain, and
+        // never replace announcements (a11y review: reinforcement only).
+        const music = musicRef.current;
+        music?.playEffect(result.correct ? STINGS.correct : STINGS.wrong);
+        if (result.run.lives === 1 && !result.correct && result.run.status === "active") {
+          music?.playEffect(STINGS.lastLife);
+        }
+        for (const event of result.events) {
+          if (event.type === "roundComplete") music?.playEffect(STINGS.round);
+          else if (event.type === "lifeGained") music?.playEffect(STINGS.lifeGained);
+          else if (event.type === "tapeUnlocked") music?.playEffect(STINGS.tapeFound);
+          else if (event.type === "gameOver" && event.isPersonalBest) music?.playEffect(STINGS.highScore);
+        }
         playBark(result.correct ? "correct" : "wrong", bundle);
         if (result.correct) {
           bundle.push(`Correct! Plus ${result.scoreDelta} points.`);
@@ -317,7 +393,7 @@ export function GameApp() {
         const tape = story?.tapes.find((t) => t.id === next.id);
         if (tape) {
           const audioPath = manifestRef.current.story[tape.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused) void playerRef.current.play(audioPath);
+          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
           setPhase({ kind: "tape", tape, pending: rest, result });
           return;
         }
@@ -330,7 +406,7 @@ export function GameApp() {
           setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
           const first = finale.lines[0];
           const audioPath = manifestRef.current.story[first.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused) void playerRef.current.play(audioPath);
+          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
           return;
         } catch {
           // Not eligible after all; fall through to the next event.
@@ -356,7 +432,7 @@ export function GameApp() {
         setPhase({ kind: "gameover", result });
       }
     },
-    [completeFinaleMutation, playerKey, serveQuestionAudio, story?.tapes],
+    [completeFinaleMutation, playerKey, playHostClip, serveQuestionAudio, story?.tapes],
   );
 
   const backToTitle = useCallback(() => {
@@ -387,7 +463,7 @@ export function GameApp() {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (event.key === "r" || event.key === "R") {
-        playerRef.current?.replayLast();
+        void replayHostClip();
         return;
       }
       if (phase.kind === "question" && question && chosenIndex === null) {
@@ -400,7 +476,7 @@ export function GameApp() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [chooseAnswer, chosenIndex, phase.kind, question, settings?.numberShortcuts]);
+  }, [chooseAnswer, chosenIndex, phase.kind, question, replayHostClip, settings?.numberShortcuts]);
 
   const toggleHostPaused = useCallback(() => {
     setHostPaused((prev) => {
@@ -470,6 +546,9 @@ export function GameApp() {
                 Resume broadcast
               </button>
             ) : null}
+            <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
+              {musicMuted ? "Unmute music" : "Mute music"}
+            </button>
           </div>
         </form>
         {errorText ? <p className="mt-4 font-semibold text-amber-300">{errorText}</p> : null}
@@ -645,11 +724,14 @@ export function GameApp() {
       ) : null}
 
       <div className="mt-8 flex flex-wrap gap-3 border-t border-amber-700 pt-4">
-        <button className={secondaryButton} onClick={() => void playerRef.current?.replayLast()} type="button">
+        <button className={secondaryButton} onClick={() => void replayHostClip()} type="button">
           Replay Clide&apos;s last line
         </button>
         <button className={secondaryButton} onClick={toggleHostPaused} type="button">
           {hostPaused ? "Resume host audio" : "Pause host audio"}
+        </button>
+        <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
+          {musicMuted ? "Unmute music" : "Mute music"}
         </button>
         {phase.kind === "question" || phase.kind === "feedback" ? (
           <button className={secondaryButton} onClick={() => void quitRun()} type="button">
