@@ -7,7 +7,7 @@
   "questions": [
     {
       "id": "otdb-c1ef2cf0",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What M83 song was featured on Grand Theft Auto V's radio?",
       "choices": [
@@ -17,11 +17,12 @@
         "Midnight City"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Midnight City\" is the lead single from M83's 2011 album Hurry Up, We're Dreaming."
     },
     {
       "id": "otdb-992909b3",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which member of the Wu-Tang Clan had only one verse in their debut album Enter the Wu-Tang (36 Chambers)?",
       "choices": [
@@ -31,11 +32,12 @@
         "Masta Killa"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Masta Killa's single verse on \"Da Mystery of Chessboxin'\" became one of the most quoted in hip-hop despite his minimal presence on the album."
     },
     {
       "id": "otdb-7c4be4f0",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "\"Some people call me the space cowboy\" is the first line from what song?",
       "choices": [
@@ -45,11 +47,12 @@
         "Take The Money and Run"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"The Joker\" by the Steve Miller Band topped the US charts in 1973 and again after a 1990 Levi's ad revived it."
     },
     {
       "id": "otdb-34c18e52",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What is the real name of prominent electronic musician Aphex Twin?",
       "choices": [
@@ -59,11 +62,12 @@
         "Richard M. Hall"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Richard D. James has released music under many aliases, including AFX and Polygon Window."
     },
     {
       "id": "otdb-ca611a02",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who was the youngest member of The Beatles?",
       "choices": [
@@ -73,11 +77,12 @@
         "John Lennon"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "George Harrison, born in February 1943, was the youngest of the four Beatles."
     },
     {
       "id": "otdb-9fbab70b",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "Which brass instrument has the lowest pitch in an orchestra?",
       "choices": [
@@ -87,11 +92,12 @@
         "Tuba"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The tuba is the largest and lowest-pitched instrument in the brass family."
     },
     {
       "id": "otdb-2fa481cf",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which of these is NOT a song featured on the Lockjaw EP released in 2013 by Flume & Chet Faker?",
       "choices": [
@@ -101,11 +107,12 @@
         "Drop The Game"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Flume and Chet Faker's collaborative Lockjaw EP was released in 2013 on Future Classic."
     },
     {
       "id": "otdb-63c04113",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "Ozzy Osbourne was the lead singer for what metal band?",
       "choices": [
@@ -115,11 +122,12 @@
         "Judas Priest"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Ozzy Osbourne fronted Black Sabbath from 1968 until his 1979 departure, later returning for reunion shows."
     },
     {
       "id": "otdb-a94f1024",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "The song \"Caramelldansen\" is commonly mistaken as a Japanese song, what language is the song actually sung in?",
       "choices": [
@@ -129,11 +137,12 @@
         "Swedish"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Caramelldansen\" is by the Swedish group Caramell, despite its association with Japanese meme culture online."
     },
     {
       "id": "otdb-6ccd555b",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "What is the real name of American rapper Eminem, also known as Slim Shady?",
       "choices": [
@@ -143,11 +152,12 @@
         "Marshall Mathers"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Marshall Bruce Mathers III has performed as Eminem and his alter ego Slim Shady since the late 1990s."
     },
     {
       "id": "otdb-cde72aa1",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "What is not a wind instrument?",
       "choices": [
@@ -157,11 +167,12 @@
         "Trombone"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The viola is a bowed string instrument, unlike the oboe, duduk, and trombone, which all produce sound by blown air."
     },
     {
       "id": "otdb-6bc2b07f",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Finish these lyrics from the 2016 song \"Panda\" by Desiigner: \"I got broads in _______\".",
       "choices": [
@@ -171,11 +182,12 @@
         "Marietta"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Desiigner's \"Panda\" topped the Billboard Hot 100 in 2016 and was later sampled by Kanye West on \"Father Stretch My Hands Pt. 1\"."
     },
     {
       "id": "otdb-440ddecf",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of the following guitarists recorded an album as a member of the Red Hot Chili Peppers?",
       "choices": [
@@ -185,11 +197,12 @@
         "Dave Navarro"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dave Navarro, best known for Jane's Addiction, joined the Red Hot Chili Peppers for their 1995 album One Hot Minute."
     },
     {
       "id": "otdb-ddf02ba8",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "In which year did \"Caravan Palace\" release their first album?",
       "choices": [
@@ -199,11 +212,12 @@
         "2004"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Caravan Palace's self-titled debut, blending electro-swing with jazz, was released in 2008."
     },
     {
       "id": "otdb-4cc2ab2d",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which famous 90's rap album is commonly referred to as \"The Bible of Hip Hop\"?",
       "choices": [
@@ -213,11 +227,12 @@
         "The Low End Theory"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nas's 1994 debut Illmatic is frequently cited by critics as one of hip-hop's greatest and most influential albums."
     },
     {
       "id": "otdb-d4110a17",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "Which musical instrument is nicknamed 'the clown of the orchestra'?",
       "choices": [
@@ -227,11 +242,12 @@
         "Bassoon"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The bassoon's reedy, comedic tone has earned it the nickname \"the clown of the orchestra.\""
     },
     {
       "id": "otdb-e11eacb9",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "\"Drink the Sea\" is an album by which electronic music artist?",
       "choices": [
@@ -241,11 +257,12 @@
         "Flux Pavilion"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Glitch Mob released their debut album Drink the Sea in 2010."
     },
     {
       "id": "otdb-a7888a6b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What is the first Studio Album to be released on the Internet with a \"Pay-What-You-Want\" price?",
       "choices": [
@@ -255,11 +272,12 @@
         "Blackstar"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Radiohead's In Rainbows was released in 2007 with a pay-what-you-want digital model that upended music industry norms."
     },
     {
       "id": "otdb-5e7cb6d6",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which European capital city gives its name to a 1981 song by Ultravox?",
       "choices": [
@@ -269,11 +287,12 @@
         "Vienna"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Vienna\" by Ultravox reached number 2 in the UK charts in 1981, famously kept off the top spot by Joe Dolce's \"Shaddap You Face.\""
     },
     {
       "id": "otdb-75ff274d",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which of these women is not a member of the Korean girl group TWICE?",
       "choices": [
@@ -283,11 +302,12 @@
         "Kang Seulgi"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kang Seulgi is a member of the K-pop group Red Velvet, not TWICE."
     },
     {
       "id": "otdb-195a45ee",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "When did The Beatles release the LP \"Please Please Me\"?",
       "choices": [
@@ -297,11 +317,12 @@
         "1969"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Please Please Me, released in March 1963, was The Beatles' debut studio album."
     },
     {
       "id": "otdb-6ff73c4b",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "\"Sleepyhead\" is the debut single from which Electronic band?",
       "choices": [
@@ -311,11 +332,12 @@
         "The Chemical Brothers"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Sleepyhead\" was Passion Pit's debut single, released in 2008 and later remixed widely."
     },
     {
       "id": "otdb-3dce8885",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 1,
       "prompt": "Which Canadian reggae musician had a 1993 hit with the song 'Informer'?",
       "choices": [
@@ -325,11 +347,12 @@
         "Hail"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Snow's \"Informer\" topped the Billboard Hot 100 in 1993 and remains one of the best-selling reggae-influenced singles by a Canadian artist."
     },
     {
       "id": "otdb-7f986e99",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "'74–'75 is a 1993 single from the album Ring by what American band?",
       "choices": [
@@ -339,11 +362,12 @@
         "The Ocean Blue"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Connells' \"'74-'75\" became an unexpected European hit in 1995, two years after its original release."
     },
     {
       "id": "otdb-6c8d95e8",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What is the real name of American rapper Pitbull?",
       "choices": [
@@ -353,11 +377,12 @@
         "Armando Christian Pérez"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Armando Christian Pérez has performed as Pitbull since the early 2000s."
     },
     {
       "id": "otdb-ab1506f0",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "Which song is NOT by singer Tom Jones?",
       "choices": [
@@ -367,11 +392,12 @@
         "It's Not Unusual"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Never Gonna Give You Up\" is a 1987 hit by Rick Astley, not Tom Jones."
     },
     {
       "id": "otdb-b03d5bcf",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Who was not in the band \"The Smiths\"?",
       "choices": [
@@ -381,11 +407,12 @@
         "Morrissey"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Martin Chambers was the drummer for The Pretenders, not The Smiths, whose rhythm section was Mike Joyce and Andy Rourke."
     },
     {
       "id": "otdb-50e5428b",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Kanye West's \"Gold Digger\" featured which Oscar-winning actor?",
       "choices": [
@@ -395,25 +422,12 @@
         "Alec Baldwin"
       ],
       "answer": 0,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-78e62656",
-      "category": "music",
-      "difficulty": 1,
-      "prompt": "Which of these artists has Lil A collaborated with?",
-      "choices": [
-        "Lil Fortnite",
-        "Boonk Gang",
-        "6ix9ine",
-        "Lil Pump"
-      ],
-      "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Jamie Foxx sang the Ray Charles-style hook on Kanye West's 2005 hit \"Gold Digger\" the same year he won the Oscar for playing Charles in Ray."
     },
     {
       "id": "otdb-7c4b3447",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What is the name of the song by Beyoncé and Alejandro Fernández released in 2007?",
       "choices": [
@@ -423,11 +437,12 @@
         "Amor Gitano"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Amor Gitano\" was a duet between Beyoncé and Mexican singer Alejandro Fernández released in 2007."
     },
     {
       "id": "otdb-54098e22",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which punk rock band released hit songs such as \"Californication\", \"Can't Stop\" and \"Under the Bridge\"?",
       "choices": [
@@ -437,11 +452,12 @@
         "Foo Fighters"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Red Hot Chili Peppers released \"Californication,\" \"Can't Stop,\" and \"Under the Bridge\" as a funk-rock band, not strictly punk."
     },
     {
       "id": "otdb-5e4cc274",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which Iron Maiden album did the song \"Dream of Mirrors\" feature in?",
       "choices": [
@@ -451,11 +467,12 @@
         "Dance of Death"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Dream of Mirrors\" appears on Iron Maiden's 2000 album Brave New World."
     },
     {
       "id": "otdb-7aac5a44",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was the name of Pink Floyd's first studio album?",
       "choices": [
@@ -465,11 +482,12 @@
         "The Piper at the Gates of Dawn"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Piper at the Gates of Dawn, released in 1967, was Pink Floyd's psychedelic debut led largely by Syd Barrett."
     },
     {
       "id": "otdb-5bb60270",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What year was Min Yoongi from South Korea boy band \"BTS\" born in?",
       "choices": [
@@ -479,11 +497,12 @@
         "1994"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "BTS member Suga (Min Yoongi) was born in 1993."
     },
     {
       "id": "otdb-d4f0d960",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which one of these rappers is NOT a member of the rap group Wu-Tang Clan?",
       "choices": [
@@ -493,11 +512,12 @@
         "Dr.Dre"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dr. Dre was never a member of Wu-Tang Clan; the group's core lineup came from Staten Island in the early 1990s."
     },
     {
       "id": "otdb-10408e6d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "How many members are there in the band Nirvana?",
       "choices": [
@@ -507,11 +527,12 @@
         "Two"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nirvana's classic lineup was a trio: Kurt Cobain, Krist Novoselic, and Dave Grohl."
     },
     {
       "id": "otdb-01b502c8",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "Which of these is NOT considered a woodwind instrument?",
       "choices": [
@@ -521,11 +542,12 @@
         "Oboe"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The trombone is a brass instrument, while the clarinet, bassoon, and oboe are woodwinds."
     },
     {
       "id": "otdb-13afb908",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Who is the musical artist who released the hit song, \"Love Song,\" in 2007?",
       "choices": [
@@ -535,11 +557,12 @@
         "Taylor Swift"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sara Bareilles's \"Love Song\" reached the top 5 on the Billboard Hot 100 in 2007."
     },
     {
       "id": "otdb-ec863adf",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Who is the lead singer of Bastille?",
       "choices": [
@@ -549,11 +572,12 @@
         "Dan Smith"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dan Smith has fronted the British band Bastille since its formation in 2010."
     },
     {
       "id": "otdb-cde4a0ef",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Which company did the animation for Peter Gabriel's Video Sledgehammer (1986)?",
       "choices": [
@@ -563,11 +587,12 @@
         "HIT Entertainment"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Aardman Animations, later famous for Wallace and Gromit, produced the claymation video for Peter Gabriel's \"Sledgehammer\" in 1986."
     },
     {
       "id": "otdb-4bf24b8a",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "Who was \"Kung Fu Fighting\" in 1974?",
       "choices": [
@@ -577,11 +602,12 @@
         "Kool & the Gang"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Carl Douglas's \"Kung Fu Fighting\" topped charts worldwide in 1974 and remains one of the best-selling singles of all time."
     },
     {
       "id": "otdb-2a513a46",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "In what year was the smash hit song \"Scatman's World\" released?",
       "choices": [
@@ -591,11 +617,12 @@
         "1996"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Scatman John's \"Scatman's World\" was released in 1995 following the success of \"Scatman (Ski-Ba-Bop-Ba-Dop-Bop).\""
     },
     {
       "id": "otdb-78a203b8",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Björk's \"Unison\" contains a sample of which Oval song?",
       "choices": [
@@ -605,11 +632,12 @@
         "Panorama"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Björk's \"Unison\" from Vespertine samples the German electronic act Oval's track \"Do While.\""
     },
     {
       "id": "otdb-d58fad39",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What is the first track on Kanye West's 808s & Heartbreak?",
       "choices": [
@@ -619,11 +647,12 @@
         "Welcome to Heartbreak"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Say You Will\" opens Kanye West's 2008 album 808s & Heartbreak."
     },
     {
       "id": "otdb-0fd27247",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 3,
       "prompt": "In music theory, how many notes are in a seventh chord?",
       "choices": [
@@ -633,11 +662,12 @@
         "3"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "A seventh chord stacks four notes: a triad plus an added seventh above the root."
     },
     {
       "id": "otdb-4500cbb7",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these is NOT the name of an album released by Miami-based producer DJ Khaled?",
       "choices": [
@@ -647,11 +677,12 @@
         "Don't Ever Play Yourself"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Don't Ever Play Yourself\" is not an actual DJ Khaled album title, unlike Suffering from Success, Major Key, and I Changed a Lot."
     },
     {
       "id": "otdb-c29b9bd4",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 5,
       "prompt": "Who was the first jazz musician to win the Pulitzer Prize for Music?",
       "choices": [
@@ -661,11 +692,12 @@
         "Joe Henderson"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Wynton Marsalis won the Pulitzer Prize for Music in 1997 for his oratorio Blood on the Fields."
     },
     {
       "id": "otdb-2fadd7bd",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "\"Lift Your Spirit\" is an album by which artist?",
       "choices": [
@@ -675,11 +707,12 @@
         "Taylor Swift"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Aloe Blacc released the album Lift Your Spirit in 2013, featuring the hit \"The Man.\""
     },
     {
       "id": "otdb-c9b81110",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of Pearl Jam?",
       "choices": [
@@ -689,11 +722,12 @@
         "Kurt Cobain"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Eddie Vedder has been Pearl Jam's lead vocalist since the band formed in 1990."
     },
     {
       "id": "otdb-e107509b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Grand Theft Autumn/Where Is Your Boy is a song by which band?",
       "choices": [
@@ -703,11 +737,12 @@
         "Panic! At The Disco"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Grand Theft Autumn/Where Is Your Boy\" appears on Fall Out Boy's 2003 debut Take This to Your Grave."
     },
     {
       "id": "otdb-6bad1a62",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of these are NOT a Men at Work song?",
       "choices": [
@@ -717,11 +752,12 @@
         "Be Good Johnny"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Basket Case\" is a Green Day song from Dookie, not a Men at Work track."
     },
     {
       "id": "otdb-51fac86b",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "According to their 1974 hit, what were Brownsville Station doing \"In The Boys' Room\"?",
       "choices": [
@@ -731,11 +767,12 @@
         "Lovin'"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Brownsville Station's \"Smokin' in the Boys Room\" was a top-10 hit in 1974, later covered by Mötley Crüe in 1985."
     },
     {
       "id": "otdb-6a050d63",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of Green Day?",
       "choices": [
@@ -745,11 +782,12 @@
         "Billie Joe Armstrong"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Billie Joe Armstrong has been Green Day's lead singer and guitarist since founding the band in 1987."
     },
     {
       "id": "otdb-124b6397",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which Toronto landmark was featured on the cover art of Canadian rapper Drake's 2016 album \"Views\"?",
       "choices": [
@@ -759,11 +797,12 @@
         "Allan Gardens"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Drake's 2016 album Views features the CN Tower prominently on its cover art, with Drake seated atop it."
     },
     {
       "id": "otdb-5136d222",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "In what year was Tchaikovsky's 1812 Overture composed?",
       "choices": [
@@ -773,11 +812,12 @@
         "1880"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tchaikovsky composed the 1812 Overture in 1880 to commemorate Russia's defense against Napoleon's invasion."
     },
     {
       "id": "otdb-b507defa",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which Death Grips album is the only one to feature a band member?",
       "choices": [
@@ -787,11 +827,12 @@
         "Bottomless Pit"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "No Love Deep Web, Death Grips' 2012 album, features live drums from touring member Nick Reinhart on some tracks amid their usual sample-based production."
     },
     {
       "id": "otdb-4ee2491b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What is Pink Floyd's first album?",
       "choices": [
@@ -801,11 +842,12 @@
         "Meddle"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Piper at the Gates of Dawn was Pink Floyd's 1967 debut album."
     },
     {
       "id": "otdb-54f0e9ef",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "What 1970's American ballad referred to the 1959 plane crash as the \"the day the music died\"?",
       "choices": [
@@ -815,11 +857,12 @@
         "Kentucky Rain"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Don McLean's \"American Pie\" (1971) memorialized the 1959 plane crash that killed Buddy Holly, Ritchie Valens, and the Big Bopper."
     },
     {
       "id": "otdb-d6f9225e",
-      "category": "music",
+      "category": "soundtracks",
       "difficulty": 3,
       "prompt": "Iconic cartoon character Mickey Mouse made his onscreen debut in what year?",
       "choices": [
@@ -829,11 +872,12 @@
         "1929"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Mickey Mouse debuted in the 1928 short Steamboat Willie, one of the first cartoons with synchronized sound."
     },
     {
       "id": "otdb-c1b9db8d",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which of these artists did NOT feature in the fitfh studio album \"Humanz\" by British virtual band Gorillaz?",
       "choices": [
@@ -843,11 +887,12 @@
         "Pusha T"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Snoop Dogg did not appear on Gorillaz's Humanz; guests included Vince Staples, Danny Brown, and Pusha T among many others."
     },
     {
       "id": "otdb-437a156c",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Which Elton John hit starts with the line \"When are you gonna come down\"?",
       "choices": [
@@ -857,11 +902,12 @@
         "Bennie and the Jets"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Goodbye Yellow Brick Road\" opens with that line and became the title track of Elton John's acclaimed 1973 double album."
     },
     {
       "id": "otdb-c0fff4d5",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which alternative rock band released the critically-acclaimed album \"OK Computer\"?",
       "choices": [
@@ -871,11 +917,12 @@
         "Radiohead"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Radiohead released OK Computer in 1997 to widespread critical acclaim, often ranked among the greatest albums ever made."
     },
     {
       "id": "otdb-c1e25e41",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "For which civil rights activist did Stevie Wonder write the song 'Happy Birthday' in 1980?",
       "choices": [
@@ -885,11 +932,12 @@
         "Rosa Parks"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Stevie Wonder wrote \"Happy Birthday\" in 1980 to campaign for Martin Luther King Jr. Day, which became a federal holiday in 1983."
     },
     {
       "id": "otdb-df46e698",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "Prior to going solo in 1982, Lionel Richie was a member of which Motown group?",
       "choices": [
@@ -899,11 +947,12 @@
         "The Temptations"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Lionel Richie was a founding member of the Commodores before launching his solo career in 1982."
     },
     {
       "id": "otdb-040e1ce2",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "On which Beatles album would you find the song 'Eleanor Rigby'?",
       "choices": [
@@ -913,11 +962,12 @@
         "Help!"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Eleanor Rigby\" appears on The Beatles' 1966 album Revolver."
     },
     {
       "id": "otdb-0a48552b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which one of these Pink Floyd albums were also a movie?",
       "choices": [
@@ -927,11 +977,12 @@
         "Animals"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pink Floyd's The Wall was adapted into the 1982 film Pink Floyd – The Wall, directed by Alan Parker."
     },
     {
       "id": "otdb-25ba9d3e",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "A piccolo is a smaller version of what instrument?",
       "choices": [
@@ -941,11 +992,12 @@
         "Flute"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The piccolo is a smaller, higher-pitched relative of the concert flute."
     },
     {
       "id": "otdb-c5c1dc36",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "Who recorded the album called \"Down to the Moon\" in 1986?",
       "choices": [
@@ -955,11 +1007,12 @@
         "Bing Crosby"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Swiss harpist Andreas Vollenweider released Down to the Moon in 1986, blending harp with electronic textures."
     },
     {
       "id": "otdb-367ab048",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is NOT a song featured on Green Day's 21st Century Breakdown album?",
       "choices": [
@@ -969,11 +1022,12 @@
         "Before The Lobotomy"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"She's a Rebel\" is from Green Day's American Idiot, not 21st Century Breakdown."
     },
     {
       "id": "otdb-1d666b39",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "Which popular jazz standard begins with the line \"Someday, when I'm awfully low\"?",
       "choices": [
@@ -983,11 +1037,12 @@
         "All the Things You Are"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"The Way You Look Tonight,\" written by Jerome Kern and Dorothy Fields, won the Academy Award for Best Original Song in 1936."
     },
     {
       "id": "otdb-50a34e22",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Rick Astley's hit song \"Never Gonna Give You Up\" was released in what year?",
       "choices": [
@@ -997,11 +1052,12 @@
         "1988"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rick Astley's \"Never Gonna Give You Up\" topped charts worldwide in 1987 and later became the internet's \"Rickrolling\" anthem."
     },
     {
       "id": "otdb-c941fcef",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which of the music artists did NOT perform in the Live Aid concert in Wembley Stadium, London in 1985?",
       "choices": [
@@ -1011,11 +1067,12 @@
         "David Bowie"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Rolling Stones did not perform at Live Aid's Wembley concert in 1985, though Mick Jagger appeared solo at the Philadelphia leg."
     },
     {
       "id": "otdb-62bbcf6c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which Coldplay album won the Grammy for Best Rock Album in the 2009 Grammy Awards?",
       "choices": [
@@ -1025,11 +1082,12 @@
         "Mylo Xyloto"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Coldplay's Viva la Vida or Death and All His Friends won the Grammy for Best Rock Album in 2009."
     },
     {
       "id": "otdb-e7a936c4",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "May 16th of every year is known as __________ Day, named after a punk band prominent in the 1990s.",
       "choices": [
@@ -1039,11 +1097,12 @@
         "Less Than Jake"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Lagwagon Day is named for the band's 1998 song \"May 16,\" about frontman Joey Cape overhearing a friend's wedding he wasn't invited to."
     },
     {
       "id": "otdb-6eb8d5b4",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which country does the power metal band \"Sabaton\" originate from?",
       "choices": [
@@ -1053,11 +1112,12 @@
         "Finland"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sabaton, known for historically themed power metal anthems, formed in Falun, Sweden, in 1999."
     },
     {
       "id": "otdb-3c1d4668",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which of the following is NOT a real song from the band Thousand Foot Krutch?",
       "choices": [
@@ -1067,11 +1127,12 @@
         "Let The Sparks Fly"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Limitless Fury\" is not a real Thousand Foot Krutch title; the Canadian rock band's actual catalog includes \"Down\" and \"Let the Sparks Fly.\""
     },
     {
       "id": "otdb-194c02e9",
-      "category": "music",
+      "category": "soundtracks",
       "difficulty": 3,
       "prompt": "Cryoshell, known for \"Creeping in My Soul\" did the advertising music for what Lego Theme?",
       "choices": [
@@ -1081,11 +1142,12 @@
         "Bionicle"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Cryoshell's music was licensed for Lego Bionicle promotional videos in the early 2010s."
     },
     {
       "id": "otdb-212844b9",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What was the name of the Wu-Tang Clan album Martin Shkreli bought for $2 million dollars?",
       "choices": [
@@ -1095,11 +1157,12 @@
         "Once Upon a Time in Shaolin"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Martin Shkreli bought the single-copy Wu-Tang Clan album Once Upon a Time in Shaolin for about $2 million in 2015."
     },
     {
       "id": "otdb-92774e12",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which song in rapper Kanye West's album \"The Life of Pablo\" features Rihanna?",
       "choices": [
@@ -1109,11 +1172,12 @@
         "Wolves"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rihanna features on \"Famous,\" the opening track of Kanye West's 2016 album The Life of Pablo."
     },
     {
       "id": "otdb-3397cbfa",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the Pink Floyd song \"Shine On You Crazy Diamond\" written about?",
       "choices": [
@@ -1123,11 +1187,12 @@
         "Syd Barrett"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Shine On You Crazy Diamond\" is Pink Floyd's tribute to founding member Syd Barrett, who left the band due to declining mental health."
     },
     {
       "id": "otdb-dcc378ca",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What album did Gorillaz release in 2017?",
       "choices": [
@@ -1137,11 +1202,12 @@
         "Demon Days"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Gorillaz released their fifth album, Humanz, in 2017."
     },
     {
       "id": "otdb-ba71c62b",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "When did the rapper Eazy-E die?",
       "choices": [
@@ -1151,11 +1217,12 @@
         "March 26, 1995"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "N.W.A rapper Eazy-E died of AIDS-related complications on March 26, 1995."
     },
     {
       "id": "otdb-4b82873a",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "How many members are there in the idol group \"µ's\"?",
       "choices": [
@@ -1165,11 +1232,12 @@
         "3"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "μ's is the fictional idol group from the Love Live! franchise, made up of nine members."
     },
     {
       "id": "otdb-c73023e8",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these is NOT the name of an album released by American rapper Viper?",
       "choices": [
@@ -1179,11 +1247,12 @@
         "Kill Urself My Man"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Life of Pablo is a Kanye West album, not one of underground rapper Viper's many self-released titles."
     },
     {
       "id": "otdb-693fc9fb",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What year was Weezer's album \"Pinkerton\" released?",
       "choices": [
@@ -1193,11 +1262,12 @@
         "1994"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Weezer's Pinkerton, initially poorly received, was released in 1996 and later reassessed as a cult classic."
     },
     {
       "id": "otdb-187ac404",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "What was the title of Sakamoto Kyu's song \"Ue o Muite Arukou\" (I Look Up As I Walk) changed to in the United States?",
       "choices": [
@@ -1207,11 +1277,12 @@
         "Oden"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kyu Sakamoto's \"Ue o Muite Arukou\" was retitled \"Sukiyaki\" for US release and topped the Billboard Hot 100 in 1963, the only Japanese-language song to do so."
     },
     {
       "id": "otdb-97c71210",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was David Bowie's real surname?",
       "choices": [
@@ -1221,11 +1292,12 @@
         "Carter"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "David Bowie was born David Robert Jones in Brixton, London, in 1947."
     },
     {
       "id": "otdb-29712ed9",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "In The Bangles' 'Manic Monday', what time is it already?",
       "choices": [
@@ -1235,11 +1307,12 @@
         "Five o'clock"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Manic Monday,\" written by Prince, was a top-5 hit for The Bangles in 1986."
     },
     {
       "id": "otdb-afbee8d8",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Who was the first white band to play the Apollo Theater?",
       "choices": [
@@ -1249,11 +1322,12 @@
         "Elvis"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Buddy Holly and the Crickets became the first white rock act to play Harlem's Apollo Theater in the late 1950s."
     },
     {
       "id": "otdb-1ed73742",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What was Britney Spears' debut single?",
       "choices": [
@@ -1263,11 +1337,12 @@
         "...Baby One More Time"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"...Baby One More Time,\" released in 1998, launched Britney Spears's career and became her signature hit."
     },
     {
       "id": "otdb-05faed54",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What is the relationship between the band members of American rock band King of Leon?",
       "choices": [
@@ -1277,11 +1352,12 @@
         "Former classmates"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kings of Leon consists of three Followill brothers and their cousin Matthew."
     },
     {
       "id": "otdb-f492e64e",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Who was featured in the song \"Words\" by Feint?",
       "choices": [
@@ -1291,11 +1367,12 @@
         "Danyka Nadeau"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Laura Brehm provided vocals for Feint's melodic dubstep track \"Words.\""
     },
     {
       "id": "otdb-84f0d466",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which group performs the song \"Crash into Me\"?",
       "choices": [
@@ -1305,11 +1382,12 @@
         "Phish"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Crash into Me\" is a signature ballad from the Dave Matthews Band's 1996 album Crash."
     },
     {
       "id": "otdb-f44a7b05",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Liam Howlett founded which electronic music group in 1990?",
       "choices": [
@@ -1319,11 +1397,12 @@
         "Infected Mushroom"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Liam Howlett founded The Prodigy in Essex, England, in 1990, pioneering the rave-influenced electronic genre."
     },
     {
       "id": "otdb-0dd72b7f",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Moby, an American DJ, singer, and musician, achieved worldwide success for the 1999 release of which of the following albums?",
       "choices": [
@@ -1333,25 +1412,12 @@
         "Play"
       ],
       "answer": 3,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-d8323583",
-      "category": "music",
-      "difficulty": 1,
-      "prompt": "Which Twitch streamer is the vocalist for Red Vox?",
-      "choices": [
-        "The8BitDrummer",
-        "Sodapoppin",
-        "LIRIK",
-        "Vinesauce"
-      ],
-      "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Moby's 1999 album Play became a breakout crossover hit, with every track eventually licensed for film, TV, or advertising."
     },
     {
       "id": "otdb-4f6367bb",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the lead singer of Silverchair?",
       "choices": [
@@ -1361,11 +1427,12 @@
         "Ben Gillies"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Daniel Johns has fronted the Australian band Silverchair since its formation in the early 1990s."
     },
     {
       "id": "otdb-2bb67482",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What is the name of the 2016 studio album by the French electronic music duo Justice?",
       "choices": [
@@ -1375,11 +1442,12 @@
         "Pleasure"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "French duo Justice released their second studio album, Woman, in 2016."
     },
     {
       "id": "otdb-5da81f64",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "In Kendrick Lamar's 2012 album, \"Good Kid, M.A.A.D City\", the album's story takes place in which city?",
       "choices": [
@@ -1389,11 +1457,12 @@
         "New York"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kendrick Lamar's good kid, m.A.A.d city is a concept album set in his hometown of Compton, California."
     },
     {
       "id": "otdb-d91c5055",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was the release date of the They Might Be Giants album \"Mink Car\"?",
       "choices": [
@@ -1403,11 +1472,12 @@
         "September 11th, 2001"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "They Might Be Giants released Mink Car on September 11, 2001, an unplanned coincidence with the date's later significance."
     },
     {
       "id": "otdb-1549c3d7",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "The tuba is a part of which musical family?",
       "choices": [
@@ -1417,11 +1487,12 @@
         "Woodwind"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The tuba is the lowest-pitched member of the brass instrument family."
     },
     {
       "id": "otdb-2a54f3b8",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which rap group released the album \"Straight Outta Compton\"?",
       "choices": [
@@ -1431,11 +1502,12 @@
         "Beastie Boys"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "N.W.A's Straight Outta Compton, released in 1988, became a landmark album in the rise of gangsta rap."
     },
     {
       "id": "otdb-e94f76fd",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who released the song \"Photograph\" in 2005?",
       "choices": [
@@ -1445,11 +1517,12 @@
         "Green Day"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nickelback's \"Photograph\" was released in 2005 and became one of the band's signature hits."
     },
     {
       "id": "otdb-6c89d64f",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Korean girl group TWICE is under which Entertainment Label?",
       "choices": [
@@ -1459,11 +1532,12 @@
         "JYP"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "TWICE debuted in 2015 under JYP Entertainment."
     },
     {
       "id": "otdb-fcddca06",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "What is the best selling album of all time from 1976 to 2018?",
       "choices": [
@@ -1473,11 +1547,12 @@
         "Abbey Road"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Michael Jackson's Thriller (1982) is certified as the best-selling album of all time by the RIAA."
     },
     {
       "id": "otdb-09e39875",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "'Don't You Want Me?' was a number one hit in 1981 for which electropop band?",
       "choices": [
@@ -1487,11 +1562,12 @@
         "Depeche Mode"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Human League's \"Don't You Want Me\" topped the UK charts as the 1981 Christmas number one."
     },
     {
       "id": "otdb-d50ab9b2",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which rapper had an album that went double platinum with no features?",
       "choices": [
@@ -1501,11 +1577,12 @@
         "Kendrick Lamar"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "J. Cole's 2014 Forest Hills Drive went double platinum without a single guest feature, a rarity in mainstream hip-hop."
     },
     {
       "id": "otdb-bed25d69",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which musical group won the Brit Awards in 1985, with George Michael as a member?",
       "choices": [
@@ -1515,11 +1592,12 @@
         "Wham!"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Wham!, featuring George Michael and Andrew Ridgeley, won Best British Group at the 1985 Brit Awards."
     },
     {
       "id": "otdb-67459c9c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "When did Tame Impala release their second album?",
       "choices": [
@@ -1529,11 +1607,12 @@
         "2010"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tame Impala released their second album, Lonerism, in 2012."
     },
     {
       "id": "otdb-92fa9ee9",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Where does the Mac part of the name Fleetwood Mac come from?",
       "choices": [
@@ -1543,11 +1622,12 @@
         "David Tennant"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Fleetwood Mac's name combines drummer Mick Fleetwood with bassist John McVie."
     },
     {
       "id": "otdb-35bdf525",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the founder and leader of industrial rock band, 'Nine Inch Nails'?",
       "choices": [
@@ -1557,11 +1637,12 @@
         "Trent Reznor"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Trent Reznor founded Nine Inch Nails in Cleveland in 1988 and remains its sole permanent member."
     },
     {
       "id": "otdb-e903a170",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which of these is NOT a song by Pegboard Nerds?",
       "choices": [
@@ -1571,11 +1652,12 @@
         "WiFi Tears"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"WiFi Tears\" is not a real Pegboard Nerds track, unlike \"Emoji,\" \"Swamp Thing,\" and \"BAMF.\""
     },
     {
       "id": "otdb-948ab84a",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which band released songs suchs as \"Rio\", \"Girls on Film\", and \"The Reflex\"?",
       "choices": [
@@ -1585,11 +1667,12 @@
         "Depeche Mode"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Duran Duran's \"Rio,\" \"Girls on Film,\" and \"The Reflex\" helped define the New Romantic sound of the early 1980s."
     },
     {
       "id": "otdb-2edf547f",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "\"The Genius\" is the original and secondary name of which Wu-Tang Clan member?",
       "choices": [
@@ -1599,11 +1682,12 @@
         "Raekwon the Chef"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "GZA is known as \"The Genius,\" a nickname predating his time in Wu-Tang Clan."
     },
     {
       "id": "otdb-89efb8bf",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "What is Brian May's guitar called?",
       "choices": [
@@ -1613,11 +1697,12 @@
         "Red Special"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Brian May built his \"Red Special\" guitar with his father in the early 1960s and still plays it with Queen."
     },
     {
       "id": "otdb-b8d691dd",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "Typically, how many keys are on a piano?",
       "choices": [
@@ -1627,11 +1712,12 @@
         "12"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "A standard modern piano has 88 keys: 52 white and 36 black."
     },
     {
       "id": "otdb-345f8840",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which member of the British pop group \"The Spice Girls\" was known as Ginger Spice?",
       "choices": [
@@ -1641,11 +1727,12 @@
         "Geri Halliwell"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Geri Halliwell was known as Ginger Spice during her time in the Spice Girls."
     },
     {
       "id": "otdb-08902566",
-      "category": "music",
+      "category": "soundtracks",
       "difficulty": 3,
       "prompt": "Who sung the opening theme song to the 1995 James Bond film 'Goldeneye'?",
       "choices": [
@@ -1655,11 +1742,12 @@
         "Shirley Bassey"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tina Turner performed the title theme for the 1995 James Bond film GoldenEye."
     },
     {
       "id": "otdb-fda3512e",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What was the progressive rock band Rush's first single?",
       "choices": [
@@ -1669,11 +1757,12 @@
         "Tom Sawyer"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rush's cover of \"Not Fade Away\" was their first single, released in 1973 before their self-titled debut album."
     },
     {
       "id": "otdb-6d3dbae1",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In August 1964, who introduced the Beatles to cannabis?",
       "choices": [
@@ -1683,11 +1772,12 @@
         "Bob Dylan"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bob Dylan is widely credited with introducing The Beatles to cannabis during a 1964 meeting in New York."
     },
     {
       "id": "otdb-37f90367",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "What was the subject of the 2014 song \"CoCo\" by American rapper O. T. Genasis?",
       "choices": [
@@ -1697,11 +1787,12 @@
         "Coconut cream pie"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "O.T. Genasis's 2014 song \"CoCo\" is a blunt ode to cocaine that became a viral hit."
     },
     {
       "id": "otdb-e1060898",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which music publication is often abbreviated to NME?",
       "choices": [
@@ -1711,11 +1802,12 @@
         "North Manchester Express"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "NME, short for New Musical Express, has covered British music since 1952."
     },
     {
       "id": "otdb-564f042b",
-      "category": "music",
+      "category": "classical",
       "difficulty": 5,
       "prompt": "Who is a pioneer of \"Minimal Music\" in 1960s?",
       "choices": [
@@ -1725,11 +1817,12 @@
         "Sigur Rós"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Steve Reich helped pioneer minimalist music in the 1960s with pieces built on repeating phase patterns."
     },
     {
       "id": "otdb-86853165",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which one of these songs did the group \"Men At Work\" NOT make?",
       "choices": [
@@ -1739,11 +1832,12 @@
         "Down Under"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Safety Dance\" is a Men Without Hats song, not a Men at Work track."
     },
     {
       "id": "otdb-bb635584",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the bassist of the British rock band Queen?",
       "choices": [
@@ -1753,11 +1847,12 @@
         "John Deacon"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "John Deacon played bass for Queen from 1971 until the band's activities wound down in the late 1990s."
     },
     {
       "id": "otdb-9e023499",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "What album did The Lumineers release in 2016?",
       "choices": [
@@ -1767,11 +1862,12 @@
         "Winter"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Lumineers released their second studio album, Cleopatra, in 2016."
     },
     {
       "id": "otdb-b2631a0e",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these songs was NOT released in the 90s?",
       "choices": [
@@ -1781,11 +1877,12 @@
         "\"King of Wishful Thinking\" by Go West"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Queen's \"I Want It All\" was released in 1989, ahead of the other songs listed."
     },
     {
       "id": "otdb-73751c61",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "What is the name of Death Grips Front Man, MC Ride?",
       "choices": [
@@ -1795,11 +1892,12 @@
         "Stefan Burnett"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Stefan Burnett performs as MC Ride, the vocalist of the experimental hip-hop group Death Grips."
     },
     {
       "id": "otdb-0a8a78a7",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 3,
       "prompt": "The 1952 musical composition 4'33\", composed by prolific American composer John Cage, is mainly comprised of what sound?",
       "choices": [
@@ -1809,11 +1907,12 @@
         "Silence"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "John Cage's 4'33\" instructs performers not to play their instruments, foregrounding the ambient sounds of the room instead."
     },
     {
       "id": "otdb-10e58551",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which English guitarist has the nickname \"Slowhand\"?",
       "choices": [
@@ -1823,11 +1922,12 @@
         "Mark Knopfler"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Eric Clapton earned the nickname \"Slowhand\" during his early days with the Yardbirds."
     },
     {
       "id": "otdb-4f526a89",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is NOT a song on The Beatles' 1968 self titled album, also known as the White album?",
       "choices": [
@@ -1837,11 +1937,12 @@
         "Everybody's Got Something to Hide Except Me and My Monkey"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Being for the Benefit of Mr. Kite!\" is from Sgt. Pepper's Lonely Hearts Club Band, not The Beatles' White Album."
     },
     {
       "id": "otdb-c52b9d1c",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What is Justin Bieber's debut Album?",
       "choices": [
@@ -1851,11 +1952,12 @@
         "Purpose"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Justin Bieber's debut studio album, My World 2.0, was released in 2010."
     },
     {
       "id": "otdb-945b5814",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which member of the Foo Fighters was previously the drummer for Nirvana?",
       "choices": [
@@ -1865,11 +1967,12 @@
         "Nate Mendel"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dave Grohl drummed for Nirvana before founding Foo Fighters in 1994 as his own project."
     },
     {
       "id": "otdb-43860a6d",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What is rapper Drake's real name?",
       "choices": [
@@ -1879,11 +1982,12 @@
         "Andre Young"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Drake's given name is Aubrey Drake Graham."
     },
     {
       "id": "otdb-b9362cf2",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which album was released by Kanye West in 2013?",
       "choices": [
@@ -1893,11 +1997,12 @@
         "Watch the Throne"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West released Yeezus, his abrasive sixth studio album, in 2013."
     },
     {
       "id": "otdb-58a8d5ca",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which of the following songs was not originally released by Sir Elton John?",
       "choices": [
@@ -1907,11 +2012,12 @@
         "Crocodile Rock"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"You'll Be in My Heart,\" written and performed by Phil Collins for Disney's Tarzan, was not an Elton John song."
     },
     {
       "id": "otdb-2d0c01d2",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "According to the RIAA: Which artist has sold the most albums by the million?",
       "choices": [
@@ -1921,11 +2027,12 @@
         "Pink Floyd"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The RIAA credits The Beatles with the most certified album sales of any artist in the US."
     },
     {
       "id": "otdb-2a995180",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who released the 1991 album \"Out of Time\"?",
       "choices": [
@@ -1935,11 +2042,12 @@
         "U2"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "R.E.M. released Out of Time, featuring \"Losing My Religion,\" in 1991."
     },
     {
       "id": "otdb-bc9038cb",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 1,
       "prompt": "\"Grande Valse\" is a phrase from the song \"Gran Vals\". What is that song segment known as?",
       "choices": [
@@ -1949,11 +2057,12 @@
         "Hello Moto [Motorola Ringtone]"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The famous \"Nokia Tune\" ringtone is adapted from a guitar piece called \"Gran Vals\" by Spanish composer Francisco Tárrega."
     },
     {
       "id": "otdb-f449af50",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "What collaborative album was released by Kanye West and Jay-Z in 2011?",
       "choices": [
@@ -1963,11 +2072,12 @@
         "Distant Relatives"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West and Jay-Z released their joint album Watch the Throne in 2011."
     },
     {
       "id": "otdb-d1e90d75",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "What was the last Aphex Twin album released before his decade-long hiatus?",
       "choices": [
@@ -1977,11 +2087,12 @@
         "Collected Ambient Works 85-92"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Aphex Twin's Drukqs (2001) was his last release before a long recording hiatus, broken by 2014's Syro."
     },
     {
       "id": "otdb-3c1e5f1b",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "In the song “The Ultimate Showdown of Ultimate Destiny,” who is the only one to survive the battle?",
       "choices": [
@@ -1991,11 +2102,12 @@
         "Batman"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "In Jonathan Coulton's comedic song \"The Ultimate Showdown of Ultimate Destiny,\" Mr. Rogers is the sole survivor of the escalating battle."
     },
     {
       "id": "otdb-8bdde92b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The letters in the name of the band \"TWRP\" stand for what?",
       "choices": [
@@ -2005,11 +2117,12 @@
         "Totally Wicked Robot Performers"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "TWRP, a costumed synth-rock band, takes its name from \"Tupperware Remix Party.\""
     },
     {
       "id": "otdb-7d252650",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which singer was featured in Jack Ü (Skrillex & Diplo)'s 2015 song 'Where Are Ü Now'?",
       "choices": [
@@ -2019,11 +2132,12 @@
         "Justin Bieber"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Justin Bieber sang on Jack Ü's 2015 single \"Where Are Ü Now,\" which later won a Grammy for Best Dance Recording."
     },
     {
       "id": "otdb-f02a3600",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these languages was NOT included in the 2016 song \"Don't Mind\" by Kent Jones?",
       "choices": [
@@ -2033,11 +2147,12 @@
         "Portuguese"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kent Jones's 2016 hit \"Don't Mind\" name-checks French, Spanish, and Japanese, but not Portuguese."
     },
     {
       "id": "otdb-8af7a188",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which country is singer Kyary Pamyu Pamyu from?",
       "choices": [
@@ -2047,11 +2162,12 @@
         "Vietnam"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kyary Pamyu Pamyu is a Japanese pop singer known for her exaggerated \"kawaii\" aesthetic."
     },
     {
       "id": "otdb-b454dace",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Electronic artists Boys Noize and Skrillex have collaborated and released tracks under what name?",
       "choices": [
@@ -2061,11 +2177,12 @@
         "Dog Blood"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Boys Noize and Skrillex release collaborative tracks together under the name Dog Blood."
     },
     {
       "id": "otdb-7e57eead",
-      "category": "music",
+      "category": "classical",
       "difficulty": 1,
       "prompt": "In the  Rossini opera, what was the name of 'The Barber of Seville'?",
       "choices": [
@@ -2075,11 +2192,12 @@
         "Figaro"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Figaro is the resourceful barber at the center of Rossini's opera The Barber of Seville."
     },
     {
       "id": "otdb-48f5ba4d",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which of the following music bands is not from Finland?",
       "choices": [
@@ -2089,21 +2207,8 @@
         "Waltari"
       ],
       "answer": 2,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-fe5b844e",
-      "category": "music",
-      "difficulty": 5,
-      "prompt": "Who designed the album cover for True Romance, an album by Estelle?",
-      "choices": [
-        "Ben Leven",
-        "Rebecca Sugar",
-        "Ian Jones Quartey",
-        "Matt Burnett"
-      ],
-      "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sabaton is Swedish, unlike Lordi, Apocalyptica, and Waltari, which all hail from Finland."
     },
     {
       "id": "otdb-91e505e1",
