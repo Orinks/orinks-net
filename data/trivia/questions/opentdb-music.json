@@ -2212,7 +2212,7 @@
     },
     {
       "id": "otdb-91e505e1",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which music artist made the songs \"Heart\", \"It's a Sin\", and \"West End Girls\"?",
       "choices": [
@@ -2222,11 +2222,12 @@
         "Pet Shop Boys"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pet Shop Boys, the British synth-pop duo of Neil Tennant and Chris Lowe, released \"West End Girls,\" \"It's a Sin,\" and \"Heart\" in the 1980s."
     },
     {
       "id": "otdb-719a7a4b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What year did Dire Straits's Song \"Money for Nothing\" release?",
       "choices": [
@@ -2236,11 +2237,12 @@
         "1985"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dire Straits released \"Money for Nothing\" in 1985, featuring a guest vocal cameo from Sting."
     },
     {
       "id": "otdb-a7b45b0b",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What is the real name of Canadian electronic music producer deadmau5?",
       "choices": [
@@ -2250,11 +2252,12 @@
         "Thomas Wesley Pentz"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Joel Zimmerman performs as deadmau5, known for his signature mouse-head helmet."
     },
     {
       "id": "otdb-58addee5",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which band released the album \"Sonic Highways\" in 2014?",
       "choices": [
@@ -2264,11 +2267,12 @@
         "Nickelback"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Foo Fighters released Sonic Highways in 2014, each track recorded in a different American city."
     },
     {
       "id": "otdb-b1787e28",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Who had a 1976 hit with the song 'You Make Me Feel Like Dancing'?",
       "choices": [
@@ -2278,11 +2282,12 @@
         "Andy Gibb"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Leo Sayer's \"You Make Me Feel Like Dancing\" topped the US charts in early 1977 after its late-1976 release."
     },
     {
       "id": "otdb-3c823226",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of the following is an album by punk rock band Anti-Flag?",
       "choices": [
@@ -2292,11 +2297,12 @@
         "Infinity On High"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Anti-Flag released the album For Blood and Empire in 2006."
     },
     {
       "id": "otdb-43a65674",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these bands is the oldest?",
       "choices": [
@@ -2306,11 +2312,12 @@
         "Metallica"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pink Floyd formed in 1965, making it the oldest of the four bands listed."
     },
     {
       "id": "otdb-f0f9c71b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the lead singer of The Lumineers?",
       "choices": [
@@ -2320,11 +2327,12 @@
         "Wesley Schultz"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Wesley Schultz co-founded and fronts The Lumineers."
     },
     {
       "id": "otdb-53207ea6",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which French duo had UK hits in 1998 with the songs 'Sexy Boy', 'Kelly Watch The Stars' & 'All I Need'?",
       "choices": [
@@ -2334,11 +2342,12 @@
         "Earth"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "French duo Air had UK hits with \"Sexy Boy,\" \"Kelly Watch the Stars,\" and \"All I Need\" in 1998."
     },
     {
       "id": "otdb-75961768",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 3,
       "prompt": "Saul Hudson (Slash) of the band Guns N' Roses is known for playing what type of guitar?",
       "choices": [
@@ -2348,11 +2357,12 @@
         "Gretsch Falcon"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Slash is closely associated with the Gibson Les Paul, which defines his signature tone in Guns N' Roses."
     },
     {
       "id": "otdb-ae2541e5",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which Aerosmith album featured \"Walk This Way\"?",
       "choices": [
@@ -2362,11 +2372,12 @@
         "Rocks"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Walk This Way\" appears on Aerosmith's 1975 album Toys in the Attic, later famously reworked with Run-D.M.C. in 1986."
     },
     {
       "id": "otdb-9bfc9800",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which band is the longest active band in the world with no breaks or line-up changes?",
       "choices": [
@@ -2376,11 +2387,12 @@
         "U2"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "U2's lineup of Bono, The Edge, Adam Clayton, and Larry Mullen Jr. has remained unchanged since 1978."
     },
     {
       "id": "otdb-adce01d7",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which of these artists did NOT remix the song \"Faded\" by Alan Walker?",
       "choices": [
@@ -2390,11 +2402,12 @@
         "Dash Berlin"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Alan Walker's \"Faded\" was remixed by Slushii, Tiësto, and Dash Berlin, but not Skrillex."
     },
     {
       "id": "otdb-387f21dd",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "This album, now considered to be one of the greatest of all time, was a commercial failure when it was released.",
       "choices": [
@@ -2404,11 +2417,12 @@
         "Led Zeppelin IV"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Velvet Underground & Nico sold poorly on release in 1967 but is now widely regarded as one of rock's most influential albums."
     },
     {
       "id": "otdb-0e15a765",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who was the guitarist in the band \"The Doors\"?",
       "choices": [
@@ -2418,11 +2432,12 @@
         "Robby Krieger"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Robby Krieger played guitar for The Doors and co-wrote several of their biggest hits, including \"Light My Fire.\""
     },
     {
       "id": "otdb-5aad9d13",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What event inspired The Cranberries song \"Zombie\" ?",
       "choices": [
@@ -2432,11 +2447,12 @@
         "September 11 Attacks"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Cranberries wrote \"Zombie\" in response to the 1993 Warrington bombing, which killed two children."
     },
     {
       "id": "otdb-0b4ebbc8",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Pete Townshend collaborated with which famous guitarist for an event at Brixton Academy in 1985?",
       "choices": [
@@ -2446,11 +2462,12 @@
         "Mark Knopfler"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pete Townshend performed with David Gilmour at a 1985 Brixton Academy charity event."
     },
     {
       "id": "otdb-10599f93",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 1,
       "prompt": "Which genre of music is John Coltrane primarily associated with?",
       "choices": [
@@ -2460,11 +2477,12 @@
         "Jazz"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "John Coltrane became one of jazz's most influential saxophonists, particularly through his work in the late 1950s and 1960s."
     },
     {
       "id": "otdb-f832ada7",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "EDM producer Marshmello performs live wearing clothes and a marshmallow mask of what colour?",
       "choices": [
@@ -2474,11 +2492,12 @@
         "Black"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Marshmello performs wearing a white marshmallow-shaped helmet to keep his identity concealed."
     },
     {
       "id": "otdb-a9cb2f48",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "What date is referenced in the 1971 song \"September\" by Earth, Wind & Fire?",
       "choices": [
@@ -2488,11 +2507,12 @@
         "26th of September"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Earth, Wind & Fire's \"September\" famously sings of \"the 21st night of September,\" chosen for how it sounded rather than any real event."
     },
     {
       "id": "otdb-ff602772",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "'The Safety Dance' was the biggest hit single for which Canadian act?",
       "choices": [
@@ -2502,11 +2522,12 @@
         "Broken Social Scene"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"The Safety Dance\" was the breakout hit for Canadian band Men Without Hats in 1982."
     },
     {
       "id": "otdb-8942a4fa",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which of these aliases has NOT been used by electronic musician Aphex Twin?",
       "choices": [
@@ -2516,11 +2537,12 @@
         "Bradley Strider"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Burial is a separate, mysterious British electronic artist and not one of Aphex Twin's known aliases."
     },
     {
       "id": "otdb-86973933",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "How many copies have Metallica album \"Metallica\" (A.K.A The Black Album) sold worldwide (in Millions of Copies)?",
       "choices": [
@@ -2530,11 +2552,12 @@
         "19.5"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Metallica's self-titled 1991 album, known as The Black Album, has sold roughly 20.5 million copies worldwide."
     },
     {
       "id": "otdb-83c963a8",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Who wrote the song \"You Know You Like It\"?",
       "choices": [
@@ -2544,11 +2567,12 @@
         "DJ Snake"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "AlunaGeorge wrote and performed \"You Know You Like It,\" later remixed by DJ Snake into a hit single."
     },
     {
       "id": "otdb-dd7dd5e1",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of the following is NOT a song in BROCKHAMPTON's SATURATION album series?",
       "choices": [
@@ -2558,11 +2582,12 @@
         "BUMP"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"LAMB\" is not a real BROCKHAMPTON track; \"SWAMP,\" \"HOTTIE,\" and \"BUMP\" all appear across the group's SATURATION trilogy."
     },
     {
       "id": "otdb-c459e5ac",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "In 2006, which band released their debut album \"A Fever You Can't Sweat Out\"?",
       "choices": [
@@ -2572,11 +2597,12 @@
         "Panic! At the Disco"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Panic! at the Disco released their debut album, A Fever You Can't Sweat Out, in 2005 (issued in some regions in 2006)."
     },
     {
       "id": "otdb-09d66de3",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which British female singer and songwriter was sampled Eminem's hit single 'Stan'?",
       "choices": [
@@ -2586,11 +2612,12 @@
         "Adele"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Eminem's \"Stan\" samples Dido's \"Thank You,\" and she also appears on the track's hook."
     },
     {
       "id": "otdb-f4cc6954",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The 'In the Flesh' tour was used in support of what Pink Floyd album?",
       "choices": [
@@ -2600,11 +2627,12 @@
         "Animals"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pink Floyd's 1977 album Animals was supported by the \"In the Flesh\" tour, notable for its giant inflatable pig."
     },
     {
       "id": "otdb-671e6461",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "Who wrote the musical composition, \"Rhapsody In Blue\"?",
       "choices": [
@@ -2614,11 +2642,12 @@
         "George Gershwin"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "George Gershwin composed Rhapsody in Blue in 1924, blending jazz idioms with classical orchestration."
     },
     {
       "id": "otdb-0ae3be06",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Johnny Cash did a cover of this song written by lead singer of Nine Inch Nails, Trent Reznor.",
       "choices": [
@@ -2628,11 +2657,12 @@
         "Hurt"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Johnny Cash's stark 2002 cover of Nine Inch Nails' \"Hurt\" became one of the most acclaimed covers in music history."
     },
     {
       "id": "otdb-b632d465",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Where did the British Boy Band \"Bros\" come from?",
       "choices": [
@@ -2642,11 +2672,12 @@
         "Bagshot"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bros, the British pop duo of twins Matt and Luke Goss, formed in Camberley, Surrey."
     },
     {
       "id": "otdb-9d49dec8",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 5,
       "prompt": "What is the British term for a 64th note?",
       "choices": [
@@ -2656,11 +2687,12 @@
         "Hemidemisemiquaver"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "A 64th note is called a hemidemisemiquaver in British musical terminology."
     },
     {
       "id": "otdb-ab462d0a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "According to a Beatles song, who kept her face in a jar by the door?",
       "choices": [
@@ -2670,11 +2702,12 @@
         "Loretta Martin"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Eleanor Rigby\" describes a lonely woman who \"keeps her face in a jar by the door\" in The Beatles' 1966 song."
     },
     {
       "id": "otdb-ea48f130",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 5,
       "prompt": "The key of sharps does the key of G# minor contain?",
       "choices": [
@@ -2684,11 +2717,12 @@
         "7"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "G# minor's key signature contains five sharps."
     },
     {
       "id": "otdb-26f93a74",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "The Red Hot Chili Pepper song \"Give It Away\" is from what album?",
       "choices": [
@@ -2698,11 +2732,12 @@
         "One Hot Minute"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Give It Away\" appears on the Red Hot Chili Peppers' 1991 album Blood Sugar Sex Magik."
     },
     {
       "id": "otdb-fa36960b",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "Who sang backup vocals on Rockwell's hit 1984 single 'Somebody's Watching Me'?",
       "choices": [
@@ -2712,11 +2747,12 @@
         "Michael Jackson"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Michael Jackson sang uncredited backup vocals on Rockwell's 1984 hit \"Somebody's Watching Me.\""
     },
     {
       "id": "otdb-366b2710",
-      "category": "music",
+      "category": "metal",
       "difficulty": 5,
       "prompt": "Chino Moreno is the lead singer of which alternative metal band?",
       "choices": [
@@ -2726,11 +2762,12 @@
         "Type O Negative"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Chino Moreno has fronted the alternative metal band Deftones since its formation in the late 1980s."
     },
     {
       "id": "otdb-5407ae7b",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "What is the stage name of English female rapper Mathangi Arulpragasam, who is known for the song \"Paper Planes\"?",
       "choices": [
@@ -2740,11 +2777,12 @@
         "M.I.A."
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Mathangi \"Maya\" Arulpragasam performs as M.I.A., known for blending rap with global electronic influences."
     },
     {
       "id": "otdb-4d70a80e",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "Which chain restaurant increased sales after it was mentioned in the 2016 Beyoncé song: \"Formation\"?",
       "choices": [
@@ -2754,11 +2792,12 @@
         "Outback Steakhouse"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Red Lobster reported a sales spike after being name-checked in Beyoncé's 2016 single \"Formation.\""
     },
     {
       "id": "otdb-4d220ae8",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What is the first track on the Dave Matthews Band album \"Before These Crowded Streets\"?",
       "choices": [
@@ -2768,25 +2807,12 @@
         "Pantala Naga Pampa"
       ],
       "answer": 3,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-e1b46c79",
-      "category": "music",
-      "difficulty": 5,
-      "prompt": "Who won the 1989 Drum Corps International championships?",
-      "choices": [
-        "Santa Clara Vanguard",
-        "The Bluecoats",
-        "Blue Devils",
-        "The Academy"
-      ],
-      "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Pantala Naga Pampa\" opens the Dave Matthews Band's 1998 album Before These Crowded Streets."
     },
     {
       "id": "otdb-40096972",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "When was Gangnam Style uploaded to YouTube?",
       "choices": [
@@ -2796,11 +2822,12 @@
         "2013"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Gangnam Style\" by Psy was uploaded to YouTube in July 2012 and became the first video to reach one billion views."
     },
     {
       "id": "otdb-9efae547",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "In the words of his 1973 song, Bob Dylan is \"knock, knock, knockin\" on which door?",
       "choices": [
@@ -2810,11 +2837,12 @@
         "Eileen's"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bob Dylan's 1973 song \"Knockin' on Heaven's Door\" was written for the film Pat Garrett and Billy the Kid."
     },
     {
       "id": "otdb-9531e4d6",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which member of the English band \"The xx\" released their solo album \"In Colour\" in 2015?",
       "choices": [
@@ -2824,11 +2852,12 @@
         "Oliver Sim"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Jamie xx, producer for The xx, released his acclaimed solo album In Colour in 2015."
     },
     {
       "id": "otdb-0347ddf2",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "In which city did American rap producer DJ Khaled originate from?",
       "choices": [
@@ -2838,11 +2867,12 @@
         "Atlanta"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "DJ Khaled was born in New Orleans but moved to Miami as a teenager, where he built his career and identity as an artist."
     },
     {
       "id": "otdb-803a812d",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 5,
       "prompt": "A Caixa Malacacheta is what kind of musical instrument which is commonly used in Latin American music?",
       "choices": [
@@ -2852,11 +2882,12 @@
         "Maraca"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The caixa is a snare drum widely used in Brazilian samba and other Latin American percussion ensembles."
     },
     {
       "id": "otdb-c2f89f62",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these artists do NOT originate from France?",
       "choices": [
@@ -2866,11 +2897,12 @@
         "Air"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Chemical Brothers are English, unlike Justice, Daft Punk, and Air, who are all French."
     },
     {
       "id": "otdb-385ba05b",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What was Raekwon the Chefs debut solo album?",
       "choices": [
@@ -2880,11 +2912,12 @@
         "The Wild"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Raekwon's 1995 debut, Only Built 4 Cuban Linx..., is considered a landmark Wu-Tang solo album."
     },
     {
       "id": "otdb-89b1a2f2",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which of the following stars was not mentioned in the lyrics of Madonna's \"Vogue\"?",
       "choices": [
@@ -2894,11 +2927,12 @@
         "Mae West"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Madonna's \"Vogue\" name-checks classic Hollywood icons like Marlene Dietrich and Grace Kelly, but not Mae West."
     },
     {
       "id": "otdb-8555e1b9",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "The band Muse released their first album, Showbiz, in what year?",
       "choices": [
@@ -2908,25 +2942,12 @@
         "2001"
       ],
       "answer": 0,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-43277016",
-      "category": "music",
-      "difficulty": 5,
-      "prompt": "What year was Huun Huur Tu's album Altai Sayan Tandy-Uula released?",
-      "choices": [
-        "2006",
-        "1993",
-        "2010",
-        "2004"
-      ],
-      "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Muse released their debut album, Showbiz, in 1999."
     },
     {
       "id": "otdb-1c4b31d8",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which artist curated the official soundtrack for \"The Hunger Games: Mockingjay - Part 1\"?",
       "choices": [
@@ -2936,11 +2957,12 @@
         "Kanye West"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Lorde curated The Hunger Games: Mockingjay – Part 1 soundtrack in 2014, contributing the single \"Yellow Flicker Beat.\""
     },
     {
       "id": "otdb-8a8cd65e",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of the Beatles band members is barefoot on the front cover of the 'Abbey Road' album?",
       "choices": [
@@ -2950,11 +2972,12 @@
         "Paul McCartney"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Paul McCartney is the barefoot Beatle walking across the zebra crossing on the Abbey Road cover."
     },
     {
       "id": "otdb-8a8bd44d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the frontman of Muse?",
       "choices": [
@@ -2964,11 +2987,12 @@
         "Matt Bellamy"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Matt Bellamy has fronted Muse since the band's formation in the mid-1990s."
     },
     {
       "id": "otdb-880172f4",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which famous artist featured on Rowdy Rebel's 2015 song \"Computers\"?",
       "choices": [
@@ -2978,11 +3002,12 @@
         "Lil Wayne"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bobby Shmurda featured on Rowdy Rebel's 2015 track \"Computers,\" both part of the GS9 collective."
     },
     {
       "id": "otdb-c102b527",
-      "category": "music",
+      "category": "video-game-music",
       "difficulty": 5,
       "prompt": "What was the name of the rock band that Nobuo Uematsu formed that played songs from various Final Fantasy games?",
       "choices": [
@@ -2992,11 +3017,12 @@
         "The Final Fantasies"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nobuo Uematsu formed The Black Mages to perform rock arrangements of his Final Fantasy compositions."
     },
     {
       "id": "otdb-bb28ce4d",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which of these bands are NOT from Australia?",
       "choices": [
@@ -3006,11 +3032,12 @@
         "Cut Copy"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Naked and Famous are from New Zealand, unlike Tame Impala, Empire of the Sun, and Cut Copy, who are Australian."
     },
     {
       "id": "otdb-3e89ec71",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was Bon Iver's debut album released in 2007?",
       "choices": [
@@ -3020,11 +3047,12 @@
         "Bon Iver, Bon Iver"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bon Iver's debut album, For Emma, Forever Ago, was written and recorded in a remote Wisconsin cabin and released in 2007."
     },
     {
       "id": "otdb-3dbca3a7",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who had a 1973 hit with the song 'Hocus Pocus'?",
       "choices": [
@@ -3034,11 +3062,12 @@
         "Pilot"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Dutch band Focus had a surprise 1973 hit with the instrumental \"Hocus Pocus,\" known for its yodeling breaks."
     },
     {
       "id": "otdb-52755643",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "What is the official name of Prince's backing band?",
       "choices": [
@@ -3048,11 +3077,12 @@
         "The Wailers"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Revolution backed Prince through his Purple Rain era and reunited with him for later tours."
     },
     {
       "id": "otdb-f20e0b4d",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "Which one of the following musical instruments is NOT a part of the Woodwind section?",
       "choices": [
@@ -3062,11 +3092,12 @@
         "Clarinet"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The trumpet is a brass instrument, unlike the oboe, alto saxophone, and clarinet, which are woodwinds."
     },
     {
       "id": "otdb-fd50d15d",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which artist collaborated with American DJ Dillon Francis to release the song 2016 \"Need You\"?",
       "choices": [
@@ -3076,11 +3107,12 @@
         "DVBBS"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "NGHTMRE teamed with Dillon Francis on the 2016 collaborative track \"Need You.\""
     },
     {
       "id": "otdb-80e0cd94",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Which of these songs is not by Tatsuro Yamashita?",
       "choices": [
@@ -3090,11 +3122,12 @@
         "Let's Dance Baby"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Lucky Lady Feel So Good\" is not a real Tatsuro Yamashita song title, unlike his City Pop staples \"Merry-Go-Round\" and \"Love Talkin'.\""
     },
     {
       "id": "otdb-c101c6d6",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "What was Rage Against the Machine's debut album?",
       "choices": [
@@ -3104,11 +3137,12 @@
         "Rage Against the Machine"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rage Against the Machine's self-titled debut album was released in 1992."
     },
     {
       "id": "otdb-fabe9e6c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which member of \"The Beatles\" narrated episodes of \"Thomas the Tank Engine\"?",
       "choices": [
@@ -3118,11 +3152,12 @@
         "George Harrison"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Ringo Starr narrated the first two seasons of Thomas the Tank Engine & Friends in the 1980s."
     },
     {
       "id": "otdb-1828f9a6",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "Where does \"Gasolina\" rapper Daddy Yankee originate from?",
       "choices": [
@@ -3132,11 +3167,12 @@
         "Mexico"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Daddy Yankee, a pioneer of reggaeton, was born and raised in Puerto Rico."
     },
     {
       "id": "otdb-8dbcc26c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "When did Radiohead release their album \"OK Computer\"?",
       "choices": [
@@ -3146,11 +3182,12 @@
         "1997"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Radiohead released OK Computer in 1997."
     },
     {
       "id": "otdb-658e1d5e",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "\"The Day the Music Died\" was a tragic plane crash that killed three musicians in which decade?",
       "choices": [
@@ -3160,11 +3197,12 @@
         "70's"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"The Day the Music Died\" refers to the February 1959 plane crash that killed Buddy Holly, Ritchie Valens, and the Big Bopper."
     },
     {
       "id": "otdb-681ddb30",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What was the title of ABBA`s first UK hit single?",
       "choices": [
@@ -3174,11 +3212,12 @@
         "Mamma Mia"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Waterloo\" was ABBA's first UK hit, topping the chart after winning the 1974 Eurovision Song Contest."
     },
     {
       "id": "otdb-f1ef4ae5",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What album is the song 'New Slang' by The Shins found on?",
       "choices": [
@@ -3188,11 +3227,12 @@
         "Chutes Too Narrow"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"New Slang\" appears on The Shins' 2001 debut album, Oh, Inverted World."
     },
     {
       "id": "otdb-3cf4ee54",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which band released songs such as \"Electric Feel\", \"Kids\", and \"Time to Pretend\"?",
       "choices": [
@@ -3202,11 +3242,12 @@
         "Franz Ferdinand"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "MGMT released \"Electric Feel,\" \"Kids,\" and \"Time to Pretend\" on their 2007 debut, Oracular Spectacular."
     },
     {
       "id": "otdb-ce8f0d00",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which Beatles album does NOT feature any of the band members on it's cover?",
       "choices": [
@@ -3216,11 +3257,12 @@
         "The Beatles (White Album)"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Beatles (White Album) features a plain white cover with no band imagery, designed by artist Richard Hamilton."
     },
     {
       "id": "otdb-dad6acf9",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who performed the hit single 'Call Me' for the 1980 film 'American Gigolo'?",
       "choices": [
@@ -3230,11 +3272,12 @@
         "Janet Jackson"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Blondie's \"Call Me,\" produced by Giorgio Moroder, was the theme for the 1980 film American Gigolo."
     },
     {
       "id": "otdb-9149cabe",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What is the last song on the first Panic! At the Disco album?",
       "choices": [
@@ -3244,11 +3287,12 @@
         "Nails for Breakfast, Tacks for Snacks"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Build God, Then We'll Talk\" closes Panic! at the Disco's 2005 debut album."
     },
     {
       "id": "otdb-447851c7",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Dallon Weekes, former touring basist of Panic! At the Disco, created his own band in 2016 called...",
       "choices": [
@@ -3258,7 +3302,8 @@
         "I Don't Know How But They Found Me"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dallon Weekes formed I Don't Know How But They Found Me in 2016 after his run as Panic! at the Disco's touring bassist."
     },
     {
       "id": "otdb-01622238",
