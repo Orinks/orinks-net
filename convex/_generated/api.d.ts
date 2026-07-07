@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as freightFate from "../freightFate.js";
 import type * as notifications from "../notifications.js";
 import type * as visits from "../visits.js";
 
@@ -18,6 +19,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  freightFate: typeof freightFate;
   notifications: typeof notifications;
   visits: typeof visits;
 }>;
