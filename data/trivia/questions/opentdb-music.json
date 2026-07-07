@@ -4417,7 +4417,7 @@
     },
     {
       "id": "otdb-4fa3a15c",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which song on Daft Punk's \"Random Access Memories\" features Pharrell Williams?",
       "choices": [
@@ -4427,11 +4427,12 @@
         "Doin' It Right"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pharrell Williams sings lead vocals on Daft Punk's 2013 hit \"Get Lucky.\""
     },
     {
       "id": "otdb-6bdbd740",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What is the name of French electronic music producer Madeon's 2015 debut studio album?",
       "choices": [
@@ -4441,11 +4442,12 @@
         "The City"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Madeon's debut studio album, Adventure, was released in 2015."
     },
     {
       "id": "otdb-158b14ca",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Who had a US and UK number 1 hit in 1962 with the instrumental, 'Telstar'?",
       "choices": [
@@ -4455,11 +4457,12 @@
         "The Ventures"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Tornados' \"Telstar\" became the first single by a British group to hit number one in the US, in 1962."
     },
     {
       "id": "otdb-57148f55",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "What kind of instrument is a \"Mandolin\"?",
       "choices": [
@@ -4469,11 +4472,12 @@
         "Percussion"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The mandolin is a plucked string instrument, typically with four pairs of strings."
     },
     {
       "id": "otdb-ee26083f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these Johns was murdered by gunshots outside the Dakota in New York in 1980?",
       "choices": [
@@ -4483,11 +4487,12 @@
         "Johnny Thunders"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "John Lennon was shot and killed outside the Dakota apartment building in New York City in December 1980."
     },
     {
       "id": "otdb-c16276a4",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these is NOT a name of an album released by American rapper Pitbull?",
       "choices": [
@@ -4497,11 +4502,12 @@
         "Welcome to Miami"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Welcome to Miami\" is a song, not an album title, unlike Pitbull's actual albums Dale, Armando, and Global Warming."
     },
     {
       "id": "otdb-13d17865",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What is Fergie's debut album called?",
       "choices": [
@@ -4511,11 +4517,12 @@
         "Fergalicious"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Fergie's debut solo album, The Dutchess, was released in 2006."
     },
     {
       "id": "otdb-9f4cd69a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "In the Panic! At the Disco's song \"Nothern Downpour\", which lyric follows 'I know the world's a broken bone'.",
       "choices": [
@@ -4525,11 +4532,12 @@
         "\"So let them know they're on their own\""
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Northern Downpour\" appears on Panic! at the Disco's 2008 album Pretty. Odd."
     },
     {
       "id": "otdb-a5337a31",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which popular rock band has a one-armed drummer?",
       "choices": [
@@ -4539,11 +4547,12 @@
         "Def Leppard"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Def Leppard drummer Rick Allen lost his left arm in a 1984 car accident but continued performing using a custom electronic kit."
     },
     {
       "id": "otdb-7b2668bd",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which Nirvana album had a naked baby on the cover?",
       "choices": [
@@ -4553,11 +4562,12 @@
         "Nevermind"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nirvana's 1991 album Nevermind features its famous underwater baby cover art."
     },
     {
       "id": "otdb-7579b906",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "In Prokofiev's 'Peter and the Wolf', the wolf itself is represented by a trio of which musical instrument?",
       "choices": [
@@ -4567,11 +4577,12 @@
         "French horn"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "In Prokofiev's Peter and the Wolf, three French horns represent the menacing wolf."
     },
     {
       "id": "otdb-bf94a226",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "How many members are in the Japanese rock band SCANDAL?",
       "choices": [
@@ -4581,11 +4592,12 @@
         "18"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "SCANDAL is a four-member Japanese all-female rock band formed in Osaka in 2006."
     },
     {
       "id": "otdb-253126e6",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which song is not by TheFatRat?",
       "choices": [
@@ -4595,11 +4607,12 @@
         "Monody"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Ascent\" is not a TheFatRat track; his catalog includes \"Windfall,\" \"Monody,\" and \"Infinite Power!\""
     },
     {
       "id": "otdb-7377cd21",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Panic! At the Disco's sixth album \"Pray For The Wicked\" was released on which date?",
       "choices": [
@@ -4609,11 +4622,12 @@
         "March 13, 2018"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Panic! at the Disco released Pray for the Wicked on June 22, 2018."
     },
     {
       "id": "otdb-5a76e181",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which of these artists was NOT a member of the electronic music supergroup Swedish House Mafia, which split up in 2013?",
       "choices": [
@@ -4623,11 +4637,12 @@
         "Sebastian Ingrosso"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Alesso was never part of Swedish House Mafia, whose members were Axwell, Steve Angello, and Sebastian Ingrosso."
     },
     {
       "id": "otdb-ccc3b959",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Swedish DJ Tim Bergling, who produced songs such as \"Levels\" and \"Wake Me Up\", is better known under what alias?",
       "choices": [
@@ -4637,11 +4652,12 @@
         "deadmau5"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tim Bergling produced music under the name Avicii until his death in 2018."
     },
     {
       "id": "otdb-64e8cecb",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which artist released the 2012 single \"Harlem Shake\", which was used in numerous YouTube videos in 2013?",
       "choices": [
@@ -4651,11 +4667,12 @@
         "RL Grime"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Baauer's 2012 track \"Harlem Shake\" fueled a massive viral video trend in early 2013."
     },
     {
       "id": "otdb-ccc0548a",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "What is the name of the 2016 mixtape released by Venezuelan electronic producer Arca?",
       "choices": [
@@ -4665,11 +4682,12 @@
         "Entrañas"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Venezuelan producer Arca released the mixtape Entrañas in 2016."
     },
     {
       "id": "otdb-1f7edbfc",
-      "category": "music",
+      "category": "country",
       "difficulty": 1,
       "prompt": "Who had a 1969 top 5 hit with the song,  'A Boy Named Sue'?",
       "choices": [
@@ -4679,11 +4697,12 @@
         "Kris Kristofferson"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Johnny Cash's live recording of Shel Silverstein's \"A Boy Named Sue\" became a top-5 hit in 1969."
     },
     {
       "id": "otdb-b4289461",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The co-creator of Gorillaz, Damon Albarn, is also the lead singer of what band?",
       "choices": [
@@ -4693,11 +4712,12 @@
         "Blur"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Damon Albarn co-created Gorillaz and remains the longtime frontman of Blur."
     },
     {
       "id": "otdb-44da4a2b",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "How many strings are there on a cello?",
       "choices": [
@@ -4707,11 +4727,12 @@
         "5"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The cello has four strings, tuned C-G-D-A."
     },
     {
       "id": "otdb-22763937",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "What is the name of the album released in 2014 by American band Maroon 5?",
       "choices": [
@@ -4721,11 +4742,12 @@
         "V"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Maroon 5 released their fifth studio album, titled V, in 2014."
     },
     {
       "id": "otdb-1dcbdead",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Who performed \"I Took A Pill In Ibiza\"?",
       "choices": [
@@ -4735,11 +4757,12 @@
         "Mike Posner"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Mike Posner's \"I Took a Pill in Ibiza\" became a hit in 2016 after a Seeb remix."
     },
     {
       "id": "otdb-4e3d67ce",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "What album did Bon Iver release in 2016?",
       "choices": [
@@ -4749,11 +4772,12 @@
         "For Emma, Forever Ago"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bon Iver released their third studio album, 22, A Million, in 2016."
     },
     {
       "id": "otdb-d84b12b4",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which of these black metal acts was a solo project?",
       "choices": [
@@ -4763,11 +4787,12 @@
         "Mayhem"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Burzum was the solo project of Norwegian musician Varg Vikernes, unlike the multi-member acts Mayhem, Darkthrone, and Dissection."
     },
     {
       "id": "otdb-ab9bce59",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "The song \"Old Town Road\" by American rapper Lil Nas X samples the song \"34 Ghosts IV\" by which band?",
       "choices": [
@@ -4777,11 +4802,12 @@
         "Animal Collective"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Old Town Road\" samples Nine Inch Nails' \"34 Ghosts IV,\" leading to a co-writing credit for Trent Reznor."
     },
     {
       "id": "otdb-fb3e7fad",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "'I'm never gonna dance again, guilty feet have got no rhythm' were lyrics from which Wham! hit single?",
       "choices": [
@@ -4791,11 +4817,12 @@
         "Wake Me Up Before You Go-Go"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Guilty feet have got no rhythm\" is a line from Wham!'s 1984 hit \"Careless Whisper.\""
     },
     {
       "id": "otdb-27c28687",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was Radiohead's first album?",
       "choices": [
@@ -4805,11 +4832,12 @@
         "A Moon Shaped Pool"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Radiohead's debut album, Pablo Honey, was released in 1993."
     },
     {
       "id": "otdb-09f94e7a",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What is the stage name of New Zealand singer Phillipa \"Pip\" Brown?",
       "choices": [
@@ -4819,11 +4847,12 @@
         "Lorde"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Phillipa \"Pip\" Brown performs as Ladyhawke, the New Zealand singer behind the 2008 hit \"My Delirium.\""
     },
     {
       "id": "otdb-dbbef0e6",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which year was the album \"Floral Shoppe\" by Macintosh Plus released?",
       "choices": [
@@ -4833,11 +4862,12 @@
         "2012"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Macintosh Plus's Floral Shoppe, a foundational vaporwave release, came out in 2011."
     },
     {
       "id": "otdb-f15a36cb",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What is the name of the main character from the music video of \"Shelter\" by Porter Robinson and A-1 Studios?",
       "choices": [
@@ -4847,11 +4877,12 @@
         "Rem"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The character Rin is the protagonist of the animated music video for Porter Robinson's \"Shelter.\""
     },
     {
       "id": "otdb-2cc06a1d",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What was Taylor Swift's 5th album called?",
       "choices": [
@@ -4861,11 +4892,12 @@
         "Red"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "1989 was Taylor Swift's fifth studio album, released in 2014."
     },
     {
       "id": "otdb-2626b31a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "\"All the Boys\" by Panic! At the Disco was released as a bonus track on what album?",
       "choices": [
@@ -4875,11 +4907,12 @@
         "Too Weird To Live, Too Rare To Die!"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"All the Boys\" was released as a bonus track on Panic! at the Disco's Too Weird to Live, Too Rare to Die!"
     },
     {
       "id": "otdb-1893587d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the lead singer of the Smashing Pumpkins?",
       "choices": [
@@ -4889,11 +4922,12 @@
         "Brett Scallions"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Billy Corgan has led the Smashing Pumpkins since founding the band in 1988."
     },
     {
       "id": "otdb-4e368976",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "What is the English title of the vaporwave track \"リサフランク420 / 現代のコンピュー\" by Macintosh Plus (Vektroid)?",
       "choices": [
@@ -4903,11 +4937,12 @@
         "Lisa Frank 420 / Modern Computing"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The vaporwave classic's Japanese title translates to \"Lisa Frank 420 / Modern Computing.\""
     },
     {
       "id": "otdb-4bd09e57",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "African-American performer Sammy Davis Jr. was known for losing which part of his body in a car accident?",
       "choices": [
@@ -4917,11 +4952,12 @@
         "Right Middle Finger"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sammy Davis Jr. lost his left eye in a near-fatal car accident in 1954."
     },
     {
       "id": "otdb-136a4680",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who was the oldest member of The Beatles?",
       "choices": [
@@ -4931,11 +4967,12 @@
         "John Lennon"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Ringo Starr, born in July 1940, was the oldest of The Beatles."
     },
     {
       "id": "otdb-5414974d",
-      "category": "music",
+      "category": "metal",
       "difficulty": 5,
       "prompt": "The heavy metal band Black Sabbath hail from which English city?",
       "choices": [
@@ -4945,11 +4982,12 @@
         "London"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Black Sabbath formed in Birmingham, England, in 1968."
     },
     {
       "id": "otdb-8188f994",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What song includes the words \"Numa Numa\" which was subject to a Viral Video in 2004?",
       "choices": [
@@ -4959,11 +4997,12 @@
         "Dragostea Din Tei"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "O-Zone's \"Dragostea Din Tei\" became a global viral hit in 2004, spawning the \"Numa Numa\" video meme."
     },
     {
       "id": "otdb-361e88bc",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Irish musician Hozier released a music track in 2013 titled, \"Take Me to ______\".",
       "choices": [
@@ -4973,11 +5012,12 @@
         "Synagogue"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Hozier's breakout 2013 single \"Take Me to Church\" critiques organized religion's treatment of love and sexuality."
     },
     {
       "id": "otdb-1d0dc15c",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "\"Hallelujah\" is a song written by which Canadian recording artist?",
       "choices": [
@@ -4987,11 +5027,12 @@
         "Leonard Cohen"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Leonard Cohen wrote \"Hallelujah,\" originally released in 1984, later popularized by covers from Jeff Buckley and others."
     },
     {
       "id": "otdb-4243754d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these songs is not on the \"untitled\" album by Led Zeppelin?",
       "choices": [
@@ -5001,11 +5042,12 @@
         "Celebration Day"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Celebration Day\" is not on Led Zeppelin's untitled fourth album, which does include \"Black Dog,\" \"Rock and Roll,\" and \"Stairway to Heaven.\""
     },
     {
       "id": "otdb-6218f321",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which one of these people has been in the band ''Metallica'' in the past?",
       "choices": [
@@ -5015,11 +5057,12 @@
         "Joey Belladonna"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dave Mustaine played guitar in Metallica's early lineup before being fired and going on to found Megadeth."
     },
     {
       "id": "otdb-57730d59",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which band had hits in 1972 with the songs \"Baby I'm A Want You\", \"Everything I Own\", and \"The Guitar Man\"?",
       "choices": [
@@ -5029,11 +5072,12 @@
         "Smokie"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bread had 1972 hits with \"Baby I'm-a Want You,\" \"Everything I Own,\" and \"The Guitar Man.\""
     },
     {
       "id": "otdb-789e8200",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "In what year was Avril Lavigne’s first studio album, “Let Go”, released?",
       "choices": [
@@ -5043,11 +5087,12 @@
         "2002"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Avril Lavigne released her debut album, Let Go, in 2002."
     },
     {
       "id": "otdb-98e16d6a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of the British pop rock band Coldplay?",
       "choices": [
@@ -5057,11 +5102,12 @@
         "Chris Martin"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Chris Martin has fronted Coldplay since the band's formation in London in 1996."
     },
     {
       "id": "otdb-cb7eb425",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which Queen song was sampled for the bassline in Vanilla Ice's \"Ice Ice Baby\"?",
       "choices": [
@@ -5071,11 +5117,12 @@
         "Don't Stop Me Now"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Vanilla Ice's \"Ice Ice Baby\" sampled the bassline from Queen and David Bowie's \"Under Pressure.\""
     },
     {
       "id": "otdb-7eaf6d81",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What is the real name of rapper, The Notorious B.I.G?",
       "choices": [
@@ -5085,11 +5132,12 @@
         "Christopher Wallace"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Notorious B.I.G. was born Christopher Wallace."
     },
     {
       "id": "otdb-1d52cd4a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The 2023 Beatles song \"Now and Then\" originated from an unfinished demo recorded by which Beatle?",
       "choices": [
@@ -5099,11 +5147,12 @@
         "Ringo Starr"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Now and Then\" was completed in 2023 from a John Lennon home demo using AI-assisted audio restoration."
     },
     {
       "id": "otdb-fee39127",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Ringo Starr of The Beatles mainly played what instrument?",
       "choices": [
@@ -5113,11 +5162,12 @@
         "Piano"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Ringo Starr served as The Beatles' drummer throughout the band's career."
     },
     {
       "id": "otdb-a6f73c6c",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "What was the name of singer Frank Ocean's second studio album, which was released on August 20, 2016?",
       "choices": [
@@ -5127,25 +5177,12 @@
         "Brunette"
       ],
       "answer": 2,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-ad829505",
-      "category": "music",
-      "difficulty": 5,
-      "prompt": "Who sings the rap song \"Secret Wars Part 1\"?",
-      "choices": [
-        "The Last Emperor",
-        "Masta Killa",
-        "Busdriver",
-        "MC Frontalot"
-      ],
-      "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Frank Ocean released his acclaimed second album, Blonde, on August 20, 2016."
     },
     {
       "id": "otdb-a9ab4766",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "What is the name of Rivers Cuomo's wife?",
       "choices": [
@@ -5155,11 +5192,12 @@
         "Kyary Pamyu Pamyu"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Weezer frontman Rivers Cuomo is married to Kyoko Ito."
     },
     {
       "id": "otdb-9b583a0e",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "Which song previously recorded by Elvis Presley was covered by UB40 with a reggae beat?",
       "choices": [
@@ -5169,11 +5207,12 @@
         "In the Ghetto"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "UB40's reggae cover of Elvis Presley's \"Can't Help Falling in Love\" topped charts worldwide in 1993."
     },
     {
       "id": "otdb-761deab6",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which of these is the name of a song by Tears for Fears?",
       "choices": [
@@ -5183,11 +5222,12 @@
         "Shout"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Shout\" is a 1984 hit by Tears for Fears, known for its extended instrumental outro."
     },
     {
       "id": "otdb-c3d21bf1",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the singer for Fall Out Boy?",
       "choices": [
@@ -5197,11 +5237,12 @@
         "Brendon Urie"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Patrick Stump is the lead vocalist of Fall Out Boy."
     },
     {
       "id": "otdb-32e3a259",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is not a member of the virtual band Gorillaz?",
       "choices": [
@@ -5211,11 +5252,12 @@
         "Russel Hobbs"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Phi Cypher\" is not a real Gorillaz character; the band's members are Noodle, Murdoc Niccals, Russel Hobbs, and 2-D."
     },
     {
       "id": "otdb-a07a9514",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What musician made the song \"F**kin` Perfect\" in 2010?",
       "choices": [
@@ -5225,11 +5267,12 @@
         "Adam lambert"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "P!nk released \"F**kin' Perfect\" in 2010, from her album Greatest Hits... So Far!!!"
     },
     {
       "id": "otdb-cf0d70bd",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "The 2010 song \"Eenie Meenie\" was a collaboration between which two popular artists?",
       "choices": [
@@ -5239,11 +5282,12 @@
         "Lady Gaga & Beyoncé"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sean Kingston and Justin Bieber collaborated on \"Eenie Meenie\" in 2010."
     },
     {
       "id": "otdb-d2787c67",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the frontman of the band 30 Seconds to Mars?",
       "choices": [
@@ -5253,11 +5297,12 @@
         "Jared Leto"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Jared Leto fronts 30 Seconds to Mars alongside his acting career."
     },
     {
       "id": "otdb-a5ac0d15",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of Arctic Monkeys?",
       "choices": [
@@ -5267,11 +5312,12 @@
         "Jamie Cook"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Alex Turner has fronted Arctic Monkeys since the band's formation in Sheffield in 2002."
     },
     {
       "id": "otdb-9654d830",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Artis Leon Ivey Jr. is better known as which rap artist?",
       "choices": [
@@ -5281,11 +5327,12 @@
         "Dr Dre"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Artis Leon Ivey Jr. performed as Coolio, best known for \"Gangsta's Paradise.\""
     },
     {
       "id": "otdb-52afbce1",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Where was Nicki Minaj born?",
       "choices": [
@@ -5295,11 +5342,12 @@
         "Grenada"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nicki Minaj was born in Saint James, Trinidad and Tobago, before moving to Queens, New York, as a child."
     },
     {
       "id": "otdb-cfed513a",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Who recorded the 1975 album 'Captain Fantastic and the Brown Dirt Cowboy'?",
       "choices": [
@@ -5309,11 +5357,12 @@
         "John Denver"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Elton John released Captain Fantastic and the Brown Dirt Cowboy in 1975, a semi-autobiographical concept album."
     },
     {
       "id": "otdb-a6477c44",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which of these artists has NOT been a member of dancehall group Major Lazer?",
       "choices": [
@@ -5323,11 +5372,12 @@
         "Diplo"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Major Lazer's core lineup has included Diplo, Jillionaire, and Walshy Fire, but never Skrillex."
     },
     {
       "id": "otdb-9781ad4c",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Who had hits in the 70s with the songs \"Lonely Boy\" and \"Never Let Her Slip Away\"?",
       "choices": [
@@ -5337,11 +5387,12 @@
         "Barry White"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Andrew Gold scored 1970s hits with \"Lonely Boy\" and \"Never Let Her Slip Away.\""
     },
     {
       "id": "otdb-5030e43a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is the name of an American psychedelic rock band formed in 2002 by Benjamin Goldwasser and Andrew VanWyngarden?",
       "choices": [
@@ -5351,11 +5402,12 @@
         "MGMT"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Benjamin Goldwasser and Andrew VanWyngarden formed MGMT in 2002 while attending Wesleyan University."
     },
     {
       "id": "otdb-39901f53",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Of which 90s boy band was Justin Timberlake a member?",
       "choices": [
@@ -5365,11 +5417,12 @@
         "*NSYNC"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Justin Timberlake rose to fame as a member of *NSYNC in the 1990s."
     },
     {
       "id": "otdb-048dca54",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "According to a song by Belinda Carlisle, Heaven is a place on what?",
       "choices": [
@@ -5379,11 +5432,12 @@
         "Uranus"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Belinda Carlisle's 1987 hit declares \"Heaven Is a Place on Earth.\""
     },
     {
       "id": "otdb-dda59b35",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "The four strings on a violin are the G string, D string, A string, and...",
       "choices": [
@@ -5393,11 +5447,12 @@
         "E string"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "A violin's four strings, from lowest to highest, are G, D, A, and E."
     },
     {
       "id": "otdb-f16c4cbb",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is not a single by Pink Floyd guitarist, David Gilmour?",
       "choices": [
@@ -5407,11 +5462,12 @@
         "Blue Light"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Sunset Strip\" is not a David Gilmour single; his solo catalog includes \"Rattle That Lock,\" \"Arnold Layne,\" and \"Blue Light.\""
     },
     {
       "id": "otdb-968c33d0",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What rock group is named after a gym teacher who taught at the original band members' high school?",
       "choices": [
@@ -5421,11 +5477,12 @@
         "Pink Floyd"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Lynyrd Skynyrd took its name, with altered spelling, from a strict gym teacher named Leonard Skinner at the members' Florida high school."
     },
     {
       "id": "otdb-4168ed09",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "From which country did the song \"Gangnam Style\" originate from?",
       "choices": [
@@ -5435,13 +5492,14 @@
         "Japan"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Psy's \"Gangnam Style\" originated in South Korea, released in 2012."
     },
     {
       "id": "otdb-fe6f73f7",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
-      "prompt": "Who was walking like an Egyptian in 1981?",
+      "prompt": "Who was walking like an Egyptian in 1986?",
       "choices": [
         "The Ocean Blue",
         "R.E.M.",
@@ -5449,11 +5507,12 @@
         "The Bangles"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Bangles' \"Walk Like an Egyptian\" topped the US charts in December 1986."
     },
     {
       "id": "otdb-db7cf7e1",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Pearl Jam was originally named after which sports figure?",
       "choices": [
@@ -5463,7 +5522,8 @@
         "Mookie Blaylock"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pearl Jam was originally called Mookie Blaylock, after the NBA point guard, before a trademark issue prompted the name change."
     },
     {
       "id": "otdb-0becbf09",
