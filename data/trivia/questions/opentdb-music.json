@@ -3,7 +3,7 @@
   "voice": "clide",
   "source": "Open Trivia Database (https://opentdb.com)",
   "license": "CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)",
-  "curated": false,
+  "curated": true,
   "questions": [
     {
       "id": "otdb-c1ef2cf0",
@@ -3007,7 +3007,7 @@
     },
     {
       "id": "otdb-c102b527",
-      "category": "video-game-music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What was the name of the rock band that Nobuo Uematsu formed that played songs from various Final Fantasy games?",
       "choices": [
@@ -4687,7 +4687,7 @@
     },
     {
       "id": "otdb-1f7edbfc",
-      "category": "country",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "Who had a 1969 top 5 hit with the song,  'A Boy Named Sue'?",
       "choices": [
@@ -5527,7 +5527,7 @@
     },
     {
       "id": "otdb-0becbf09",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which British band did Keith Moon play in until his death in 1978?",
       "choices": [
@@ -5537,11 +5537,12 @@
         "The Yardbirds"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Keith Moon drummed for The Who from 1964 until his death in 1978."
     },
     {
       "id": "otdb-0f86e93e",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which of the following songs did Elton John perform following Princess Diane's passing?",
       "choices": [
@@ -5551,11 +5552,12 @@
         "Your Song"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Elton John rewrote \"Candle in the Wind\" as a tribute performed at Princess Diana's funeral in 1997."
     },
     {
       "id": "otdb-18520f56",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which Queen song was covered by Brittany Murphy in the 2006 film \"Happy Feet\"?",
       "choices": [
@@ -5565,11 +5567,12 @@
         "Bohemian Rhapsody"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Brittany Murphy's penguin character sang Queen's \"Somebody to Love\" in the 2006 film Happy Feet."
     },
     {
       "id": "otdb-081cfc6e",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What song on ScHoolboy Q's album Black Face LP featured Kanye West?",
       "choices": [
@@ -5579,11 +5582,12 @@
         "THat Part"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West features on \"THat Part\" from ScHoolboy Q's 2016 album Blank Face LP."
     },
     {
       "id": "otdb-cf895dd0",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these bands was a featuring artist in Compton rapper Kendrick Lamar's 2017 album, \"DAMN.\"?",
       "choices": [
@@ -5593,11 +5597,12 @@
         "U2"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "U2 is credited on Kendrick Lamar's \"XXX.\" from DAMN., though only Bono actually sings on the track."
     },
     {
       "id": "otdb-4d1e905d",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Kanye West at 2009 VMA's interrupted which celebrity?",
       "choices": [
@@ -5607,11 +5612,12 @@
         "Taylor Swift"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West interrupted Taylor Swift's acceptance speech at the 2009 MTV Video Music Awards."
     },
     {
       "id": "otdb-b5db29ec",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "What was the first music video to be broadcast on MTV?",
       "choices": [
@@ -5621,11 +5627,12 @@
         "Hungry Like the Wolf"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Video Killed the Radio Star\" by The Buggles was the first music video aired on MTV in 1981."
     },
     {
       "id": "otdb-fbffa969",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of Foo Fighters?",
       "choices": [
@@ -5635,11 +5642,12 @@
         "Dave Mustaine"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dave Grohl founded and fronts Foo Fighters after his time as Nirvana's drummer."
     },
     {
       "id": "otdb-eb976d89",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who is the lead singer of the band Coldplay?",
       "choices": [
@@ -5649,11 +5657,12 @@
         "Chris Wallace"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Chris Martin has fronted Coldplay since 1996."
     },
     {
       "id": "otdb-0a071265",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Which of Michael Jackson's albums sold the most copies?",
       "choices": [
@@ -5663,11 +5672,12 @@
         "Bad"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Michael Jackson's Thriller remains his best-selling album, with certified sales in the tens of millions worldwide."
     },
     {
       "id": "otdb-6c96af37",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which Manchester nightclub was considered central to the 'Madchester' music scene in the late 80's?",
       "choices": [
@@ -5677,11 +5687,12 @@
         "The Warehouse Project"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Haçienda nightclub was central to Manchester's late-1980s \"Madchester\" scene, co-owned by Factory Records and New Order."
     },
     {
       "id": "otdb-1b8425dc",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "Sting, the lead vocalist of The Police, primarily plays what instrument?",
       "choices": [
@@ -5691,11 +5702,12 @@
         "Keyboards"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sting has played bass guitar as The Police's frontman since the band's formation in 1977."
     },
     {
       "id": "otdb-d49b54f9",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "What was the name of the hip hop group Kanye West was a member of in the late 90s?",
       "choices": [
@@ -5705,11 +5717,12 @@
         "The Jumpers"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West was part of the Chicago group The Go-Getters in the late 1990s before his solo career took off."
     },
     {
       "id": "otdb-7c9c69ba",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which genre of Hip Hop does MC Frontalot rap?",
       "choices": [
@@ -5719,11 +5732,12 @@
         "Horrorcore"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "MC Frontalot is widely credited with coining and popularizing the nerdcore hip-hop genre."
     },
     {
       "id": "otdb-3e791f34",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 5,
       "prompt": "Which British band won the first edition of the Brit Awards in 1977?",
       "choices": [
@@ -5733,11 +5747,12 @@
         "The Rolling Stones"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Beatles won British Group at the first Brit Awards ceremony in 1977."
     },
     {
       "id": "otdb-1aa455dc",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "What is the frontman's name of the metal band Megadeth?",
       "choices": [
@@ -5747,11 +5762,12 @@
         "Vince Neil"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dave Mustaine founded and fronts Megadeth after leaving Metallica in 1983."
     },
     {
       "id": "otdb-cf070519",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What was the birthplace of musical artist 'Sir Robert Bryson Hall II' (aka. Logic)?",
       "choices": [
@@ -5761,11 +5777,12 @@
         "Maryland, United States"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rapper Logic (Sir Robert Bryson Hall II) was born in Gaithersburg, Maryland."
     },
     {
       "id": "otdb-0375956c",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which Daft Punk album is the song \"Harder, Better, Faster, Stronger\" from?",
       "choices": [
@@ -5775,11 +5792,12 @@
         "Random Access Memories"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Harder, Better, Faster, Stronger\" appears on Daft Punk's 2001 album Discovery."
     },
     {
       "id": "otdb-787c424a",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Who is the artist of the recent new album the Uncanny Valley?",
       "choices": [
@@ -5789,11 +5807,12 @@
         "Carpenter Brut"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Perturbator released the synthwave album The Uncanny Valley in 2016."
     },
     {
       "id": "otdb-5a50c88c",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which one of these Rammstein songs has two official music videos?",
       "choices": [
@@ -5803,11 +5822,12 @@
         "Du Hast"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rammstein's \"Du Riechst So Gut\" received two separate official music videos, filmed in different years."
     },
     {
       "id": "otdb-571e1f7a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What was The Velvet Underground's first album called?",
       "choices": [
@@ -5817,11 +5837,12 @@
         "Loaded"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Velvet Underground & Nico, released in 1967, is the band's debut album, notably produced with Andy Warhol's involvement."
     },
     {
       "id": "otdb-236599cc",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which M83 album is the song \"Midnight City\" featured in?",
       "choices": [
@@ -5831,11 +5852,12 @@
         "Saturdays = Youth"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Midnight City\" appears on M83's 2011 album Hurry Up, We're Dreaming."
     },
     {
       "id": "otdb-8c81e4d5",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "The Rush song \"YYZ\" derives its name from the IATA aiport identification code for which city?",
       "choices": [
@@ -5845,11 +5867,12 @@
         "Vancouver"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rush's instrumental \"YYZ\" is named for Toronto Pearson Airport's IATA code."
     },
     {
       "id": "otdb-743c2b89",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which Beatle wrote and sang the song \"Why Don't We Do It in the Road\" after being inspired by seeing two monkeys copulating in the street?",
       "choices": [
@@ -5859,11 +5882,12 @@
         "Paul"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Paul McCartney wrote and sang \"Why Don't We Do It in the Road?\" on The Beatles' White Album."
     },
     {
       "id": "otdb-77522bb4",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which iconic album cover features the pulsar waves of CP 1919 placed in the center of the cover?",
       "choices": [
@@ -5873,11 +5897,12 @@
         "Unknown Pleasures"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Joy Division's Unknown Pleasures features a visualization of radio pulses from pulsar CP 1919 on its iconic cover."
     },
     {
       "id": "otdb-fdb9979f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "A classic 1976 song by Blue Oyster Cult features the advice “Don’t Fear The” what?",
       "choices": [
@@ -5887,11 +5912,12 @@
         "Clowns"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Blue Öyster Cult's 1976 hit \"(Don't Fear) The Reaper\" remains their best-known song."
     },
     {
       "id": "otdb-a9c938c5",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "How many studio albums have the heavy metal band, 'Metallica' released in the period between 1983 and 2016?",
       "choices": [
@@ -5901,7 +5927,8 @@
         "9"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Metallica released ten studio albums between 1983's Kill 'Em All and 2016's Hardwired... to Self-Destruct."
     }
   ]
 }
