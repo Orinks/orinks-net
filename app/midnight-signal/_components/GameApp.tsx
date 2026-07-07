@@ -67,6 +67,7 @@ interface StoryLine {
 
 type Phase =
   | { kind: "title" }
+  | { kind: "intro"; runNumber: number; isDaily: boolean }
   | { kind: "question" }
   | { kind: "feedback"; result: AnswerResult }
   | { kind: "tape"; tape: StoryLine; pending: GameEvent[]; result: AnswerResult }
@@ -239,7 +240,7 @@ export function GameApp() {
   useEffect(() => {
     const music = musicRef.current;
     if (!music?.started) return;
-    if (phase.kind === "title") {
+    if (phase.kind === "title" || phase.kind === "intro") {
       void music.playLoop(MUSIC_TRACKS.title);
     } else if (phase.kind === "question" || phase.kind === "feedback" || phase.kind === "tape") {
       void music.playLoop(MUSIC_TRACKS.bed);
@@ -279,7 +280,9 @@ export function GameApp() {
         setQuestion(started.question);
         setQuestionNumber(1);
         setChosenIndex(null);
-        setPhase({ kind: "question" });
+        // The show opens before the first question: title theme under Clide's
+        // greeting, then the player advances at their own pace (no timers).
+        setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
         const bundle: string[] = [];
         if (daily) {
           playBark("daily-intro", bundle);
@@ -288,7 +291,6 @@ export function GameApp() {
         }
         producerSay("run-intro", { name: trimmed || "friend", runNumber: started.runNumber }, bundle);
         bundle.forEach((line) => announce(line));
-        serveQuestionAudio(started.question.key);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Something went wrong.";
         const friendly = message.includes("already aired")
@@ -300,7 +302,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, busy, ensurePlayer, name, playBark, playerKey, producerSay, serveQuestionAudio, startRunMutation],
+    [announce, busy, ensurePlayer, name, playBark, playerKey, producerSay, startRunMutation],
   );
 
   const resumeRun = useCallback(() => {
@@ -311,9 +313,17 @@ export function GameApp() {
     setQuestion(resumable.question);
     setQuestionNumber(resumable.run.questionNumber);
     setChosenIndex(null);
+    // No show-open on resume: the player is mid-episode, get them back fast.
     setPhase({ kind: "question" });
     serveQuestionAudio(resumable.question.key);
   }, [resumable, serveQuestionAudio]);
+
+  /** Leaves the on-air intro for the first question. */
+  const beginQuestions = useCallback(() => {
+    if (!question) return;
+    setPhase({ kind: "question" });
+    serveQuestionAudio(question.key);
+  }, [question, serveQuestionAudio]);
 
   const chooseAnswer = useCallback(
     async (index: number) => {
@@ -605,6 +615,23 @@ export function GameApp() {
         </dl>
       ) : null}
 
+      {phase.kind === "intro" ? (
+        <section aria-labelledby="intro-heading" className="mt-6">
+          <h2 className="text-xl font-semibold text-amber-200" id="intro-heading" ref={panelHeadingRef} tabIndex={-1}>
+            {phase.isDaily
+              ? "Tonight's broadcast — on the air"
+              : `On the air — Episode ${phase.runNumber}`}
+          </h2>
+          <p className="mt-2 leading-7">
+            The studio lights are up, Clide is at the desk, and the signal is warm. Take a breath —
+            the first question comes when you&apos;re ready.
+          </p>
+          <button className={`${primaryButton} mt-4`} onClick={beginQuestions} type="button">
+            Begin the questions
+          </button>
+        </section>
+      ) : null}
+
       {(phase.kind === "question" || phase.kind === "feedback") && question ? (
         <section aria-labelledby="question-heading" className="mt-6">
           <p className="text-sm text-zinc-400">
@@ -733,7 +760,7 @@ export function GameApp() {
         <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
           {musicMuted ? "Unmute music" : "Mute music"}
         </button>
-        {phase.kind === "question" || phase.kind === "feedback" ? (
+        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" ? (
           <button className={secondaryButton} onClick={() => void quitRun()} type="button">
             Quit run
           </button>
