@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import { questionByKey } from "./questionBank";
@@ -8,6 +8,22 @@ import { questionByKey } from "./questionBank";
 const modules = import.meta.glob("./**/*.ts");
 
 const PLAYER = "test-player-0001";
+
+// Fake ONLY Date (not timers) so we can simulate human think time between the
+// server serving a question and the answer coming back — the anti-cheat's
+// signal. Leaving setTimeout/setInterval real keeps convex-test's async intact.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"], now: 1_700_000_000_000 });
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+/** Advance the fake clock to simulate a human pausing to read and answer. */
+const HUMAN_THINK_MS = 2000;
+function think(ms = HUMAN_THINK_MS) {
+  vi.setSystemTime(Date.now() + ms);
+}
 
 function setup() {
   return convexTest(schema, modules);
@@ -27,7 +43,9 @@ async function answer(
   runId: string,
   questionKey: string,
   correctly: boolean,
+  thinkMs = HUMAN_THINK_MS,
 ) {
+  think(thinkMs); // simulate think time before submitting (default = human-plausible)
   const question = questionByKey.get(questionKey)!;
   const choiceIndex = correctly
     ? question.answer
@@ -389,5 +407,54 @@ describe("account identity", () => {
     }
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
     expect(board.some((row) => row.displayName === "SignalHunter")).toBe(true);
+  });
+});
+
+describe("anti-cheat", () => {
+  test("a run answered superhumanly fast is flagged out of the leaderboard", async () => {
+    const t = setup();
+    const bot = t.withIdentity({ subject: "user_bot", nickname: "SpeedBot" });
+    await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000001" });
+    const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000001" });
+    let key = start.question.key;
+    let result;
+    for (let i = 0; i < 3; i++) {
+      // ~100ms per answer: impossible to read a question + four choices that fast.
+      result = await answer(bot, "bot-key-00000001", start.run.runId, key, false, 100);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    expect(result!.run.status).toBe("dead");
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "SpeedBot")).toBe(false);
+  });
+
+  test("a human-paced run is not flagged and ranks normally", async () => {
+    const t = setup();
+    const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });
+    await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
+    const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(human, "human-key-0000001", start.run.runId, key, false); // default human pace
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "RealPlayer")).toBe(true);
+  });
+
+  test("startRun is rate-limited per player", async () => {
+    const t = setup();
+    const grinder = t.withIdentity({ subject: "user_rl", nickname: "Grinder" });
+    await grinder.mutation(api.trivia.ensurePlayer, { playerKey: "rl-key-000000001" });
+    let threw = false;
+    for (let i = 0; i < 45; i++) {
+      try {
+        await grinder.mutation(api.trivia.startRun, { playerKey: "rl-key-000000001" });
+      } catch {
+        threw = true;
+        break;
+      }
+    }
+    expect(threw).toBe(true);
   });
 });

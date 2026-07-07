@@ -15,6 +15,11 @@ const STREAK_BONUS = 25; // per prior consecutive correct answer
 const STREAK_BONUS_CAP = 10;
 const LEADERBOARD_LIMIT_MAX = 100;
 
+// --- Anti-cheat ---
+const MIN_ANSWER_MS = 900; // reading a question + 4 choices realistically takes longer
+const FAST_ANSWER_FLAG = 3; // this many superhuman-fast answers flags a run as automated
+const MAX_RUNS_PER_HOUR = 40; // per-player rate limit on starting runs
+
 const TAPES = [...story.tapes].sort((a, b) => a.order - b.order);
 const FINALE_UNLOCK = story.finale.unlock;
 
@@ -332,6 +337,18 @@ export const startRun = mutation({
       }
     }
 
+    // Rate limit: cap how many runs a player can start per hour to blunt
+    // scripted farming of the leaderboard.
+    const recentRuns = await ctx.db
+      .query("triviaRuns")
+      .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
+      .order("desc")
+      .take(MAX_RUNS_PER_HOUR + 1);
+    const startedLastHour = recentRuns.filter((run) => now - run.startedAt < 3600_000).length;
+    if (startedLastHour >= MAX_RUNS_PER_HOUR) {
+      throw new Error("You're starting broadcasts very fast. Take a short break and try again.");
+    }
+
     const runId = await ctx.db.insert("triviaRuns", {
       playerId: player._id,
       seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
@@ -344,6 +361,9 @@ export const startRun = mutation({
       answeredInRound: 0,
       wrongInRound: 0,
       tapeDropped: false,
+      fastAnswers: 0,
+      flagged: false,
+      currentQuestionServedAt: now,
       modifiers: [],
       askedQuestionKeys: [],
       dateKey,
@@ -388,6 +408,14 @@ export const submitAnswer = mutation({
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
+
+    // Anti-cheat: think time measured from the server's serve timestamp (the
+    // client can't fake it). Superhuman-fast answers accumulate; enough of them
+    // flag the run out of the public leaderboard. Never blocks the answer.
+    const answeredAt = Date.now();
+    const elapsed = answeredAt - (run.currentQuestionServedAt ?? answeredAt);
+    const fastAnswers = (run.fastAnswers ?? 0) + (elapsed < MIN_ANSWER_MS ? 1 : 0);
+    const flagged = (run.flagged ?? false) || fastAnswers >= FAST_ANSWER_FLAG;
 
     const events: GameEvent[] = [];
     const correct = args.choiceIndex === question.answer;
@@ -434,6 +462,8 @@ export const submitAnswer = mutation({
         lives: 0,
         answeredInRound,
         wrongInRound,
+        fastAnswers,
+        flagged,
         currentQuestionKey: undefined,
         endedAt: Date.now(),
       });
@@ -502,6 +532,8 @@ export const submitAnswer = mutation({
           round,
           answeredInRound,
           wrongInRound,
+          fastAnswers,
+          flagged,
           currentQuestionKey: undefined,
           endedAt: Date.now(),
         });
@@ -515,6 +547,9 @@ export const submitAnswer = mutation({
           wrongInRound,
           tapeDropped,
           roundCategory,
+          fastAnswers,
+          flagged,
+          currentQuestionServedAt: answeredAt,
           currentQuestionKey: nextQuestion.id,
           askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
         });
@@ -668,6 +703,7 @@ export const getLeaderboard = query({
     const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
     for (const run of runs) {
       if (rows.length >= limit) break;
+      if (run.flagged) continue; // automated-looking runs don't rank (anti-cheat)
       let player = playerCache.get(run.playerId);
       if (player === undefined) {
         player = await ctx.db.get(run.playerId);

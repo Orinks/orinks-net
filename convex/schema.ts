@@ -69,6 +69,13 @@ export default defineSchema({
     tapeDropped: v.boolean(),
     roundCategory: v.optional(v.string()), // theme of the current round
 
+    // Anti-cheat: when the current question was served (server clock) and how
+    // many answers came back implausibly fast. A flagged run is excluded from
+    // public leaderboards (a bot answering in milliseconds can't rank).
+    currentQuestionServedAt: v.optional(v.number()),
+    fastAnswers: v.optional(v.number()),
+    flagged: v.optional(v.boolean()),
+
     modifiers: v.array(v.string()),
     currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
