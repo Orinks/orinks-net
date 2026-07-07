@@ -54,10 +54,6 @@ export default async function FreightFateDriverPage({ params, searchParams }: Dr
       <Section title="Driver profile">
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="font-semibold text-ink">Driver ID</dt>
-            <dd>{profile.driver.driverId}</dd>
-          </div>
-          <div>
             <dt className="font-semibold text-ink">Visibility</dt>
             <dd>{profile.driver.visibility}</dd>
           </div>

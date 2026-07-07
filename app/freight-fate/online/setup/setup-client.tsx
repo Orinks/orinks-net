@@ -69,7 +69,11 @@ function DriverSetup() {
   const [visibility, setVisibility] = useState<Visibility>("private");
   const [nameError, setNameError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [issuedToken, setIssuedToken] = useState<string | null>(null);
+  // Carries BOTH values from the provision result: the reactive getMyDriver
+  // query can lag the mutation, so myDriver may still be null at the moment
+  // the panel renders and focus arrives (a11y review: an empty ID field
+  // would be copied as nothing).
+  const [issued, setIssued] = useState<{ token: string; driverId: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [initialized, setInitialized] = useState(false);
 
@@ -92,12 +96,12 @@ function DriverSetup() {
     setInitialized(true);
   }, [initialized, myDriver, user]);
 
-  // Bring the reader to the one-time token the moment it is revealed.
+  // Bring the reader to the connect panel the moment it is revealed.
   useEffect(() => {
-    if (issuedToken) {
+    if (issued) {
       tokenHeadingRef.current?.focus();
     }
-  }, [issuedToken]);
+  }, [issued]);
 
   const copyText = useCallback(
     async (value: string, label: string) => {
@@ -139,8 +143,8 @@ function DriverSetup() {
       });
       if (result.token) {
         setCopyStatus("");
-        setIssuedToken(result.token);
-        announcePolite("Driver ready. Your one-time token is shown below — copy it now.");
+        setIssued({ token: result.token, driverId: result.driverId });
+        announcePolite("Driver ready. Copy your Driver ID and one-time token below.");
       } else {
         announcePolite("Changes saved.");
       }
@@ -166,7 +170,7 @@ function DriverSetup() {
       });
       if (result.token) {
         setCopyStatus("");
-        setIssuedToken(result.token);
+        setIssued({ token: result.token, driverId: result.driverId });
         announcePolite("Token rotated. The new token is shown below — copy it now. The old token no longer works.");
       }
     } catch {
@@ -190,7 +194,7 @@ function DriverSetup() {
         {errorStatus}
       </div>
 
-      {issuedToken ? (
+      {issued ? (
         <section
           aria-labelledby="ff-token-heading"
           className="space-y-3 rounded border border-line bg-white p-5"
@@ -201,13 +205,47 @@ function DriverSetup() {
             ref={tokenHeadingRef}
             tabIndex={-1}
           >
-            Your driver token
+            Connect Freight Fate
           </h2>
-          <p className="font-semibold text-red-800" id="ff-token-desc">
-            Shown once. Copy it into Freight Fate on your PC now — you will not be able to see it
-            again.
+          <p className="text-slate-800">
+            Freight Fate needs two values. In the game, open Online Sharing, then paste your
+            Driver ID first and your token second.
           </p>
+
           <div className="space-y-2">
+            <label className="block font-semibold text-ink" htmlFor="ff-token-driver-id">
+              Driver ID
+            </label>
+            <p className="text-sm text-slate-600" id="ff-token-driver-id-hint">
+              Paste this into Freight Fate first. It is not secret.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                aria-describedby="ff-token-driver-id-hint"
+                autoComplete="off"
+                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
+                id="ff-token-driver-id"
+                onFocus={(event) => event.currentTarget.select()}
+                readOnly
+                spellCheck={false}
+                type="text"
+                value={issued.driverId}
+              />
+              <button
+                className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
+                onClick={() => copyText(issued.driverId, "Driver ID")}
+                type="button"
+              >
+                Copy Driver ID
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-semibold text-red-800" id="ff-token-desc">
+              Your token is shown once. Copy it into Freight Fate on your PC now — you will not be
+              able to see it again.
+            </p>
             <label className="block font-semibold text-ink" htmlFor="ff-driver-token">
               Driver token
             </label>
@@ -221,22 +259,19 @@ function DriverSetup() {
                 readOnly
                 spellCheck={false}
                 type="text"
-                value={issuedToken}
+                value={issued.token}
               />
               <button
                 className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                onClick={() => copyText(issuedToken, "Token")}
+                onClick={() => copyText(issued.token, "Token")}
                 type="button"
               >
                 Copy token
               </button>
             </div>
-            {copyStatus ? <p className="text-sm text-slate-700">{copyStatus}</p> : null}
           </div>
-          <p className="text-slate-800">
-            In Freight Fate, open Online Sharing and paste this token. Your Driver ID is{" "}
-            <code className="font-mono">{myDriver?.driverId}</code>.
-          </p>
+
+          {copyStatus ? <p className="text-sm text-slate-700">{copyStatus}</p> : null}
         </section>
       ) : null}
 
