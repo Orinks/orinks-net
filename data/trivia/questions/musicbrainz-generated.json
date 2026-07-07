@@ -1,0 +1,2809 @@
+{
+  "minigame": "general-trivia",
+  "voice": "clide",
+  "source": "MusicBrainz (https://musicbrainz.org)",
+  "license": "MusicBrainz core data is placed into the public domain (CC0) — https://musicbrainz.org/doc/About/Data_License",
+  "curated": false,
+  "questions": [
+    {
+      "id": "mb-4a7ec9bd",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"The Wild, the Innocent & The E Street Shuffle\" in 1973?",
+      "choices": [
+        "Pink Floyd",
+        "Elvis Presley",
+        "Led Zeppelin",
+        "Bruce Springsteen"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-27f6025f",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Surfin’ Safari\" by The Beach Boys first released?",
+      "choices": [
+        "1967",
+        "1966",
+        "1962",
+        "1958"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e7ae2e6e",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Souvenir Album\" by Ella Fitzgerald first released?",
+      "choices": [
+        "1949",
+        "1953",
+        "1951",
+        "1943"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-fa6de257",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Eminem?",
+      "choices": [
+        "There’s a Poison Goin On…",
+        "The Massacre",
+        "Infinite",
+        "All Eyez on Me"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e2c31259",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"…and Then I Wrote\" by Willie Nelson first released?",
+      "choices": [
+        "1957",
+        "1968",
+        "1958",
+        "1962"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c452267f",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Depeche Mode?",
+      "choices": [
+        "OK Computer",
+        "Incantations",
+        "With Teeth",
+        "Speak & Spell"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-24c87e8d",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Kill ’Em All\" in 1983?",
+      "choices": [
+        "Metallica",
+        "Napalm Death",
+        "Motörhead",
+        "Korn"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b1073acf",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"The Tender, the Moving, the Swinging Aretha Franklin\" by Aretha Franklin first released?",
+      "choices": [
+        "1957",
+        "1965",
+        "1966",
+        "1962"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-677d5df6",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Bob Marley & The Wailers?",
+      "choices": [
+        "Reggae Thing",
+        "Rhythm Shower",
+        "Soul Rebels",
+        "Unlimited"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ed171247",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Johann Sebastian Bach?",
+      "choices": [
+        "Symphonie nr. 9 / Rosamunde‐Ouvertüre",
+        "Sinfonie nr. 4 d‐moll, op. 120",
+        "Oratorio de Noël",
+        "14 Valses"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e6678cc8",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Please Please Me\" by The Beatles first released?",
+      "choices": [
+        "1969",
+        "1967",
+        "1958",
+        "1963"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-bcb3eaac",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by David Bowie?",
+      "choices": [
+        "Walls and Bridges",
+        "Pretty Baby",
+        "Surfer Girl",
+        "The Man Who Sold the World"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-dce16ba9",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"The New Sounds\" in 1951?",
+      "choices": [
+        "Miles Davis",
+        "Frank Sinatra",
+        "Charlie Parker",
+        "Ella Fitzgerald"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-0292706a",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Paul’s Boutique\" by Beastie Boys first released?",
+      "choices": [
+        "1993",
+        "1983",
+        "1989",
+        "1987"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4b467c03",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by George Jones?",
+      "choices": [
+        "In the Good Old Days (When Times Were Bad)",
+        "Sings 14 Top Country Favorites",
+        "The Legend of Bonnie & Clyde",
+        "…and Then I Wrote"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-160fef5b",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"The Bends\" in 1994?",
+      "choices": [
+        "Radiohead",
+        "Tangerine Dream",
+        "Pet Shop Boys",
+        "Björk"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-68ade953",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Bomber\" by Motörhead first released?",
+      "choices": [
+        "1979",
+        "1983",
+        "1976",
+        "1974"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c7c4a2dd",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Marvin Gaye?",
+      "choices": [
+        "That Stubborn Kinda’ Fellow",
+        "Here I Am",
+        "Gettin’ Ready",
+        "I Was Made to Love Her"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-726de388",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Cloak & Dagger\" in 1972?",
+      "choices": [
+        "Bob Marley",
+        "Bob Marley & The Wailers",
+        "Toots & The Maytals",
+        "Lee “Scratch” Perry"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e7ed1de4",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Wolfgang Amadeus Mozart?",
+      "choices": [
+        "Missa in tempore Belli",
+        "Gloria / Exultate Jubilate",
+        "Carnaval / Fantasy Pieces",
+        "14 Valses"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-08d4436f",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Aoxomoxoa\" by Grateful Dead first released?",
+      "choices": [
+        "1969",
+        "1965",
+        "1964",
+        "1967"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-09bc0df5",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Prince?",
+      "choices": [
+        "Lonely and Blue",
+        "Red",
+        "True Blue",
+        "Dirty Mind"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5d79ae39",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Sings for Two in Love\" by Nat King Cole first released?",
+      "choices": [
+        "1953",
+        "1948",
+        "1956",
+        "1957"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7517a591",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Lil B?",
+      "choices": [
+        "Me Against The World",
+        "The Impossible: Mission TV Series, Part 1",
+        "The Blueprint²: The Gift & The Curse",
+        "Angels Exodus"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-689b9f4c",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Bimbo\" in 1957?",
+      "choices": [
+        "Jerry Lee Lewis",
+        "Tennessee Ernie Ford",
+        "Jim Reeves",
+        "George Jones"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e6d6b5b3",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Zeit\" by Tangerine Dream first released?",
+      "choices": [
+        "1975",
+        "1972",
+        "1968",
+        "1976"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-cd52a8bc",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Linkin Park?",
+      "choices": [
+        "From Enslavement to Obliteration",
+        "Minutes to Midnight",
+        "Liebe ist für alle da",
+        "Take a Look in the Mirror"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-77114c21",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"A Bit of Liverpool\" in 1964?",
+      "choices": [
+        "Dionne Warwick",
+        "The Temptations",
+        "The Supremes",
+        "Marvin Gaye"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c3af5488",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"UB44\" by UB40 first released?",
+      "choices": [
+        "1986",
+        "1977",
+        "1982",
+        "1988"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5775b452",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Ludwig van Beethoven?",
+      "choices": [
+        "Concerto pour flûte et harpe / Divertissement n° 11",
+        "Piano Concerto no. 5 in E‐flat “Emperor”",
+        "Wassermusik / Feuerwerksmusik",
+        "Symphony In G Minor, K. 550 / Symphony In D Major, No. 104"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-884e8717",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Rift\" in 1993?",
+      "choices": [
+        "Phish",
+        "The Rolling Stones",
+        "Led Zeppelin",
+        "Pink Floyd"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-10a16571",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Red\" by Taylor Swift first released?",
+      "choices": [
+        "2015",
+        "2007",
+        "2012",
+        "2009"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ad2d6677",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"South of the Border\" in 1952?",
+      "choices": [
+        "Charlie Parker",
+        "Miles Davis",
+        "Billie Holiday",
+        "Louis Armstrong"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a8789b04",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Trap‐a‐Thon\" by Gucci Mane first released?",
+      "choices": [
+        "2011",
+        "2007",
+        "2004",
+        "2010"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-59e925fe",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Merle Haggard?",
+      "choices": [
+        "I’m a Lonesome Fugitive",
+        "Just the Two of Us",
+        "Sings the Hits of His Country Cousins",
+        "Singing Down The Lane"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-afdfd611",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"With Teeth\" in 2005?",
+      "choices": [
+        "Radiohead",
+        "Moby",
+        "Björk",
+        "Nine Inch Nails"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-fc12a0d0",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Zeitreise - Reisezeit\" by Rammstein first released?",
+      "choices": [
+        "2002",
+        "2004",
+        "1998",
+        "2000"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c0f8845b",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Gettin’ Ready\" in 1966?",
+      "choices": [
+        "Marvin Gaye",
+        "James Brown",
+        "Stevie Wonder",
+        "The Temptations"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-39100d2f",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Monkey Man\" by Toots & The Maytals first released?",
+      "choices": [
+        "1965",
+        "1970",
+        "1974",
+        "1972"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c5cda88b",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Franz Schubert?",
+      "choices": [
+        "Il cimento dell’armonia e dell’inventione, op. 8",
+        "Symphonie No. 8 En Si Mineur \"Inachevée\"",
+        "The Four Ballades",
+        "Six Violin Sonatas (Remastered 2024)"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-49f2ae23",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Bringing It All Back Home\" in 1965?",
+      "choices": [
+        "Bruce Springsteen",
+        "Led Zeppelin",
+        "The Rolling Stones",
+        "Bob Dylan"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-85cbc37f",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Honky Château\" by Elton John first released?",
+      "choices": [
+        "1972",
+        "1969",
+        "1966",
+        "1977"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3f2aea8b",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which of these albums is by Ray Charles?",
+      "choices": [
+        "Porgy & Bess",
+        "Souvenir Album",
+        "Soul Brothers",
+        "Vol. 3"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7c144aea",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"The Dynasty: Roc La Familia\" in 2000?",
+      "choices": [
+        "De La Soul",
+        "Eminem",
+        "Public Enemy",
+        "JAY‐Z"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e8cd5255",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Love of the Common People\" by Waylon Jennings first released?",
+      "choices": [
+        "1965",
+        "1970",
+        "1972",
+        "1967"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d747ebcb",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Moby?",
+      "choices": [
+        "Play",
+        "Abbey Road Demos",
+        "Trans Europa Express",
+        "Hergest Ridge"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-2a42b1bd",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Untouchables\" in 2002?",
+      "choices": [
+        "Blind Guardian",
+        "Linkin Park",
+        "Napalm Death",
+        "Korn"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-8004cbfb",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Up‐Tight (Everything’s Alright)\" by Stevie Wonder first released?",
+      "choices": [
+        "1960",
+        "1964",
+        "1966",
+        "1971"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b300f3d3",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Jimmy Cliff?",
+      "choices": [
+        "Another Cycle",
+        "Blame It on the Sun",
+        "Extra Classic",
+        "Unreleased Acoustic Tapes"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5bb81e44",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Robert Schumann?",
+      "choices": [
+        "Symphony no. 2",
+        "L’Estro armonico: 12 Concerti for String Orchestra",
+        "Concert pentru pian și orchestră în La minor, op. 54",
+        "Six Violin Sonatas (Remastered 2024)"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-0afbae28",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Tear Down the Walls\" by U2 first released?",
+      "choices": [
+        "1984",
+        "1987",
+        "1992",
+        "1993"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ca14f7a2",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Dean Martin?",
+      "choices": [
+        "Some Time in New York City",
+        "This Time I’m Swingin’!",
+        "RAM",
+        "Surfer Girl"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-616d0519",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Sings Songs by Jerome Kern\" in 1949?",
+      "choices": [
+        "Billie Holiday",
+        "Bing Crosby",
+        "Miles Davis",
+        "Ella Fitzgerald"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-1a5d2cea",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"There’s a Poison Goin On…\" by Public Enemy first released?",
+      "choices": [
+        "1995",
+        "2002",
+        "2004",
+        "1999"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5bd08007",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which of these albums is by Tennessee Ernie Ford?",
+      "choices": [
+        "Good Times",
+        "Nearer the Cross",
+        "Sings the Hits of His Country Cousins",
+        "Always, Always"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d5a2a5a4",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Relentless\" in 1993?",
+      "choices": [
+        "Nine Inch Nails",
+        "Depeche Mode",
+        "Pet Shop Boys",
+        "Tangerine Dream"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-965145bb",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"UROBOROS\" by DIR EN GREY first released?",
+      "choices": [
+        "2012",
+        "2008",
+        "2005",
+        "2013"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a4dd56ef",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which of these albums is by Earth, Wind & Fire?",
+      "choices": [
+        "With a Lot o’ Soul",
+        "Grits & Soul",
+        "With a Song in My Heart",
+        "Spirit"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-1c23c588",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Extra Classic\" in 1978?",
+      "choices": [
+        "Bob Marley & The Wailers",
+        "Gregory Isaacs",
+        "Bob Marley",
+        "King Tubby"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9d1f9cae",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Joseph Haydn?",
+      "choices": [
+        "Oratorio de Noël",
+        "14 Valses",
+        "'Jupiter' Symphony / 'Drum Roll' Symphony",
+        "Moments musicaux, Op. 94, Nos. 1-6, D.780"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3bd30af3",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Pink Floyd?",
+      "choices": [
+        "John Wesley Harding",
+        "War",
+        "Something for Everybody",
+        "Wish You Were Here"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-011ef8c0",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Bedtime Stories\" in 1994?",
+      "choices": [
+        "Taylor Swift",
+        "David Bowie",
+        "Roy Orbison",
+        "Madonna"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b06fe298",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Songs for Young Lovers\" by Frank Sinatra first released?",
+      "choices": [
+        "1954",
+        "1950",
+        "1949",
+        "1956"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c24bb9c1",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by 2Pac?",
+      "choices": [
+        "Muse Sick‐N‐Hour Mess Age",
+        "Me Against The World",
+        "Art Official Intelligence: Mosaic Thump",
+        "Late Registration"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b53f2bd3",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Sing Me a Blue Song\" in 1957?",
+      "choices": [
+        "Jim Reeves",
+        "Hank Williams",
+        "Dolly Parton",
+        "George Jones"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4a689c4d",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Lust for Life\" by Lana Del Rey first released?",
+      "choices": [
+        "2012",
+        "2020",
+        "2017",
+        "2014"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ec45b984",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Sepultura?",
+      "choices": [
+        "Roots",
+        "Minutes to Midnight",
+        "Follow the Leader",
+        "From Enslavement to Obliteration"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3b977099",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Handful of Soul\" in 1966?",
+      "choices": [
+        "Dionne Warwick",
+        "James Brown",
+        "Marvin Gaye",
+        "The Supremes"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9839094b",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"In Dub Conference, Volume 3\" by King Tubby first released?",
+      "choices": [
+        "1972",
+        "1978",
+        "1980",
+        "1973"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-97d9c6fd",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Antonio Vivaldi?",
+      "choices": [
+        "Sinfonie nr. 4 d‐moll, op. 120",
+        "Les Quatre Saisons",
+        "14 Valses",
+        "Symphonie Nr. 3 in Es-Dur op. 55 (Eroica)"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-18db476a",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"In Through the Out Door\" by Led Zeppelin first released?",
+      "choices": [
+        "1979",
+        "1984",
+        "1985",
+        "1974"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-74ad5b6a",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Roy Orbison?",
+      "choices": [
+        "Young Americans",
+        "Cry Softly Lonely One",
+        "Surfin’ Safari",
+        "Cha Cha De Amor"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-85aec044",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Porgy & Bess\" in 1957?",
+      "choices": [
+        "Charlie Parker",
+        "Ella Fitzgerald",
+        "Louis Armstrong",
+        "Nat King Cole"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-0af98c72",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Good Ass Job\" by Ye first released?",
+      "choices": [
+        "2011",
+        "2009",
+        "2003",
+        "2007"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-1b5c6a8e",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Jerry Lee Lewis?",
+      "choices": [
+        "Folk‐Country",
+        "Just Because I’m a Woman",
+        "I’m a Lonesome Fugitive",
+        "Another Place Another Time"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d0e722f5",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Computerwelt\" in 1981?",
+      "choices": [
+        "Tangerine Dream",
+        "Nine Inch Nails",
+        "Kraftwerk",
+        "Mike Oldfield"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c5f16227",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Eat the Heat\" by Accept first released?",
+      "choices": [
+        "1989",
+        "1984",
+        "1991",
+        "1994"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-84deae50",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Ike & Tina Turner?",
+      "choices": [
+        "Soul Sister",
+        "Gettin’ Ready",
+        "Outta Season",
+        "Grits & Soul"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f77f4bd0",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Maestro\" in 1996?",
+      "choices": [
+        "Beenie Man",
+        "Jimmy Cliff",
+        "Bob Marley",
+        "King Tubby"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9760000a",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by George Frideric Handel?",
+      "choices": [
+        "Missa in tempore Belli",
+        "14 Valses",
+        "Acis & Galatea",
+        "Partita no. 5 in G major / Partita no. 6 in E minor"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-20cd6b1d",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Bruce Springsteen?",
+      "choices": [
+        "Presence",
+        "The Wild, the Innocent & The E Street Shuffle",
+        "Please Please Me",
+        "Blonde on Blonde"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ed42071d",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Unfinished Music No. 1: Two Virgins\" in 1968?",
+      "choices": [
+        "Paul McCartney",
+        "John Lennon",
+        "Prince",
+        "David Bowie"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4202de06",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by Miles Davis?",
+      "choices": [
+        "Lullabies of Birdland",
+        "Sings for Two in Love",
+        "The Genius Hits the Road",
+        "Modern Jazz Trumpets"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-306989f9",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"3 Feet High and Rising\" in 1989?",
+      "choices": [
+        "2Pac",
+        "Beastie Boys",
+        "Ye",
+        "De La Soul"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c38ee7bd",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Hello, I’m Dolly\" by Dolly Parton first released?",
+      "choices": [
+        "1973",
+        "1965",
+        "1967",
+        "1961"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f7d27028",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Tubular Bells\" in 1973?",
+      "choices": [
+        "Depeche Mode",
+        "Mike Oldfield",
+        "Björk",
+        "Moby"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a5c34359",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Battalions of Fear\" by Blind Guardian first released?",
+      "choices": [
+        "1988",
+        "1992",
+        "1993",
+        "1983"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-82179af9",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"The Soulful Moods of Marvin Gaye\" by Marvin Gaye first released?",
+      "choices": [
+        "1961",
+        "1957",
+        "1964",
+        "1956"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-6e7c3e29",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which of these albums is by Bob Marley?",
+      "choices": [
+        "From the Roots",
+        "Rastaman Vibration",
+        "Rhythm Shower",
+        "Unreleased Acoustic Tapes"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-50435e30",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Johannes Brahms?",
+      "choices": [
+        "6 \"Erdődy\" Quartets Op. 76",
+        "Piano Concerto no. 5 in E‐flat “Emperor”",
+        "Concerto no. 2, in B-flat, op. 83",
+        "Moments musicaux, Op. 94, Nos. 1-6, D.780"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f69be1e7",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by The Rolling Stones?",
+      "choices": [
+        "England’s Newest Hit Makers",
+        "Please Please Me",
+        "Bringing It All Back Home",
+        "Born in the U.S.A."
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5bdfc805",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"RAM\" in 1971?",
+      "choices": [
+        "Taylor Swift",
+        "Paul McCartney",
+        "David Bowie",
+        "The Beach Boys"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-fb836000",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Lover Man\" by Billie Holiday first released?",
+      "choices": [
+        "1954",
+        "1956",
+        "1948",
+        "1951"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-12ad8337",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by 50 Cent?",
+      "choices": [
+        "Back to the Traphouse",
+        "Get Rich or Die Tryin’",
+        "Angels Exodus",
+        "The Best of Both Worlds"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-1a7fbbfb",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Here’s Willie Nelson\" by Willie Nelson first released?",
+      "choices": [
+        "1959",
+        "1963",
+        "1957",
+        "1966"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5f6ffe91",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Alpha Centauri\" by Tangerine Dream first released?",
+      "choices": [
+        "1975",
+        "1971",
+        "1977",
+        "1976"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d55e28c1",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Napalm Death?",
+      "choices": [
+        "Untouchables",
+        "ARCHE",
+        "From Enslavement to Obliteration",
+        "Roots"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-62f018d8",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Where Did Our Love Go\" in 1964?",
+      "choices": [
+        "Nina Simone",
+        "Stevie Wonder",
+        "The Supremes",
+        "Marvin Gaye"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c94ddf22",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Blame It on the Sun\" by Inner Circle first released?",
+      "choices": [
+        "1978",
+        "1980",
+        "1975",
+        "1971"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-84ec6b7c",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by Phish?",
+      "choices": [
+        "Physical Graffiti",
+        "Junta",
+        "Their Satanic Majesties Request",
+        "Tear Down the Walls"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a29845d6",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Little Deuce Coupe\" in 1963?",
+      "choices": [
+        "Taylor Swift",
+        "Dean Martin",
+        "The Beach Boys",
+        "Elton John"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7155d590",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Bird and Diz\" in 1952?",
+      "choices": [
+        "Charlie Parker",
+        "Bing Crosby",
+        "Miles Davis",
+        "Ray Charles"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-89d4b269",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Unmastered Sequence\" by Eminem first released?",
+      "choices": [
+        "2003",
+        "1999",
+        "1994",
+        "1996"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-0e5bb4cb",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Just Between the Two of Us\" by Merle Haggard first released?",
+      "choices": [
+        "1972",
+        "1969",
+        "1960",
+        "1966"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-98d65cba",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by Nine Inch Nails?",
+      "choices": [
+        "OK Computer",
+        "Trans Europa Express",
+        "Ambient",
+        "The Fragile"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d99ebb3a",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Master of Puppets\" in 1986?",
+      "choices": [
+        "Napalm Death",
+        "Metallica",
+        "Motörhead",
+        "Accept"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e902aa38",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Forbidden Fruit\" by Nina Simone first released?",
+      "choices": [
+        "1958",
+        "1965",
+        "1961",
+        "1955"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f2b0bbe0",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Rhythm Shower\" in 1973?",
+      "choices": [
+        "Bob Marley & The Wailers",
+        "Bob Marley",
+        "Beenie Man",
+        "Lee “Scratch” Perry"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-019edd30",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"The Unforgettable Fire\" in 1984?",
+      "choices": [
+        "U2",
+        "Grateful Dead",
+        "Elvis Presley",
+        "Pink Floyd"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3c2963d4",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"The Rise and Fall of Ziggy Stardust and the Spiders From Mars\" by David Bowie first released?",
+      "choices": [
+        "1977",
+        "1975",
+        "1976",
+        "1972"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7e03222c",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Blue Skies\" in 1946?",
+      "choices": [
+        "Bing Crosby",
+        "Django Reinhardt",
+        "Ella Fitzgerald",
+        "Charlie Parker"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-64f6126c",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Ill Communication\" by Beastie Boys first released?",
+      "choices": [
+        "1996",
+        "1990",
+        "1999",
+        "1994"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a30f67df",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Ol’ Rockin’ Ern\" in 1957?",
+      "choices": [
+        "George Jones",
+        "Tennessee Ernie Ford",
+        "Hank Williams",
+        "Jim Reeves"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-34055fd4",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Animal Rights\" by Moby first released?",
+      "choices": [
+        "1992",
+        "2001",
+        "1990",
+        "1996"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-c4f3453c",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by Motörhead?",
+      "choices": [
+        "Diatribes",
+        "Withering to death.",
+        "On Parole",
+        "Reload"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4ee674a5",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Stevie at the Beach\" by Stevie Wonder first released?",
+      "choices": [
+        "1969",
+        "1964",
+        "1970",
+        "1960"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7013447f",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by UB40?",
+      "choices": [
+        "Be Your Self",
+        "Dis Unu Fi Hear",
+        "Labour of Love",
+        "Shalom Dub"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-693211ba",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Meddle\" by Pink Floyd first released?",
+      "choices": [
+        "1968",
+        "1971",
+        "1973",
+        "1974"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-83844ba2",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"1989\" in 2014?",
+      "choices": [
+        "Elton John",
+        "Madonna",
+        "Taylor Swift",
+        "Roy Orbison"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a0ca59fb",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Dedicated to You\" by Frank Sinatra first released?",
+      "choices": [
+        "1944",
+        "1950",
+        "1952",
+        "1956"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a924a016",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"The State vs. Radric Davis\" in 2009?",
+      "choices": [
+        "50 Cent",
+        "Gucci Mane",
+        "JAY‐Z",
+        "Eminem"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ab2da6a1",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Honky Tonkin’\" by Hank Williams first released?",
+      "choices": [
+        "1956",
+        "1954",
+        "1951",
+        "1960"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d32220bf",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Pet Shop Boys?",
+      "choices": [
+        "Amnesiac",
+        "Ambient",
+        "Die Mensch·Maschine",
+        "Abbey Road Demos"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-fa0bdf33",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Living Things\" in 2012?",
+      "choices": [
+        "Rammstein",
+        "Metallica",
+        "Accept",
+        "Linkin Park"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-53aafd85",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Open Our Eyes\" by Earth, Wind & Fire first released?",
+      "choices": [
+        "1974",
+        "1972",
+        "1968",
+        "1977"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b92b68e6",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Toots & The Maytals?",
+      "choices": [
+        "Blessed",
+        "Be Your Self",
+        "Slatyam Stoot",
+        "Music Maker"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e40c321f",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Physical Graffiti\" by Led Zeppelin first released?",
+      "choices": [
+        "1970",
+        "1979",
+        "1975",
+        "1978"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b7e74ff1",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Elton John?",
+      "choices": [
+        "Don’t Shoot Me I’m Only the Piano Player",
+        "Crying",
+        "Wedding Album",
+        "Surfin’ Safari"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-8ba8e4da",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Ella Fitzgerald Sings the Rodgers and Hart Song Book\" by Ella Fitzgerald first released?",
+      "choices": [
+        "1962",
+        "1952",
+        "1958",
+        "1956"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-347faa3f",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by JAY‐Z?",
+      "choices": [
+        "The Blueprint",
+        "Ferrari Boyz",
+        "Unmastered Sequence",
+        "The Mix‐Up"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4be4d338",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Memphis Beat\" in 1966?",
+      "choices": [
+        "Jerry Lee Lewis",
+        "George Jones",
+        "Merle Haggard",
+        "Dolly Parton"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4da337fc",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Honeymoon\" by Lana Del Rey first released?",
+      "choices": [
+        "2010",
+        "2011",
+        "2015",
+        "2012"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-79019a88",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Rammstein?",
+      "choices": [
+        "A Thousand Suns",
+        "Rosenrot",
+        "Utopia Banished",
+        "Restless and Wild"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-613bc690",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"River Deep – Mountain High\" by Ike & Tina Turner first released?",
+      "choices": [
+        "1971",
+        "1970",
+        "1966",
+        "1960"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-aa0291a0",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Dub Basket Chapter II - A King Tubby's Mix\" by King Tubby first released?",
+      "choices": [
+        "1982",
+        "1976",
+        "1973",
+        "1980"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-05872b64",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Born in the U.S.A.\" in 1984?",
+      "choices": [
+        "Grateful Dead",
+        "Bruce Springsteen",
+        "Pink Floyd",
+        "Phish"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7581e155",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Cha Cha De Amor\" by Dean Martin first released?",
+      "choices": [
+        "1959",
+        "1962",
+        "1965",
+        "1966"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e516118d",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Music for Torching\" in 1955?",
+      "choices": [
+        "Miles Davis",
+        "Charlie Parker",
+        "Django Reinhardt",
+        "Billie Holiday"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4991abf3",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Revolverlution\" by Public Enemy first released?",
+      "choices": [
+        "1999",
+        "2000",
+        "2002",
+        "1998"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-58502f8d",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Dolly Parton?",
+      "choices": [
+        "Swinging Doors and the Bottle Let Me Down",
+        "Always, Always",
+        "Bimbo",
+        "JD’s"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d56221f2",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Die Mensch·Maschine\" in 1978?",
+      "choices": [
+        "Nine Inch Nails",
+        "Kraftwerk",
+        "Radiohead",
+        "Depeche Mode"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-2146dfb6",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"See You on the Other Side\" by Korn first released?",
+      "choices": [
+        "2002",
+        "2010",
+        "1999",
+        "2005"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-6368b535",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Dionne Warwick?",
+      "choices": [
+        "Yeah!!!",
+        "Broadway Blues Ballads",
+        "Here Where There Is Love",
+        "How Sweet It Is to Be Loved by You"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5eef7e69",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"All The Best\" in 1995?",
+      "choices": [
+        "Toots & The Maytals",
+        "Beenie Man",
+        "Jimmy Cliff",
+        "Gregory Isaacs"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-afe05035",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Their Satanic Majesties Request\" in 1967?",
+      "choices": [
+        "The Rolling Stones",
+        "Led Zeppelin",
+        "U2",
+        "The Beatles"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e3784d20",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Ray of Light\" by Madonna first released?",
+      "choices": [
+        "1998",
+        "1993",
+        "2002",
+        "2001"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f15036a8",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"The Charlie Parker Story\" by Charlie Parker first released?",
+      "choices": [
+        "1950",
+        "1959",
+        "1956",
+        "1960"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-34e1a694",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Good Ass Job\" in 2009?",
+      "choices": [
+        "Eminem",
+        "Gucci Mane",
+        "Ye",
+        "Public Enemy"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-2114114f",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"The Sound of Johnny Cash\" by Johnny Cash first released?",
+      "choices": [
+        "1966",
+        "1967",
+        "1962",
+        "1956"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-387f7c18",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which of these albums is by Björk?",
+      "choices": [
+        "Ghosts I–IV",
+        "Lust for Life",
+        "Relentless",
+        "Volta"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-82257883",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"ARCHE\" in 2014?",
+      "choices": [
+        "Rammstein",
+        "DIR EN GREY",
+        "Napalm Death",
+        "Motörhead"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-10078ab2",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"I Never Loved a Man the Way I Love You\" by Aretha Franklin first released?",
+      "choices": [
+        "1969",
+        "1962",
+        "1972",
+        "1967"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-80edcbd7",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "Which artist released the album \"Black Roses\" in 1986?",
+      "choices": [
+        "UB40",
+        "Inner Circle",
+        "Toots & The Maytals",
+        "Gregory Isaacs"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-be962397",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Lawn Boy\" by Phish first released?",
+      "choices": [
+        "1993",
+        "1994",
+        "1992",
+        "1990"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f045a2f0",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"McCartney\" by Paul McCartney first released?",
+      "choices": [
+        "1970",
+        "1973",
+        "1976",
+        "1975"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-82fa97a8",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Ballad for Americans\" in 1940?",
+      "choices": [
+        "Bing Crosby",
+        "Django Reinhardt",
+        "Frank Sinatra",
+        "Billie Holiday"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-8aa2f01e",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"3 Feet High and Rising\" by De La Soul first released?",
+      "choices": [
+        "1989",
+        "1992",
+        "1991",
+        "1984"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-42b0a6d6",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Willie Nelson?",
+      "choices": [
+        "I’m a Lonesome Fugitive",
+        "Country Church Time",
+        "The Lure of the Grand Canyon",
+        "…and Then I Wrote"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-48fb2402",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Speak & Spell\" by Depeche Mode first released?",
+      "choices": [
+        "1977",
+        "1985",
+        "1981",
+        "1987"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ab1d1eff",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Motörhead\" by Motörhead first released?",
+      "choices": [
+        "1971",
+        "1982",
+        "1977",
+        "1979"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-25fbe788",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Little Girl Blue\" by Nina Simone first released?",
+      "choices": [
+        "1953",
+        "1958",
+        "1954",
+        "1955"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-99a1433d",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Africa's Blood\" in 1971?",
+      "choices": [
+        "King Tubby",
+        "Bob Marley & The Wailers",
+        "Lee “Scratch” Perry",
+        "Jimmy Cliff"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b00222a9",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"October\" in 1981?",
+      "choices": [
+        "U2",
+        "Phish",
+        "The Rolling Stones",
+        "Grateful Dead"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-e6340df2",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Surfer Girl\" by The Beach Boys first released?",
+      "choices": [
+        "1963",
+        "1969",
+        "1960",
+        "1966"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-0390026d",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which artist released the album \"Paris 1934\" in 1947?",
+      "choices": [
+        "Louis Armstrong",
+        "Nat King Cole",
+        "Django Reinhardt",
+        "Billie Holiday"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9f2fbd4f",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Get Rich or Die Tryin’\" by 50 Cent first released?",
+      "choices": [
+        "2005",
+        "2006",
+        "2003",
+        "2000"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3c384e47",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Singing Down The Lane\" in 1956?",
+      "choices": [
+        "Johnny Cash",
+        "Jim Reeves",
+        "Waylon Jennings",
+        "Merle Haggard"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a6f77e3f",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"The Bends\" by Radiohead first released?",
+      "choices": [
+        "2000",
+        "1989",
+        "1994",
+        "1992"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-b0f61b2c",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Sehnsucht\" in 1997?",
+      "choices": [
+        "Motörhead",
+        "Rammstein",
+        "Accept",
+        "Blind Guardian"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-47bff8d1",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"The Temptations Sing Smokey\" by The Temptations first released?",
+      "choices": [
+        "1965",
+        "1968",
+        "1969",
+        "1963"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-bfc2c61e",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Jimmy Cliff / Wonderful World, Beautiful People\" by Jimmy Cliff first released?",
+      "choices": [
+        "1963",
+        "1972",
+        "1969",
+        "1964"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-013abc1f",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Ummagumma\" in 1969?",
+      "choices": [
+        "Pink Floyd",
+        "Bob Dylan",
+        "Phish",
+        "Elvis Presley"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-23bc1b8c",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "In which year was \"Hunky Dory\" by David Bowie first released?",
+      "choices": [
+        "1971",
+        "1965",
+        "1966",
+        "1974"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ed974d26",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Young Man With a Horn\" in 1952?",
+      "choices": [
+        "Ella Fitzgerald",
+        "Bing Crosby",
+        "Miles Davis",
+        "Ray Charles"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-50d81748",
+      "category": "music",
+      "difficulty": 1,
+      "prompt": "Which of these albums is by Beastie Boys?",
+      "choices": [
+        "Good Life",
+        "Check Your Head",
+        "Still I Rise",
+        "Reasonable Doubt"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d8a5ed48",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Just Between the Two of Us\" in 1966?",
+      "choices": [
+        "Jim Reeves",
+        "Tennessee Ernie Ford",
+        "Willie Nelson",
+        "Merle Haggard"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-25394ca8",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which artist released the album \"Everything Is Wrong\" in 1995?",
+      "choices": [
+        "Lana Del Rey",
+        "Moby",
+        "Depeche Mode",
+        "Mike Oldfield"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-067c6426",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Follow the Leader\" by Korn first released?",
+      "choices": [
+        "1998",
+        "2000",
+        "2001",
+        "2003"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a9c7f46b",
+      "category": "music",
+      "difficulty": 2,
+      "prompt": "Which of these albums is by Stevie Wonder?",
+      "choices": [
+        "Gettin’ Ready",
+        "Tribute to Uncle Ray",
+        "Laughing on the Outside",
+        "Spirit"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-3420b8db",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Dub Me\" by King Tubby first released?",
+      "choices": [
+        "1971",
+        "1975",
+        "1969",
+        "1977"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-2f2dfe74",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"Darkness on the Edge of Town\" by Bruce Springsteen first released?",
+      "choices": [
+        "1982",
+        "1974",
+        "1978",
+        "1976"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-ff0599d9",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Red\" in 2012?",
+      "choices": [
+        "John Lennon",
+        "David Bowie",
+        "Madonna",
+        "Taylor Swift"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5e36bee8",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Solitude\" by Billie Holiday first released?",
+      "choices": [
+        "1955",
+        "1952",
+        "1947",
+        "1954"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-d28dc76f",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Trap‐a‐Thon\" in 2007?",
+      "choices": [
+        "2Pac",
+        "Gucci Mane",
+        "Lil B",
+        "Public Enemy"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-59d919ac",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Waylon Sings Ol’ Harlan\" by Waylon Jennings first released?",
+      "choices": [
+        "1965",
+        "1967",
+        "1964",
+        "1962"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5aa6ca12",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Born to Die Demos\" in 2012?",
+      "choices": [
+        "Nine Inch Nails",
+        "Depeche Mode",
+        "Lana Del Rey",
+        "Björk"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-1c15c175",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Withering to death.\" by DIR EN GREY first released?",
+      "choices": [
+        "2005",
+        "1999",
+        "2010",
+        "2007"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9188a551",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Showtime\" in 1964?",
+      "choices": [
+        "Earth, Wind & Fire",
+        "The Temptations",
+        "James Brown",
+        "Ike & Tina Turner"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4bb5b59d",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Face To Face\" by Beenie Man first released?",
+      "choices": [
+        "1996",
+        "1988",
+        "1998",
+        "1994"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-5336b299",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "In which year was \"The Rolling Stones No. 2\" by The Rolling Stones first released?",
+      "choices": [
+        "1965",
+        "1960",
+        "1967",
+        "1959"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-9dea4ce2",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"A Winter Romance\" in 1959?",
+      "choices": [
+        "John Lennon",
+        "David Bowie",
+        "Dean Martin",
+        "Paul McCartney"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-26f45bfb",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "In which year was \"Love Is the Thing\" by Nat King Cole first released?",
+      "choices": [
+        "1959",
+        "1957",
+        "1962",
+        "1954"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-704f20fe",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which artist released the album \"Muse Sick‐N‐Hour Mess Age\" in 1994?",
+      "choices": [
+        "De La Soul",
+        "Public Enemy",
+        "JAY‐Z",
+        "Beastie Boys"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-4b933a6a",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"The Star Carol\" by Tennessee Ernie Ford first released?",
+      "choices": [
+        "1956",
+        "1964",
+        "1954",
+        "1958"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-cb61b72a",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which of these albums is by Kraftwerk?",
+      "choices": [
+        "QE2",
+        "Hail to the Thief",
+        "Radio‐Aktivität",
+        "Speak & Spell"
+      ],
+      "answer": 2,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-7abd7fbe",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Arise\" in 1991?",
+      "choices": [
+        "Sepultura",
+        "Rammstein",
+        "Metallica",
+        "Napalm Death"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-155c8dd0",
+      "category": "music",
+      "difficulty": 5,
+      "prompt": "In which year was \"Don’t Play Me Cheap\" by Ike & Tina Turner first released?",
+      "choices": [
+        "1960",
+        "1959",
+        "1965",
+        "1963"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-a2341d8c",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Everything Is Great\" in 1979?",
+      "choices": [
+        "Jimmy Cliff",
+        "Lee “Scratch” Perry",
+        "Beenie Man",
+        "Inner Circle"
+      ],
+      "answer": 3,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-6848169f",
+      "category": "music",
+      "difficulty": 3,
+      "prompt": "Which of these albums is by Elvis Presley?",
+      "choices": [
+        "Pot Luck",
+        "Houses of the Holy",
+        "Their Satanic Majesties Request",
+        "American Beauty"
+      ],
+      "answer": 0,
+      "source": "musicbrainz"
+    },
+    {
+      "id": "mb-f45ad47e",
+      "category": "music",
+      "difficulty": 4,
+      "prompt": "Which artist released the album \"Boy Toy\" in 1993?",
+      "choices": [
+        "Paul McCartney",
+        "Madonna",
+        "Elton John",
+        "Prince"
+      ],
+      "answer": 1,
+      "source": "musicbrainz"
+    }
+  ]
+}
