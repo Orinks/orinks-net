@@ -3,11 +3,11 @@
   "voice": "clide",
   "source": "MusicBrainz (https://musicbrainz.org)",
   "license": "MusicBrainz core data is placed into the public domain (CC0) — https://musicbrainz.org/doc/About/Data_License",
-  "curated": false,
+  "curated": true,
   "questions": [
     {
       "id": "mb-4a7ec9bd",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which artist released the album \"The Wild, the Innocent & The E Street Shuffle\" in 1973?",
       "choices": [
@@ -17,11 +17,12 @@
         "Bruce Springsteen"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "This was Bruce Springsteen's second album, released the same year as his debut and later overshadowed by the breakthrough success of Born to Run."
     },
     {
       "id": "mb-27f6025f",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 2,
       "prompt": "In which year was \"Surfin’ Safari\" by The Beach Boys first released?",
       "choices": [
@@ -31,11 +32,12 @@
         "1958"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Surfin' Safari was The Beach Boys' debut album and introduced their surf-rock sound to a national audience."
     },
     {
       "id": "mb-e7ae2e6e",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 2,
       "prompt": "In which year was \"Souvenir Album\" by Ella Fitzgerald first released?",
       "choices": [
@@ -45,11 +47,12 @@
         "1943"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Ella Fitzgerald was already an established jazz vocalist by this point, having first risen to fame in the swing era of the 1930s."
     },
     {
       "id": "mb-fa6de257",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which of these albums is by Eminem?",
       "choices": [
@@ -59,11 +62,12 @@
         "All Eyez on Me"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Infinite was Eminem's independent 1996 debut album, released before he signed with Dr. Dre's Aftermath label."
     },
     {
       "id": "mb-e2c31259",
-      "category": "music",
+      "category": "country",
       "difficulty": 2,
       "prompt": "In which year was \"…and Then I Wrote\" by Willie Nelson first released?",
       "choices": [
@@ -73,11 +77,12 @@
         "1962"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "...And Then I Wrote was Willie Nelson's debut album, showcasing songs he had written that would go on to become hits for other artists."
     },
     {
       "id": "mb-c452267f",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which of these albums is by Depeche Mode?",
       "choices": [
@@ -87,11 +92,12 @@
         "Speak & Spell"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Speak & Spell was Depeche Mode's debut album and the only one to feature founding songwriter Vince Clarke, who left to form Yazoo."
     },
     {
       "id": "mb-24c87e8d",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Kill ’Em All\" in 1983?",
       "choices": [
@@ -101,11 +107,12 @@
         "Korn"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Kill 'Em All was Metallica's debut album and a foundational release for the thrash metal genre."
     },
     {
       "id": "mb-b1073acf",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 2,
       "prompt": "In which year was \"The Tender, the Moving, the Swinging Aretha Franklin\" by Aretha Franklin first released?",
       "choices": [
@@ -115,11 +122,12 @@
         "1962"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Aretha Franklin recorded for Columbia Records early in her career, before her more famous soul hits on Atlantic later in the decade."
     },
     {
       "id": "mb-677d5df6",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 1,
       "prompt": "Which of these albums is by Bob Marley & The Wailers?",
       "choices": [
@@ -129,11 +137,12 @@
         "Unlimited"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Soul Rebels was one of the earliest albums by Bob Marley & The Wailers, produced by Lee \"Scratch\" Perry in Jamaica."
     },
     {
       "id": "mb-ed171247",
-      "category": "music",
+      "category": "classical",
       "difficulty": 1,
       "prompt": "Which of these albums is by Johann Sebastian Bach?",
       "choices": [
@@ -143,11 +152,12 @@
         "14 Valses"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Christmas Oratorio (Weihnachts-Oratorium) is a set of six cantatas Bach composed for the 1734-35 holiday season in Leipzig."
     },
     {
       "id": "mb-e6678cc8",
-      "category": "music",
+      "category": "rock",
       "difficulty": 2,
       "prompt": "In which year was \"Please Please Me\" by The Beatles first released?",
       "choices": [
@@ -157,11 +167,12 @@
         "1963"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Please Please Me was The Beatles' debut studio album, recorded in a single day at Abbey Road Studios."
     },
     {
       "id": "mb-bcb3eaac",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of these albums is by David Bowie?",
       "choices": [
@@ -171,11 +182,12 @@
         "The Man Who Sold the World"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Man Who Sold the World was David Bowie's third studio album, later covered by Nirvana on their MTV Unplugged set."
     },
     {
       "id": "mb-dce16ba9",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 2,
       "prompt": "Which artist released the album \"The New Sounds\" in 1951?",
       "choices": [
@@ -185,11 +197,12 @@
         "Ella Fitzgerald"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Miles Davis helped pioneer the cool jazz movement of the early 1950s with a more relaxed, understated sound than bebop."
     },
     {
       "id": "mb-0292706a",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 2,
       "prompt": "In which year was \"Paul’s Boutique\" by Beastie Boys first released?",
       "choices": [
@@ -199,11 +212,12 @@
         "1987"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Paul's Boutique was famously built on dense, layered samples assembled with the production team the Dust Brothers."
     },
     {
       "id": "mb-4b467c03",
-      "category": "music",
+      "category": "country",
       "difficulty": 1,
       "prompt": "Which of these albums is by George Jones?",
       "choices": [
@@ -213,13 +227,14 @@
         "…and Then I Wrote"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "George Jones built his reputation as one of country music's most distinctive vocalists across decades of honky-tonk recordings."
     },
     {
       "id": "mb-160fef5b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
-      "prompt": "Which artist released the album \"The Bends\" in 1994?",
+      "prompt": "Which artist released the album \"The Bends\" in 1995?",
       "choices": [
         "Radiohead",
         "Tangerine Dream",
@@ -227,11 +242,12 @@
         "Björk"
       ],
       "answer": 0,
+      "explanation": "The Bends was Radiohead's second album, following their 1993 debut Pablo Honey.",
       "source": "musicbrainz"
     },
     {
       "id": "mb-68ade953",
-      "category": "music",
+      "category": "metal",
       "difficulty": 2,
       "prompt": "In which year was \"Bomber\" by Motörhead first released?",
       "choices": [
@@ -241,11 +257,12 @@
         "1974"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bomber gave Motörhead's live shows their signature stage prop: a giant lighting rig shaped like a World War II bomber."
     },
     {
       "id": "mb-c7c4a2dd",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "Which of these albums is by Marvin Gaye?",
       "choices": [
@@ -255,11 +272,12 @@
         "I Was Made to Love Her"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "That Stubborn Kinda' Fellow was Marvin Gaye's debut studio album for Motown's Tamla label, released in 1963."
     },
     {
       "id": "mb-726de388",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Cloak & Dagger\" in 1972?",
       "choices": [
@@ -269,11 +287,12 @@
         "Lee “Scratch” Perry"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lee \"Scratch\" Perry was a hugely influential reggae producer known for pioneering dub through his innovative studio techniques."
     },
     {
       "id": "mb-e7ed1de4",
-      "category": "music",
+      "category": "classical",
       "difficulty": 1,
       "prompt": "Which of these albums is by Wolfgang Amadeus Mozart?",
       "choices": [
@@ -283,11 +302,12 @@
         "14 Valses"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Exsultate, Jubilate is a solo motet Mozart composed in 1773 for the castrato singer Venanzio Rauzzini."
     },
     {
       "id": "mb-08d4436f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In which year was \"Aoxomoxoa\" by Grateful Dead first released?",
       "choices": [
@@ -297,11 +317,12 @@
         "1967"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Aoxomoxoa is a palindrome, reading the same forwards and backwards."
     },
     {
       "id": "mb-09bc0df5",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which of these albums is by Prince?",
       "choices": [
@@ -311,11 +332,12 @@
         "Dirty Mind"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dirty Mind marked a stylistic shift for Prince toward a stripped-down new wave and funk sound."
     },
     {
       "id": "mb-5d79ae39",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "In which year was \"Sings for Two in Love\" by Nat King Cole first released?",
       "choices": [
@@ -325,11 +347,12 @@
         "1957"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Nat King Cole was known as much for his smooth vocal style as for his skills as a jazz pianist."
     },
     {
       "id": "mb-7517a591",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which of these albums is by Lil B?",
       "choices": [
@@ -339,11 +362,12 @@
         "Angels Exodus"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lil B, known as \"The BasedGod,\" built a cult following through an unusually prolific stream of underground mixtapes and albums."
     },
     {
       "id": "mb-689b9f4c",
-      "category": "music",
+      "category": "country",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Bimbo\" in 1957?",
       "choices": [
@@ -353,11 +377,12 @@
         "George Jones"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Jim Reeves was known for his smooth, low-key vocal style that helped define the countrypolitan sound of the late 1950s and 60s."
     },
     {
       "id": "mb-e6d6b5b3",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 2,
       "prompt": "In which year was \"Zeit\" by Tangerine Dream first released?",
       "choices": [
@@ -367,11 +392,12 @@
         "1976"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Zeit was an early Tangerine Dream album built around long-form ambient and experimental electronic compositions."
     },
     {
       "id": "mb-cd52a8bc",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of these albums is by Linkin Park?",
       "choices": [
@@ -381,11 +407,12 @@
         "Take a Look in the Mirror"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Minutes to Midnight was Linkin Park's third album and marked a deliberate move away from their earlier nu-metal sound."
     },
     {
       "id": "mb-77114c21",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "Which artist released the album \"A Bit of Liverpool\" in 1964?",
       "choices": [
@@ -395,11 +422,12 @@
         "Marvin Gaye"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "A Bit of Liverpool was a covers album of Merseybeat-era songs, released during the height of Beatlemania."
     },
     {
       "id": "mb-c3af5488",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 2,
       "prompt": "In which year was \"UB44\" by UB40 first released?",
       "choices": [
@@ -409,11 +437,12 @@
         "1988"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "UB44 was a parody title referencing UB40's own name, released as a tribute/covers project."
     },
     {
       "id": "mb-5775b452",
-      "category": "music",
+      "category": "classical",
       "difficulty": 1,
       "prompt": "Which of these albums is by Ludwig van Beethoven?",
       "choices": [
@@ -423,11 +452,12 @@
         "Symphony In G Minor, K. 550 / Symphony In D Major, No. 104"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Beethoven's Piano Concerto No. 5 earned its \"Emperor\" nickname after his death; he never used the title himself."
     },
     {
       "id": "mb-884e8717",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Rift\" in 1993?",
       "choices": [
@@ -437,11 +467,12 @@
         "Pink Floyd"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Rift was a concept album by Phish, with the band later performing it live from start to finish on New Year's Eve."
     },
     {
       "id": "mb-10a16571",
-      "category": "music",
+      "category": "pop",
       "difficulty": 4,
       "prompt": "In which year was \"Red\" by Taylor Swift first released?",
       "choices": [
@@ -451,11 +482,12 @@
         "2009"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Red included the song \"I Knew You Were Trouble,\" which pushed Taylor Swift's sound further toward pop and electronic production."
     },
     {
       "id": "mb-ad2d6677",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 4,
       "prompt": "Which artist released the album \"South of the Border\" in 1952?",
       "choices": [
@@ -465,11 +497,12 @@
         "Louis Armstrong"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Charlie Parker was a pioneering alto saxophonist central to the development of bebop in the 1940s."
     },
     {
       "id": "mb-a8789b04",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 4,
       "prompt": "In which year was \"Trap‐a‐Thon\" by Gucci Mane first released?",
       "choices": [
@@ -479,11 +512,12 @@
         "2010"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Gucci Mane released Trap-a-Thon early in his career while helping build the foundations of Atlanta's trap subgenre."
     },
     {
       "id": "mb-59e925fe",
-      "category": "music",
+      "category": "country",
       "difficulty": 3,
       "prompt": "Which of these albums is by Merle Haggard?",
       "choices": [
@@ -493,11 +527,12 @@
         "Singing Down The Lane"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "I'm a Lonesome Fugitive was Merle Haggard's breakthrough album, led by the title track that became his first number-one country hit."
     },
     {
       "id": "mb-afdfd611",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which artist released the album \"With Teeth\" in 2005?",
       "choices": [
@@ -507,11 +542,12 @@
         "Nine Inch Nails"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "With Teeth was Nine Inch Nails' first album in six years, following Trent Reznor's recovery from addiction."
     },
     {
       "id": "mb-fc12a0d0",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "In which year was \"Zeitreise - Reisezeit\" by Rammstein first released?",
       "choices": [
@@ -521,11 +557,12 @@
         "2000"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Zeitreise - Reisezeit was a live release documenting Rammstein's elaborate, pyrotechnic-heavy stage shows."
     },
     {
       "id": "mb-c0f8845b",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Gettin’ Ready\" in 1966?",
       "choices": [
@@ -535,11 +572,12 @@
         "The Temptations"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Temptations built their reputation on tight vocal harmonies and choreography as one of Motown's flagship groups."
     },
     {
       "id": "mb-39100d2f",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 4,
       "prompt": "In which year was \"Monkey Man\" by Toots & The Maytals first released?",
       "choices": [
@@ -549,11 +587,12 @@
         "1972"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Monkey Man became one of Toots & The Maytals' most enduring songs, later covered by other artists including The Specials."
     },
     {
       "id": "mb-c5cda88b",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "Which of these albums is by Franz Schubert?",
       "choices": [
@@ -563,11 +602,12 @@
         "Six Violin Sonatas (Remastered 2024)"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Schubert's Symphony No. 8 is known as the \"Unfinished Symphony\" because he completed only two of its planned four movements."
     },
     {
       "id": "mb-49f2ae23",
-      "category": "music",
+      "category": "rock",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Bringing It All Back Home\" in 1965?",
       "choices": [
@@ -577,11 +617,12 @@
         "Bob Dylan"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bringing It All Back Home was the album where Bob Dylan first incorporated electric instrumentation alongside acoustic tracks."
     },
     {
       "id": "mb-85cbc37f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 4,
       "prompt": "In which year was \"Honky Château\" by Elton John first released?",
       "choices": [
@@ -591,11 +632,12 @@
         "1977"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Honky Château was recorded at Château d'Hérouville in France and included the hit \"Rocket Man.\""
     },
     {
       "id": "mb-3f2aea8b",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "Which of these albums is by Ray Charles?",
       "choices": [
@@ -605,11 +647,12 @@
         "Vol. 3"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Soul Brothers was a 1958 collaborative album pairing Ray Charles with jazz saxophonist Milt Jackson."
     },
     {
       "id": "mb-7c144aea",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"The Dynasty: Roc La Familia\" in 2000?",
       "choices": [
@@ -619,11 +662,12 @@
         "JAY‐Z"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Dynasty: Roc La Familia was billed as a JAY-Z album but featured heavy contributions from his Roc-A-Fella labelmates."
     },
     {
       "id": "mb-e8cd5255",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "In which year was \"Love of the Common People\" by Waylon Jennings first released?",
       "choices": [
@@ -633,11 +677,12 @@
         "1967"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Waylon Jennings was still developing his sound in Nashville before becoming a leading figure of the outlaw country movement."
     },
     {
       "id": "mb-d747ebcb",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which of these albums is by Moby?",
       "choices": [
@@ -647,11 +692,12 @@
         "Hergest Ridge"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Play became a commercial breakthrough for Moby after every one of its tracks was licensed for film, TV, or advertising use."
     },
     {
       "id": "mb-2a42b1bd",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Untouchables\" in 2002?",
       "choices": [
@@ -661,11 +707,12 @@
         "Korn"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Untouchables was Korn's fifth studio album and one of the most expensive metal albums produced at the time."
     },
     {
       "id": "mb-8004cbfb",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "In which year was \"Up‐Tight (Everything’s Alright)\" by Stevie Wonder first released?",
       "choices": [
@@ -675,11 +722,12 @@
         "1971"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Up-Tight (Everything's Alright) came during Stevie Wonder's transition from child prodigy \"Little Stevie Wonder\" into a more mature Motown artist."
     },
     {
       "id": "mb-b300f3d3",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "Which of these albums is by Jimmy Cliff?",
       "choices": [
@@ -689,11 +737,12 @@
         "Unreleased Acoustic Tapes"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Jimmy Cliff helped bring reggae to international audiences, notably through his starring role in the film The Harder They Come."
     },
     {
       "id": "mb-5bb81e44",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "Which of these albums is by Robert Schumann?",
       "choices": [
@@ -703,11 +752,12 @@
         "Six Violin Sonatas (Remastered 2024)"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Schumann's Piano Concerto in A minor was written for his wife, the celebrated pianist Clara Schumann."
     },
     {
       "id": "mb-0afbae28",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "In which year was \"Tear Down the Walls\" by U2 first released?",
       "choices": [
@@ -717,11 +767,12 @@
         "1993"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Tear Down the Walls was an early, hard-to-find release credited to a pre-fame U2 alongside another artist."
     },
     {
       "id": "mb-ca14f7a2",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Which of these albums is by Dean Martin?",
       "choices": [
@@ -731,11 +782,12 @@
         "Surfer Girl"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dean Martin built a career as a crooner and entertainer alongside his work as part of the Rat Pack with Frank Sinatra and Sammy Davis Jr."
     },
     {
       "id": "mb-616d0519",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Sings Songs by Jerome Kern\" in 1949?",
       "choices": [
@@ -745,11 +797,12 @@
         "Ella Fitzgerald"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bing Crosby was one of the best-selling recording artists of the 20th century and a pioneer of the crooner vocal style."
     },
     {
       "id": "mb-1a5d2cea",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 4,
       "prompt": "In which year was \"There’s a Poison Goin On…\" by Public Enemy first released?",
       "choices": [
@@ -759,11 +812,12 @@
         "1999"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "There's a Poison Goin On was released on Public Enemy's own label after the group's split from Def Jam."
     },
     {
       "id": "mb-5bd08007",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "Which of these albums is by Tennessee Ernie Ford?",
       "choices": [
@@ -773,11 +827,12 @@
         "Always, Always"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Nearer the Cross was one of several gospel and hymn albums Tennessee Ernie Ford recorded during his career."
     },
     {
       "id": "mb-d5a2a5a4",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Relentless\" in 1993?",
       "choices": [
@@ -787,11 +842,12 @@
         "Tangerine Dream"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Pet Shop Boys built their career on synth-pop production paired with Neil Tennant's wry lyrical delivery."
     },
     {
       "id": "mb-965145bb",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "In which year was \"UROBOROS\" by DIR EN GREY first released?",
       "choices": [
@@ -801,11 +857,12 @@
         "2013"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "UROBOROS took its title from the ancient symbol of a serpent eating its own tail, representing cyclical renewal."
     },
     {
       "id": "mb-a4dd56ef",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "Which of these albums is by Earth, Wind & Fire?",
       "choices": [
@@ -815,11 +872,12 @@
         "Spirit"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Spirit was Earth, Wind & Fire's eighth studio album, released after founder Maurice White was diagnosed with Parkinson's disease."
     },
     {
       "id": "mb-1c23c588",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Extra Classic\" in 1978?",
       "choices": [
@@ -829,11 +887,12 @@
         "King Tubby"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Gregory Isaacs, nicknamed the \"Cool Ruler,\" was known for his smooth voice and lovers rock style within reggae."
     },
     {
       "id": "mb-9d1f9cae",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "Which of these albums is by Joseph Haydn?",
       "choices": [
@@ -843,11 +902,12 @@
         "Moments musicaux, Op. 94, Nos. 1-6, D.780"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The \"Drum Roll\" Symphony, Haydn's Symphony No. 103, opens with an unaccompanied timbrel roll that gives the piece its nickname."
     },
     {
       "id": "mb-3bd30af3",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which of these albums is by Pink Floyd?",
       "choices": [
@@ -857,11 +917,12 @@
         "Wish You Were Here"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Wish You Were Here is largely a tribute to Pink Floyd's former bandmate Syd Barrett, who left the group in 1968."
     },
     {
       "id": "mb-011ef8c0",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Bedtime Stories\" in 1994?",
       "choices": [
@@ -871,11 +932,12 @@
         "Madonna"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bedtime Stories included the hit single \"Take a Bow\" and marked a more introspective turn for Madonna after the Erotica era."
     },
     {
       "id": "mb-b06fe298",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 4,
       "prompt": "In which year was \"Songs for Young Lovers\" by Frank Sinatra first released?",
       "choices": [
@@ -885,11 +947,12 @@
         "1956"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Songs for Young Lovers was one of the concept albums that helped define Frank Sinatra's classic Capitol Records era."
     },
     {
       "id": "mb-c24bb9c1",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which of these albums is by 2Pac?",
       "choices": [
@@ -899,11 +962,12 @@
         "Late Registration"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Me Against the World debuted at number one on the Billboard 200 while 2Pac was serving a prison sentence."
     },
     {
       "id": "mb-b53f2bd3",
-      "category": "music",
+      "category": "country",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Sing Me a Blue Song\" in 1957?",
       "choices": [
@@ -913,11 +977,12 @@
         "George Jones"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Hank Williams died in 1953, so this album was released posthumously from recordings made in the years before his death."
     },
     {
       "id": "mb-4a689c4d",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "In which year was \"Lust for Life\" by Lana Del Rey first released?",
       "choices": [
@@ -927,11 +992,12 @@
         "2014"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lust for Life featured guest appearances from artists including The Weeknd, Stevie Nicks, and Sean Ono Lennon."
     },
     {
       "id": "mb-ec45b984",
-      "category": "music",
+      "category": "metal",
       "difficulty": 5,
       "prompt": "Which of these albums is by Sepultura?",
       "choices": [
@@ -941,11 +1007,12 @@
         "From Enslavement to Obliteration"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Roots saw Sepultura blend death metal with Brazilian percussion and rhythms, including a collaboration with the Xavante people."
     },
     {
       "id": "mb-3b977099",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Handful of Soul\" in 1966?",
       "choices": [
@@ -955,11 +1022,12 @@
         "The Supremes"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "James Brown earned the nickname \"the Godfather of Soul\" for his innovations in funk and soul during the 1960s."
     },
     {
       "id": "mb-9839094b",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "In which year was \"In Dub Conference, Volume 3\" by King Tubby first released?",
       "choices": [
@@ -969,11 +1037,12 @@
         "1973"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "King Tubby is widely credited as one of the founding architects of dub through his pioneering remix and mixing-desk techniques."
     },
     {
       "id": "mb-97d9c6fd",
-      "category": "music",
+      "category": "classical",
       "difficulty": 5,
       "prompt": "Which of these albums is by Antonio Vivaldi?",
       "choices": [
@@ -983,11 +1052,12 @@
         "Symphonie Nr. 3 in Es-Dur op. 55 (Eroica)"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Les Quatre Saisons is the French title for The Four Seasons, Vivaldi's set of four violin concertos."
     },
     {
       "id": "mb-18db476a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "In which year was \"In Through the Out Door\" by Led Zeppelin first released?",
       "choices": [
@@ -997,11 +1067,12 @@
         "1974"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "In Through the Out Door was the last studio album Led Zeppelin released before John Bonham's death ended the band."
     },
     {
       "id": "mb-74ad5b6a",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 5,
       "prompt": "Which of these albums is by Roy Orbison?",
       "choices": [
@@ -1011,11 +1082,12 @@
         "Cha Cha De Amor"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Roy Orbison was known for his operatic vocal range and dramatic ballads like \"Crying\" and \"Oh, Pretty Woman.\""
     },
     {
       "id": "mb-85aec044",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Porgy & Bess\" in 1957?",
       "choices": [
@@ -1025,11 +1097,12 @@
         "Nat King Cole"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "This Porgy & Bess was a collaborative album pairing Louis Armstrong with Ella Fitzgerald, interpreting Gershwin's opera."
     },
     {
       "id": "mb-0af98c72",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "In which year was \"Good Ass Job\" by Ye first released?",
       "choices": [
@@ -1039,11 +1112,12 @@
         "2007"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Good Ass Job circulated as an unofficial compilation of Kanye West guest verses and collaborations rather than a formal studio album."
     },
     {
       "id": "mb-1b5c6a8e",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 5,
       "prompt": "Which of these albums is by Jerry Lee Lewis?",
       "choices": [
@@ -1053,11 +1127,12 @@
         "Another Place Another Time"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Another Place Another Time marked Jerry Lee Lewis's comeback as a country hitmaker after his early rock and roll fame faded."
     },
     {
       "id": "mb-d0e722f5",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Computerwelt\" in 1981?",
       "choices": [
@@ -1067,11 +1142,12 @@
         "Mike Oldfield"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Computerwelt (Computer World) was a concept album by Kraftwerk exploring themes of computers and data long before home computing was widespread."
     },
     {
       "id": "mb-c5f16227",
-      "category": "music",
+      "category": "metal",
       "difficulty": 5,
       "prompt": "In which year was \"Eat the Heat\" by Accept first released?",
       "choices": [
@@ -1081,11 +1157,12 @@
         "1994"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Eat the Heat was notable for being the only Accept album to feature David Reece rather than longtime vocalist Udo Dirkschneider."
     },
     {
       "id": "mb-84deae50",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "Which of these albums is by Ike & Tina Turner?",
       "choices": [
@@ -1095,11 +1172,12 @@
         "Grits & Soul"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Outta Season was one of several albums Ike & Tina Turner released on Blue Thumb Records in the early 1970s."
     },
     {
       "id": "mb-f77f4bd0",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Maestro\" in 1996?",
       "choices": [
@@ -1109,11 +1187,12 @@
         "King Tubby"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Beenie Man became one of dancehall's most prominent artists through the 1990s, known for his rapid-fire deejay style."
     },
     {
       "id": "mb-9760000a",
-      "category": "music",
+      "category": "classical",
       "difficulty": 5,
       "prompt": "Which of these albums is by George Frideric Handel?",
       "choices": [
@@ -1123,11 +1202,12 @@
         "Partita no. 5 in G major / Partita no. 6 in E minor"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Acis and Galatea is a pastoral masque Handel composed based on the Greek myth of the nymph Galatea and her lover Acis."
     },
     {
       "id": "mb-20cd6b1d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of these albums is by Bruce Springsteen?",
       "choices": [
@@ -1137,11 +1217,12 @@
         "Blonde on Blonde"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Wild, the Innocent & the E Street Shuffle was Bruce Springsteen's second album and the first to feature the full E Street Band lineup."
     },
     {
       "id": "mb-ed42071d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Unfinished Music No. 1: Two Virgins\" in 1968?",
       "choices": [
@@ -1151,11 +1232,12 @@
         "David Bowie"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Unfinished Music No. 1: Two Virgins was a controversial experimental collaboration between John Lennon and Yoko Ono."
     },
     {
       "id": "mb-4202de06",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 2,
       "prompt": "Which of these albums is by Miles Davis?",
       "choices": [
@@ -1165,11 +1247,12 @@
         "Modern Jazz Trumpets"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Miles Davis helped define multiple eras of jazz, from bebop through cool jazz, modal jazz, and fusion."
     },
     {
       "id": "mb-306989f9",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"3 Feet High and Rising\" in 1989?",
       "choices": [
@@ -1179,11 +1262,12 @@
         "De La Soul"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "3 Feet High and Rising introduced De La Soul's playful, sample-heavy style and helped popularize alternative hip-hop."
     },
     {
       "id": "mb-c38ee7bd",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "In which year was \"Hello, I’m Dolly\" by Dolly Parton first released?",
       "choices": [
@@ -1193,11 +1277,12 @@
         "1961"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Hello, I'm Dolly was Dolly Parton's debut solo studio album."
     },
     {
       "id": "mb-f7d27028",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Tubular Bells\" in 1973?",
       "choices": [
@@ -1207,11 +1292,12 @@
         "Moby"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Tubular Bells was Mike Oldfield's debut album, recorded largely by Oldfield playing nearly every instrument himself."
     },
     {
       "id": "mb-a5c34359",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "In which year was \"Battalions of Fear\" by Blind Guardian first released?",
       "choices": [
@@ -1221,11 +1307,12 @@
         "1983"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Battalions of Fear was Blind Guardian's debut album, released while the band was still finding its footing in speed and power metal."
     },
     {
       "id": "mb-82179af9",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 2,
       "prompt": "In which year was \"The Soulful Moods of Marvin Gaye\" by Marvin Gaye first released?",
       "choices": [
@@ -1235,11 +1322,12 @@
         "1956"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Soulful Moods of Marvin Gaye was Marvin Gaye's debut solo album, leaning toward jazz standards before his soul hits followed."
     },
     {
       "id": "mb-6e7c3e29",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 4,
       "prompt": "Which of these albums is by Bob Marley?",
       "choices": [
@@ -1249,11 +1337,12 @@
         "Unreleased Acoustic Tapes"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bob Marley's catalog has been repackaged many times since his death, including numerous archival and rarities collections."
     },
     {
       "id": "mb-50435e30",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "Which of these albums is by Johannes Brahms?",
       "choices": [
@@ -1263,11 +1352,12 @@
         "Moments musicaux, Op. 94, Nos. 1-6, D.780"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Brahms wrote his Piano Concerto No. 2 nearly two decades after his tumultuous first, and it is notable for including a full scherzo movement."
     },
     {
       "id": "mb-f69be1e7",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of these albums is by The Rolling Stones?",
       "choices": [
@@ -1277,11 +1367,12 @@
         "Born in the U.S.A."
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "England's Newest Hit Makers was the American title for The Rolling Stones' self-titled 1964 debut album."
     },
     {
       "id": "mb-5bdfc805",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"RAM\" in 1971?",
       "choices": [
@@ -1291,11 +1382,12 @@
         "The Beach Boys"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "RAM was credited to Paul and Linda McCartney and was recorded not long after the breakup of the Beatles."
     },
     {
       "id": "mb-fb836000",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "In which year was \"Lover Man\" by Billie Holiday first released?",
       "choices": [
@@ -1305,11 +1397,12 @@
         "1951"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lover Man gathered together a number of Billie Holiday's recordings for Decca Records."
     },
     {
       "id": "mb-12ad8337",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these albums is by 50 Cent?",
       "choices": [
@@ -1319,11 +1412,12 @@
         "The Best of Both Worlds"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Get Rich or Die Tryin' was 50 Cent's major-label debut, released after he survived being shot nine times in 2000."
     },
     {
       "id": "mb-1a7fbbfb",
-      "category": "music",
+      "category": "country",
       "difficulty": 2,
       "prompt": "In which year was \"Here’s Willie Nelson\" by Willie Nelson first released?",
       "choices": [
@@ -1333,11 +1427,12 @@
         "1966"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Here's Willie Nelson was an early album released while Nelson was still primarily known as a Nashville songwriter rather than a performer."
     },
     {
       "id": "mb-5f6ffe91",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 2,
       "prompt": "In which year was \"Alpha Centauri\" by Tangerine Dream first released?",
       "choices": [
@@ -1347,11 +1442,12 @@
         "1976"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Alpha Centauri took its name from the star system and reflected Tangerine Dream's early interest in space-themed ambient music."
     },
     {
       "id": "mb-d55e28c1",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which of these albums is by Napalm Death?",
       "choices": [
@@ -1361,11 +1457,12 @@
         "Roots"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "From Enslavement to Obliteration is considered a foundational album in the development of grindcore."
     },
     {
       "id": "mb-62f018d8",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Where Did Our Love Go\" in 1964?",
       "choices": [
@@ -1375,11 +1472,12 @@
         "Marvin Gaye"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Where Did Our Love Go gave The Supremes their first number-one single and launched their run as Motown's top act."
     },
     {
       "id": "mb-c94ddf22",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 4,
       "prompt": "In which year was \"Blame It on the Sun\" by Inner Circle first released?",
       "choices": [
@@ -1389,11 +1487,12 @@
         "1971"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Inner Circle built a strong reggae following through the 1970s, years before their 1990s mainstream crossover hits."
     },
     {
       "id": "mb-84ec6b7c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 2,
       "prompt": "Which of these albums is by Phish?",
       "choices": [
@@ -1403,11 +1502,12 @@
         "Tear Down the Walls"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Junta was Phish's debut studio album, named after a nickname for drummer Jon Fishman."
     },
     {
       "id": "mb-a29845d6",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Little Deuce Coupe\" in 1963?",
       "choices": [
@@ -1417,11 +1517,12 @@
         "Elton John"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Little Deuce Coupe was a car-themed album that captured The Beach Boys' early surf and hot-rod culture image."
     },
     {
       "id": "mb-7155d590",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Bird and Diz\" in 1952?",
       "choices": [
@@ -1431,11 +1532,12 @@
         "Ray Charles"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Bird and Diz paired Charlie Parker (nicknamed \"Bird\") with fellow bebop pioneer Dizzy Gillespie."
     },
     {
       "id": "mb-89d4b269",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 2,
       "prompt": "In which year was \"Unmastered Sequence\" by Eminem first released?",
       "choices": [
@@ -1445,11 +1547,12 @@
         "1996"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Unmastered Sequence circulated as an unofficial, unfinished collection of Eminem material from before his major-label breakthrough."
     },
     {
       "id": "mb-0e5bb4cb",
-      "category": "music",
+      "category": "country",
       "difficulty": 3,
       "prompt": "In which year was \"Just Between the Two of Us\" by Merle Haggard first released?",
       "choices": [
@@ -1459,11 +1562,12 @@
         "1966"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Merle Haggard was establishing his signature hard-edged honky-tonk sound during this stretch of his early career."
     },
     {
       "id": "mb-98d65cba",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 2,
       "prompt": "Which of these albums is by Nine Inch Nails?",
       "choices": [
@@ -1473,11 +1577,12 @@
         "The Fragile"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Fragile was a sprawling double album that Trent Reznor described as one of Nine Inch Nails' most personal works."
     },
     {
       "id": "mb-d99ebb3a",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Master of Puppets\" in 1986?",
       "choices": [
@@ -1487,11 +1592,12 @@
         "Accept"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Master of Puppets is widely regarded as one of the most influential thrash metal albums ever recorded."
     },
     {
       "id": "mb-e902aa38",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "In which year was \"Forbidden Fruit\" by Nina Simone first released?",
       "choices": [
@@ -1501,11 +1607,12 @@
         "1955"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Forbidden Fruit was an early Nina Simone album blending jazz, blues, and folk influences."
     },
     {
       "id": "mb-f2b0bbe0",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Rhythm Shower\" in 1973?",
       "choices": [
@@ -1515,11 +1622,12 @@
         "Lee “Scratch” Perry"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lee \"Scratch\" Perry recorded prolifically through the 1970s, often producing other reggae artists alongside his own material."
     },
     {
       "id": "mb-019edd30",
-      "category": "music",
+      "category": "rock",
       "difficulty": 4,
       "prompt": "Which artist released the album \"The Unforgettable Fire\" in 1984?",
       "choices": [
@@ -1529,11 +1637,12 @@
         "Pink Floyd"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Unforgettable Fire was U2's fourth album, produced by Brian Eno and Daniel Lanois and featuring the single \"Pride (In the Name of Love).\""
     },
     {
       "id": "mb-3c2963d4",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In which year was \"The Rise and Fall of Ziggy Stardust and the Spiders From Mars\" by David Bowie first released?",
       "choices": [
@@ -1543,11 +1652,12 @@
         "1972"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Ziggy Stardust album introduced David Bowie's flamboyant alter ego and is considered a landmark of glam rock."
     },
     {
       "id": "mb-7e03222c",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Blue Skies\" in 1946?",
       "choices": [
@@ -1557,11 +1667,12 @@
         "Charlie Parker"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Blue Skies was one of many albums Bing Crosby released drawing from the Great American Songbook."
     },
     {
       "id": "mb-64f6126c",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "In which year was \"Ill Communication\" by Beastie Boys first released?",
       "choices": [
@@ -1571,11 +1682,12 @@
         "1994"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Ill Communication included the hit \"Sabotage,\" whose retro cop-show-style music video became an MTV staple."
     },
     {
       "id": "mb-a30f67df",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Ol’ Rockin’ Ern\" in 1957?",
       "choices": [
@@ -1585,11 +1697,12 @@
         "Jim Reeves"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Tennessee Ernie Ford scored a massive hit around this era with \"Sixteen Tons,\" cementing his country and gospel crossover appeal."
     },
     {
       "id": "mb-34055fd4",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 4,
       "prompt": "In which year was \"Animal Rights\" by Moby first released?",
       "choices": [
@@ -1599,11 +1712,12 @@
         "1996"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Animal Rights marked a stylistic departure for Moby into punk and rock, a contrast to the electronic dance music that made him known."
     },
     {
       "id": "mb-c4f3453c",
-      "category": "music",
+      "category": "metal",
       "difficulty": 2,
       "prompt": "Which of these albums is by Motörhead?",
       "choices": [
@@ -1613,11 +1727,12 @@
         "Reload"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "On Parole was Motörhead's first recorded album, though its release was delayed for several years by their label."
     },
     {
       "id": "mb-4ee674a5",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "In which year was \"Stevie at the Beach\" by Stevie Wonder first released?",
       "choices": [
@@ -1627,11 +1742,12 @@
         "1960"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Stevie at the Beach was released while Stevie Wonder was still a young Motown prodigy performing as \"Little Stevie Wonder.\""
     },
     {
       "id": "mb-7013447f",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 2,
       "prompt": "Which of these albums is by UB40?",
       "choices": [
@@ -1641,11 +1757,12 @@
         "Shalom Dub"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Labour of Love was a covers album of reggae and rocksteady classics that became one of UB40's biggest commercial successes."
     },
     {
       "id": "mb-693211ba",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "In which year was \"Meddle\" by Pink Floyd first released?",
       "choices": [
@@ -1655,11 +1772,12 @@
         "1974"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Meddle featured the extended track \"Echoes,\" which took up the entire second side of the album."
     },
     {
       "id": "mb-83844ba2",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"1989\" in 2014?",
       "choices": [
@@ -1669,11 +1787,12 @@
         "Roy Orbison"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "1989 marked Taylor Swift's full transition from country to pop and later won the Grammy Award for Album of the Year in 2016."
     },
     {
       "id": "mb-a0ca59fb",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "In which year was \"Dedicated to You\" by Frank Sinatra first released?",
       "choices": [
@@ -1683,11 +1802,12 @@
         "1956"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dedicated to You was part of Frank Sinatra's catalog of albums built around romantic standards from the Great American Songbook."
     },
     {
       "id": "mb-a924a016",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"The State vs. Radric Davis\" in 2009?",
       "choices": [
@@ -1697,11 +1817,12 @@
         "Eminem"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The State vs. Radric Davis used Gucci Mane's legal first name in its title and became one of his most successful albums."
     },
     {
       "id": "mb-ab2da6a1",
-      "category": "music",
+      "category": "country",
       "difficulty": 5,
       "prompt": "In which year was \"Honky Tonkin’\" by Hank Williams first released?",
       "choices": [
@@ -1711,11 +1832,12 @@
         "1960"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Honky Tonkin' gathered recordings from Hank Williams, whose brief but influential career ended with his death in 1953."
     },
     {
       "id": "mb-d32220bf",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which of these albums is by Pet Shop Boys?",
       "choices": [
@@ -1725,11 +1847,12 @@
         "Abbey Road Demos"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Pet Shop Boys built their sound around synth-pop production paired with Neil Tennant's dry, observational lyrics."
     },
     {
       "id": "mb-fa0bdf33",
-      "category": "music",
+      "category": "rock",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Living Things\" in 2012?",
       "choices": [
@@ -1739,11 +1862,12 @@
         "Linkin Park"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Living Things was Linkin Park's fifth studio album, blending their rock sound with heavier electronic production."
     },
     {
       "id": "mb-53aafd85",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "In which year was \"Open Our Eyes\" by Earth, Wind & Fire first released?",
       "choices": [
@@ -1753,11 +1877,12 @@
         "1977"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Open Our Eyes came early in Earth, Wind & Fire's career, before the run of hits that made them a dominant force in soul and funk."
     },
     {
       "id": "mb-b92b68e6",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "Which of these albums is by Toots & The Maytals?",
       "choices": [
@@ -1767,11 +1892,12 @@
         "Music Maker"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Toots & The Maytals were pioneers of ska and rocksteady, and frontman Toots Hibbert is often credited with coining the term \"reggae.\""
     },
     {
       "id": "mb-e40c321f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "In which year was \"Physical Graffiti\" by Led Zeppelin first released?",
       "choices": [
@@ -1781,11 +1907,12 @@
         "1978"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Physical Graffiti was a sprawling double album that included tracks recorded during sessions for several earlier Led Zeppelin releases."
     },
     {
       "id": "mb-b7e74ff1",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these albums is by Elton John?",
       "choices": [
@@ -1795,11 +1922,12 @@
         "Surfin’ Safari"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Don't Shoot Me I'm Only the Piano Player included the hit \"Daniel\" and was one of several albums Elton John released in 1972 and 1973."
     },
     {
       "id": "mb-8ba8e4da",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "In which year was \"Ella Fitzgerald Sings the Rodgers and Hart Song Book\" by Ella Fitzgerald first released?",
       "choices": [
@@ -1809,11 +1937,12 @@
         "1956"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "This was one of several \"Songbook\" albums where Ella Fitzgerald interpreted the work of a single great American songwriting team."
     },
     {
       "id": "mb-347faa3f",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these albums is by JAY‐Z?",
       "choices": [
@@ -1823,11 +1952,12 @@
         "The Mix‐Up"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Blueprint is widely regarded as one of JAY-Z's finest albums and introduced producer Kanye West's soul-sample style to a wide audience."
     },
     {
       "id": "mb-4be4d338",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Memphis Beat\" in 1966?",
       "choices": [
@@ -1837,11 +1967,12 @@
         "Dolly Parton"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Jerry Lee Lewis recorded prolifically for Smash Records during the mid-1960s as he rebuilt his career around country music."
     },
     {
       "id": "mb-4da337fc",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "In which year was \"Honeymoon\" by Lana Del Rey first released?",
       "choices": [
@@ -1851,11 +1982,12 @@
         "2012"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Honeymoon leaned into a more cinematic, orchestral sound compared to Lana Del Rey's earlier releases."
     },
     {
       "id": "mb-79019a88",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "Which of these albums is by Rammstein?",
       "choices": [
@@ -1865,11 +1997,12 @@
         "Restless and Wild"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Rosenrot was assembled from sessions recorded alongside Rammstein's Reise, Reise album and released the following year."
     },
     {
       "id": "mb-613bc690",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "In which year was \"River Deep – Mountain High\" by Ike & Tina Turner first released?",
       "choices": [
@@ -1879,11 +2012,12 @@
         "1960"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "River Deep - Mountain High was produced by Phil Spector using his elaborate \"Wall of Sound\" technique."
     },
     {
       "id": "mb-aa0291a0",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "In which year was \"Dub Basket Chapter II - A King Tubby's Mix\" by King Tubby first released?",
       "choices": [
@@ -1893,11 +2027,12 @@
         "1980"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "King Tubby's dub mixes often stripped songs down to drums, bass, and effects, transforming existing reggae tracks into new instrumental versions."
     },
     {
       "id": "mb-05872b64",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Born in the U.S.A.\" in 1984?",
       "choices": [
@@ -1907,11 +2042,12 @@
         "Phish"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Born in the U.S.A. became Bruce Springsteen's best-selling album, spawning seven top-ten singles."
     },
     {
       "id": "mb-7581e155",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 5,
       "prompt": "In which year was \"Cha Cha De Amor\" by Dean Martin first released?",
       "choices": [
@@ -1921,11 +2057,12 @@
         "1966"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dean Martin recorded a number of themed pop albums like this one during his long run as a popular crooner."
     },
     {
       "id": "mb-e516118d",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Music for Torching\" in 1955?",
       "choices": [
@@ -1935,11 +2072,12 @@
         "Billie Holiday"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Billie Holiday's recordings from this period showcased the more world-weary vocal style of her later career."
     },
     {
       "id": "mb-4991abf3",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "In which year was \"Revolverlution\" by Public Enemy first released?",
       "choices": [
@@ -1949,11 +2087,12 @@
         "1998"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Revolverlution mixed new Public Enemy material with reworked versions of some of their earlier classic tracks."
     },
     {
       "id": "mb-58502f8d",
-      "category": "music",
+      "category": "country",
       "difficulty": 5,
       "prompt": "Which of these albums is by Dolly Parton?",
       "choices": [
@@ -1963,11 +2102,12 @@
         "JD’s"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dolly Parton released a steady run of country albums through the 1960s and 70s before her mainstream pop crossover."
     },
     {
       "id": "mb-d56221f2",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Die Mensch·Maschine\" in 1978?",
       "choices": [
@@ -1977,11 +2117,12 @@
         "Depeche Mode"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Die Mensch-Maschine (The Man-Machine) helped define Kraftwerk's image of merging human and machine identity through electronic music."
     },
     {
       "id": "mb-2146dfb6",
-      "category": "music",
+      "category": "metal",
       "difficulty": 5,
       "prompt": "In which year was \"See You on the Other Side\" by Korn first released?",
       "choices": [
@@ -1991,11 +2132,12 @@
         "2005"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "See You on the Other Side saw Korn experimenting further with electronic production alongside their nu-metal sound."
     },
     {
       "id": "mb-6368b535",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "Which of these albums is by Dionne Warwick?",
       "choices": [
@@ -2005,11 +2147,12 @@
         "How Sweet It Is to Be Loved by You"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dionne Warwick built her early career on songs written by the songwriting team of Burt Bacharach and Hal David."
     },
     {
       "id": "mb-5eef7e69",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "Which artist released the album \"All The Best\" in 1995?",
       "choices": [
@@ -2019,11 +2162,12 @@
         "Gregory Isaacs"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Beenie Man released a steady string of dancehall albums through the 1990s as his international profile grew."
     },
     {
       "id": "mb-afe05035",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Their Satanic Majesties Request\" in 1967?",
       "choices": [
@@ -2033,11 +2177,12 @@
         "The Beatles"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Their Satanic Majesties Request was The Rolling Stones' psychedelic-era album, often seen as a response to the Beatles' Sgt. Pepper's."
     },
     {
       "id": "mb-e3784d20",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "In which year was \"Ray of Light\" by Madonna first released?",
       "choices": [
@@ -2047,11 +2192,12 @@
         "2001"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Ray of Light marked a major stylistic shift for Madonna toward electronic music, produced with William Orbit."
     },
     {
       "id": "mb-f15036a8",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 5,
       "prompt": "In which year was \"The Charlie Parker Story\" by Charlie Parker first released?",
       "choices": [
@@ -2061,11 +2207,12 @@
         "1960"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Charlie Parker Story compiled recordings from Parker, the influential bebop saxophonist who died in 1955."
     },
     {
       "id": "mb-34e1a694",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Good Ass Job\" in 2009?",
       "choices": [
@@ -2075,11 +2222,12 @@
         "Public Enemy"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Good Ass Job was released as a compilation gathering Kanye West's guest verses and collaborations rather than a traditional studio album."
     },
     {
       "id": "mb-2114114f",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "In which year was \"The Sound of Johnny Cash\" by Johnny Cash first released?",
       "choices": [
@@ -2089,11 +2237,12 @@
         "1956"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Johnny Cash was building his reputation with Sun Records and then Columbia during this stretch of his early career."
     },
     {
       "id": "mb-387f7c18",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 5,
       "prompt": "Which of these albums is by Björk?",
       "choices": [
@@ -2103,11 +2252,12 @@
         "Volta"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Volta featured Björk experimenting with brass arrangements and collaborations with producers Timbaland and Antony Hegarty."
     },
     {
       "id": "mb-82257883",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "Which artist released the album \"ARCHE\" in 2014?",
       "choices": [
@@ -2117,11 +2267,12 @@
         "Motörhead"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "ARCHE marked a return to a heavier, more aggressive sound for DIR EN GREY after some more experimental releases."
     },
     {
       "id": "mb-10078ab2",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "In which year was \"I Never Loved a Man the Way I Love You\" by Aretha Franklin first released?",
       "choices": [
@@ -2131,11 +2282,12 @@
         "1967"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "I Never Loved a Man the Way I Love You was Aretha Franklin's breakthrough album after she moved to Atlantic Records."
     },
     {
       "id": "mb-80edcbd7",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "Which artist released the album \"Black Roses\" in 1986?",
       "choices": [
@@ -2145,11 +2297,12 @@
         "Gregory Isaacs"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Inner Circle built their reggae sound through the 1970s and 80s before finding mainstream crossover success in the 1990s."
     },
     {
       "id": "mb-be962397",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In which year was \"Lawn Boy\" by Phish first released?",
       "choices": [
@@ -2159,11 +2312,12 @@
         "1990"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lawn Boy was Phish's second studio album and included fan favorites like \"Bouncing Around the Room.\""
     },
     {
       "id": "mb-f045a2f0",
-      "category": "music",
+      "category": "rock",
       "difficulty": 4,
       "prompt": "In which year was \"McCartney\" by Paul McCartney first released?",
       "choices": [
@@ -2173,11 +2327,12 @@
         "1975"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "McCartney was recorded largely at home, with Paul McCartney playing almost every instrument himself."
     },
     {
       "id": "mb-82fa97a8",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Ballad for Americans\" in 1940?",
       "choices": [
@@ -2187,11 +2342,12 @@
         "Billie Holiday"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Ballad for Americans was a patriotic cantata that became a popular recording subject for several artists around 1940."
     },
     {
       "id": "mb-8aa2f01e",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 4,
       "prompt": "In which year was \"3 Feet High and Rising\" by De La Soul first released?",
       "choices": [
@@ -2201,11 +2357,12 @@
         "1984"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "3 Feet High and Rising introduced De La Soul's playful, sample-heavy style and helped popularize alternative hip-hop."
     },
     {
       "id": "mb-42b0a6d6",
-      "category": "music",
+      "category": "country",
       "difficulty": 1,
       "prompt": "Which of these albums is by Willie Nelson?",
       "choices": [
@@ -2215,11 +2372,12 @@
         "…and Then I Wrote"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "...And Then I Wrote was Willie Nelson's debut album, showcasing songs he had written that became hits for other country artists."
     },
     {
       "id": "mb-48fb2402",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 2,
       "prompt": "In which year was \"Speak & Spell\" by Depeche Mode first released?",
       "choices": [
@@ -2229,11 +2387,12 @@
         "1987"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Speak & Spell was Depeche Mode's only album to feature founding songwriter Vince Clarke, who left soon after to form Yazoo."
     },
     {
       "id": "mb-ab1d1eff",
-      "category": "music",
+      "category": "metal",
       "difficulty": 2,
       "prompt": "In which year was \"Motörhead\" by Motörhead first released?",
       "choices": [
@@ -2243,11 +2402,12 @@
         "1979"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Motörhead's self-titled album helped define the raw, high-speed sound that influenced the development of thrash metal."
     },
     {
       "id": "mb-25fbe788",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 3,
       "prompt": "In which year was \"Little Girl Blue\" by Nina Simone first released?",
       "choices": [
@@ -2257,11 +2417,12 @@
         "1955"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Little Girl Blue was Nina Simone's debut album and included her breakthrough recording of \"I Loves You, Porgy.\""
     },
     {
       "id": "mb-99a1433d",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Africa's Blood\" in 1971?",
       "choices": [
@@ -2271,11 +2432,12 @@
         "Jimmy Cliff"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Lee \"Scratch\" Perry ran the legendary Black Ark studio, where he developed much of his groundbreaking dub production style."
     },
     {
       "id": "mb-b00222a9",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"October\" in 1981?",
       "choices": [
@@ -2285,11 +2447,12 @@
         "Grateful Dead"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "October was U2's second album, shaped in part by the members' involvement with a Christian fellowship group around that time."
     },
     {
       "id": "mb-e6340df2",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 2,
       "prompt": "In which year was \"Surfer Girl\" by The Beach Boys first released?",
       "choices": [
@@ -2299,11 +2462,12 @@
         "1966"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Surfer Girl was the first Beach Boys album where Brian Wilson took on production duties himself."
     },
     {
       "id": "mb-0390026d",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 1,
       "prompt": "Which artist released the album \"Paris 1934\" in 1947?",
       "choices": [
@@ -2313,11 +2477,12 @@
         "Billie Holiday"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Louis Armstrong helped shape the sound of early jazz as one of its most influential trumpeters and vocalists."
     },
     {
       "id": "mb-9f2fbd4f",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 4,
       "prompt": "In which year was \"Get Rich or Die Tryin’\" by 50 Cent first released?",
       "choices": [
@@ -2327,11 +2492,12 @@
         "2000"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Get Rich or Die Tryin' was 50 Cent's major-label debut, released after he survived being shot nine times in 2000."
     },
     {
       "id": "mb-3c384e47",
-      "category": "music",
+      "category": "country",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Singing Down The Lane\" in 1956?",
       "choices": [
@@ -2341,25 +2507,27 @@
         "Merle Haggard"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Jim Reeves crossed over from honky-tonk into a smoother, pop-influenced country style during this period of his career."
     },
     {
       "id": "mb-a6f77e3f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 2,
       "prompt": "In which year was \"The Bends\" by Radiohead first released?",
       "choices": [
         "2000",
         "1989",
-        "1994",
-        "1992"
+        "1992",
+        "1995"
       ],
-      "answer": 2,
+      "answer": 3,
+      "explanation": "The Bends came out in March 1995 and marked Radiohead's shift toward the more atmospheric sound that led into OK Computer.",
       "source": "musicbrainz"
     },
     {
       "id": "mb-b0f61b2c",
-      "category": "music",
+      "category": "metal",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Sehnsucht\" in 1997?",
       "choices": [
@@ -2369,11 +2537,12 @@
         "Blind Guardian"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Sehnsucht was Rammstein's second album and their commercial breakthrough, later boosted internationally by the single \"Du Hast.\""
     },
     {
       "id": "mb-47bff8d1",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "In which year was \"The Temptations Sing Smokey\" by The Temptations first released?",
       "choices": [
@@ -2383,11 +2552,12 @@
         "1963"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Temptations Sing Smokey was a tribute album covering songs written by Motown's Smokey Robinson."
     },
     {
       "id": "mb-bfc2c61e",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 3,
       "prompt": "In which year was \"Jimmy Cliff / Wonderful World, Beautiful People\" by Jimmy Cliff first released?",
       "choices": [
@@ -2397,11 +2567,12 @@
         "1964"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Jimmy Cliff helped bring reggae to international audiences during this stretch of his early career."
     },
     {
       "id": "mb-013abc1f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Ummagumma\" in 1969?",
       "choices": [
@@ -2411,11 +2582,12 @@
         "Elvis Presley"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Ummagumma was a double album pairing live Pink Floyd recordings with solo studio compositions from each band member."
     },
     {
       "id": "mb-23bc1b8c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 2,
       "prompt": "In which year was \"Hunky Dory\" by David Bowie first released?",
       "choices": [
@@ -2425,11 +2597,12 @@
         "1974"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Hunky Dory included \"Life on Mars?\" and \"Changes,\" two songs that became enduring David Bowie staples."
     },
     {
       "id": "mb-ed974d26",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Young Man With a Horn\" in 1952?",
       "choices": [
@@ -2439,11 +2612,12 @@
         "Ray Charles"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Miles Davis continued refining his early cool jazz sound in the years following his work with Charlie Parker's quintet."
     },
     {
       "id": "mb-50d81748",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which of these albums is by Beastie Boys?",
       "choices": [
@@ -2453,11 +2627,12 @@
         "Reasonable Doubt"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Check Your Head marked the Beastie Boys playing their own instruments again, moving away from the sample-heavy sound of Paul's Boutique."
     },
     {
       "id": "mb-d8a5ed48",
-      "category": "music",
+      "category": "country",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Just Between the Two of Us\" in 1966?",
       "choices": [
@@ -2467,11 +2642,12 @@
         "Merle Haggard"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Merle Haggard built his early reputation on hard-edged honky-tonk songs drawn from his own working-class background."
     },
     {
       "id": "mb-25394ca8",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 2,
       "prompt": "Which artist released the album \"Everything Is Wrong\" in 1995?",
       "choices": [
@@ -2481,11 +2657,12 @@
         "Mike Oldfield"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Everything Is Wrong was Moby's major-label debut, blending electronic dance music with a wide range of other styles."
     },
     {
       "id": "mb-067c6426",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "In which year was \"Follow the Leader\" by Korn first released?",
       "choices": [
@@ -2495,11 +2672,12 @@
         "2003"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Follow the Leader became Korn's commercial breakthrough, featuring the hit single \"Freak on a Leash.\""
     },
     {
       "id": "mb-a9c7f46b",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 2,
       "prompt": "Which of these albums is by Stevie Wonder?",
       "choices": [
@@ -2509,11 +2687,12 @@
         "Spirit"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Tribute to Uncle Ray was one of Stevie Wonder's earliest albums, recorded as a child prodigy signed to Motown as \"Little Stevie Wonder.\""
     },
     {
       "id": "mb-3420b8db",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 4,
       "prompt": "In which year was \"Dub Me\" by King Tubby first released?",
       "choices": [
@@ -2523,11 +2702,12 @@
         "1977"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "King Tubby is widely credited as one of the founding architects of dub through his pioneering remix and mixing-desk techniques."
     },
     {
       "id": "mb-2f2dfe74",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In which year was \"Darkness on the Edge of Town\" by Bruce Springsteen first released?",
       "choices": [
@@ -2537,11 +2717,12 @@
         "1976"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Darkness on the Edge of Town followed a lengthy legal dispute that kept Bruce Springsteen out of the studio for several years."
     },
     {
       "id": "mb-ff0599d9",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Red\" in 2012?",
       "choices": [
@@ -2551,11 +2732,12 @@
         "Taylor Swift"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Red included the song \"I Knew You Were Trouble,\" which pushed Taylor Swift's sound further toward pop and electronic production."
     },
     {
       "id": "mb-5e36bee8",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 4,
       "prompt": "In which year was \"Solitude\" by Billie Holiday first released?",
       "choices": [
@@ -2565,11 +2747,12 @@
         "1954"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Solitude gathered recordings that showcased the more world-weary vocal style of Billie Holiday's later career."
     },
     {
       "id": "mb-d28dc76f",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Trap‐a‐Thon\" in 2007?",
       "choices": [
@@ -2579,11 +2762,12 @@
         "Public Enemy"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Gucci Mane released Trap-a-Thon early in his career as he was building the trap subgenre's foundations in Atlanta hip-hop."
     },
     {
       "id": "mb-59d919ac",
-      "category": "music",
+      "category": "country",
       "difficulty": 4,
       "prompt": "In which year was \"Waylon Sings Ol’ Harlan\" by Waylon Jennings first released?",
       "choices": [
@@ -2593,11 +2777,12 @@
         "1962"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Waylon Jennings was still developing his sound in Nashville before becoming a leading figure of the outlaw country movement."
     },
     {
       "id": "mb-5aa6ca12",
-      "category": "music",
+      "category": "pop",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Born to Die Demos\" in 2012?",
       "choices": [
@@ -2607,11 +2792,12 @@
         "Björk"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Born to Die Demos gathered early versions of songs from Lana Del Rey's breakthrough album Born to Die."
     },
     {
       "id": "mb-1c15c175",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "In which year was \"Withering to death.\" by DIR EN GREY first released?",
       "choices": [
@@ -2621,11 +2807,12 @@
         "2007"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Withering to death. saw DIR EN GREY moving toward a heavier, more extreme sound within Japanese visual kei metal."
     },
     {
       "id": "mb-9188a551",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Showtime\" in 1964?",
       "choices": [
@@ -2635,11 +2822,12 @@
         "Ike & Tina Turner"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "James Brown's live performances during this era were central to building his reputation as a dynamic showman."
     },
     {
       "id": "mb-4bb5b59d",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 5,
       "prompt": "In which year was \"Face To Face\" by Beenie Man first released?",
       "choices": [
@@ -2649,11 +2837,12 @@
         "1994"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Beenie Man became one of dancehall's most prominent artists through the 1990s, known for his rapid-fire deejay style."
     },
     {
       "id": "mb-5336b299",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In which year was \"The Rolling Stones No. 2\" by The Rolling Stones first released?",
       "choices": [
@@ -2663,11 +2852,12 @@
         "1959"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Rolling Stones No. 2 was the British title for the band's second studio album, released under a different title in the US."
     },
     {
       "id": "mb-9dea4ce2",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Which artist released the album \"A Winter Romance\" in 1959?",
       "choices": [
@@ -2677,11 +2867,12 @@
         "Paul McCartney"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Dean Martin recorded several seasonal and romance-themed albums like this one during his career as a popular crooner."
     },
     {
       "id": "mb-26f45bfb",
-      "category": "music",
+      "category": "jazz",
       "difficulty": 4,
       "prompt": "In which year was \"Love Is the Thing\" by Nat King Cole first released?",
       "choices": [
@@ -2691,11 +2882,12 @@
         "1954"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Love Is the Thing became one of Nat King Cole's best-selling albums, built around lush orchestral arrangements by Gordon Jenkins."
     },
     {
       "id": "mb-704f20fe",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which artist released the album \"Muse Sick‐N‐Hour Mess Age\" in 1994?",
       "choices": [
@@ -2705,11 +2897,12 @@
         "Beastie Boys"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Muse Sick-N-Hour Mess Age found Public Enemy addressing criticism of hip-hop and the music industry directly in its lyrics."
     },
     {
       "id": "mb-4b933a6a",
-      "category": "music",
+      "category": "country",
       "difficulty": 5,
       "prompt": "In which year was \"The Star Carol\" by Tennessee Ernie Ford first released?",
       "choices": [
@@ -2719,11 +2912,12 @@
         "1958"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "The Star Carol was one of several Christmas and gospel-themed albums Tennessee Ernie Ford recorded during his career."
     },
     {
       "id": "mb-cb61b72a",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 4,
       "prompt": "Which of these albums is by Kraftwerk?",
       "choices": [
@@ -2733,11 +2927,12 @@
         "Speak & Spell"
       ],
       "answer": 2,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Radio-Aktivität (Radio-Activity) was a concept album by Kraftwerk built around the theme of radio broadcasting and, more ambiguously, radioactivity."
     },
     {
       "id": "mb-7abd7fbe",
-      "category": "music",
+      "category": "metal",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Arise\" in 1991?",
       "choices": [
@@ -2747,11 +2942,12 @@
         "Napalm Death"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Arise helped push Sepultura toward wider international recognition as one of the leading thrash and death metal bands of the era."
     },
     {
       "id": "mb-155c8dd0",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 5,
       "prompt": "In which year was \"Don’t Play Me Cheap\" by Ike & Tina Turner first released?",
       "choices": [
@@ -2761,11 +2957,12 @@
         "1963"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Don't Play Me Cheap was one of several albums Ike & Tina Turner released early in their long recording partnership."
     },
     {
       "id": "mb-a2341d8c",
-      "category": "music",
+      "category": "reggae",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Everything Is Great\" in 1979?",
       "choices": [
@@ -2775,11 +2972,12 @@
         "Inner Circle"
       ],
       "answer": 3,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Inner Circle built a strong reggae following through the late 1970s before achieving global mainstream success in the 1990s."
     },
     {
       "id": "mb-6848169f",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "Which of these albums is by Elvis Presley?",
       "choices": [
@@ -2789,11 +2987,12 @@
         "American Beauty"
       ],
       "answer": 0,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Pot Luck was one of several albums Elvis Presley released after returning from military service in Germany."
     },
     {
       "id": "mb-f45ad47e",
-      "category": "music",
+      "category": "pop",
       "difficulty": 4,
       "prompt": "Which artist released the album \"Boy Toy\" in 1993?",
       "choices": [
@@ -2803,7 +3002,8 @@
         "Prince"
       ],
       "answer": 1,
-      "source": "musicbrainz"
+      "source": "musicbrainz",
+      "explanation": "Boy Toy was a nickname tied to Madonna's mid-1980s image, famously referenced by a belt buckle she wore during the Like a Virgin era."
     }
   ]
 }
