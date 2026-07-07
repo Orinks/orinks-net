@@ -84,4 +84,34 @@ export default defineSchema({
     achievementKey: v.string(),
     unlockedAt: v.number(),
   }).index("by_player_achievement", ["playerId", "achievementKey"]),
+
+  // --- Freight Fate online ---
+
+  freightFateDrivers: defineTable({
+    driverId: v.string(),
+    displayName: v.string(),
+    visibility: v.union(v.literal("private"), v.literal("unlisted")),
+    driverTokenHash: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_driver_id", ["driverId"]),
+  freightFateSetupSessions: defineTable({
+    setupTokenHash: v.string(),
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    displayName: v.optional(v.string()),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+    confirmedAt: v.optional(v.number()),
+  }).index("by_setup_token", ["setupTokenHash"]),
+  freightFateDriverEvents: defineTable({
+    driverId: v.string(),
+    eventId: v.string(),
+    eventType: v.string(),
+    summary: v.string(),
+    occurredAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_driver", ["driverId"])
+    .index("by_driver_event", ["driverId", "eventId"]),
 });

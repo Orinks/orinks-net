@@ -67,16 +67,18 @@ export const freightFate: ProjectPage = {
   title: "Freight Fate",
   tagline: "An audio trucking adventure across America.",
   summary:
-    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Build a freight career across 59 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
+    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Build a freight career across 194 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
   status: "Stable releases and preview snapshots are available.",
   audience:
     "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
   features: [
     "Truck physics you can hear: a ten-speed transmission (manual with clutch or automatic), torque, grades, traction limits, brake fade, and an engine note that tracks RPM in real time.",
-    "A living map: 59 cities and 106 legs along real interstates, regional freight identity, cargo markets that drift day by day, and multiple route options per job.",
-    "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world conditions.",
-    "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock while delivery deadlines keep counting.",
-    "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, and mid-trip save and resume.",
+    "A living map: 194 cities and 437 legs along real interstates, regional freight identity, cargo markets that drift day by day, and multiple route options per job.",
+    "Highway exit callouts that read like real signs: \"In 2 miles, exit 7 for US-1 North toward Trenton and New York,\" with onramp merges and grounded interchange numbers, sourced from OpenStreetMap and snapped onto truck-legal routes.",
+    "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world National Weather Service conditions.",
+    "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock, choose relaxed or realistic pacing, and draw a dispatcher pay advance when cash runs low so a rough run is never a dead end.",
+    "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, unlockable achievements, and mid-trip save and resume.",
+    "Optional extras that stay out of the way: a gentle lane-drift steering task and Discord Rich Presence that shares only broad game status.",
     "Layered sound effects and music keep speech, driving cues, weather, and the truck cab easy to balance.",
   ],
   downloadsHref: "/freight-fate/downloads",
