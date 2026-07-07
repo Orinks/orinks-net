@@ -61,19 +61,49 @@ function difficultyRange(round: number): [number, number] {
   return [3, 5];
 }
 
+function runRoll(run: Doc<"triviaRuns">, salt: string): number {
+  // Dailies must be deterministic so every player gets the same episode.
+  return run.isDaily ? seededRandom(`${run.seed}:${salt}`)() : Math.random();
+}
+
+/**
+ * Picks a theme for a round: a category with enough unasked questions to
+ * carry the whole round. Returns undefined when the bank is too depleted to
+ * theme (the round falls back to a mixed grab bag).
+ */
+function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | undefined {
+  const asked = new Set(run.askedQuestionKeys);
+  const counts = new Map<string, number>();
+  for (const q of questionBank) {
+    if (!asked.has(q.id)) counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
+  }
+  const viable = [...counts.entries()]
+    .filter(([category, count]) => count >= QUESTIONS_PER_ROUND && category !== run.roundCategory)
+    .map(([category]) => category)
+    .sort(); // stable order so daily seeding is deterministic
+  if (viable.length === 0) return undefined;
+  const roll = runRoll(run, `category:${forRound}`);
+  return viable[Math.floor(roll * viable.length)];
+}
+
 function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   const asked = new Set(run.askedQuestionKeys);
   const [min, max] = difficultyRange(run.round);
-  let candidates = questionBank.filter(
-    (q) => !asked.has(q.id) && q.difficulty >= min && q.difficulty <= max,
+  const unasked = questionBank.filter((q) => !asked.has(q.id));
+  // Prefer: on-theme + in difficulty range → on-theme any difficulty →
+  // in-range any theme → anything left.
+  let candidates = unasked.filter(
+    (q) => q.category === run.roundCategory && q.difficulty >= min && q.difficulty <= max,
   );
-  if (candidates.length === 0) {
-    candidates = questionBank.filter((q) => !asked.has(q.id));
+  if (candidates.length === 0 && run.roundCategory) {
+    candidates = unasked.filter((q) => q.category === run.roundCategory);
   }
+  if (candidates.length === 0) {
+    candidates = unasked.filter((q) => q.difficulty >= min && q.difficulty <= max);
+  }
+  if (candidates.length === 0) candidates = unasked;
   if (candidates.length === 0) return null;
-  const roll = run.isDaily
-    ? seededRandom(`${run.seed}:${run.askedQuestionKeys.length}`)()
-    : Math.random();
+  const roll = runRoll(run, String(run.askedQuestionKeys.length));
   return candidates[Math.floor(roll * candidates.length)];
 }
 
@@ -123,7 +153,7 @@ async function unlockAchievement(
 
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
-  | { type: "roundComplete"; round: number }
+  | { type: "roundComplete"; round: number; nextCategory: string | null }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -142,6 +172,7 @@ function publicRunState(run: Doc<"triviaRuns">) {
     answeredInRound: run.answeredInRound,
     questionsPerRound: QUESTIONS_PER_ROUND,
     questionNumber: run.askedQuestionKeys.length,
+    roundCategory: run.roundCategory ?? null,
   };
 }
 
@@ -231,16 +262,18 @@ export const startRun = mutation({
     });
 
     const run = (await ctx.db.get(runId))!;
-    const question = pickQuestion(run);
+    const roundCategory = pickRoundCategory(run, 1);
+    const question = pickQuestion({ ...run, roundCategory });
     if (!question) throw new Error("The question bank is empty.");
     await ctx.db.patch(runId, {
+      roundCategory,
       currentQuestionKey: question.id,
       askedQuestionKeys: [question.id],
     });
 
     await ctx.db.patch(player._id, { lastSeenAt: now });
     return {
-      run: { ...publicRunState(run), questionNumber: 1 },
+      run: { ...publicRunState(run), questionNumber: 1, roundCategory: roundCategory ?? null },
       question: sanitizeQuestion(question),
       runNumber: player.totalRuns + 1,
       epilogueActive: player.finaleCompletedAt !== undefined,
@@ -268,7 +301,7 @@ export const submitAnswer = mutation({
 
     const events: GameEvent[] = [];
     const correct = args.choiceIndex === question.answer;
-    let { score, streak, lives, round, answeredInRound, wrongInRound, tapeDropped } = run;
+    let { score, streak, lives, round, answeredInRound, wrongInRound, tapeDropped, roundCategory } = run;
     let scoreDelta = 0;
     let tapesUnlocked = player.tapesUnlocked;
 
@@ -320,12 +353,13 @@ export const submitAnswer = mutation({
       }
     } else {
       if (answeredInRound >= QUESTIONS_PER_ROUND) {
-        // Round complete.
+        // Round complete: advance and pick the next round's theme.
         const completedRound = round;
-        events.push({ type: "roundComplete", round: completedRound });
+        round += 1;
+        roundCategory = pickRoundCategory(run, round);
+        events.push({ type: "roundComplete", round: completedRound, nextCategory: roundCategory ?? null });
         if (wrongInRound === 0) await unlockAchievement(ctx, player._id, "perfect-round", events);
         if (lives === 1) await unlockAchievement(ctx, player._id, "comeback", events);
-        round += 1;
         answeredInRound = 0;
         wrongInRound = 0;
         if (round === 10) await unlockAchievement(ctx, player._id, "round-10", events);
@@ -362,7 +396,7 @@ export const submitAnswer = mutation({
         }
       }
 
-      nextQuestion = pickQuestion({ ...run, round, askedQuestionKeys: run.askedQuestionKeys });
+      nextQuestion = pickQuestion({ ...run, round, roundCategory });
       if (!nextQuestion) {
         // Ran the entire bank dry — end the run as a victory lap.
         events.push({ type: "bankExhausted" });
@@ -390,6 +424,7 @@ export const submitAnswer = mutation({
           answeredInRound,
           wrongInRound,
           tapeDropped,
+          roundCategory,
           currentQuestionKey: nextQuestion.id,
           askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
         });

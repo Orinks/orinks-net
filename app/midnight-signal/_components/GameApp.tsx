@@ -36,10 +36,11 @@ interface RunState {
   answeredInRound: number;
   questionsPerRound: number;
   questionNumber: number;
+  roundCategory: string | null;
 }
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
-  | { type: "roundComplete"; round: number }
+  | { type: "roundComplete"; round: number; nextCategory: string | null }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -73,6 +74,15 @@ type Phase =
   | { kind: "tape"; tape: StoryLine; pending: GameEvent[]; result: AnswerResult }
   | { kind: "finale"; lines: StoryLine[]; pending: GameEvent[]; result: AnswerResult }
   | { kind: "gameover"; result: AnswerResult };
+
+function categoryLabel(category: string | null | undefined): string {
+  if (!category) return "Mixed bag";
+  return category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+    .replace("Rnb", "R&B");
+}
 
 export function GameApp() {
   const announce = useAnnounce();
@@ -159,15 +169,17 @@ export function GameApp() {
    * screen reader users miss nothing. Returns the text for optional bundling.
    */
   const speakHostLine = useCallback(
-    (text: string, audioPath: string | undefined, bundle: string[] | null) => {
+    (text: string, audioPath: string | undefined, bundle: string[] | null): Promise<void> => {
       addCaption("Clide", text);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
-        void playHostClip(audioPath);
-      } else if (bundle) {
+        return playHostClip(audioPath);
+      }
+      if (bundle) {
         bundle.push(`Clide: ${text}`);
       } else {
         announce(`Clide: ${text}`);
       }
+      return Promise.resolve();
     },
     [addCaption, announce, playHostClip],
   );
@@ -247,7 +259,7 @@ export function GameApp() {
     } else if (phase.kind === "finale") {
       void music.playOnce(MUSIC_TRACKS.finale);
     } else if (phase.kind === "gameover") {
-      void music.playOnce(MUSIC_TRACKS.signoff);
+      void music.playLoop(MUSIC_TRACKS.signoff); // loops while the player lingers
     }
   }, [phase.kind]);
 
@@ -290,6 +302,7 @@ export function GameApp() {
           playBark(started.runNumber > 1 ? "run-intro-returning" : "run-intro", bundle);
         }
         producerSay("run-intro", { name: trimmed || "friend", runNumber: started.runNumber }, bundle);
+        bundle.push(`Tonight's first theme: ${categoryLabel(started.run.roundCategory as string | null)}.`);
         bundle.forEach((line) => announce(line));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Something went wrong.";
@@ -372,6 +385,7 @@ export function GameApp() {
           if (event.type === "roundComplete") {
             playBark("round-transition", bundle);
             producerSay("round-transition", { round: event.round + 1 }, bundle);
+            bundle.push(`Next round's theme: ${categoryLabel(event.nextCategory)}.`);
           } else if (event.type === "lifeGained") {
             bundle.push(`Life regained. ${event.lives} lives.`);
           } else if (event.type === "achievement") {
@@ -433,16 +447,32 @@ export function GameApp() {
         return;
       }
       if (result.nextQuestion) {
+        // Occasional flavor between questions: an archive fact or a lead-in.
+        // Skipped after round transitions (Clide already spoke) and kept
+        // infrequent so it stays charming at question three hundred.
+        const hadRoundEvent = result.events.some((e) => e.type === "roundComplete");
+        const roll = Math.random();
+        const flavor = hadRoundEvent
+          ? null
+          : roll < 0.2
+            ? pickBark("fact", epilogueBarks)
+            : roll < 0.5
+              ? pickBark("question-lead-in", epilogueBarks)
+              : null;
+        const flavorDone = flavor
+          ? speakHostLine(flavor.text, manifestRef.current.barks[flavor.id], null)
+          : Promise.resolve();
+        const nextKey = result.nextQuestion.key;
         setQuestion(result.nextQuestion);
         setQuestionNumber(result.run.questionNumber);
         setChosenIndex(null);
         setPhase({ kind: "question" });
-        serveQuestionAudio(result.nextQuestion.key);
+        void flavorDone.then(() => serveQuestionAudio(nextKey));
       } else {
         setPhase({ kind: "gameover", result });
       }
     },
-    [completeFinaleMutation, playerKey, playHostClip, serveQuestionAudio, story?.tapes],
+    [completeFinaleMutation, epilogueBarks, playerKey, playHostClip, serveQuestionAudio, speakHostLine, story?.tapes],
   );
 
   const backToTitle = useCallback(() => {
@@ -623,8 +653,9 @@ export function GameApp() {
               : `On the air — Episode ${phase.runNumber}`}
           </h2>
           <p className="mt-2 leading-7">
-            The studio lights are up, Clide is at the desk, and the signal is warm. Take a breath —
-            the first question comes when you&apos;re ready.
+            The studio lights are up, Clide is at the desk, and the signal is warm. Tonight&apos;s
+            first theme: {categoryLabel(run?.roundCategory)}. The first question comes when
+            you&apos;re ready.
           </p>
           <button className={`${primaryButton} mt-4`} onClick={beginQuestions} type="button">
             Begin the questions
@@ -635,7 +666,7 @@ export function GameApp() {
       {(phase.kind === "question" || phase.kind === "feedback") && question ? (
         <section aria-labelledby="question-heading" className="mt-6">
           <p className="text-sm text-zinc-400">
-            Question {questionNumber} · Round {run?.round} · {question.category}
+            Question {questionNumber} · Round {run?.round} · Theme: {categoryLabel(run?.roundCategory)}
           </p>
           <h2 className="mt-2 text-xl font-semibold" id="question-heading" ref={questionHeadingRef} tabIndex={-1}>
             {question.prompt}

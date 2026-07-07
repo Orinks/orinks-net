@@ -271,3 +271,30 @@ describe("story gating", () => {
     expect(await t.query(api.trivia.getProfile, { playerKey: PLAYER })).toBeNull();
   });
 });
+
+describe("themed rounds", () => {
+  test("all questions within a round share the round's category", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    expect(start.run.roundCategory).not.toBeNull();
+    const categories = new Set([start.question.category]);
+    let questionKey = start.question.key;
+    for (let i = 0; i < 5; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, questionKey, true);
+      if (i < 4) {
+        // Questions 2-5 belong to round 1 and must share its theme.
+        categories.add(result.nextQuestion!.category);
+        questionKey = result.nextQuestion!.key;
+      } else {
+        // The 5th answer completes the round; a new theme is announced.
+        const roundEvent = result.events.find(
+          (e: { type: string }) => e.type === "roundComplete",
+        ) as { nextCategory: string | null } | undefined;
+        expect(roundEvent).toBeDefined();
+        expect(result.run.roundCategory).toBe(roundEvent!.nextCategory);
+      }
+    }
+    expect(categories.size).toBe(1);
+  });
+});

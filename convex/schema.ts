@@ -64,6 +64,8 @@ export default defineSchema({
     answeredInRound: v.number(),
     wrongInRound: v.number(),
     tapeDropped: v.boolean(),
+    roundCategory: v.optional(v.string()), // theme of the current round
+
     modifiers: v.array(v.string()),
     currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
