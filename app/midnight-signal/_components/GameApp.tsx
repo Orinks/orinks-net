@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api } from "@/convex/_generated/api";
@@ -87,6 +87,8 @@ function categoryLabel(category: string | null | undefined): string {
 
 export function GameApp() {
   const announce = useAnnounce();
+  const { user } = useUser();
+  const accountHandle = user?.username ?? user?.fullName ?? user?.firstName ?? "your account";
   const ensurePlayer = useMutation(api.trivia.ensurePlayer);
   const startRunMutation = useMutation(api.trivia.startRun);
   const submitAnswerMutation = useMutation(api.trivia.submitAnswer);
@@ -563,18 +565,27 @@ export function GameApp() {
             void beginRun(false);
           }}
         >
-          <label className="block font-semibold text-amber-100" htmlFor="contestant-name">
-            Contestant name
-          </label>
-          <input
-            autoComplete="nickname"
-            className={`mt-1 w-full max-w-xs rounded-md border border-amber-700 bg-zinc-900 px-3 py-2 text-amber-50 ${focusRing}`}
-            id="contestant-name"
-            maxLength={24}
-            onChange={(event) => setName(event.target.value)}
-            type="text"
-            value={name}
-          />
+          <Show when="signed-out">
+            <label className="block font-semibold text-amber-100" htmlFor="contestant-name">
+              Contestant name
+            </label>
+            <input
+              autoComplete="nickname"
+              className={`mt-1 w-full max-w-xs rounded-md border border-amber-700 bg-zinc-900 px-3 py-2 text-amber-50 ${focusRing}`}
+              id="contestant-name"
+              maxLength={24}
+              onChange={(event) => setName(event.target.value)}
+              type="text"
+              value={name}
+            />
+          </Show>
+          <Show when="signed-in">
+            <p className="font-semibold text-amber-100">Playing as {accountHandle}</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Your account name is what appears on the leaderboards. To change it, use the account
+              button in the Account section below.
+            </p>
+          </Show>
           <div className="mt-4 flex flex-wrap gap-3">
             <button aria-disabled={busy} className={primaryButton} type="submit">
               Start broadcast

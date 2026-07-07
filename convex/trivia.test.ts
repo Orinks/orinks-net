@@ -17,9 +17,12 @@ async function newPlayer(t: ReturnType<typeof convexTest>, key = PLAYER, name = 
   return t.mutation(api.trivia.ensurePlayer, { playerKey: key, displayName: name });
 }
 
+// Accept either the base test client or a withIdentity accessor (both expose .mutation).
+type Caller = { mutation: ReturnType<typeof convexTest>["mutation"] };
+
 /** Answer the current question; pass correctly=true/false to steer the run. */
 async function answer(
-  t: ReturnType<typeof convexTest>,
+  t: Caller,
   playerKey: string,
   runId: string,
   questionKey: string,
@@ -296,5 +299,64 @@ describe("themed rounds", () => {
       }
     }
     expect(categories.size).toBe(1);
+  });
+});
+
+describe("account identity", () => {
+  const IDENTITY = { subject: "user_clerk_abc", nickname: "SignalHunter", name: "Ada Vale" };
+
+  test("signing in creates an account whose leaderboard name is the Clerk handle", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    const res = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0001" });
+    expect(res.signedIn).toBe(true);
+    expect(res.displayName).toBe("SignalHunter");
+    const profile = await asUser.query(api.trivia.getProfile, { playerKey: "device-key-0001" });
+    expect(profile!.displayName).toBe("SignalHunter");
+  });
+
+  test("first sign-in claims the guest row's progress on this device", async () => {
+    const t = setup();
+    // Play a losing run as a guest first (builds totalAnswered).
+    await t.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002", displayName: "Guest" });
+    const start = await t.mutation(api.trivia.startRun, { playerKey: "device-key-0002" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(t, "device-key-0002", start.run.runId, key, false);
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const guestProfile = await t.query(api.trivia.getProfile, { playerKey: "device-key-0002" });
+    expect(guestProfile!.totalRuns).toBe(1);
+
+    // Sign in on the same device: the account inherits that progress.
+    const asUser = t.withIdentity(IDENTITY);
+    const link = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002" });
+    expect(link.migrated).toBe(true);
+    const acctProfile = await asUser.query(api.trivia.getProfile, { playerKey: "device-key-0002" });
+    expect(acctProfile!.totalRuns).toBe(1);
+    expect(acctProfile!.displayName).toBe("SignalHunter");
+  });
+
+  test("a returning account is not re-created and keeps its stats", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0003" });
+    const again = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0003" });
+    expect(again.created).toBe(false);
+    expect(again.signedIn).toBe(true);
+  });
+
+  test("signed-in runs appear on the leaderboard under the account handle", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
+    const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(asUser, "device-key-0004", start.run.runId, key, false);
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "SignalHunter")).toBe(true);
   });
 });

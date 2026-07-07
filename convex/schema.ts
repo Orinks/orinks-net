@@ -28,11 +28,13 @@ export default defineSchema({
   // from data/trivia/questions/ directly into the server bundle, so answers
   // never leave the server and question edits ship with a normal deploy.
 
-  // playerKey is an anonymous client-generated key for now; when real auth is
-  // added, map the auth subject onto the same row and keep the key as a legacy
-  // alias. Aggregate stats live here so profile pages don't scan runs.
+  // playerKey is the anonymous client-generated key (guest play). When a player
+  // signs in with Clerk, their Clerk subject is stored in authSubject on the
+  // same row (claiming the guest's progress), and displayName is seeded from
+  // their account. Aggregate stats live here so profile pages don't scan runs.
   triviaPlayers: defineTable({
     playerKey: v.string(),
+    authSubject: v.optional(v.string()), // Clerk user id once signed in
     displayName: v.string(),
     createdAt: v.number(),
     lastSeenAt: v.number(),
@@ -46,6 +48,7 @@ export default defineSchema({
     tapesUnlocked: v.array(v.string()),
     finaleCompletedAt: v.optional(v.number()),
   })
+    .index("by_authSubject", ["authSubject"])
     .index("by_playerKey", ["playerKey"])
     .index("by_displayName", ["displayName"]),
 

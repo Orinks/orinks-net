@@ -107,17 +107,45 @@ function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   return candidates[Math.floor(roll * candidates.length)];
 }
 
-async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+async function getPlayerByKey(ctx: QueryCtx | MutationCtx, playerKey: string) {
   return ctx.db
     .query("triviaPlayers")
     .withIndex("by_playerKey", (q) => q.eq("playerKey", playerKey))
     .unique();
 }
 
+async function getPlayerBySubject(ctx: QueryCtx | MutationCtx, subject: string) {
+  return ctx.db
+    .query("triviaPlayers")
+    .withIndex("by_authSubject", (q) => q.eq("authSubject", subject))
+    .unique();
+}
+
+/**
+ * Resolves the player for a request: the signed-in account takes precedence
+ * over the anonymous guest key. ensurePlayer creates/links the account row, so
+ * by the time gameplay functions run the account row already exists.
+ */
+async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (identity) {
+    const account = await getPlayerBySubject(ctx, identity.subject);
+    if (account) return account;
+  }
+  return getPlayerByKey(ctx, playerKey);
+}
+
 async function requirePlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
   const player = await getPlayer(ctx, playerKey);
   if (!player) throw new Error("Unknown player. Call ensurePlayer first.");
   return player;
+}
+
+/** A leaderboard handle from the Clerk identity claims (see the "convex" JWT template). */
+function handleFromIdentity(identity: { nickname?: string; preferredUsername?: string; name?: string; email?: string }) {
+  const raw =
+    identity.nickname || identity.preferredUsername || identity.name || identity.email?.split("@")[0] || "Contestant";
+  return cleanDisplayName(raw);
 }
 
 async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {
@@ -185,14 +213,49 @@ export const ensurePlayer = mutation({
       throw new Error("playerKey must be 8-64 characters");
     }
     const now = Date.now();
-    const existing = await getPlayer(ctx, args.playerKey);
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (identity) {
+      // Signed in: the account IS the identity. Its leaderboard name mirrors
+      // the Clerk handle (username, else name); a guest's typed name is ignored.
+      const handle = handleFromIdentity(identity);
+      const account = await getPlayerBySubject(ctx, identity.subject);
+      if (account) {
+        await ctx.db.patch(account._id, { displayName: handle, lastSeenAt: now });
+        return { created: false, signedIn: true, displayName: handle };
+      }
+      // First sign-in: claim this device's guest row (and its progress) if it
+      // isn't already tied to an account; otherwise start a fresh account row.
+      const guest = await getPlayerByKey(ctx, args.playerKey);
+      if (guest && guest.authSubject === undefined) {
+        await ctx.db.patch(guest._id, { authSubject: identity.subject, displayName: handle, lastSeenAt: now });
+        return { created: false, signedIn: true, migrated: true, displayName: handle };
+      }
+      await ctx.db.insert("triviaPlayers", {
+        playerKey: identity.subject,
+        authSubject: identity.subject,
+        displayName: handle,
+        createdAt: now,
+        lastSeenAt: now,
+        totalRuns: 0,
+        bestScore: 0,
+        deepestRound: 0,
+        totalCorrect: 0,
+        totalAnswered: 0,
+        tapesUnlocked: [],
+      });
+      return { created: true, signedIn: true, displayName: handle };
+    }
+
+    // Guest (signed out): anonymous row keyed by the client-generated playerKey.
+    const existing = await getPlayerByKey(ctx, args.playerKey);
     if (existing) {
       const patch: Partial<Doc<"triviaPlayers">> = { lastSeenAt: now };
       if (args.displayName !== undefined) {
         patch.displayName = cleanDisplayName(args.displayName);
       }
       await ctx.db.patch(existing._id, patch);
-      return { created: false, displayName: patch.displayName ?? existing.displayName };
+      return { created: false, signedIn: false, displayName: patch.displayName ?? existing.displayName };
     }
     const displayName = cleanDisplayName(args.displayName ?? `Contestant ${args.playerKey.slice(0, 4)}`);
     await ctx.db.insert("triviaPlayers", {
@@ -207,7 +270,7 @@ export const ensurePlayer = mutation({
       totalAnswered: 0,
       tapesUnlocked: [],
     });
-    return { created: true, displayName };
+    return { created: true, signedIn: false, displayName };
   },
 });
 
