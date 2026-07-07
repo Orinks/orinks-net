@@ -1,9 +1,10 @@
 "use client";
 
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 
@@ -47,19 +48,10 @@ export function FreightFateSetupClient() {
     return (
       <Section title="Sign in to continue">
         <p>
-          Freight Fate drivers are Orinks accounts. Sign in to create your driver identity and get a
-          posting token for the game.
+          Freight Fate drivers are Orinks accounts. Sign in — or create an account — to set up your
+          driver identity and get a posting token for the game.
         </p>
-        <p>
-          <SignInButton mode="modal">
-            <button
-              className={`rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-              type="button"
-            >
-              Sign in
-            </button>
-          </SignInButton>
-        </p>
+        <AccountControls />
       </Section>
     );
   }

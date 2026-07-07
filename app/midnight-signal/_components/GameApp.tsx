@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { Show, useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { AccountControls } from "@/components/AccountControls";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useAnnounce } from "./Announcer";
@@ -625,25 +626,14 @@ export function GameApp() {
               Sign in to save your progress and appear on the leaderboards across all the games.
               It&apos;s optional — you can keep playing as a guest.
             </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <SignInButton mode="modal">
-                <button className={primaryButton} type="button">
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className={secondaryButton} type="button">
-                  Create account
-                </button>
-              </SignUpButton>
-            </div>
           </Show>
-          <Show when="signed-in">
-            <div className="mt-2 flex items-center gap-3">
-              <span className="text-sm text-zinc-400">You&apos;re signed in.</span>
-              <UserButton />
-            </div>
-          </Show>
+          <div className="mt-3">
+            <AccountControls
+              nameClassName="text-sm font-semibold text-amber-100"
+              signInClassName={primaryButton}
+              signUpClassName={secondaryButton}
+            />
+          </div>
         </section>
         <nav aria-label="Game sections" className="mt-8">
           <ul className="flex flex-wrap gap-3">
