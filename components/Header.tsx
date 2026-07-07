@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { AccountControls } from "@/components/AccountControls";
+import { AccountNav } from "@/components/AccountNav";
 import { gameModNav, gamesNav, navItems, projectNav, site } from "@/lib/site";
 
 const disclosureNav = {
@@ -41,9 +41,6 @@ export function Header() {
               {site.name}
             </Link>
             <p className="text-sm leading-6 text-slate-700">{site.description}</p>
-          </div>
-          <div className="ml-auto">
-            <AccountControls />
           </div>
         </div>
         <nav aria-label="Primary navigation" className="flex flex-wrap items-start gap-2">
@@ -86,6 +83,7 @@ export function Header() {
               </Link>
             );
           })}
+          <AccountNav />
         </nav>
       </div>
     </header>
