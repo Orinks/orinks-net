@@ -76,8 +76,9 @@ export default async function FreightFateOnlineSetupPage({ searchParams }: Setup
             <input type="hidden" name="setupToken" value={token} />
             <p className="text-slate-800">
               Freight Fate opened this setup link for one driver identity. Confirming creates a private driver
-              profile. You can make the profile unlisted for a shareable link, or public to also appear on{" "}
-              <Link href="/freight-fate/online">the live drivers board</Link> while you are on duty.
+              profile. You can make the profile unlisted for a shareable link, or public to also appear in the
+              drivers on duty list on <Link href="/freight-fate">the Freight Fate page</Link> while you are
+              hauling.
             </p>
 
             <div className="space-y-2">
