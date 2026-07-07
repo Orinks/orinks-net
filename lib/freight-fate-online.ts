@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
 
-export type FreightFateVisibility = "private" | "unlisted";
+export type FreightFateVisibility = "public" | "private" | "unlisted";
 
 export type FreightFateSetupStatus =
   | { configured: false }
@@ -50,7 +50,10 @@ export function normalizeFreightFateDisplayName(value: unknown, fallback = "Frei
 }
 
 export function normalizeFreightFateVisibility(value: unknown): FreightFateVisibility {
-  return value === "unlisted" ? "unlisted" : "private";
+  if (value === "public" || value === "unlisted") {
+    return value;
+  }
+  return "private";
 }
 
 export function normalizeFreightFateToken(value: unknown, label: string) {
@@ -169,6 +172,50 @@ export async function postFreightFateDriverEvent(input: {
     occurredAt: input.occurredAt ?? now,
     now,
   });
+}
+
+export async function postFreightFatePresence(input: {
+  driverId: string;
+  driverToken: string;
+  activity: string;
+  detail: string;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.mutation(anyApi.freightFate.updatePresence, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    // An empty activity means "going off duty"; keep it empty rather than
+    // letting the normalizer reject it.
+    activity: input.activity.trim().replace(/\s+/g, " ").slice(0, 160),
+    detail: input.detail.trim().replace(/\s+/g, " ").slice(0, 160),
+    now: Date.now(),
+  });
+}
+
+export type FreightFatePresenceBoard = {
+  drivers: {
+    driverId: string;
+    displayName: string;
+    activity: string;
+    detail: string;
+    updatedAt: number;
+  }[];
+  asOf: number;
+};
+
+export async function getFreightFatePresenceBoard(): Promise<FreightFatePresenceBoard | null> {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.query(anyApi.freightFate.getPresenceBoard, { now: Date.now() });
 }
 
 export async function getFreightFateDriverProfile(driverId: string, limit = 20) {

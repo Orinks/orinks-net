@@ -1,7 +1,12 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-const visibility = v.union(v.literal("private"), v.literal("unlisted"));
+const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
+
+// A driver whose latest heartbeat is older than this is off the live board.
+// The game sends a heartbeat roughly every minute, so three missed beats
+// (game closed, went off duty, lost connection) removes the row.
+export const PRESENCE_TTL_MS = 3 * 60_000;
 
 export const createSetupSession = mutation({
   args: {
@@ -169,6 +174,104 @@ export const recordDriverEvent = mutation({
     await ctx.db.patch(driver._id, { updatedAt: args.now });
 
     return { ok: true as const, duplicate: false, driverId: args.driverId };
+  },
+});
+
+export const updatePresence = mutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    activity: v.string(),
+    detail: v.string(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+
+    if (!driver) {
+      return { ok: false as const, reason: "driver_not_found" };
+    }
+
+    if (driver.driverTokenHash !== args.driverTokenHash) {
+      return { ok: false as const, reason: "unauthorized" };
+    }
+
+    const existing = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+
+    // An empty activity is an explicit "off duty" sign-off from the game.
+    if (!args.activity) {
+      if (existing) {
+        await ctx.db.delete(existing._id);
+      }
+      return { ok: true as const, cleared: true };
+    }
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        activity: args.activity,
+        detail: args.detail,
+        updatedAt: args.now,
+      });
+    } else {
+      await ctx.db.insert("freightFatePresence", {
+        driverId: args.driverId,
+        activity: args.activity,
+        detail: args.detail,
+        updatedAt: args.now,
+      });
+    }
+
+    // Piggyback expiry cleanup on writes so the table never accumulates
+    // stale rows without needing a scheduled job.
+    const stale = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_updated", (q) => q.lt("updatedAt", args.now - PRESENCE_TTL_MS))
+      .take(20);
+    for (const row of stale) {
+      await ctx.db.delete(row._id);
+    }
+
+    return { ok: true as const, cleared: false };
+  },
+});
+
+export const getPresenceBoard = query({
+  args: {
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const fresh = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_TTL_MS))
+      .order("desc")
+      .take(100);
+
+    // Only drivers who chose the public listing appear on the board.
+    const drivers = [];
+    for (const row of fresh) {
+      const driver = await ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
+        .unique();
+      if (!driver || driver.visibility !== "public") {
+        continue;
+      }
+      drivers.push({
+        driverId: row.driverId,
+        displayName: driver.displayName,
+        activity: row.activity,
+        detail: row.detail,
+        updatedAt: row.updatedAt,
+      });
+    }
+
+    return { drivers, asOf: args.now };
   },
 });
 
