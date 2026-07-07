@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Show } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -52,6 +53,15 @@ export function Leaderboard() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-3xl font-bold text-amber-200">Leaderboard</h1>
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
+        Only signed-in players appear here, listed by their account name.
+      </p>
+      <Show when="signed-out">
+        <p className="mt-2 rounded-md border border-amber-700 p-3 leading-6 text-amber-100">
+          You&apos;re playing as a guest — your scores stay on this device and don&apos;t appear on
+          the board. Sign in from the title screen to claim your spot.
+        </p>
+      </Show>
       <div className="mt-4 flex flex-wrap gap-3">
         {(Object.keys(scopeLabels) as Scope[]).map((key) => (
           <button

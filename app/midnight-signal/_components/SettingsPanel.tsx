@@ -32,6 +32,7 @@ export function SettingsPanel() {
   if (!loaded) return <p>Loading settings…</p>;
 
   const volumePercent = Math.round(settings.hostVolume * 100);
+  const musicPercent = Math.round(settings.musicVolume * 100);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -62,6 +63,56 @@ export function SettingsPanel() {
             type="range"
             value={volumePercent}
           />
+        </div>
+
+        <div>
+          <label className="block font-semibold text-amber-100" htmlFor="music-volume">
+            Music volume
+          </label>
+          <input
+            aria-valuetext={`${musicPercent} percent`}
+            className={`mt-2 w-full max-w-xs ${focusRing}`}
+            id="music-volume"
+            max={100}
+            min={0}
+            onChange={(event) =>
+              // Silent like the host slider: aria-valuetext already reports steps.
+              setSettings((prev) => {
+                const next = { ...prev, musicVolume: Number(event.target.value) / 100 };
+                saveSettings(next);
+                return next;
+              })
+            }
+            step={10}
+            type="range"
+            value={musicPercent}
+          />
+          <p className="mt-1 text-sm leading-6 text-zinc-400">
+            Takes effect when you return to the broadcast. During play, the Mute music button
+            next to the host audio controls silences it instantly.
+          </p>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <input
+            checked={settings.soundEffects}
+            className={`mt-1 h-5 w-5 ${focusRing}`}
+            id="sound-effects"
+            onChange={(event) =>
+              update(
+                { soundEffects: event.target.checked },
+                `Sound effects ${event.target.checked ? "on" : "off"}.`,
+              )
+            }
+            type="checkbox"
+          />
+          <label htmlFor="sound-effects">
+            <span className="font-semibold text-amber-100">Sound effects</span>
+            <span className="block text-sm leading-6 text-zinc-400">
+              Short musical cues for correct answers, round changes, and tape discoveries. Purely
+              decorative — every cue is always paired with a spoken and text announcement.
+            </span>
+          </label>
         </div>
 
         <div className="flex items-start gap-3">

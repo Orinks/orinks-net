@@ -1,6 +1,8 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { useState, type ReactNode } from "react";
 
 // NEXT_PUBLIC_CONVEX_URL is inlined at build time (set in Vercel env). When
@@ -21,5 +23,11 @@ export function MidnightSignalProviders({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  return <ConvexProvider client={client}>{children}</ConvexProvider>;
+  // ConvexProviderWithClerk bridges the site-wide Clerk identity (from the root
+  // ClerkProvider) to this game's own Convex deployment.
+  return (
+    <ConvexProviderWithClerk client={client} useAuth={useAuth}>
+      {children}
+    </ConvexProviderWithClerk>
+  );
 }

@@ -1,6 +1,7 @@
 {
   "minigame": "general-trivia",
   "voice": "clide",
+  "curated": true,
   "questions": [
     {
       "id": "gt-0001",
@@ -72,7 +73,7 @@
       "prompt": "Who composed The Four Seasons?",
       "choices": ["Johann Sebastian Bach", "Antonio Vivaldi", "George Frideric Handel", "Wolfgang Amadeus Mozart"],
       "answer": 1,
-      "explanation": "Vivaldi composed the four violin concertos around 1720."
+      "explanation": "Vivaldi composed the four violin concertos around 1723, publishing them in 1725 as part of Op. 8."
     },
     {
       "id": "gt-0009",

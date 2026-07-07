@@ -130,7 +130,12 @@ function collectItems(config) {
         fail(`${relPath}: question "${q.id}" has out-of-range answer index`);
       }
       if (q.voice === false) continue; // authored as text/screen-reader only
-      addItem("questions", q.id, q.prompt, typeof q.voice === "string" ? q.voice : bankVoice, relPath);
+      // The clip reads the numbered choices too (numbers match the 1-4 keys).
+      const choiceText = q.choices
+        .map((choice, index) => `${index + 1}: ${choice}`)
+        .join(". ");
+      const questionText = `${q.prompt} Your choices are... ${choiceText}.`;
+      addItem("questions", q.id, questionText, typeof q.voice === "string" ? q.voice : bankVoice, relPath);
     }
   }
 

@@ -3,6 +3,7 @@
 // browser sees goes through sanitizeQuestion(). To add a new bank file,
 // import it below and add it to the banks array.
 import generalTrivia from "../data/trivia/questions/general-trivia.json";
+import musicbrainzGenerated from "../data/trivia/questions/musicbrainz-generated.json";
 import opentdbMusic from "../data/trivia/questions/opentdb-music.json";
 
 export interface BankQuestion {
@@ -28,7 +29,11 @@ interface BankFile {
   questions: BankQuestion[];
 }
 
-const banks: BankFile[] = [generalTrivia as BankFile, opentdbMusic as BankFile];
+const banks: BankFile[] = [
+  generalTrivia as BankFile,
+  opentdbMusic as BankFile,
+  musicbrainzGenerated as BankFile,
+];
 
 export const questionBank: BankQuestion[] = banks.flatMap((bank) => bank.questions);
 

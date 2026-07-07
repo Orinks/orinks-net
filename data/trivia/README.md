@@ -59,6 +59,23 @@ user-contributed and has typos/awkward phrasing). Its license is
 CC BY-SA 4.0, so the site needs a visible credit to opentdb.com wherever
 the game lives.
 
+## Generating questions from MusicBrainz
+
+```
+node scripts/generate-musicbrainz.mjs               # target ~200 questions
+node scripts/generate-musicbrainz.mjs --amount 50   # smaller batch
+```
+
+Free and keyless, but MusicBrainz enforces one request per second, so a
+full run takes a few minutes. Questions are built from tag-search seeded
+well-known artists and their official studio albums, with same-genre
+distractors; dedupes against everything already in `questions/`, so
+re-running only appends new material. Generated files carry
+`"curated": false` — review them before deploying (the difficulty
+heuristic is rough and the data is community-edited). MusicBrainz core
+data is public domain (CC0), so no attribution is legally required, but
+a credit to musicbrainz.org is a nice touch.
+
 ## Generating audio
 
 ```

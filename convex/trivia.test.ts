@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import { questionByKey } from "./questionBank";
@@ -8,6 +8,22 @@ import { questionByKey } from "./questionBank";
 const modules = import.meta.glob("./**/*.ts");
 
 const PLAYER = "test-player-0001";
+
+// Fake ONLY Date (not timers) so we can simulate human think time between the
+// server serving a question and the answer coming back — the anti-cheat's
+// signal. Leaving setTimeout/setInterval real keeps convex-test's async intact.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"], now: 1_700_000_000_000 });
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+/** Advance the fake clock to simulate a human pausing to read and answer. */
+const HUMAN_THINK_MS = 2000;
+function think(ms = HUMAN_THINK_MS) {
+  vi.setSystemTime(Date.now() + ms);
+}
 
 function setup() {
   return convexTest(schema, modules);
@@ -17,14 +33,19 @@ async function newPlayer(t: ReturnType<typeof convexTest>, key = PLAYER, name = 
   return t.mutation(api.trivia.ensurePlayer, { playerKey: key, displayName: name });
 }
 
+// Accept either the base test client or a withIdentity accessor (both expose .mutation).
+type Caller = { mutation: ReturnType<typeof convexTest>["mutation"] };
+
 /** Answer the current question; pass correctly=true/false to steer the run. */
 async function answer(
-  t: ReturnType<typeof convexTest>,
+  t: Caller,
   playerKey: string,
   runId: string,
   questionKey: string,
   correctly: boolean,
+  thinkMs = HUMAN_THINK_MS,
 ) {
+  think(thinkMs); // simulate think time before submitting (default = human-plausible)
   const question = questionByKey.get(questionKey)!;
   const choiceIndex = correctly
     ? question.answer
@@ -206,26 +227,28 @@ describe("daily runs", () => {
 });
 
 describe("leaderboards", () => {
-  test("finished runs rank by score across scopes", async () => {
+  test("finished account runs rank by score across scopes", async () => {
     const t = setup();
-    await newPlayer(t, "leader-player-0001", "Alpha");
-    await newPlayer(t, "leader-player-0002", "Beta");
+    const alpha = t.withIdentity({ subject: "user_alpha", nickname: "Alpha" });
+    const beta = t.withIdentity({ subject: "user_beta", nickname: "Beta" });
+    await alpha.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0001" });
+    await beta.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0002" });
 
     // Alpha scores then dies; Beta dies immediately.
-    const runA = await t.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
+    const runA = await alpha.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
     let key = runA.question.key;
     for (let i = 0; i < 2; i++) {
-      const result = await answer(t, "leader-player-0001", runA.run.runId, key, true);
+      const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
     }
     for (let i = 0; i < 3; i++) {
-      const result = await answer(t, "leader-player-0001", runA.run.runId, key, false);
+      const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
-    const runB = await t.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
+    const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
     key = runB.question.key;
     for (let i = 0; i < 3; i++) {
-      const result = await answer(t, "leader-player-0002", runB.run.runId, key, false);
+      const result = await answer(beta, "leader-player-0002", runB.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
 
@@ -236,6 +259,35 @@ describe("leaderboards", () => {
       expect(board[0].rank).toBe(1);
       expect(board[0].score).toBeGreaterThan(board[1].score);
     }
+  });
+
+  test("guests do not appear on the public leaderboard", async () => {
+    const t = setup();
+    await newPlayer(t, "guest-leader-0001", "SomeGuest");
+    const start = await t.mutation(api.trivia.startRun, { playerKey: "guest-leader-0001" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(t, "guest-leader-0001", start.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.length).toBe(0);
+  });
+
+  test("offensive account handles are masked on the leaderboard", async () => {
+    const t = setup();
+    const troll = t.withIdentity({ subject: "user_troll", nickname: "n1gger" });
+    await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
+    const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
+    let key = run.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(troll, "troll-key-000001", run.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.length).toBe(1);
+    expect(board[0].displayName).not.toContain("n1gger");
+    expect(board[0].displayName.startsWith("Player ")).toBe(true);
   });
 
   test("abandoned runs never appear on leaderboards", async () => {
@@ -269,5 +321,140 @@ describe("story gating", () => {
     const wiped = await t.mutation(internal.trivia.wipePlayer, { playerKey: PLAYER });
     expect(wiped.wiped).toBe(true);
     expect(await t.query(api.trivia.getProfile, { playerKey: PLAYER })).toBeNull();
+  });
+});
+
+describe("themed rounds", () => {
+  test("all questions within a round share the round's category", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    expect(start.run.roundCategory).not.toBeNull();
+    const categories = new Set([start.question.category]);
+    let questionKey = start.question.key;
+    for (let i = 0; i < 5; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, questionKey, true);
+      if (i < 4) {
+        // Questions 2-5 belong to round 1 and must share its theme.
+        categories.add(result.nextQuestion!.category);
+        questionKey = result.nextQuestion!.key;
+      } else {
+        // The 5th answer completes the round; a new theme is announced.
+        const roundEvent = result.events.find(
+          (e: { type: string }) => e.type === "roundComplete",
+        ) as { nextCategory: string | null } | undefined;
+        expect(roundEvent).toBeDefined();
+        expect(result.run.roundCategory).toBe(roundEvent!.nextCategory);
+      }
+    }
+    expect(categories.size).toBe(1);
+  });
+});
+
+describe("account identity", () => {
+  const IDENTITY = { subject: "user_clerk_abc", nickname: "SignalHunter", name: "Ada Vale" };
+
+  test("signing in creates an account whose leaderboard name is the Clerk handle", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    const res = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0001" });
+    expect(res.signedIn).toBe(true);
+    expect(res.displayName).toBe("SignalHunter");
+    const profile = await asUser.query(api.trivia.getProfile, { playerKey: "device-key-0001" });
+    expect(profile!.displayName).toBe("SignalHunter");
+  });
+
+  test("first sign-in claims the guest row's progress on this device", async () => {
+    const t = setup();
+    // Play a losing run as a guest first (builds totalAnswered).
+    await t.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002", displayName: "Guest" });
+    const start = await t.mutation(api.trivia.startRun, { playerKey: "device-key-0002" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(t, "device-key-0002", start.run.runId, key, false);
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const guestProfile = await t.query(api.trivia.getProfile, { playerKey: "device-key-0002" });
+    expect(guestProfile!.totalRuns).toBe(1);
+
+    // Sign in on the same device: the account inherits that progress.
+    const asUser = t.withIdentity(IDENTITY);
+    const link = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002" });
+    expect(link.migrated).toBe(true);
+    const acctProfile = await asUser.query(api.trivia.getProfile, { playerKey: "device-key-0002" });
+    expect(acctProfile!.totalRuns).toBe(1);
+    expect(acctProfile!.displayName).toBe("SignalHunter");
+  });
+
+  test("a returning account is not re-created and keeps its stats", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0003" });
+    const again = await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0003" });
+    expect(again.created).toBe(false);
+    expect(again.signedIn).toBe(true);
+  });
+
+  test("signed-in runs appear on the leaderboard under the account handle", async () => {
+    const t = setup();
+    const asUser = t.withIdentity(IDENTITY);
+    await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
+    const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(asUser, "device-key-0004", start.run.runId, key, false);
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "SignalHunter")).toBe(true);
+  });
+});
+
+describe("anti-cheat", () => {
+  test("a run answered superhumanly fast is flagged out of the leaderboard", async () => {
+    const t = setup();
+    const bot = t.withIdentity({ subject: "user_bot", nickname: "SpeedBot" });
+    await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000001" });
+    const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000001" });
+    let key = start.question.key;
+    let result;
+    for (let i = 0; i < 3; i++) {
+      // ~100ms per answer: impossible to read a question + four choices that fast.
+      result = await answer(bot, "bot-key-00000001", start.run.runId, key, false, 100);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    expect(result!.run.status).toBe("dead");
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "SpeedBot")).toBe(false);
+  });
+
+  test("a human-paced run is not flagged and ranks normally", async () => {
+    const t = setup();
+    const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });
+    await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
+    const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const r = await answer(human, "human-key-0000001", start.run.runId, key, false); // default human pace
+      if (r.nextQuestion) key = r.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.some((row) => row.displayName === "RealPlayer")).toBe(true);
+  });
+
+  test("startRun is rate-limited per player", async () => {
+    const t = setup();
+    const grinder = t.withIdentity({ subject: "user_rl", nickname: "Grinder" });
+    await grinder.mutation(api.trivia.ensurePlayer, { playerKey: "rl-key-000000001" });
+    let threw = false;
+    for (let i = 0; i < 45; i++) {
+      try {
+        await grinder.mutation(api.trivia.startRun, { playerKey: "rl-key-000000001" });
+      } catch {
+        threw = true;
+        break;
+      }
+    }
+    expect(threw).toBe(true);
   });
 });

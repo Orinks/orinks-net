@@ -45,6 +45,34 @@
     { "id": "tape-found-01", "trigger": "tape-found", "text": "Well now — the archive coughed something up. A master tape! Shall we hear it together after this round?" },
     { "id": "tape-found-02", "trigger": "tape-found", "text": "Hold on. There's a tape on my desk that was not there a moment ago. The studio does this sometimes. Let's give it a listen." },
 
-    { "id": "daily-intro-01", "trigger": "daily-intro", "text": "It's tonight's broadcast, friend — same questions for every soul tuned in past midnight. Make your answers count. The whole frequency is listening." }
+    { "id": "daily-intro-01", "trigger": "daily-intro", "text": "It's tonight's broadcast, friend — same questions for every soul tuned in past midnight. Make your answers count. The whole frequency is listening." },
+
+    { "id": "lead-in-04", "trigger": "question-lead-in", "text": "The Producer just handed me this one. Its printer sounded smug." },
+    { "id": "lead-in-05", "trigger": "question-lead-in", "text": "Ooh, I like this card. Let's see what you make of it." },
+    { "id": "lead-in-06", "trigger": "question-lead-in", "text": "Next question, straight from the archive drawer that sticks." },
+    { "id": "lead-in-07", "trigger": "question-lead-in", "text": "Vernon would have loved this one. No pressure." },
+    { "id": "lead-in-08", "trigger": "question-lead-in", "text": "Alright, the band's waiting on you. Here we go." },
+
+    { "id": "round-theme-01", "trigger": "round-theme", "text": "New round, new territory. The Producer has picked our next theme — I just read the cards, friend." },
+    { "id": "round-theme-02", "trigger": "round-theme", "text": "The wheel of categories has spoken. On we go!" },
+
+    { "id": "fact-01", "trigger": "fact", "text": "A little something from the archive: Queen's label swore radio would never play a six-minute single. Bohemian Rhapsody played anyway. Constantly." },
+    { "id": "fact-02", "trigger": "fact", "text": "Studio fact for you: Beethoven kept composing long after he lost his hearing. Some of his greatest work came after the silence." },
+    { "id": "fact-03", "trigger": "fact", "text": "From the files: Decca Records turned down The Beatles, saying guitar groups were on the way out. The archive keeps that memo for laughs." },
+    { "id": "fact-04", "trigger": "fact", "text": "Little-known dial fact: a standard LP spins at thirty-three and a third revolutions per minute. The signal prefers it that way." },
+    { "id": "fact-05", "trigger": "fact", "text": "Between you and me: a piano has eighty-eight keys, but well over two hundred strings doing the real work." },
+    { "id": "fact-06", "trigger": "fact", "text": "Archive card says Mozart wrote his first symphony at eight years old. At eight, I was a schematic." },
+    { "id": "fact-07", "trigger": "fact", "text": "Legal department memo: Happy Birthday was claimed under copyright for decades — a court finally set it free in 2016. Sing responsibly." },
+    { "id": "fact-08", "trigger": "fact", "text": "Travel desk fact: Elvis Presley never performed a concert outside North America. The King stayed close to the castle." },
+    { "id": "fact-09", "trigger": "fact", "text": "The Ramones weren't brothers — every member just took the name Ramone at the door. The show respects a good bit." },
+    { "id": "fact-10", "trigger": "fact", "text": "Instrument corner: the saxophone was invented by a man actually named Sax. Adolphe Sax, 1840s. Sometimes the universe is tidy." },
+    { "id": "fact-11", "trigger": "fact", "text": "Hall of Fame note: Aretha Franklin was the first woman inducted into the Rock and Roll Hall of Fame. 1987. Respect." },
+    { "id": "fact-12", "trigger": "fact", "text": "Chart trivia: the Billboard Hot 100 first ran in 1958. The signal was already five years old and felt ancient." },
+    { "id": "fact-13", "trigger": "fact", "text": "String section secret: a violin bow is strung with horsehair. The horses, I'm told, are flattered." },
+    { "id": "fact-14", "trigger": "fact", "text": "Before the helmets, Daft Punk were a rock band called Darlin'. A critic called it daft punk. They kept the review." },
+    { "id": "fact-15", "trigger": "fact", "text": "My favorite instrument fact: the theremin is played without touching it at all. An instrument made of nothing but signal. I feel seen." },
+    { "id": "fact-16", "trigger": "fact", "text": "Sales desk: Michael Jackson's Thriller remains the best-selling album of all time. Some records the archive expects to keep." },
+    { "id": "fact-17", "trigger": "fact", "text": "Good Vibrations by the Beach Boys features the Electro-Theremin — an instrument so rare it mostly exists in that song." },
+    { "id": "fact-18", "trigger": "fact", "text": "Timekeeping fact: the metronome was patented around 1815. Musicians have resented it, faithfully, ever since." }
   ]
 }

@@ -96,19 +96,37 @@ export function initSpeech() {
   speechReady = true;
 }
 
-export function speakProducer(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  // Do NOT cancel here: several Producer lines can fire on one answer (round +
-  // achievement + tape) and cancelling would drop all but the last (a11y
-  // review P0-2). Deliberate interruption goes through stopProducer().
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1.05;
-  utterance.pitch = 0.7; // the Producer is a machine and proud of it
-  currentUtterance = utterance;
-  utterance.onend = () => {
-    if (currentUtterance === utterance) currentUtterance = null;
-  };
-  window.speechSynthesis.speak(utterance);
+/**
+ * Speaks a Producer line. Resolves when the utterance finishes — via onend,
+ * onerror, or a text-length safety timeout, because Chrome's onend is
+ * unreliable and callers use this to release music ducking.
+ */
+export function speakProducer(text: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      resolve();
+      return;
+    }
+    // Do NOT cancel here: several Producer lines can fire on one answer (round +
+    // achievement + tape) and cancelling would drop all but the last (a11y
+    // review P0-2). Deliberate interruption goes through stopProducer().
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 0.7; // the Producer is a machine and proud of it
+    currentUtterance = utterance;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(safety);
+      if (currentUtterance === utterance) currentUtterance = null;
+      resolve();
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    const safety = setTimeout(finish, Math.min(20000, 2000 + text.length * 80));
+    window.speechSynthesis.speak(utterance);
+  });
 }
 
 export function stopProducer() {

@@ -10,6 +10,9 @@ export interface GameSettings {
   captions: boolean;
   numberShortcuts: boolean; // 1-4 answer keys + R replay (WCAG 2.1.4 requires this toggle)
   reducedMotion: "system" | "on" | "off";
+  musicVolume: number; // 0..1
+  musicMuted: boolean; // in-game Mute music toggle (persisted)
+  soundEffects: boolean; // earcons; never information-bearing on their own
 }
 
 export const defaultSettings: GameSettings = {
@@ -21,6 +24,11 @@ export const defaultSettings: GameSettings = {
   captions: true,
   numberShortcuts: true,
   reducedMotion: "system",
+  // Low default on purpose: ducking can't hear a screen reader, so SR speech
+  // rides over full music — 40% + the in-game mute are load-bearing (a11y review)
+  musicVolume: 0.4,
+  musicMuted: false,
+  soundEffects: true,
 };
 
 export function loadSettings(): GameSettings {

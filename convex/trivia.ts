@@ -15,6 +15,11 @@ const STREAK_BONUS = 25; // per prior consecutive correct answer
 const STREAK_BONUS_CAP = 10;
 const LEADERBOARD_LIMIT_MAX = 100;
 
+// --- Anti-cheat ---
+const MIN_ANSWER_MS = 900; // reading a question + 4 choices realistically takes longer
+const FAST_ANSWER_FLAG = 3; // this many superhuman-fast answers flags a run as automated
+const MAX_RUNS_PER_HOUR = 40; // per-player rate limit on starting runs
+
 const TAPES = [...story.tapes].sort((a, b) => a.order - b.order);
 const FINALE_UNLOCK = story.finale.unlock;
 
@@ -61,33 +66,118 @@ function difficultyRange(round: number): [number, number] {
   return [3, 5];
 }
 
+function runRoll(run: Doc<"triviaRuns">, salt: string): number {
+  // Dailies must be deterministic so every player gets the same episode.
+  return run.isDaily ? seededRandom(`${run.seed}:${salt}`)() : Math.random();
+}
+
+/**
+ * Picks a theme for a round: a category with enough unasked questions to
+ * carry the whole round. Returns undefined when the bank is too depleted to
+ * theme (the round falls back to a mixed grab bag).
+ */
+function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | undefined {
+  const asked = new Set(run.askedQuestionKeys);
+  const counts = new Map<string, number>();
+  for (const q of questionBank) {
+    if (!asked.has(q.id)) counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
+  }
+  const viable = [...counts.entries()]
+    .filter(([category, count]) => count >= QUESTIONS_PER_ROUND && category !== run.roundCategory)
+    .map(([category]) => category)
+    .sort(); // stable order so daily seeding is deterministic
+  if (viable.length === 0) return undefined;
+  const roll = runRoll(run, `category:${forRound}`);
+  return viable[Math.floor(roll * viable.length)];
+}
+
 function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   const asked = new Set(run.askedQuestionKeys);
   const [min, max] = difficultyRange(run.round);
-  let candidates = questionBank.filter(
-    (q) => !asked.has(q.id) && q.difficulty >= min && q.difficulty <= max,
+  const unasked = questionBank.filter((q) => !asked.has(q.id));
+  // Prefer: on-theme + in difficulty range → on-theme any difficulty →
+  // in-range any theme → anything left.
+  let candidates = unasked.filter(
+    (q) => q.category === run.roundCategory && q.difficulty >= min && q.difficulty <= max,
   );
-  if (candidates.length === 0) {
-    candidates = questionBank.filter((q) => !asked.has(q.id));
+  if (candidates.length === 0 && run.roundCategory) {
+    candidates = unasked.filter((q) => q.category === run.roundCategory);
   }
+  if (candidates.length === 0) {
+    candidates = unasked.filter((q) => q.difficulty >= min && q.difficulty <= max);
+  }
+  if (candidates.length === 0) candidates = unasked;
   if (candidates.length === 0) return null;
-  const roll = run.isDaily
-    ? seededRandom(`${run.seed}:${run.askedQuestionKeys.length}`)()
-    : Math.random();
+  const roll = runRoll(run, String(run.askedQuestionKeys.length));
   return candidates[Math.floor(roll * candidates.length)];
 }
 
-async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+async function getPlayerByKey(ctx: QueryCtx | MutationCtx, playerKey: string) {
   return ctx.db
     .query("triviaPlayers")
     .withIndex("by_playerKey", (q) => q.eq("playerKey", playerKey))
     .unique();
 }
 
+async function getPlayerBySubject(ctx: QueryCtx | MutationCtx, subject: string) {
+  return ctx.db
+    .query("triviaPlayers")
+    .withIndex("by_authSubject", (q) => q.eq("authSubject", subject))
+    .unique();
+}
+
+/**
+ * Resolves the player for a request: the signed-in account takes precedence
+ * over the anonymous guest key. ensurePlayer creates/links the account row, so
+ * by the time gameplay functions run the account row already exists.
+ */
+async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (identity) {
+    const account = await getPlayerBySubject(ctx, identity.subject);
+    if (account) return account;
+  }
+  return getPlayerByKey(ctx, playerKey);
+}
+
 async function requirePlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
   const player = await getPlayer(ctx, playerKey);
   if (!player) throw new Error("Unknown player. Call ensurePlayer first.");
   return player;
+}
+
+/** A leaderboard handle from the Clerk identity claims (see the "convex" JWT template). */
+function handleFromIdentity(identity: { nickname?: string; preferredUsername?: string; name?: string; email?: string }) {
+  const raw =
+    identity.nickname || identity.preferredUsername || identity.name || identity.email?.split("@")[0] || "Contestant";
+  return cleanDisplayName(raw);
+}
+
+// Clerk validates username FORMAT but not content, so account handles still
+// need screening before they appear publicly. This is a compact first-pass
+// blocklist matched after leetspeak normalization; swap in a maintained
+// profanity library before a wide launch. Offensive names render as anonymous.
+const PROFANITY_ROOTS = [
+  "nigger", "nigga", "faggot", "retard", "cunt", "fuck", "shit", "bitch",
+  "rape", "nazi", "slut", "whore", "coon", "kike", "spic", "chink",
+];
+function normalizeForModeration(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[4@]/g, "a")
+    .replace(/3/g, "e")
+    .replace(/[1!|]/g, "i")
+    .replace(/0/g, "o")
+    .replace(/[$5]/g, "s")
+    .replace(/7/g, "t")
+    .replace(/[^a-z]/g, "");
+}
+function safeLeaderboardName(name: string, runId: Id<"triviaRuns">): string {
+  const normalized = normalizeForModeration(name);
+  if (PROFANITY_ROOTS.some((root) => normalized.includes(root))) {
+    return `Player ${runId.slice(-4)}`;
+  }
+  return name;
 }
 
 async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {
@@ -123,7 +213,7 @@ async function unlockAchievement(
 
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
-  | { type: "roundComplete"; round: number }
+  | { type: "roundComplete"; round: number; nextCategory: string | null }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -142,6 +232,7 @@ function publicRunState(run: Doc<"triviaRuns">) {
     answeredInRound: run.answeredInRound,
     questionsPerRound: QUESTIONS_PER_ROUND,
     questionNumber: run.askedQuestionKeys.length,
+    roundCategory: run.roundCategory ?? null,
   };
 }
 
@@ -154,14 +245,49 @@ export const ensurePlayer = mutation({
       throw new Error("playerKey must be 8-64 characters");
     }
     const now = Date.now();
-    const existing = await getPlayer(ctx, args.playerKey);
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (identity) {
+      // Signed in: the account IS the identity. Its leaderboard name mirrors
+      // the Clerk handle (username, else name); a guest's typed name is ignored.
+      const handle = handleFromIdentity(identity);
+      const account = await getPlayerBySubject(ctx, identity.subject);
+      if (account) {
+        await ctx.db.patch(account._id, { displayName: handle, lastSeenAt: now });
+        return { created: false, signedIn: true, displayName: handle };
+      }
+      // First sign-in: claim this device's guest row (and its progress) if it
+      // isn't already tied to an account; otherwise start a fresh account row.
+      const guest = await getPlayerByKey(ctx, args.playerKey);
+      if (guest && guest.authSubject === undefined) {
+        await ctx.db.patch(guest._id, { authSubject: identity.subject, displayName: handle, lastSeenAt: now });
+        return { created: false, signedIn: true, migrated: true, displayName: handle };
+      }
+      await ctx.db.insert("triviaPlayers", {
+        playerKey: identity.subject,
+        authSubject: identity.subject,
+        displayName: handle,
+        createdAt: now,
+        lastSeenAt: now,
+        totalRuns: 0,
+        bestScore: 0,
+        deepestRound: 0,
+        totalCorrect: 0,
+        totalAnswered: 0,
+        tapesUnlocked: [],
+      });
+      return { created: true, signedIn: true, displayName: handle };
+    }
+
+    // Guest (signed out): anonymous row keyed by the client-generated playerKey.
+    const existing = await getPlayerByKey(ctx, args.playerKey);
     if (existing) {
       const patch: Partial<Doc<"triviaPlayers">> = { lastSeenAt: now };
       if (args.displayName !== undefined) {
         patch.displayName = cleanDisplayName(args.displayName);
       }
       await ctx.db.patch(existing._id, patch);
-      return { created: false, displayName: patch.displayName ?? existing.displayName };
+      return { created: false, signedIn: false, displayName: patch.displayName ?? existing.displayName };
     }
     const displayName = cleanDisplayName(args.displayName ?? `Contestant ${args.playerKey.slice(0, 4)}`);
     await ctx.db.insert("triviaPlayers", {
@@ -176,7 +302,7 @@ export const ensurePlayer = mutation({
       totalAnswered: 0,
       tapesUnlocked: [],
     });
-    return { created: true, displayName };
+    return { created: true, signedIn: false, displayName };
   },
 });
 
@@ -211,6 +337,18 @@ export const startRun = mutation({
       }
     }
 
+    // Rate limit: cap how many runs a player can start per hour to blunt
+    // scripted farming of the leaderboard.
+    const recentRuns = await ctx.db
+      .query("triviaRuns")
+      .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
+      .order("desc")
+      .take(MAX_RUNS_PER_HOUR + 1);
+    const startedLastHour = recentRuns.filter((run) => now - run.startedAt < 3600_000).length;
+    if (startedLastHour >= MAX_RUNS_PER_HOUR) {
+      throw new Error("You're starting broadcasts very fast. Take a short break and try again.");
+    }
+
     const runId = await ctx.db.insert("triviaRuns", {
       playerId: player._id,
       seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
@@ -223,6 +361,9 @@ export const startRun = mutation({
       answeredInRound: 0,
       wrongInRound: 0,
       tapeDropped: false,
+      fastAnswers: 0,
+      flagged: false,
+      currentQuestionServedAt: now,
       modifiers: [],
       askedQuestionKeys: [],
       dateKey,
@@ -231,16 +372,18 @@ export const startRun = mutation({
     });
 
     const run = (await ctx.db.get(runId))!;
-    const question = pickQuestion(run);
+    const roundCategory = pickRoundCategory(run, 1);
+    const question = pickQuestion({ ...run, roundCategory });
     if (!question) throw new Error("The question bank is empty.");
     await ctx.db.patch(runId, {
+      roundCategory,
       currentQuestionKey: question.id,
       askedQuestionKeys: [question.id],
     });
 
     await ctx.db.patch(player._id, { lastSeenAt: now });
     return {
-      run: { ...publicRunState(run), questionNumber: 1 },
+      run: { ...publicRunState(run), questionNumber: 1, roundCategory: roundCategory ?? null },
       question: sanitizeQuestion(question),
       runNumber: player.totalRuns + 1,
       epilogueActive: player.finaleCompletedAt !== undefined,
@@ -266,9 +409,17 @@ export const submitAnswer = mutation({
       throw new Error("choiceIndex out of range");
     }
 
+    // Anti-cheat: think time measured from the server's serve timestamp (the
+    // client can't fake it). Superhuman-fast answers accumulate; enough of them
+    // flag the run out of the public leaderboard. Never blocks the answer.
+    const answeredAt = Date.now();
+    const elapsed = answeredAt - (run.currentQuestionServedAt ?? answeredAt);
+    const fastAnswers = (run.fastAnswers ?? 0) + (elapsed < MIN_ANSWER_MS ? 1 : 0);
+    const flagged = (run.flagged ?? false) || fastAnswers >= FAST_ANSWER_FLAG;
+
     const events: GameEvent[] = [];
     const correct = args.choiceIndex === question.answer;
-    let { score, streak, lives, round, answeredInRound, wrongInRound, tapeDropped } = run;
+    let { score, streak, lives, round, answeredInRound, wrongInRound, tapeDropped, roundCategory } = run;
     let scoreDelta = 0;
     let tapesUnlocked = player.tapesUnlocked;
 
@@ -311,6 +462,8 @@ export const submitAnswer = mutation({
         lives: 0,
         answeredInRound,
         wrongInRound,
+        fastAnswers,
+        flagged,
         currentQuestionKey: undefined,
         endedAt: Date.now(),
       });
@@ -320,12 +473,13 @@ export const submitAnswer = mutation({
       }
     } else {
       if (answeredInRound >= QUESTIONS_PER_ROUND) {
-        // Round complete.
+        // Round complete: advance and pick the next round's theme.
         const completedRound = round;
-        events.push({ type: "roundComplete", round: completedRound });
+        round += 1;
+        roundCategory = pickRoundCategory(run, round);
+        events.push({ type: "roundComplete", round: completedRound, nextCategory: roundCategory ?? null });
         if (wrongInRound === 0) await unlockAchievement(ctx, player._id, "perfect-round", events);
         if (lives === 1) await unlockAchievement(ctx, player._id, "comeback", events);
-        round += 1;
         answeredInRound = 0;
         wrongInRound = 0;
         if (round === 10) await unlockAchievement(ctx, player._id, "round-10", events);
@@ -362,7 +516,7 @@ export const submitAnswer = mutation({
         }
       }
 
-      nextQuestion = pickQuestion({ ...run, round, askedQuestionKeys: run.askedQuestionKeys });
+      nextQuestion = pickQuestion({ ...run, round, roundCategory });
       if (!nextQuestion) {
         // Ran the entire bank dry — end the run as a victory lap.
         events.push({ type: "bankExhausted" });
@@ -378,6 +532,8 @@ export const submitAnswer = mutation({
           round,
           answeredInRound,
           wrongInRound,
+          fastAnswers,
+          flagged,
           currentQuestionKey: undefined,
           endedAt: Date.now(),
         });
@@ -390,6 +546,10 @@ export const submitAnswer = mutation({
           answeredInRound,
           wrongInRound,
           tapeDropped,
+          roundCategory,
+          fastAnswers,
+          flagged,
+          currentQuestionServedAt: answeredAt,
           currentQuestionKey: nextQuestion.id,
           askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
         });
@@ -501,6 +661,8 @@ export const getLeaderboard = query({
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 20, 1), LEADERBOARD_LIMIT_MAX);
+    // Over-fetch by score, then keep only signed-in accounts (see filter below).
+    const window = Math.min(limit * 5 + 20, 500);
     const now = Date.now();
     const viewer = args.playerKey ? await getPlayer(ctx, args.playerKey) : null;
     let runs: Doc<"triviaRuns">[];
@@ -509,36 +671,56 @@ export const getLeaderboard = query({
         .query("triviaRuns")
         .withIndex("by_leaderboard", (q) => q.eq("status", "dead"))
         .order("desc")
-        .take(limit);
+        .take(window);
     } else if (args.scope === "daily") {
       const dateKey = args.periodKey ?? dateKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
         .withIndex("by_daily_leaderboard", (q) => q.eq("status", "dead").eq("dateKey", dateKey))
         .order("desc")
-        .take(limit);
+        .take(window);
     } else {
       const weekKey = args.periodKey ?? weekKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
         .withIndex("by_weekly_leaderboard", (q) => q.eq("status", "dead").eq("weekKey", weekKey))
         .order("desc")
-        .take(limit);
+        .take(window);
     }
-    return Promise.all(
-      runs.map(async (run, index) => {
-        const player = await ctx.db.get(run.playerId);
-        return {
-          rank: index + 1,
-          displayName: player?.displayName ?? "Lost to static",
-          score: run.score,
-          round: run.round,
-          isDaily: run.isDaily,
-          isYou: viewer !== null && run.playerId === viewer._id,
-          endedAt: run.endedAt ?? run.startedAt,
-        };
-      }),
-    );
+
+    // Public leaderboards list signed-in accounts only (guests play but don't
+    // rank), and offensive account handles are masked (usernames aren't
+    // content-moderated by Clerk). Guests' typed names never reach here.
+    const rows: Array<{
+      rank: number;
+      displayName: string;
+      score: number;
+      round: number;
+      isDaily: boolean;
+      isYou: boolean;
+      endedAt: number;
+    }> = [];
+    const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
+    for (const run of runs) {
+      if (rows.length >= limit) break;
+      if (run.flagged) continue; // automated-looking runs don't rank (anti-cheat)
+      let player = playerCache.get(run.playerId);
+      if (player === undefined) {
+        player = await ctx.db.get(run.playerId);
+        playerCache.set(run.playerId, player);
+      }
+      if (!player || player.authSubject === undefined) continue; // accounts only
+      rows.push({
+        rank: rows.length + 1,
+        displayName: safeLeaderboardName(player.displayName, run._id),
+        score: run.score,
+        round: run.round,
+        isDaily: run.isDaily,
+        isYou: viewer !== null && run.playerId === viewer._id,
+        endedAt: run.endedAt ?? run.startedAt,
+      });
+    }
+    return rows;
   },
 });
 
