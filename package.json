@@ -12,6 +12,7 @@
     "tts": "node scripts/generate-tts.mjs"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.5.13",
     "convex": "^1.37.0",
     "next": "^15.3.0",
     "react": "^19.0.0",

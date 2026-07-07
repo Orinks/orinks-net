@@ -90,22 +90,19 @@ export default defineSchema({
   freightFateDrivers: defineTable({
     driverId: v.string(),
     displayName: v.string(),
+    // The Clerk account (getUserIdentity().subject) that owns this driver.
+    // One driver per account; the setup page provisions it after sign-in.
+    // Optional so pre-existing prototype rows validate until they are reset.
+    authSubject: v.optional(v.string()),
     // public: listed on the live drivers board; unlisted: profile reachable
     // by URL only; private: nothing shown anywhere.
     visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
     driverTokenHash: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_driver_id", ["driverId"]),
-  freightFateSetupSessions: defineTable({
-    setupTokenHash: v.string(),
-    driverId: v.string(),
-    driverTokenHash: v.string(),
-    displayName: v.optional(v.string()),
-    expiresAt: v.number(),
-    createdAt: v.number(),
-    confirmedAt: v.optional(v.number()),
-  }).index("by_setup_token", ["setupTokenHash"]),
+  })
+    .index("by_driver_id", ["driverId"])
+    .index("by_auth_subject", ["authSubject"]),
   // Live "who's on duty" board: one row per driver holding only the latest
   // heartbeat. Rows older than the board TTL are treated as offline and
   // pruned on the next write; no history is kept by design.
