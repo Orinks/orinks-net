@@ -3307,7 +3307,7 @@
     },
     {
       "id": "otdb-01622238",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Band Aid's 'Do They Know It's Christmas' was recorded to raise awareness of which issue in Ethiopia?",
       "choices": [
@@ -3317,11 +3317,12 @@
         "Pollution"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Band Aid recorded \"Do They Know It's Christmas?\" in 1984 to raise money and awareness for famine relief in Ethiopia."
     },
     {
       "id": "otdb-d98e8a79",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 3,
       "prompt": "What country did Shirley Bassey originate from?",
       "choices": [
@@ -3331,11 +3332,12 @@
         "England"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Dame Shirley Bassey was born in Cardiff, Wales, in 1937."
     },
     {
       "id": "otdb-c20aa65c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "From which album is the Gorillaz song, \"On Melancholy Hill\" featured in?",
       "choices": [
@@ -3345,11 +3347,12 @@
         "Demon Days"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"On Melancholy Hill\" appears on Gorillaz's 2010 album Plastic Beach."
     },
     {
       "id": "otdb-107f29a2",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these songs from American Idiot: The Musical was a previously unreleased Green Day song?",
       "choices": [
@@ -3359,11 +3362,12 @@
         "Favorite Son"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"When It's Time\" was written specifically for the American Idiot stage musical, unlike the other songs, which were pulled from existing Green Day albums."
     },
     {
       "id": "otdb-9879f88f",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What French artist/band is known for playing on the midi instrument \"Launchpad\"?",
       "choices": [
@@ -3373,11 +3377,12 @@
         "Disclosure"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "French producer Madeon is known for performing live using a Novation Launchpad to trigger samples."
     },
     {
       "id": "otdb-c53fc5d2",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "In what year did US band Weezer release Weezer (The White Album)?",
       "choices": [
@@ -3387,11 +3392,12 @@
         "2019"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Weezer released their self-titled White Album in 2016."
     },
     {
       "id": "otdb-46ec3e24",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "What is the name of the second studio album released by American rapper Post Malone in 2018?",
       "choices": [
@@ -3401,11 +3407,12 @@
         "Beerbongs & Bentleys"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Post Malone's second studio album, Beerbongs & Bentleys, was released in 2018 and debuted at number one."
     },
     {
       "id": "otdb-da560843",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of the following bands is Tom DeLonge not a part of?",
       "choices": [
@@ -3415,11 +3422,12 @@
         "Angels & Airwaves"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tom DeLonge co-founded Blink-182, Box Car Racer, and Angels & Airwaves, but +44 was formed by his former Blink-182 bandmates Mark Hoppus and Travis Barker."
     },
     {
       "id": "otdb-23884d14",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "La Fenice opera house is in which Italian city?",
       "choices": [
@@ -3429,11 +3437,12 @@
         "Rome"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Teatro La Fenice opera house has stood in Venice since 1792, having been rebuilt after fires more than once."
     },
     {
       "id": "otdb-b4fb50f3",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which song by Swedish electronic musician Avicii samples the song \"Something's Got A Hold On Me\" by Etta James?",
       "choices": [
@@ -3443,11 +3452,12 @@
         "Seek Bromance"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Avicii's breakout single \"Levels\" samples Etta James's 1962 song \"Something's Got a Hold on Me.\""
     },
     {
       "id": "otdb-75179b10",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "\"Make You Feel My Love\" was originally written and performed by which singer-songwriter?",
       "choices": [
@@ -3457,11 +3467,12 @@
         "Bob Dylan"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Bob Dylan wrote and first recorded \"Make You Feel My Love\" for his 1997 album Time Out of Mind."
     },
     {
       "id": "otdb-3570a838",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "The 2016 song \"Starboy\" by Canadian singer The Weeknd features which prominent electronic artist?",
       "choices": [
@@ -3471,11 +3482,12 @@
         "DJ Shadow"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Daft Punk's Thomas Bangalter and Guy-Manuel de Homem-Christo produced and appear on The Weeknd's \"Starboy.\""
     },
     {
       "id": "otdb-c720557d",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "What is the name of Finnish DJ Darude's hit single released in October 1999?",
       "choices": [
@@ -3485,11 +3497,12 @@
         "Dust Devil"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Darude's \"Sandstorm,\" released in 1999, became one of the most recognizable trance tracks and a long-running internet meme."
     },
     {
       "id": "otdb-a9e54a31",
-      "category": "music",
+      "category": "instruments",
       "difficulty": 1,
       "prompt": "In an orchestra, what is the lowest member of the brass family?",
       "choices": [
@@ -3499,11 +3512,12 @@
         "Tuba"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The tuba is the lowest-pitched brass instrument in an orchestra."
     },
     {
       "id": "otdb-839a3833",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "According to the American rapper Nelly, what should you do when its hot in here?",
       "choices": [
@@ -3513,11 +3527,12 @@
         "Go skinny dipping"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Nelly's 2002 hit \"Hot in Herre\" urges listeners to \"take off all your clothes.\""
     },
     {
       "id": "otdb-2ec1d463",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of the following rappers were NOT part of the hip-hop group Odd Future?",
       "choices": [
@@ -3527,11 +3542,12 @@
         "Vince Staples"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Vince Staples was never a member of Odd Future, unlike Tyler, the Creator, Frank Ocean, and Mike G."
     },
     {
       "id": "otdb-533d318f",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which country does the electronic music duo \"The Knife\" originate from?",
       "choices": [
@@ -3541,11 +3557,12 @@
         "Norway"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Knife, the electronic duo of siblings Karin Dreijer and Olof Dreijer, hails from Sweden."
     },
     {
       "id": "otdb-c679e106",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Who is the vocalist and frontman of rock band \"Guns N' Roses\"?",
       "choices": [
@@ -3555,11 +3572,12 @@
         "Bono"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Axl Rose has fronted Guns N' Roses since the band's formation in 1985."
     },
     {
       "id": "otdb-e403d2db",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "Which country does the band Rammstein hail from?",
       "choices": [
@@ -3569,11 +3587,12 @@
         "Germany"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Rammstein formed in Berlin, Germany, in 1994."
     },
     {
       "id": "otdb-4318264a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which of these is NOT an album released by The Beatles?",
       "choices": [
@@ -3583,11 +3602,12 @@
         "Revolver"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Wall is a Pink Floyd album, not a Beatles release."
     },
     {
       "id": "otdb-30e6ee04",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "What was the best selling album of 2015?",
       "choices": [
@@ -3597,11 +3617,12 @@
         "Fetty Wap, Fetty Wap"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Adele's 25 was the best-selling album worldwide in 2015, moving nearly 17.4 million copies."
     },
     {
       "id": "otdb-8efc7d9f",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Whose signature guitar technique is called the \"windmill\"?",
       "choices": [
@@ -3611,11 +3632,12 @@
         "Pete Townshend"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Who's Pete Townshend is famous for his exaggerated \"windmill\" strumming technique."
     },
     {
       "id": "otdb-54cfe1b0",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "When was the Prince album \"Purple Rain\" released?",
       "choices": [
@@ -3625,11 +3647,12 @@
         "1984"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Prince released Purple Rain, both the album and the accompanying film, in 1984."
     },
     {
       "id": "otdb-b099accb",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which of these is NOT the name of an album released by English singer-songwriter Adele?",
       "choices": [
@@ -3639,11 +3662,12 @@
         "25"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Adele names her albums after the age she was while writing them; \"12\" is not among her releases (19, 21, 25, and 30 are)."
     },
     {
       "id": "otdb-d27a5e19",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "What is the name of Metallica's debut album, released in 1983?",
       "choices": [
@@ -3653,11 +3677,12 @@
         "Countdown to Extinction"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Metallica's debut album, Kill 'Em All, was released in 1983."
     },
     {
       "id": "otdb-99a13d3c",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "What band featured Sting, Stewart Copeland and Andy Summers?",
       "choices": [
@@ -3667,11 +3692,12 @@
         "Def Leppard"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Sting, Stewart Copeland, and Andy Summers formed The Police in London in 1977."
     },
     {
       "id": "otdb-bcf8bf66",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which famous rapper is featured in Jack Ü (Skrillex and Diplo)'s 2015 single called \"Febreze\"?",
       "choices": [
@@ -3681,11 +3707,12 @@
         "2 Chainz"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "2 Chainz is featured on Jack Ü's 2015 track \"Febreze.\""
     },
     {
       "id": "otdb-60c83d96",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "\"The Singing Cowboy\" Gene Autry is credited with the first recording for all but which classic Christmas jingle?",
       "choices": [
@@ -3695,11 +3722,12 @@
         "White Christmas"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"White Christmas\" was first recorded by Bing Crosby, not Gene Autry, who nonetheless made the first recordings of several other holiday standards."
     },
     {
       "id": "otdb-1c7ff18a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "On the cover of 'Abbey Road,' which of the Beatles is not wearing shoes?",
       "choices": [
@@ -3709,11 +3737,12 @@
         "John Lennon"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Paul McCartney is barefoot on the cover of The Beatles' Abbey Road, fueling \"Paul is dead\" conspiracy theories."
     },
     {
       "id": "otdb-fbbf953b",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Who had a 1983 hit with the song 'Africa'?",
       "choices": [
@@ -3723,11 +3752,12 @@
         "Toto"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Toto's \"Africa\" became a top-10 hit in early 1983 and later found a second life as an internet-favorite classic."
     },
     {
       "id": "otdb-3529c5c4",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 3,
       "prompt": "What song by Tina Turner is the theme for Mad Max Beyond Thunderdome?",
       "choices": [
@@ -3737,11 +3767,12 @@
         "We Don't Need Another Hero"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Tina Turner's \"We Don't Need Another Hero\" served as the theme for 1985's Mad Max Beyond Thunderdome, in which she also co-starred."
     },
     {
       "id": "otdb-a55d6566",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Brian May was the guitarist for which band?",
       "choices": [
@@ -3751,11 +3782,12 @@
         "Pink Floyd"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Brian May has been Queen's guitarist since the band's founding in 1970."
     },
     {
       "id": "otdb-02c4d394",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which rock band released the album \"The Bends\" in March 1995?",
       "choices": [
@@ -3765,11 +3797,12 @@
         "Coldplay"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Radiohead released The Bends in March 1995, their acclaimed second studio album."
     },
     {
       "id": "otdb-59847f30",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which of these is not a song on the album Graduation by Kanye West?",
       "choices": [
@@ -3779,11 +3812,12 @@
         "I Wonder"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "\"Waves\" is not on Kanye West's Graduation; it later appeared on The Life of Pablo."
     },
     {
       "id": "otdb-574f312d",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which album by American rapper Kanye West contained songs such as \"Love Lockdown\", \"Paranoid\" and \"Heartless\"?",
       "choices": [
@@ -3793,11 +3827,12 @@
         "Graduation"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Kanye West's 808s & Heartbreak (2008) featured \"Love Lockdown,\" \"Heartless,\" and \"Paranoid.\""
     },
     {
       "id": "otdb-f0e8da2d",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which band had hits in 1975 with the songs, 'One Of These Nights' & 'Lyin Eyes'?",
       "choices": [
@@ -3807,11 +3842,12 @@
         "The Eagles"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Eagles released \"One of These Nights\" and \"Lyin' Eyes\" in 1975."
     },
     {
       "id": "otdb-82b82031",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 1,
       "prompt": "Which year was the album \"Year of the Snitch\" by Death Grips released?",
       "choices": [
@@ -3821,11 +3857,12 @@
         "2018"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Death Grips released Year of the Snitch in 2018."
     },
     {
       "id": "otdb-00b98de6",
-      "category": "music",
+      "category": "metal",
       "difficulty": 3,
       "prompt": "In which year was the Megadeth album \"Peace Sells... but Who's Buying?\" released?",
       "choices": [
@@ -3835,11 +3872,12 @@
         "1979"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Megadeth released Peace Sells... but Who's Buying? in 1986."
     },
     {
       "id": "otdb-390992f9",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "Which of these songs by Skrillex features Fatman Scoop as a side artist?",
       "choices": [
@@ -3849,11 +3887,12 @@
         "Rock N Roll (Will Take You to the Mountain)"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Fatman Scoop features on Skrillex's track \"Recess,\" from the 2014 album of the same name."
     },
     {
       "id": "otdb-1ad04cb8",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "The \"K\" in \"K-Pop\" stands for which word?",
       "choices": [
@@ -3863,25 +3902,12 @@
         "Kazakhstan"
       ],
       "answer": 1,
-      "source": "opentdb"
-    },
-    {
-      "id": "otdb-d4a08aa7",
-      "category": "music",
-      "difficulty": 3,
-      "prompt": "In 2015, David Hasselhof released a single called...",
-      "choices": [
-        "True Fighter",
-        "Real Warrior",
-        "Real Kung-Fury",
-        "True Survivor"
-      ],
-      "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "K-pop refers to Korean popular music, which grew into a global phenomenon through acts like BTS and Blackpink."
     },
     {
       "id": "otdb-8434f565",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "When was the 3rd album \"Notes from the Underground\" of the band \"Hollywood Undead\" released?",
       "choices": [
@@ -3891,11 +3917,12 @@
         "2011"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Hollywood Undead released their third album, Notes from the Underground, in 2013."
     },
     {
       "id": "otdb-cfea1b4f",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Who performed the guitar solo on Michael Jackson's hit \"Beat It\"?",
       "choices": [
@@ -3905,11 +3932,12 @@
         "Steve Vai"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Eddie Van Halen played the guitar solo on Michael Jackson's \"Beat It\" in 1982, reportedly for free."
     },
     {
       "id": "otdb-a024ced2",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Who was the previous drummer of blink-182 before Travis Barker?",
       "choices": [
@@ -3919,11 +3947,12 @@
         "Atom Willard"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Scott Raynor was blink-182's original drummer before Travis Barker joined in 1998."
     },
     {
       "id": "otdb-b80a7f77",
-      "category": "music",
+      "category": "classical",
       "difficulty": 3,
       "prompt": "With his distinctive red hair, which Italian composer, born in 1678, was known as the 'Red Priest'?",
       "choices": [
@@ -3933,11 +3962,12 @@
         "Puccini"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Antonio Vivaldi, born in Venice in 1678, was nicknamed \"the Red Priest\" for his red hair and ordained priesthood."
     },
     {
       "id": "otdb-42e00802",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "What year was Red Hot Chill Pepper's album \"Californication\" released?",
       "choices": [
@@ -3947,11 +3977,12 @@
         "1992"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Red Hot Chili Peppers released Californication in 1999."
     },
     {
       "id": "otdb-16fc67f2",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "\"Doctor Jones\", \"Turn Back Time\" and \"Barbie Girl\" were UK number ones for which Eurodance group?",
       "choices": [
@@ -3961,11 +3992,12 @@
         "Aqua"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Aqua, the Danish-Norwegian Eurodance group, topped the UK charts with \"Barbie Girl,\" \"Doctor Jones,\" and \"Turn Back Time\" in the late 1990s."
     },
     {
       "id": "otdb-76c45405",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which city is the American singer \"Pitbull\" from?",
       "choices": [
@@ -3975,11 +4007,12 @@
         "Miami"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pitbull was born and raised in Miami, Florida."
     },
     {
       "id": "otdb-60b7c5c3",
-      "category": "music",
+      "category": "pop",
       "difficulty": 1,
       "prompt": "Which former boy-band star released hit solo single \"Angels\" in 1997?",
       "choices": [
@@ -3989,11 +4022,12 @@
         "Harry Styles"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Robbie Williams left Take That before releasing his solo hit \"Angels\" in 1997."
     },
     {
       "id": "otdb-fd484208",
-      "category": "music",
+      "category": "classical",
       "difficulty": 5,
       "prompt": "Pamina and Papageno are characters in what Mozart opera?",
       "choices": [
@@ -4003,11 +4037,12 @@
         "The Impresario"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Pamina and Papageno are lead characters in Mozart's 1791 opera The Magic Flute."
     },
     {
       "id": "otdb-43d4bfb3",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "What song originally performed by The Bee Gees in 1978 had a cover version by Steps 20 years later?",
       "choices": [
@@ -4017,11 +4052,12 @@
         "You Should Be Dancing"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Steps covered the Bee Gees' 1978 hit \"Tragedy\" in 1998, scoring a UK number one."
     },
     {
       "id": "otdb-10422b57",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "In what year was Taylor Swift born?",
       "choices": [
@@ -4031,11 +4067,12 @@
         "1990"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Taylor Swift was born in 1989, later naming her acclaimed album after her birth year."
     },
     {
       "id": "otdb-76de7ff4",
-      "category": "music",
+      "category": "oldies",
       "difficulty": 1,
       "prompt": "The \"British Invasion\" was a cultural phenomenon in music where British boy bands became popular in the USA in what decade?",
       "choices": [
@@ -4045,11 +4082,12 @@
         "50's"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The British Invasion, led by acts like The Beatles and The Rolling Stones, swept the US charts in the 1960s."
     },
     {
       "id": "otdb-2f1728e9",
-      "category": "music",
+      "category": "soundtracks",
       "difficulty": 5,
       "prompt": "Which of these songs is NOT included in the Suicide Squad OST?",
       "choices": [
@@ -4059,11 +4097,12 @@
         "Heathens - Twenty One Pilots"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "AC/DC's \"Skies on Fire\" was not on the Suicide Squad soundtrack, which instead leaned on classic rock and hip-hop cuts like \"Fortunate Son\" and \"Without Me.\""
     },
     {
       "id": "otdb-25f952c9",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "Which of these songs was released in 1996?",
       "choices": [
@@ -4073,11 +4112,12 @@
         "The Smashing Pumpkins - \"1979\""
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Smashing Pumpkins released \"1979\" in 1996, from their album Mellon Collie and the Infinite Sadness."
     },
     {
       "id": "otdb-04fbf751",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 1,
       "prompt": "Which term best describes the connection of two sections of a musical piece through a transitional passage?",
       "choices": [
@@ -4087,11 +4127,12 @@
         "Capo"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "A bridge is a transitional passage that connects two sections of a song, often contrasting with the verse and chorus."
     },
     {
       "id": "otdb-87d3f5e1",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Which of the following is not a studio album by the band Pink Floyd?",
       "choices": [
@@ -4101,11 +4142,12 @@
         "Wish You Were Here"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Moving Pictures is a Rush album, not a Pink Floyd release."
     },
     {
       "id": "otdb-11f0c091",
-      "category": "music",
+      "category": "rock",
       "difficulty": 5,
       "prompt": "What was the name of the cold-war singer who has a song in Grand Theft Auto IV, and a wall landmark in Moscow for his memorial?",
       "choices": [
@@ -4115,11 +4157,12 @@
         "Viktor Tsoi"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Viktor Tsoi, frontman of the Soviet rock band Kino, is honored with a memorial wall in Moscow and a song featured in Grand Theft Auto IV."
     },
     {
       "id": "otdb-f16deed4",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The Proclaimers - I'm Gonna Be (500 Miles) reached what position on the US Hot 100 Charts in 1993?",
       "choices": [
@@ -4129,11 +4172,12 @@
         "3rd"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Proclaimers' \"I'm Gonna Be (500 Miles)\" reached number 3 on the US Hot 100 in 1993, boosted by its use in the film Benny & Joon."
     },
     {
       "id": "otdb-b2b92365",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "How many albums did King Gizzard & the Lizard Wizard release in 2017?",
       "choices": [
@@ -4143,11 +4187,12 @@
         "2"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "King Gizzard & the Lizard Wizard famously released five albums in 2017 as a self-imposed creative challenge."
     },
     {
       "id": "otdb-8774e378",
-      "category": "music",
+      "category": "metal",
       "difficulty": 1,
       "prompt": "What genre of music did the band Type O Negative play?",
       "choices": [
@@ -4157,11 +4202,12 @@
         "Pop Rock"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Type O Negative helped define gothic metal, blending doom-laden riffs with dark, theatrical vocals."
     },
     {
       "id": "otdb-620150e0",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "The song \"Twin Size Mattress\" was written by which band?",
       "choices": [
@@ -4171,11 +4217,12 @@
         "Twenty One Pilots"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Front Bottoms wrote \"Twin Size Mattress,\" a fan-favorite from their 2011 self-titled album."
     },
     {
       "id": "otdb-7fb53a9c",
-      "category": "music",
+      "category": "music-theory",
       "difficulty": 3,
       "prompt": "How many semitones are in an octave?",
       "choices": [
@@ -4185,11 +4232,12 @@
         "14"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "An octave spans 12 semitones in Western music theory."
     },
     {
       "id": "otdb-e13ce3d4",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which band, with Boy George on lead vocals, won the Brit Awards in 1984?",
       "choices": [
@@ -4199,11 +4247,12 @@
         "The Police"
       ],
       "answer": 2,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Culture Club, fronted by Boy George, won Best British Group at the 1984 Brit Awards."
     },
     {
       "id": "otdb-084abd98",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "How many studio albums have the duo Daft Punk released?",
       "choices": [
@@ -4213,11 +4262,12 @@
         "4"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Daft Punk released four studio albums: Homework, Discovery, Human After All, and Random Access Memories."
     },
     {
       "id": "otdb-1293ac38",
-      "category": "music",
+      "category": "hip-hop",
       "difficulty": 3,
       "prompt": "Which song in Drake's \"Views\" features Future?",
       "choices": [
@@ -4227,11 +4277,12 @@
         "Grammys"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Future is featured on \"Grammys\" from Drake's 2016 album Views."
     },
     {
       "id": "otdb-b07dfb13",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "What genre of EDM is the Dutch DJ, musician, and remixer Armin van Buuren most well-known for?",
       "choices": [
@@ -4241,11 +4292,12 @@
         "Drum and Bass"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Armin van Buuren is best known as a leading figure in trance music."
     },
     {
       "id": "otdb-6d89392a",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 3,
       "prompt": "Which singer was featured in Swedish producer Avicii's song \"Wake Me Up\"?",
       "choices": [
@@ -4255,11 +4307,12 @@
         "Pharrell Williams"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Aloe Blacc's vocals feature on Avicii's 2013 hit \"Wake Me Up.\""
     },
     {
       "id": "otdb-47c9492d",
-      "category": "music",
+      "category": "soul-rnb",
       "difficulty": 1,
       "prompt": "Who wrote the Sinead O`Connor hit 'Nothing Compares 2 U'?",
       "choices": [
@@ -4269,11 +4322,12 @@
         "Rick James"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Prince wrote \"Nothing Compares 2 U,\" originally for his side project The Family, before Sinead O'Connor's 1990 cover became a global hit."
     },
     {
       "id": "otdb-bf94767a",
-      "category": "music",
+      "category": "classical",
       "difficulty": 1,
       "prompt": "Which classical composer wrote the \"Moonlight Sonata\"?",
       "choices": [
@@ -4283,11 +4337,12 @@
         "Ludvig Van Beethoven"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Ludwig van Beethoven composed the \"Moonlight Sonata\" in 1801."
     },
     {
       "id": "otdb-dedf1a3c",
-      "category": "music",
+      "category": "electronic",
       "difficulty": 1,
       "prompt": "What was Daft Punk's first studio album?",
       "choices": [
@@ -4297,11 +4352,12 @@
         "Random Access Memories"
       ],
       "answer": 0,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Daft Punk's debut studio album, Homework, was released in 1997."
     },
     {
       "id": "otdb-841c647a",
-      "category": "music",
+      "category": "rock",
       "difficulty": 3,
       "prompt": "Which artist released his third and final studio album 'Electric Ladyland' before his death in 1970?",
       "choices": [
@@ -4311,11 +4367,12 @@
         "Captain Sensible"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Jimi Hendrix released Electric Ladyland in 1968, his last studio album before his death in 1970."
     },
     {
       "id": "otdb-692df5ca",
-      "category": "music",
+      "category": "pop",
       "difficulty": 5,
       "prompt": "Long John Baldry, the voice of Dr. Robotnik in Adventures Of Sonic The Hedgehog, was in a band with which music artist in the 1960s?",
       "choices": [
@@ -4325,11 +4382,12 @@
         "Paul McCartney"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "Long John Baldry performed alongside a young Elton John (then Reg Dwight) in the band Bluesology during the 1960s."
     },
     {
       "id": "otdb-985be751",
-      "category": "music",
+      "category": "rock",
       "difficulty": 1,
       "prompt": "Whose albums included \"Back in Black\" and \"Ballbreaker\"?",
       "choices": [
@@ -4339,11 +4397,12 @@
         "Black Sabbath"
       ],
       "answer": 1,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "AC/DC released Back in Black in 1980 and Ballbreaker in 1995."
     },
     {
       "id": "otdb-f30d8f27",
-      "category": "music",
+      "category": "pop",
       "difficulty": 3,
       "prompt": "Which American family band had a 1986 top 10 hit with the song 'Crush On You'?",
       "choices": [
@@ -4353,7 +4412,8 @@
         "The Jets"
       ],
       "answer": 3,
-      "source": "opentdb"
+      "source": "opentdb",
+      "explanation": "The Jets, a family band of Tongan-American siblings, had a top-10 hit with \"Crush on You\" in 1986."
     },
     {
       "id": "otdb-4fa3a15c",
