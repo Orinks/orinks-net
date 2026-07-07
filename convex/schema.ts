@@ -24,7 +24,9 @@ export default defineSchema({
   freightFateDrivers: defineTable({
     driverId: v.string(),
     displayName: v.string(),
-    visibility: v.union(v.literal("private"), v.literal("unlisted")),
+    // public: listed on the live drivers board; unlisted: profile reachable
+    // by URL only; private: nothing shown anywhere.
+    visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
     driverTokenHash: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -38,6 +40,17 @@ export default defineSchema({
     createdAt: v.number(),
     confirmedAt: v.optional(v.number()),
   }).index("by_setup_token", ["setupTokenHash"]),
+  // Live "who's on duty" board: one row per driver holding only the latest
+  // heartbeat. Rows older than the board TTL are treated as offline and
+  // pruned on the next write; no history is kept by design.
+  freightFatePresence: defineTable({
+    driverId: v.string(),
+    activity: v.string(),
+    detail: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_driver_id", ["driverId"])
+    .index("by_updated", ["updatedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),
     eventId: v.string(),

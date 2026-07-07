@@ -76,7 +76,8 @@ export default async function FreightFateOnlineSetupPage({ searchParams }: Setup
             <input type="hidden" name="setupToken" value={token} />
             <p className="text-slate-800">
               Freight Fate opened this setup link for one driver identity. Confirming creates a private driver
-              profile. You can switch it to unlisted if you want a shareable profile page.
+              profile. You can make the profile unlisted for a shareable link, or public to also appear on{" "}
+              <Link href="/freight-fate/online">the live drivers board</Link> while you are on duty.
             </p>
 
             <div className="space-y-2">
@@ -101,6 +102,9 @@ export default async function FreightFateOnlineSetupPage({ searchParams }: Setup
               <select className="w-full rounded border border-line px-3 py-2 text-ink" id="visibility" name="visibility">
                 <option value="private">Private: accept posts, do not show trip details publicly</option>
                 <option value="unlisted">Unlisted: show trip details to anyone with the profile link</option>
+                <option value="public">
+                  Public: show trip details to anyone and list this driver on the live drivers board while on duty
+                </option>
               </select>
             </div>
 
