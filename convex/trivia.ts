@@ -148,6 +148,33 @@ function handleFromIdentity(identity: { nickname?: string; preferredUsername?: s
   return cleanDisplayName(raw);
 }
 
+// Clerk validates username FORMAT but not content, so account handles still
+// need screening before they appear publicly. This is a compact first-pass
+// blocklist matched after leetspeak normalization; swap in a maintained
+// profanity library before a wide launch. Offensive names render as anonymous.
+const PROFANITY_ROOTS = [
+  "nigger", "nigga", "faggot", "retard", "cunt", "fuck", "shit", "bitch",
+  "rape", "nazi", "slut", "whore", "coon", "kike", "spic", "chink",
+];
+function normalizeForModeration(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[4@]/g, "a")
+    .replace(/3/g, "e")
+    .replace(/[1!|]/g, "i")
+    .replace(/0/g, "o")
+    .replace(/[$5]/g, "s")
+    .replace(/7/g, "t")
+    .replace(/[^a-z]/g, "");
+}
+function safeLeaderboardName(name: string, runId: Id<"triviaRuns">): string {
+  const normalized = normalizeForModeration(name);
+  if (PROFANITY_ROOTS.some((root) => normalized.includes(root))) {
+    return `Player ${runId.slice(-4)}`;
+  }
+  return name;
+}
+
 async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {
   const runs = await ctx.db
     .query("triviaRuns")
@@ -599,6 +626,8 @@ export const getLeaderboard = query({
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 20, 1), LEADERBOARD_LIMIT_MAX);
+    // Over-fetch by score, then keep only signed-in accounts (see filter below).
+    const window = Math.min(limit * 5 + 20, 500);
     const now = Date.now();
     const viewer = args.playerKey ? await getPlayer(ctx, args.playerKey) : null;
     let runs: Doc<"triviaRuns">[];
@@ -607,36 +636,55 @@ export const getLeaderboard = query({
         .query("triviaRuns")
         .withIndex("by_leaderboard", (q) => q.eq("status", "dead"))
         .order("desc")
-        .take(limit);
+        .take(window);
     } else if (args.scope === "daily") {
       const dateKey = args.periodKey ?? dateKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
         .withIndex("by_daily_leaderboard", (q) => q.eq("status", "dead").eq("dateKey", dateKey))
         .order("desc")
-        .take(limit);
+        .take(window);
     } else {
       const weekKey = args.periodKey ?? weekKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
         .withIndex("by_weekly_leaderboard", (q) => q.eq("status", "dead").eq("weekKey", weekKey))
         .order("desc")
-        .take(limit);
+        .take(window);
     }
-    return Promise.all(
-      runs.map(async (run, index) => {
-        const player = await ctx.db.get(run.playerId);
-        return {
-          rank: index + 1,
-          displayName: player?.displayName ?? "Lost to static",
-          score: run.score,
-          round: run.round,
-          isDaily: run.isDaily,
-          isYou: viewer !== null && run.playerId === viewer._id,
-          endedAt: run.endedAt ?? run.startedAt,
-        };
-      }),
-    );
+
+    // Public leaderboards list signed-in accounts only (guests play but don't
+    // rank), and offensive account handles are masked (usernames aren't
+    // content-moderated by Clerk). Guests' typed names never reach here.
+    const rows: Array<{
+      rank: number;
+      displayName: string;
+      score: number;
+      round: number;
+      isDaily: boolean;
+      isYou: boolean;
+      endedAt: number;
+    }> = [];
+    const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
+    for (const run of runs) {
+      if (rows.length >= limit) break;
+      let player = playerCache.get(run.playerId);
+      if (player === undefined) {
+        player = await ctx.db.get(run.playerId);
+        playerCache.set(run.playerId, player);
+      }
+      if (!player || player.authSubject === undefined) continue; // accounts only
+      rows.push({
+        rank: rows.length + 1,
+        displayName: safeLeaderboardName(player.displayName, run._id),
+        score: run.score,
+        round: run.round,
+        isDaily: run.isDaily,
+        isYou: viewer !== null && run.playerId === viewer._id,
+        endedAt: run.endedAt ?? run.startedAt,
+      });
+    }
+    return rows;
   },
 });
 

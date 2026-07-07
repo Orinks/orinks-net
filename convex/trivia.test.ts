@@ -209,26 +209,28 @@ describe("daily runs", () => {
 });
 
 describe("leaderboards", () => {
-  test("finished runs rank by score across scopes", async () => {
+  test("finished account runs rank by score across scopes", async () => {
     const t = setup();
-    await newPlayer(t, "leader-player-0001", "Alpha");
-    await newPlayer(t, "leader-player-0002", "Beta");
+    const alpha = t.withIdentity({ subject: "user_alpha", nickname: "Alpha" });
+    const beta = t.withIdentity({ subject: "user_beta", nickname: "Beta" });
+    await alpha.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0001" });
+    await beta.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0002" });
 
     // Alpha scores then dies; Beta dies immediately.
-    const runA = await t.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
+    const runA = await alpha.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
     let key = runA.question.key;
     for (let i = 0; i < 2; i++) {
-      const result = await answer(t, "leader-player-0001", runA.run.runId, key, true);
+      const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
     }
     for (let i = 0; i < 3; i++) {
-      const result = await answer(t, "leader-player-0001", runA.run.runId, key, false);
+      const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
-    const runB = await t.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
+    const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
     key = runB.question.key;
     for (let i = 0; i < 3; i++) {
-      const result = await answer(t, "leader-player-0002", runB.run.runId, key, false);
+      const result = await answer(beta, "leader-player-0002", runB.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
 
@@ -239,6 +241,35 @@ describe("leaderboards", () => {
       expect(board[0].rank).toBe(1);
       expect(board[0].score).toBeGreaterThan(board[1].score);
     }
+  });
+
+  test("guests do not appear on the public leaderboard", async () => {
+    const t = setup();
+    await newPlayer(t, "guest-leader-0001", "SomeGuest");
+    const start = await t.mutation(api.trivia.startRun, { playerKey: "guest-leader-0001" });
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(t, "guest-leader-0001", start.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.length).toBe(0);
+  });
+
+  test("offensive account handles are masked on the leaderboard", async () => {
+    const t = setup();
+    const troll = t.withIdentity({ subject: "user_troll", nickname: "n1gger" });
+    await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
+    const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
+    let key = run.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(troll, "troll-key-000001", run.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(board.length).toBe(1);
+    expect(board[0].displayName).not.toContain("n1gger");
+    expect(board[0].displayName.startsWith("Player ")).toBe(true);
   });
 
   test("abandoned runs never appear on leaderboards", async () => {
