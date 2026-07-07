@@ -87,7 +87,7 @@ function categoryLabel(category: string | null | undefined): string {
 
 export function GameApp() {
   const announce = useAnnounce();
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const accountHandle = user?.username ?? user?.fullName ?? user?.firstName ?? "your account";
   const ensurePlayer = useMutation(api.trivia.ensurePlayer);
   const startRunMutation = useMutation(api.trivia.startRun);
@@ -117,6 +117,18 @@ export function GameApp() {
   const story = useQuery(api.trivia.getStory, playerKey ? { playerKey } : "skip");
   const resumable = useQuery(api.trivia.getActiveRun, playerKey ? { playerKey } : "skip");
   const epilogueBarks: Bark[] | null = story?.epilogueActive && story.epilogueLines ? story.epilogueLines : null;
+
+  // Announce the identity change when the user signs in — the guest name field
+  // is replaced by "Playing as X" elsewhere on screen, so a screen reader user
+  // gets no confirmation of their new leaderboard name otherwise (a11y review).
+  // Fires only on the sign-out → sign-in transition, never on initial load.
+  const wasSignedIn = useRef(isSignedIn);
+  useEffect(() => {
+    if (isSignedIn === true && wasSignedIn.current === false) {
+      announce(`Signed in. Playing as ${accountHandle}. This is your leaderboard name.`);
+    }
+    wasSignedIn.current = isSignedIn;
+  }, [isSignedIn, accountHandle, announce]);
 
   // Client-only initialization.
   useEffect(() => {
