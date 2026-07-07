@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Show, useUser } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AccountControls } from "@/components/AccountControls";
@@ -632,6 +633,17 @@ export function GameApp() {
               nameClassName="text-sm font-semibold text-amber-100"
               signInClassName={primaryButton}
               signUpClassName={secondaryButton}
+              userButtonAppearance={{
+                theme: dark,
+                variables: {
+                  colorBackground: "#18181b",
+                  // Clerk renders light-on-primary by default; amber needs
+                  // dark text (a11y review: white on amber-500 is 2.14:1).
+                  colorPrimary: "#f59e0b",
+                  colorPrimaryForeground: "#1c1917",
+                  colorDanger: "#f87171",
+                },
+              }}
             />
           </div>
         </section>

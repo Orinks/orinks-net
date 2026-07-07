@@ -8,6 +8,9 @@ const config: Config = {
         ink: "#111827",
         paper: "#fbfcfe",
         line: "#d5dde8",
+        // ≥3:1 vs white/paper (WCAG 1.4.11) — for borders that ARE the
+        // component boundary (form inputs). Decorative borders stay on `line`.
+        "line-strong": "#64748b",
         action: "#075985",
         "action-dark": "#0c4a6e",
         "soft-green": "#ecfdf5",
@@ -22,9 +25,6 @@ const config: Config = {
           "Arial",
           "sans-serif",
         ],
-      },
-      boxShadow: {
-        focus: "0 0 0 3px rgba(14, 165, 233, 0.45)",
       },
     },
   },

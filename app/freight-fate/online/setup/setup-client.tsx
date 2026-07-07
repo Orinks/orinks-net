@@ -215,7 +215,7 @@ function DriverSetup() {
               <input
                 aria-describedby="ff-token-desc"
                 autoComplete="off"
-                className="w-full rounded border border-line px-3 py-2 font-mono text-ink"
+                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
                 id="ff-driver-token"
                 onFocus={(event) => event.currentTarget.select()}
                 readOnly
@@ -269,7 +269,7 @@ function DriverSetup() {
                 aria-describedby={nameDescribedBy}
                 aria-invalid={nameError ? true : undefined}
                 aria-required="true"
-                className="w-full rounded border border-line px-3 py-2 text-ink"
+                className="w-full rounded border border-line-strong px-3 py-2 text-ink"
                 id="displayName"
                 maxLength={48}
                 name="displayName"
@@ -300,7 +300,7 @@ function DriverSetup() {
                 Profile visibility
               </label>
               <select
-                className="w-full rounded border border-line px-3 py-2 text-ink"
+                className="w-full rounded border border-line-strong px-3 py-2 text-ink"
                 id="visibility"
                 name="visibility"
                 onChange={(event) => setVisibility(event.target.value as Visibility)}
@@ -346,7 +346,7 @@ function DriverSetup() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     autoComplete="off"
-                    className="w-full rounded border border-line px-3 py-2 font-mono text-ink"
+                    className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
                     id="ff-driver-id"
                     onFocus={(event) => event.currentTarget.select()}
                     readOnly

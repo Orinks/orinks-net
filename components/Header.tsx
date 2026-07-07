@@ -22,7 +22,7 @@ export function Header() {
   return (
     <header className="border-b border-line bg-white">
       <a
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-action focus:ring-4 focus:ring-sky-300"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-action focus:ring-4 focus:ring-sky-600"
         href="#main"
       >
         Skip to content
@@ -52,7 +52,7 @@ export function Header() {
 
             return disclosure ? (
               <details className="group rounded-md" key={item.href}>
-                <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300 [&::-webkit-details-marker]:hidden">
+                <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-600 [&::-webkit-details-marker]:hidden">
                   <span>{item.label}</span>
                   <span aria-hidden="true" className="text-xs transition-transform group-open:rotate-180">
                     ▼
@@ -60,14 +60,14 @@ export function Header() {
                 </summary>
                 <div className="mt-2 flex min-w-52 flex-col rounded-md border border-line bg-white p-2 shadow-sm">
                   <Link
-                    className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
+                    className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-600"
                     href={item.href}
                   >
                     {disclosure.overviewLabel}
                   </Link>
                   {disclosure.links.map((link) => (
                     <Link
-                      className="inline-flex min-h-10 items-center rounded-md px-3 py-2 text-sm font-semibold text-action hover:bg-sky-50 hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300"
+                      className="inline-flex min-h-10 items-center rounded-md px-3 py-2 text-sm font-semibold text-action hover:bg-sky-50 hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600"
                       href={link.href}
                       key={link.href}
                     >
@@ -78,7 +78,7 @@ export function Header() {
               </details>
             ) : (
               <Link
-                className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-300"
+                className="inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-600"
                 href={item.href}
                 key={item.href}
               >
