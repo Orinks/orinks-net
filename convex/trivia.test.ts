@@ -261,6 +261,41 @@ describe("leaderboards", () => {
     }
   });
 
+  test("a player with several finished runs gets one entry: their best", async () => {
+    const t = setup();
+    const grinder = t.withIdentity({ subject: "user_grinder", nickname: "Grinder" });
+    await grinder.mutation(api.trivia.ensurePlayer, { playerKey: "grind-key-000001" });
+
+    // Run 1: two correct answers, then out.
+    const runA = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
+    let key = runA.question.key;
+    for (let i = 0; i < 2; i++) {
+      const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, true);
+      key = result.nextQuestion!.key;
+    }
+    let bestScore = 0;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, false);
+      bestScore = result.run.score;
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    // Run 2: dies immediately with a lower score.
+    const runB = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
+    key = runB.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(grinder, "grind-key-000001", runB.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    for (const scope of ["alltime", "daily", "weekly"] as const) {
+      const board = await t.query(api.trivia.getLeaderboard, { scope });
+      const mine = board.filter((row) => row.displayName === "Grinder");
+      expect(mine.length).toBe(1);
+      expect(mine[0].score).toBe(bestScore);
+    }
+  });
+
   test("guests do not appear on the public leaderboard", async () => {
     const t = setup();
     await newPlayer(t, "guest-leader-0001", "SomeGuest");

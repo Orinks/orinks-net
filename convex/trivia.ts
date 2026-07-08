@@ -691,6 +691,8 @@ export const getLeaderboard = query({
     // Public leaderboards list signed-in accounts only (guests play but don't
     // rank), and offensive account handles are masked (usernames aren't
     // content-moderated by Clerk). Guests' typed names never reach here.
+    // One entry per player: runs arrive sorted by score descending, so the
+    // first run seen for a player is their best for the period.
     const rows: Array<{
       rank: number;
       displayName: string;
@@ -701,15 +703,18 @@ export const getLeaderboard = query({
       endedAt: number;
     }> = [];
     const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
+    const rankedPlayers = new Set<Id<"triviaPlayers">>();
     for (const run of runs) {
       if (rows.length >= limit) break;
       if (run.flagged) continue; // automated-looking runs don't rank (anti-cheat)
+      if (rankedPlayers.has(run.playerId)) continue;
       let player = playerCache.get(run.playerId);
       if (player === undefined) {
         player = await ctx.db.get(run.playerId);
         playerCache.set(run.playerId, player);
       }
       if (!player || player.authSubject === undefined) continue; // accounts only
+      rankedPlayers.add(run.playerId);
       rows.push({
         rank: rows.length + 1,
         displayName: safeLeaderboardName(player.displayName, run._id),
