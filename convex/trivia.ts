@@ -322,19 +322,37 @@ export const startRun = mutation({
     const dateKey = dateKeyOf(now);
     const isDaily = args.daily ?? false;
 
-    const existing = await getActiveRunDoc(ctx, player._id);
-    if (existing) {
-      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
-    }
-
     if (isDaily) {
       const todaysRuns = await ctx.db
         .query("triviaRuns")
         .withIndex("by_player_date", (q) => q.eq("playerId", player._id).eq("dateKey", dateKey))
         .collect();
-      if (todaysRuns.some((run) => run.isDaily && run.status === "dead")) {
+      // The daily seed is deterministic, so reseeding an in-progress attempt
+      // would deal the same questions again — a free preview. Resume instead.
+      const activeDaily = todaysRuns.find((run) => run.isDaily && run.status === "active");
+      if (activeDaily?.currentQuestionKey) {
+        const question = questionByKey.get(activeDaily.currentQuestionKey);
+        if (question) {
+          await ctx.db.patch(player._id, { lastSeenAt: now });
+          return {
+            run: publicRunState(activeDaily),
+            question: sanitizeQuestion(question),
+            runNumber: player.totalRuns + 1,
+            epilogueActive: player.finaleCompletedAt !== undefined,
+            resumed: true,
+          };
+        }
+      }
+      // One attempt per night: dead OR abandoned consumes it. Walking away
+      // from an attempt must not grant a fresh look at the same seed.
+      if (todaysRuns.some((run) => run.isDaily && run.status !== "active")) {
         throw new Error("Tonight's broadcast has already aired for you. Come back tomorrow!");
       }
+    }
+
+    const existing = await getActiveRunDoc(ctx, player._id);
+    if (existing) {
+      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
     }
 
     // Rate limit: cap how many runs a player can start per hour to blunt
@@ -387,6 +405,7 @@ export const startRun = mutation({
       question: sanitizeQuestion(question),
       runNumber: player.totalRuns + 1,
       epilogueActive: player.finaleCompletedAt !== undefined,
+      resumed: false,
     };
   },
 });

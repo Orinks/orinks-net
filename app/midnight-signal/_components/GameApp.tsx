@@ -308,20 +308,31 @@ export function GameApp() {
         const started = await startRunMutation({ playerKey, daily });
         setRun(started.run as RunState);
         setQuestion(started.question);
-        setQuestionNumber(1);
+        setQuestionNumber(started.run.questionNumber);
         setChosenIndex(null);
-        // The show opens before the first question: title theme under Clyde's
-        // greeting, then the player advances at their own pace (no timers).
-        setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
-        const bundle: string[] = [];
-        if (daily) {
-          playBark("daily-intro", bundle);
+        if (started.resumed) {
+          // Tonight's daily was already in progress: the server hands the
+          // attempt back mid-episode. No show-open — its "first theme" and
+          // "first question" copy would be false. Mirror resumeRun instead.
+          setPhase({ kind: "question" });
+          serveQuestionAudio(started.question.key);
+          announce(
+            `Resuming tonight's broadcast. Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
+          );
         } else {
-          playBark(started.runNumber > 1 ? "run-intro-returning" : "run-intro", bundle);
+          // The show opens before the first question: title theme under Clyde's
+          // greeting, then the player advances at their own pace (no timers).
+          setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
+          const bundle: string[] = [];
+          if (daily) {
+            playBark("daily-intro", bundle);
+          } else {
+            playBark(started.runNumber > 1 ? "run-intro-returning" : "run-intro", bundle);
+          }
+          producerSay("run-intro", { name: trimmed || "friend", runNumber: started.runNumber }, bundle);
+          bundle.push(`Tonight's first theme: ${categoryLabel(started.run.roundCategory as string | null)}.`);
+          bundle.forEach((line) => announce(line));
         }
-        producerSay("run-intro", { name: trimmed || "friend", runNumber: started.runNumber }, bundle);
-        bundle.push(`Tonight's first theme: ${categoryLabel(started.run.roundCategory as string | null)}.`);
-        bundle.forEach((line) => announce(line));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Something went wrong.";
         const friendly = message.includes("already aired")
@@ -333,7 +344,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, busy, ensurePlayer, name, playBark, playerKey, producerSay, startRunMutation],
+    [announce, busy, ensurePlayer, name, playBark, playerKey, producerSay, serveQuestionAudio, startRunMutation],
   );
 
   const resumeRun = useCallback(() => {

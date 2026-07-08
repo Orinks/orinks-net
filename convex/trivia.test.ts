@@ -211,6 +211,43 @@ describe("daily runs", () => {
     expect(a2.nextQuestion!.key).toBe(b2.nextQuestion!.key);
   });
 
+  test("starting the daily again resumes the in-progress attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const first = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    expect(first.resumed).toBe(false);
+    await answer(t, PLAYER, first.run.runId, first.question.key, true);
+
+    // Same seed, same night: the server must hand back the same run
+    // mid-episode, never a fresh look at a deterministic question sequence.
+    const again = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    expect(again.resumed).toBe(true);
+    expect(again.run.runId).toBe(first.run.runId);
+    expect(again.run.questionNumber).toBe(2);
+    expect(again.run.score).toBeGreaterThan(0);
+  });
+
+  test("an abandoned daily consumes the night's attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    await t.mutation(api.trivia.abandonRun, { playerKey: PLAYER });
+    await expect(
+      t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true }),
+    ).rejects.toThrow(/already aired/);
+  });
+
+  test("abandoning the daily via a free run also consumes the attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    // Starting a free run abandons the active daily server-side.
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await expect(
+      t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true }),
+    ).rejects.toThrow(/already aired/);
+  });
+
   test("a finished daily cannot be replayed the same day", async () => {
     const t = setup();
     await newPlayer(t);
