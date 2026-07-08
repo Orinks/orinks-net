@@ -60,11 +60,16 @@ export function AccountNav() {
 
   return (
     <details className="group rounded-md" ref={detailsRef}>
-      <summary className={summaryClass} ref={summaryRef}>
-        <span>
-          {isSignedIn ? <span className="sr-only">Account, signed in as </span> : null}
-          {label}
-        </span>
+      {/* One clean utterance: aria-label subsumes the visible username into
+          "Account: orinks" (2.5.3-safe — visible text is a substring). The
+          old sr-only prefix was position:absolute, which broke the text run
+          and made NVDA read the label as two lines. */}
+      <summary
+        aria-label={isSignedIn ? `Account: ${label}` : undefined}
+        className={summaryClass}
+        ref={summaryRef}
+      >
+        <span>{label}</span>
         <span aria-hidden="true" className="text-xs transition-transform group-open:rotate-180">
           ▼
         </span>
