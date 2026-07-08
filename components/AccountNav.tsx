@@ -2,6 +2,7 @@
 
 import { Show, SignInButton, SignOutButton, SignUpButton, useClerk, useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
+import { userDisplayName } from "@/lib/user-name";
 
 // Matches the Projects/Games/Game Mods disclosures in Header.tsx.
 const summaryClass =
@@ -55,9 +56,7 @@ export function AccountNav() {
     wasSignedIn.current = isSignedIn;
   }, [isLoaded, isSignedIn]);
 
-  const label = isSignedIn
-    ? (user?.username ?? user?.fullName ?? user?.firstName ?? "My account")
-    : "Account";
+  const label = isSignedIn ? userDisplayName(user, "My account") : "Account";
 
   return (
     <details className="group rounded-md" ref={detailsRef}>
