@@ -1,0 +1,78 @@
+{
+  "voice": "clide",
+  "lines": [
+    { "id": "run-intro-01", "trigger": "run-intro", "text": "Welcome back to the show! Let's see how long you survive this time." },
+    { "id": "run-intro-02", "trigger": "run-intro", "text": "Lights up, volume up! Another brave contestant steps into the booth." },
+    { "id": "run-intro-03", "trigger": "run-intro", "text": "The stage is set and the jukebox is loaded. Let's make some noise!" },
+
+    { "id": "lead-in-01", "trigger": "question-lead-in", "text": "Here comes your next question." },
+    { "id": "lead-in-02", "trigger": "question-lead-in", "text": "Ears open. This one counts." },
+    { "id": "lead-in-03", "trigger": "question-lead-in", "text": "Alright, listen close now." },
+
+    { "id": "correct-01", "trigger": "correct", "text": "That's the one! Nicely done." },
+    { "id": "correct-02", "trigger": "correct", "text": "Correct! You've got a good ear." },
+    { "id": "correct-03", "trigger": "correct", "text": "Bang on! The crowd loves it." },
+    { "id": "correct-04", "trigger": "correct", "text": "Yes! Somebody's done their homework." },
+
+    { "id": "wrong-01", "trigger": "wrong", "text": "Ooh, so close! But no." },
+    { "id": "wrong-02", "trigger": "wrong", "text": "Not this time, I'm afraid." },
+    { "id": "wrong-03", "trigger": "wrong", "text": "Ouch. That one's going to sting." },
+    { "id": "wrong-04", "trigger": "wrong", "text": "Wrong note, my friend. Wrong note entirely." },
+
+    { "id": "streak-01", "trigger": "streak", "text": "You're on fire! Keep it rolling!" },
+    { "id": "streak-02", "trigger": "streak", "text": "That's a streak! The band is getting nervous." },
+
+    { "id": "last-life-01", "trigger": "last-life", "text": "One life left. No pressure. Okay, maybe a little pressure." },
+    { "id": "last-life-02", "trigger": "last-life", "text": "This is it. One wrong answer and the music stops." },
+
+    { "id": "round-up-01", "trigger": "round-transition", "text": "Round complete! Things get tougher from here." },
+    { "id": "round-up-02", "trigger": "round-transition", "text": "On to the next round. The questions bite harder now." },
+
+    { "id": "game-over-01", "trigger": "game-over", "text": "And that's the final curtain! Thanks for playing." },
+    { "id": "game-over-02", "trigger": "game-over", "text": "The music stops there. But hey, what a run!" },
+
+    { "id": "high-score-01", "trigger": "high-score", "text": "Stop the presses! That's a new high score!" },
+    { "id": "high-score-02", "trigger": "high-score", "text": "Incredible! Your name goes up in lights on the leaderboard!" },
+
+    { "id": "return-intro-01", "trigger": "run-intro-returning", "text": "You again! My favorite recurring guest. The signal brightens when you tune in, you know." },
+    { "id": "return-intro-02", "trigger": "run-intro-returning", "text": "Back for another episode! I told the Producer you'd return. It printed a receipt. I'm choosing to read that as enthusiasm." },
+    { "id": "return-intro-03", "trigger": "run-intro-veteran", "text": "Ladies and gentlemen of the static, a legend walks the studio floor tonight. Places, everyone! All none of you!" },
+
+    { "id": "banter-01", "trigger": "producer-banter", "text": "Producer, the scores, please. ... Riveting delivery, as always. Truly, the Olivier of office equipment." },
+    { "id": "banter-02", "trigger": "producer-banter", "text": "Thank you, Producer. It says such warm things about you, folks, when it thinks I'm unplugged." },
+    { "id": "banter-03", "trigger": "producer-banter", "text": "What my colleague means to say is: you're doing wonderfully, and it is legally unable to express joy." },
+
+    { "id": "tape-found-01", "trigger": "tape-found", "text": "Well now — the archive coughed something up. A master tape! Shall we hear it together after this round?" },
+    { "id": "tape-found-02", "trigger": "tape-found", "text": "Hold on. There's a tape on my desk that was not there a moment ago. The studio does this sometimes. Let's give it a listen." },
+
+    { "id": "daily-intro-01", "trigger": "daily-intro", "text": "It's tonight's broadcast, friend — same questions for every soul tuned in past midnight. Make your answers count. The whole frequency is listening." },
+
+    { "id": "lead-in-04", "trigger": "question-lead-in", "text": "The Producer just handed me this one. Its printer sounded smug." },
+    { "id": "lead-in-05", "trigger": "question-lead-in", "text": "Ooh, I like this card. Let's see what you make of it." },
+    { "id": "lead-in-06", "trigger": "question-lead-in", "text": "Next question, straight from the archive drawer that sticks." },
+    { "id": "lead-in-07", "trigger": "question-lead-in", "text": "Vernon would have loved this one. No pressure." },
+    { "id": "lead-in-08", "trigger": "question-lead-in", "text": "Alright, the band's waiting on you. Here we go." },
+
+    { "id": "round-theme-01", "trigger": "round-theme", "text": "New round, new territory. The Producer has picked our next theme — I just read the cards, friend." },
+    { "id": "round-theme-02", "trigger": "round-theme", "text": "The wheel of categories has spoken. On we go!" },
+
+    { "id": "fact-01", "trigger": "fact", "text": "A little something from the archive: Queen's label swore radio would never play a six-minute single. Bohemian Rhapsody played anyway. Constantly." },
+    { "id": "fact-02", "trigger": "fact", "text": "Studio fact for you: Beethoven kept composing long after he lost his hearing. Some of his greatest work came after the silence." },
+    { "id": "fact-03", "trigger": "fact", "text": "From the files: Decca Records turned down The Beatles, saying guitar groups were on the way out. The archive keeps that memo for laughs." },
+    { "id": "fact-04", "trigger": "fact", "text": "Little-known dial fact: a standard LP spins at thirty-three and a third revolutions per minute. The signal prefers it that way." },
+    { "id": "fact-05", "trigger": "fact", "text": "Between you and me: a piano has eighty-eight keys, but well over two hundred strings doing the real work." },
+    { "id": "fact-06", "trigger": "fact", "text": "Archive card says Mozart wrote his first symphony at eight years old. At eight, I was a schematic." },
+    { "id": "fact-07", "trigger": "fact", "text": "Legal department memo: Happy Birthday was claimed under copyright for decades — a court finally set it free in 2016. Sing responsibly." },
+    { "id": "fact-08", "trigger": "fact", "text": "Travel desk fact: Elvis Presley never performed a concert outside North America. The King stayed close to the castle." },
+    { "id": "fact-09", "trigger": "fact", "text": "The Ramones weren't brothers — every member just took the name Ramone at the door. The show respects a good bit." },
+    { "id": "fact-10", "trigger": "fact", "text": "Instrument corner: the saxophone was invented by a man actually named Sax. Adolphe Sax, 1840s. Sometimes the universe is tidy." },
+    { "id": "fact-11", "trigger": "fact", "text": "Hall of Fame note: Aretha Franklin was the first woman inducted into the Rock and Roll Hall of Fame. 1987. Respect." },
+    { "id": "fact-12", "trigger": "fact", "text": "Chart trivia: the Billboard Hot 100 first ran in 1958. The signal was already five years old and felt ancient." },
+    { "id": "fact-13", "trigger": "fact", "text": "String section secret: a violin bow is strung with horsehair. The horses, I'm told, are flattered." },
+    { "id": "fact-14", "trigger": "fact", "text": "Before the helmets, Daft Punk were a rock band called Darlin'. A critic called it daft punk. They kept the review." },
+    { "id": "fact-15", "trigger": "fact", "text": "My favorite instrument fact: the theremin is played without touching it at all. An instrument made of nothing but signal. I feel seen." },
+    { "id": "fact-16", "trigger": "fact", "text": "Sales desk: Michael Jackson's Thriller remains the best-selling album of all time. Some records the archive expects to keep." },
+    { "id": "fact-17", "trigger": "fact", "text": "Good Vibrations by the Beach Boys features the Electro-Theremin — an instrument so rare it mostly exists in that song." },
+    { "id": "fact-18", "trigger": "fact", "text": "Timekeeping fact: the metronome was patented around 1815. Musicians have resented it, faithfully, ever since." }
+  ]
+}

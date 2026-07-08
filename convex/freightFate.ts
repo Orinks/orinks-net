@@ -8,124 +8,162 @@ const visibility = v.union(v.literal("public"), v.literal("private"), v.literal(
 // (game closed, went off duty, lost connection) removes the row.
 export const PRESENCE_TTL_MS = 3 * 60_000;
 
-export const createSetupSession = mutation({
+// --- Account-issued driver identity (Clerk) ---
+//
+// Drivers are Clerk accounts now. After sign-in the setup page calls
+// provisionDriver, which mints a driver token the player pastes into the
+// desktop game once. The game keeps sending that token as a Bearer header
+// exactly as before, so updatePresence/recordDriverEvent are unchanged; only
+// where the token comes from moved to Clerk.
+
+function toHex(bytes: Uint8Array) {
+  let out = "";
+  for (const byte of bytes) {
+    out += byte.toString(16).padStart(2, "0");
+  }
+  return out;
+}
+
+// Must byte-for-byte match hashFreightFateToken in lib/freight-fate-online.ts
+// (node:crypto sha256 of the utf8 token, lowercase hex). The game's Bearer
+// token is hashed by that function on the REST path, then compared here, so a
+// mismatch would silently fail the game's auth.
+async function hashDriverToken(token: string) {
+  const data = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return toHex(new Uint8Array(digest));
+}
+
+function mintDriverToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  // 4 + 64 = 68 chars, comfortably inside normalizeFreightFateToken's 24..512.
+  return `ffd_${toHex(bytes)}`;
+}
+
+// Produce a public slug already in normalizeFreightFateDriverId's canonical
+// form (lowercase, [a-z0-9_-], no leading/trailing dash, 8..64) so the id the
+// game echoes back round-trips through that normalizer unchanged.
+function driverIdFromName(displayName: string) {
+  const base =
+    displayName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "driver";
+  const suffix = new Uint8Array(4);
+  crypto.getRandomValues(suffix);
+  return `${base}-${toHex(suffix)}`.slice(0, 64);
+}
+
+function normalizeDisplayName(value: string) {
+  return value.trim().replace(/\s+/g, " ").slice(0, 48) || "Freight Fate Driver";
+}
+
+export const getMyDriver = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
+      .unique();
+
+    if (!driver) {
+      return null;
+    }
+
+    // Never returns the token — it exists only as a hash and is shown once at
+    // issuance. hasToken lets the UI say "a token is active" without it.
+    return {
+      driverId: driver.driverId,
+      displayName: driver.displayName,
+      visibility: driver.visibility,
+      createdAt: driver.createdAt,
+      updatedAt: driver.updatedAt,
+      hasToken: true,
+    };
+  },
+});
+
+export const provisionDriver = mutation({
   args: {
-    setupTokenHash: v.string(),
-    driverId: v.string(),
-    driverTokenHash: v.string(),
-    displayName: v.optional(v.string()),
-    expiresAt: v.number(),
+    displayName: v.string(),
+    visibility,
+    // First provision always mints a token. For an existing driver the token
+    // is only re-minted when the player explicitly rotates it; otherwise the
+    // pasted token in the game keeps working.
+    rotateToken: v.optional(v.boolean()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("You must be signed in to set up a Freight Fate driver.");
+    }
+
+    const displayName = normalizeDisplayName(args.displayName);
+
     const existing = await ctx.db
-      .query("freightFateSetupSessions")
-      .withIndex("by_setup_token", (q) => q.eq("setupTokenHash", args.setupTokenHash))
+      .query("freightFateDrivers")
+      .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
       .unique();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        driverId: args.driverId,
-        driverTokenHash: args.driverTokenHash,
-        displayName: args.displayName,
-        expiresAt: args.expiresAt,
-        confirmedAt: undefined,
-      });
-      return { saved: true, driverId: args.driverId, expiresAt: args.expiresAt };
+      const patch: {
+        displayName: string;
+        visibility: typeof args.visibility;
+        updatedAt: number;
+        driverTokenHash?: string;
+      } = {
+        displayName,
+        visibility: args.visibility,
+        updatedAt: args.now,
+      };
+
+      let token: string | null = null;
+      if (args.rotateToken) {
+        token = mintDriverToken();
+        patch.driverTokenHash = await hashDriverToken(token);
+      }
+
+      await ctx.db.patch(existing._id, patch);
+
+      return { driverId: existing.driverId, token, rotated: token !== null };
     }
 
-    await ctx.db.insert("freightFateSetupSessions", {
-      setupTokenHash: args.setupTokenHash,
-      driverId: args.driverId,
-      driverTokenHash: args.driverTokenHash,
-      displayName: args.displayName,
-      expiresAt: args.expiresAt,
+    const token = mintDriverToken();
+    const driverTokenHash = await hashDriverToken(token);
+
+    // Regenerate on the rare slug collision so the public id stays unique.
+    let driverId = driverIdFromName(displayName);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const clash = await ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+        .unique();
+      if (!clash) {
+        break;
+      }
+      driverId = driverIdFromName(displayName);
+    }
+
+    await ctx.db.insert("freightFateDrivers", {
+      driverId,
+      displayName,
+      visibility: args.visibility,
+      authSubject: identity.subject,
+      driverTokenHash,
       createdAt: args.now,
+      updatedAt: args.now,
     });
 
-    return { saved: true, driverId: args.driverId, expiresAt: args.expiresAt };
-  },
-});
-
-export const getSetupSession = query({
-  args: {
-    setupTokenHash: v.string(),
-    now: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query("freightFateSetupSessions")
-      .withIndex("by_setup_token", (q) => q.eq("setupTokenHash", args.setupTokenHash))
-      .unique();
-
-    if (!session) {
-      return { found: false as const };
-    }
-
-    return {
-      found: true as const,
-      confirmed: Boolean(session.confirmedAt),
-      expired: session.expiresAt < args.now,
-      driverId: session.driverId,
-      displayName: session.displayName,
-      expiresAt: session.expiresAt,
-      confirmedAt: session.confirmedAt,
-    };
-  },
-});
-
-export const confirmSetupSession = mutation({
-  args: {
-    setupTokenHash: v.string(),
-    displayName: v.string(),
-    visibility,
-    now: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query("freightFateSetupSessions")
-      .withIndex("by_setup_token", (q) => q.eq("setupTokenHash", args.setupTokenHash))
-      .unique();
-
-    if (!session) {
-      return { ok: false as const, reason: "not_found" };
-    }
-
-    if (session.expiresAt < args.now) {
-      return { ok: false as const, reason: "expired", expiresAt: session.expiresAt };
-    }
-
-    const existingDriver = await ctx.db
-      .query("freightFateDrivers")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", session.driverId))
-      .unique();
-
-    if (existingDriver) {
-      await ctx.db.patch(existingDriver._id, {
-        displayName: args.displayName,
-        visibility: args.visibility,
-        driverTokenHash: session.driverTokenHash,
-        updatedAt: args.now,
-      });
-    } else {
-      await ctx.db.insert("freightFateDrivers", {
-        driverId: session.driverId,
-        displayName: args.displayName,
-        visibility: args.visibility,
-        driverTokenHash: session.driverTokenHash,
-        createdAt: args.now,
-        updatedAt: args.now,
-      });
-    }
-
-    await ctx.db.patch(session._id, { confirmedAt: args.now });
-
-    return {
-      ok: true as const,
-      driverId: session.driverId,
-      displayName: args.displayName,
-      visibility: args.visibility,
-    };
+    return { driverId, token, rotated: false };
   },
 });
 

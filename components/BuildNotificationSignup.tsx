@@ -162,7 +162,7 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           aria-describedby={statusId}
-          className="rounded-md bg-action px-4 py-3 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+          className="rounded-md bg-action px-4 py-3 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-500"
           disabled={status === "busy" || status === "ready" || status === "unsupported"}
           onClick={subscribe}
           type="button"
@@ -171,7 +171,7 @@ export function BuildNotificationSignup({ productName }: BuildNotificationSignup
         </button>
         <button
           aria-describedby={statusId}
-          className="rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:cursor-not-allowed disabled:text-slate-500"
+          className="rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-600 disabled:cursor-not-allowed disabled:text-slate-500"
           disabled={status === "busy" || status === "unsupported"}
           onClick={unsubscribe}
           type="button"

@@ -32,7 +32,7 @@ function DownloadList({ release }: { release: GitHubRelease }) {
       {assets.map((asset) => (
         <li className="list-none" key={asset.browser_download_url}>
           <a
-            className="block rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-300"
+            className="block rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-600"
             href={asset.browser_download_url}
           >
             {downloadAssetLabel(asset.name)}

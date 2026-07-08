@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Section } from "@/components/Section";
-import { getFreightFatePresenceBoard } from "@/lib/freight-fate-online";
+import {
+  getFreightFatePresenceBoard,
+  normalizeFreightFateDisplayName,
+} from "@/lib/freight-fate-online";
 
 const relativeTime = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
 
@@ -66,19 +69,34 @@ export async function FreightFateDriversBoard() {
 
       {board.drivers.length > 0 ? (
         <ul>
-          {board.drivers.map((driver) => (
-            <li key={driver.driverId}>
-              <Link href={`/freight-fate/drivers/${driver.driverId}`}>{driver.displayName}</Link>.{" "}
-              {sentence(driver.activity)} {sentence(driver.detail)} {updatedPhrase(driver.updatedAt, board.asOf)}
-            </li>
-          ))}
+          {board.drivers.map((driver) => {
+            const displayName = normalizeFreightFateDisplayName(
+              driver.displayName,
+              "Freight Fate Driver",
+            );
+            // Driver names are user-supplied and can collide; the activity cue
+            // keeps each link's accessible name distinct in a links list.
+            const activity = driver.activity.trim();
+            const ariaLabel = activity
+              ? `${displayName} — ${activity}`
+              : `${displayName} — driver profile`;
+            return (
+              <li key={driver.driverId}>
+                <Link aria-label={ariaLabel} href={`/freight-fate/drivers/${driver.driverId}`}>
+                  {displayName}
+                </Link>
+                . {sentence(driver.activity)} {sentence(driver.detail)}{" "}
+                {updatedPhrase(driver.updatedAt, board.asOf)}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
 
       <p>
         Players appear here while hauling a load, and only if they turned on sharing inside Freight Fate
         and chose the public listing. The board shows in-game activity only, never anything about the real
-        player. <Link href="/freight-fate">Refresh the drivers board</Link>.
+        player. <Link href="/freight-fate">Open the Freight Fate page</Link> for the latest board.
       </p>
     </Section>
   );

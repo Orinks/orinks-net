@@ -1,0 +1,97 @@
+{
+  "minigame": "general-trivia",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "gt-0001",
+      "category": "pop",
+      "difficulty": 1,
+      "prompt": "Which artist released the album Thriller in 1982?",
+      "choices": ["Prince", "Michael Jackson", "Lionel Richie", "Stevie Wonder"],
+      "answer": 1,
+      "explanation": "Thriller remains one of the best-selling albums of all time."
+    },
+    {
+      "id": "gt-0002",
+      "category": "rock",
+      "difficulty": 1,
+      "prompt": "Which band recorded the song Bohemian Rhapsody?",
+      "choices": ["Led Zeppelin", "The Rolling Stones", "Queen", "Pink Floyd"],
+      "answer": 2,
+      "explanation": "Queen released Bohemian Rhapsody on the 1975 album A Night at the Opera."
+    },
+    {
+      "id": "gt-0003",
+      "category": "classical",
+      "difficulty": 2,
+      "prompt": "How many symphonies did Ludwig van Beethoven complete?",
+      "choices": ["Five", "Seven", "Nine", "Twelve"],
+      "answer": 2,
+      "explanation": "Beethoven completed nine symphonies, ending with the Ninth and its Ode to Joy."
+    },
+    {
+      "id": "gt-0004",
+      "category": "instruments",
+      "difficulty": 1,
+      "prompt": "Which instrument has eighty-eight keys in its standard form?",
+      "choices": ["Organ", "Piano", "Accordion", "Harpsichord"],
+      "answer": 1,
+      "explanation": "A standard modern piano has 52 white keys and 36 black keys."
+    },
+    {
+      "id": "gt-0005",
+      "category": "pop",
+      "difficulty": 1,
+      "prompt": "Who sang the 2010 hit Rolling in the Deep?",
+      "choices": ["Adele", "Beyoncé", "Katy Perry", "Rihanna"],
+      "answer": 0,
+      "explanation": "Rolling in the Deep was the lead single from Adele's album 21."
+    },
+    {
+      "id": "gt-0006",
+      "category": "rock",
+      "difficulty": 1,
+      "prompt": "Who was the drummer for The Beatles?",
+      "choices": ["John Lennon", "Paul McCartney", "George Harrison", "Ringo Starr"],
+      "answer": 3,
+      "explanation": "Ringo Starr joined The Beatles in 1962, replacing Pete Best."
+    },
+    {
+      "id": "gt-0007",
+      "category": "rock",
+      "difficulty": 1,
+      "prompt": "Which singer is known as the King of Rock and Roll?",
+      "choices": ["Chuck Berry", "Elvis Presley", "Little Richard", "Buddy Holly"],
+      "answer": 1,
+      "explanation": "Elvis Presley earned the nickname in the 1950s."
+    },
+    {
+      "id": "gt-0008",
+      "category": "classical",
+      "difficulty": 2,
+      "prompt": "Who composed The Four Seasons?",
+      "choices": ["Johann Sebastian Bach", "Antonio Vivaldi", "George Frideric Handel", "Wolfgang Amadeus Mozart"],
+      "answer": 1,
+      "explanation": "Vivaldi composed the four violin concertos around 1723, publishing them in 1725 as part of Op. 8."
+    },
+    {
+      "id": "gt-0009",
+      "category": "rock",
+      "difficulty": 1,
+      "prompt": "Who was the lead singer of Nirvana?",
+      "choices": ["Eddie Vedder", "Chris Cornell", "Kurt Cobain", "Dave Grohl"],
+      "answer": 2,
+      "explanation": "Kurt Cobain fronted Nirvana until his death in 1994. Dave Grohl was the drummer."
+    },
+    {
+      "id": "gt-0010",
+      "category": "pop",
+      "difficulty": 1,
+      "prompt": "Which artist recorded the song Purple Rain?",
+      "choices": ["Prince", "David Bowie", "George Michael", "Billy Idol"],
+      "answer": 0,
+      "explanation": "Purple Rain was the title track of Prince's 1984 album and film."
+    }
+  ]
+}

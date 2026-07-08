@@ -4,20 +4,6 @@ import { getConvexClient } from "@/lib/convex";
 
 export type FreightFateVisibility = "public" | "private" | "unlisted";
 
-export type FreightFateSetupStatus =
-  | { configured: false }
-  | { configured: true; found: false }
-  | {
-      configured: true;
-      found: true;
-      confirmed: boolean;
-      expired: boolean;
-      driverId: string;
-      displayName?: string;
-      expiresAt: number;
-      confirmedAt?: number;
-    };
-
 export function hashFreightFateToken(token: string) {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
@@ -82,69 +68,6 @@ export function normalizeFreightFateEventText(value: unknown, label: string, max
   }
 
   return text.slice(0, maxLength);
-}
-
-export async function createFreightFateSetupSession(input: {
-  setupToken: string;
-  driverToken: string;
-  driverId: string;
-  displayName?: string;
-  expiresInMinutes?: number;
-}) {
-  const client = getConvexClient();
-
-  if (!client) {
-    return null;
-  }
-
-  const now = Date.now();
-  const expiresInMinutes = Math.min(Math.max(input.expiresInMinutes ?? 15, 1), 60);
-  const expiresAt = now + expiresInMinutes * 60_000;
-
-  return client.mutation(anyApi.freightFate.createSetupSession, {
-    setupTokenHash: hashFreightFateToken(input.setupToken),
-    driverTokenHash: hashFreightFateToken(input.driverToken),
-    driverId: normalizeFreightFateDriverId(input.driverId),
-    displayName: input.displayName
-      ? normalizeFreightFateDisplayName(input.displayName, "Freight Fate Driver")
-      : undefined,
-    expiresAt,
-    now,
-  });
-}
-
-export async function getFreightFateSetupStatus(setupToken: string): Promise<FreightFateSetupStatus> {
-  const client = getConvexClient();
-
-  if (!client) {
-    return { configured: false };
-  }
-
-  const status = await client.query(anyApi.freightFate.getSetupSession, {
-    setupTokenHash: hashFreightFateToken(setupToken),
-    now: Date.now(),
-  });
-
-  return { configured: true, ...status } as FreightFateSetupStatus;
-}
-
-export async function confirmFreightFateSetup(input: {
-  setupToken: string;
-  displayName: string;
-  visibility: FreightFateVisibility;
-}) {
-  const client = getConvexClient();
-
-  if (!client) {
-    return null;
-  }
-
-  return client.mutation(anyApi.freightFate.confirmSetupSession, {
-    setupTokenHash: hashFreightFateToken(input.setupToken),
-    displayName: normalizeFreightFateDisplayName(input.displayName, "Freight Fate Driver"),
-    visibility: input.visibility,
-    now: Date.now(),
-  });
 }
 
 export async function postFreightFateDriverEvent(input: {

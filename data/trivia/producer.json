@@ -1,0 +1,18 @@
+{
+  "note": "The Producer is voiced by the browser's Web Speech API (speechSynthesis), never ElevenLabs — its flat synthetic delivery is the character. Placeholders in curly braces are filled at runtime, which is exactly what pre-generated audio can't do. Every line is also rendered as text for captions.",
+  "lines": [
+    { "id": "prod-welcome", "trigger": "run-intro", "template": "Contestant registered: {name}. Episode {runNumber}. Broadcast commencing." },
+    { "id": "prod-score", "trigger": "score-report", "template": "Score: {score} points. Round: {round}. Lives remaining: {lives}." },
+    { "id": "prod-round", "trigger": "round-transition", "template": "Round {round} complete. Advancing. Difficulty parameters increased." },
+    { "id": "prod-streak", "trigger": "streak", "template": "Consecutive correct answers: {streak}. Statistical anomaly noted." },
+    { "id": "prod-last-life", "trigger": "last-life", "template": "Warning. Lives remaining: one. Insurance status: not applicable." },
+    { "id": "prod-game-over", "trigger": "game-over", "template": "Broadcast concluded. Final score: {score}. Rounds survived: {round}. Thank you for your participation." },
+    { "id": "prod-leaderboard", "trigger": "leaderboard", "template": "Leaderboard position: {rank}. Tonight's broadcast rank: {dailyRank}." },
+    { "id": "prod-daily", "trigger": "daily-intro", "template": "Tonight's broadcast, {date}. All contestants receive identical questions. Synchronization: engaged." },
+    { "id": "prod-tape", "trigger": "tape-found", "template": "Archive item recovered. Cataloging. Tape {tapeNumber} of {tapeTotal}." },
+    { "id": "prod-achievement", "trigger": "achievement", "template": "Achievement unlocked: {achievementName}. Adding to permanent record." },
+
+    { "id": "prod-epilogue-intro", "trigger": "run-intro-epilogue", "template": "Contestant: {name}. Episode {runNumber}. Signal integrity: warm." },
+    { "id": "prod-epilogue-gameover", "trigger": "game-over-epilogue", "template": "Broadcast concluded. Final score: {score}. Archive annotation: Vernon would have liked this one." }
+  ]
+}

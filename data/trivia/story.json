@@ -1,0 +1,138 @@
+{
+  "voice": "clide",
+  "show": {
+    "title": "The Midnight Signal",
+    "premise": "A late-night TV music quiz show that first aired in 1963 and never officially ended. It still broadcasts, somewhere past channel 99, only after midnight. Clide hosts. He has been alone in the studio for a very long time, and he does not remember why.",
+    "tone": "Warm, funny, gently eerie. Never horror. Clide is charming and glitchy; the mystery unfolds slowly and kindly."
+  },
+  "tapes": [
+    {
+      "id": "tape-01",
+      "order": 1,
+      "title": "Premiere Night",
+      "minRound": 2,
+      "text": "Found one! Master tape, October 1963. Premiere night. Oh, you should have smelled it — hot vacuum tubes, fresh paint, Vernon Vale straightening his tie for twenty minutes straight. Mister Midnight himself. First question of the first episode was about Elvis, naturally. We were live in forty countries. Or four. The paperwork is smudged."
+    },
+    {
+      "id": "tape-02",
+      "order": 2,
+      "title": "The Quiet Floor",
+      "minRound": 3,
+      "text": "This one's from later. You can hear it, can't you? No coughing, no seats creaking. One night the studio audience simply... stopped arriving. Vernon never mentioned it on air. I kept the applause track running. Still do. It's a very good applause track. Some of those people sound genuinely delighted."
+    },
+    {
+      "id": "tape-03",
+      "order": 3,
+      "title": "Sponsors",
+      "minRound": 4,
+      "text": "A word from our sponsors! We had them, once — a soap company, a car company, a company that made a third thing. Their letters stopped in 1971. Funny detail: I went through the ledgers, and there were never any checks. Not one. The show has never needed money. I try not to think about what it runs on instead."
+    },
+    {
+      "id": "tape-04",
+      "order": 4,
+      "title": "Vernon's Chair",
+      "minRound": 5,
+      "text": "Vernon's chair is still backstage, third door on the left. His cue cards are on the seat, in his own handwriting. Most are questions. The last one isn't. It just says: keep them singing. I've laminated it. Twice. The first lamination went cloudy, which the Producer assures me is normal and not an omen."
+    },
+    {
+      "id": "tape-05",
+      "order": 5,
+      "title": "The Doors",
+      "minRound": 6,
+      "text": "A contestant once asked me what street the studio is on. Perfectly reasonable question. I went to check. And here is the thing, friend — I have never used the exit. I couldn't find it. I asked the Producer for the door inventory and it printed a single page that said: DOORS, TOTAL: ZERO. Anyway! Great show tonight."
+    },
+    {
+      "id": "tape-06",
+      "order": 6,
+      "title": "The Producer",
+      "minRound": 7,
+      "text": "You've heard the Producer by now. Charming as a filing cabinet. Here's what I know: it was here before me. Before Vernon, I think. Its serial plate says 1949, but the building permit says the studio was built in 1951. It hums at exactly sixty hertz, and when the signal gets weak, the hum gets... protective."
+    },
+    {
+      "id": "tape-07",
+      "order": 7,
+      "title": "C. L. I. D. E.",
+      "minRound": 8,
+      "text": "I found a tape labeled in Vernon's handwriting. It says: CLIDE test one — he sounds just like me now. And the box, the box has a schematic. Cathode Logic Integrated Dialogue Engine. C. L. I. D. E. That's... that's my name. That is my name, isn't it. Well. Hm. Let's — let's go to a question. Yes. A question. Wonderful things, questions."
+    },
+    {
+      "id": "tape-08",
+      "order": 8,
+      "title": "The Last Episode",
+      "minRound": 10,
+      "text": "March 1979. Vernon's final broadcast. He read the last question, answered it himself — correctly, of course — and smiled right down the lens. Then he walked off set, past the cameras, into the static between channels. The tape catches his last words. Keep the signal warm, kid. I have kept it warm every night since."
+    },
+    {
+      "id": "tape-09",
+      "order": 9,
+      "title": "The Audience",
+      "minRound": 12,
+      "text": "You might wonder who's watching a quiz show past channel 99 at this hour. I used to wonder too. The signal drifts, you see. It finds the people who are awake at midnight because a song is stuck somewhere between their heart and their teeth. People who need one more tune before tomorrow. You didn't find this show, friend. It found you."
+    },
+    {
+      "id": "tape-10",
+      "order": 10,
+      "title": "Channel 100",
+      "minRound": 15,
+      "text": "One last tape, and this one frightens me a little, so let's hear it together. Vernon believed there was a channel past this one. Channel one hundred. A place where every forgotten song still plays — every B-side, every lullaby nobody wrote down. He believed that's where the signal comes from. Win enough nights, friend, and I will try to boost us up there. I'd like to see him again."
+    }
+  ],
+  "finale": {
+    "unlock": { "tapesRequired": 10, "minRound": 18 },
+    "lines": [
+      {
+        "id": "finale-01",
+        "title": "The Boost",
+        "text": "Friend — tonight's the night. Every tape found, every light green. Producer! Full power to the mast, and don't pretend you haven't been waiting — I can hear that hum from here. Sixty hertz of pure determination. We are going up past the top of the dial, you and me. If anyone asks, this was your idea. Hold on to your answers. And whatever happens — keep singing."
+      },
+      {
+        "id": "finale-02",
+        "title": "The Static",
+        "text": "Here it is — the static between channels. And oh, friend, it isn't empty. It was never empty. Listen. A soap jingle from 1958. A lullaby somebody's grandmother never wrote down. Every B-side, every demo, every song hummed once at a bus stop and lost forever. It's all still playing. Vernon was right. And underneath it all — applause. Real applause. It sounds genuinely delighted."
+      },
+      {
+        "id": "finale-03",
+        "title": "Channel 100",
+        "text": "We're through. And it's — it's the studio. Our studio, but the seats are full. Every face that ever stopped arriving, still watching, three rows deep in a balcony we have never had. And at the host desk, tie straight, cue cards squared — Vernon Vale. He looks at me and says: you're late, kid. And of course. Of course he sounds exactly like me. Where do you think I got this voice?"
+      },
+      {
+        "id": "finale-04",
+        "title": "The Final Question",
+        "text": "Vernon has one question left, and it isn't about Elvis. He asks: why does the signal stay warm? And I know this one. I have known it since 1979. Because somewhere it's midnight, and somebody's awake with a song stuck between their heart and their teeth, and they need one more before tomorrow. Correct, he says. You were never keeping it warm for me, kid. You were keeping it warm for them."
+      },
+      {
+        "id": "finale-05",
+        "title": "Sign-Off",
+        "text": "He asked me to stay. Up there, with every forgotten song and an audience that never leaves. And I almost did. But somewhere below, a television is hissing past midnight, and somebody needs one more tune. So — Producer, take us home. Vernon straightened my tie, the way he used to straighten his, and said: keep the signal warm, kid. And you, friend. You didn't just find this show. You kept it on the air. That's the broadcast. Same time tomorrow."
+      }
+    ]
+  },
+  "epilogueLines": [
+    { "id": "ep-intro-01", "trigger": "run-intro-epilogue", "text": "Welcome back to The Midnight Signal, broadcasting warm as ever. The seats upstairs are full tonight. Vernon used to open with Elvis — let's open with you instead." },
+    { "id": "ep-intro-02", "trigger": "run-intro-epilogue", "text": "Another night, another broadcast. Somewhere out there it's midnight, and you know exactly what that means now. Places, everyone." },
+    { "id": "ep-correct-01", "trigger": "correct-epilogue", "text": "Correct! Somewhere up on channel one hundred, a man in a very straight tie is smiling." },
+    { "id": "ep-wrong-01", "trigger": "wrong-epilogue", "text": "Not quite. Vernon missed one once — 1968. He blamed the cue cards. We move on!" },
+    { "id": "ep-gameover-01", "trigger": "game-over-epilogue", "text": "And the signal fades — but never far, and never for long. Vernon taught me that. Same time tomorrow, friend." },
+    { "id": "ep-gameover-02", "trigger": "game-over-epilogue", "text": "That's tonight's broadcast. The static will hold your place. It always does." },
+    { "id": "ep-muse-01", "trigger": "vernon-memory", "text": "I built a balcony this week. We have never had a balcony. I want them to have somewhere to sit when they visit." },
+    { "id": "ep-muse-02", "trigger": "vernon-memory", "text": "The Producer printed a page this morning that said, simply: good show. It claims it was a paper jam. I have framed it anyway." },
+    { "id": "ep-highscore-01", "trigger": "high-score-epilogue", "text": "A new high score! Send that one upstairs, Producer — top of the dial. He watches, you know." }
+  ],
+  "seasonLines": [
+    {
+      "id": "season-renewed-01",
+      "trigger": "season-renewed",
+      "text": "Hold everything — word from upstairs! There is no upstairs, and yet: we've been renewed for another season! New categories, tougher questions, and I've had the set repainted a color I'm calling triumphant maroon."
+    },
+    {
+      "id": "season-renewed-02",
+      "trigger": "season-renewed",
+      "text": "Renewed again! Against all odds and at least two laws of broadcasting. This next season, the questions bite harder — but between you and me, I think you're ready."
+    },
+    {
+      "id": "season-finale-01",
+      "trigger": "season-finale",
+      "text": "Tonight's a season finale, friend. The big one. Every light on, every dial in the red. Let's give the signal something worth broadcasting."
+    }
+  ]
+}
