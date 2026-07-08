@@ -53,6 +53,14 @@ export default async function FreightFateDriverPage({ params, searchParams }: Dr
 
       <Section title="Driver profile">
         <dl className="grid gap-3 sm:grid-cols-2">
+          {/* Private profiles mask the name in the title; keep the dl
+              consistent with that rather than leaking it here. */}
+          {profile.driver.visibility !== "private" ? (
+            <div>
+              <dt className="font-semibold text-ink">Driver name</dt>
+              <dd>{profile.driver.displayName}</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="font-semibold text-ink">Visibility</dt>
             <dd>{profile.driver.visibility}</dd>
