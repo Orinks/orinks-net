@@ -11,7 +11,7 @@ MP3s, so players can never spend ElevenLabs credits.
 ## Files
 
 - `tts.config.json` — ElevenLabs voices, model, and output paths. Put the
-  real Clide voice ID here (find it under Voices in the ElevenLabs
+  real Clyde voice ID here (find it under Voices in the ElevenLabs
   dashboard). The API key does NOT go here — it lives in `.env.local` as
   `ELEVENLABS_API_KEY`.
 - `barks.json` — the host's reusable personality lines, grouped by

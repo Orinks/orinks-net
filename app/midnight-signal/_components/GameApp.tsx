@@ -61,7 +61,7 @@ interface AnswerResult {
 }
 interface CaptionLine {
   seq: number;
-  speaker: "Clide" | "Producer";
+  speaker: "Clyde" | "Producer";
   text: string;
 }
 interface StoryLine {
@@ -161,7 +161,7 @@ export function GameApp() {
     setCaptions((prev) => [...prev.slice(-9), { seq, speaker, text }]);
   }, []);
 
-  /** Plays a Clide clip with music ducked; the duck can never stick (safety timeout). */
+  /** Plays a Clyde clip with music ducked; the duck can never stick (safety timeout). */
   const playHostClip = useCallback(async (audioPath: string) => {
     const release = musicRef.current?.duck() ?? (() => {});
     try {
@@ -188,14 +188,14 @@ export function GameApp() {
    */
   const speakHostLine = useCallback(
     (text: string, audioPath: string | undefined, bundle: string[] | null): Promise<void> => {
-      addCaption("Clide", text);
+      addCaption("Clyde", text);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
         return playHostClip(audioPath);
       }
       if (bundle) {
-        bundle.push(`Clide: ${text}`);
+        bundle.push(`Clyde: ${text}`);
       } else {
-        announce(`Clide: ${text}`);
+        announce(`Clyde: ${text}`);
       }
       return Promise.resolve();
     },
@@ -310,7 +310,7 @@ export function GameApp() {
         setQuestion(started.question);
         setQuestionNumber(1);
         setChosenIndex(null);
-        // The show opens before the first question: title theme under Clide's
+        // The show opens before the first question: title theme under Clyde's
         // greeting, then the player advances at their own pace (no timers).
         setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
         const bundle: string[] = [];
@@ -466,7 +466,7 @@ export function GameApp() {
       }
       if (result.nextQuestion) {
         // Occasional flavor between questions: an archive fact or a lead-in.
-        // Skipped after round transitions (Clide already spoke) and kept
+        // Skipped after round transitions (Clyde already spoke) and kept
         // infrequent so it stays charming at question three hundred.
         const hadRoundEvent = result.events.some((e) => e.type === "roundComplete");
         const roll = Math.random();
@@ -676,7 +676,7 @@ export function GameApp() {
           The Producer (the show&apos;s second voice) can speak through your device&apos;s speech
           synthesis. It&apos;s off by default — screen reader users usually prefer announcements
           through their own screen reader. Keyboard shortcuts: 1 to 4 answer questions, R replays
-          Clide&apos;s last line. Both can be changed in Settings. Questions include material from{" "}
+          Clyde&apos;s last line. Both can be changed in Settings. Questions include material from{" "}
           <a className={`underline ${focusRing}`} href="https://opentdb.com">
             Open Trivia Database
           </a>{" "}
@@ -709,7 +709,7 @@ export function GameApp() {
               : `On the air — Episode ${phase.runNumber}`}
           </h2>
           <p className="mt-2 leading-7">
-            The studio lights are up, Clide is at the desk, and the signal is warm. Tonight&apos;s
+            The studio lights are up, Clyde is at the desk, and the signal is warm. Tonight&apos;s
             first theme: {categoryLabel(run?.roundCategory)}. The first question comes when
             you&apos;re ready.
           </p>
@@ -839,7 +839,7 @@ export function GameApp() {
 
       <div className="mt-8 flex flex-wrap gap-3 border-t border-amber-700 pt-4">
         <button className={secondaryButton} onClick={() => void replayHostClip()} type="button">
-          Replay Clide&apos;s last line
+          Replay Clyde&apos;s last line
         </button>
         <button className={secondaryButton} onClick={toggleHostPaused} type="button">
           {hostPaused ? "Resume host audio" : "Pause host audio"}

@@ -7,7 +7,7 @@
  * Design notes:
  * - Earcons play hundreds of times per player. They are short, soft (peak
  *   -6 dBFS before patina), and land outside sustained speech so they never
- *   fight Clide or a screen reader.
+ *   fight Clyde or a screen reader.
  * - Every earcon is always PAIRED with a text/speech announcement in the game
  *   (accessibility requirement) — these are reinforcement, never the sole
  *   channel for information.

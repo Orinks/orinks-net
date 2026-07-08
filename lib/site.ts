@@ -28,6 +28,7 @@ export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enha
 export const gamesNav = [
   { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense" },
   { href: "/freight-fate", label: "Freight Fate" },
+  { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
 ];
 
