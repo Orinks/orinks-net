@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AccountControls } from "@/components/AccountControls";
 import { api } from "@/convex/_generated/api";
+import { userDisplayName } from "@/lib/user-name";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useAnnounce } from "./Announcer";
 import { pickBark, producerLine, type Bark } from "../_lib/barks";
@@ -90,7 +91,7 @@ function categoryLabel(category: string | null | undefined): string {
 export function GameApp() {
   const announce = useAnnounce();
   const { user, isSignedIn } = useUser();
-  const accountHandle = user?.username ?? user?.fullName ?? user?.firstName ?? "your account";
+  const accountHandle = userDisplayName(user, "your account");
   const ensurePlayer = useMutation(api.trivia.ensurePlayer);
   const startRunMutation = useMutation(api.trivia.startRun);
   const submitAnswerMutation = useMutation(api.trivia.submitAnswer);

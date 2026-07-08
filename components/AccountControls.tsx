@@ -2,6 +2,7 @@
 
 import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useEffect, useRef, type ComponentProps } from "react";
+import { userDisplayName } from "@/lib/user-name";
 
 type AccountControlsProps = {
   /** Overrides so dark-themed contexts (Midnight Signal) can restyle the buttons. */
@@ -65,7 +66,7 @@ export function AccountControls({
           tabIndex={-1}
         >
           <span className="sr-only">Signed in as </span>
-          {user?.username ?? user?.fullName ?? user?.firstName ?? "Signed in"}
+          {userDisplayName(user, "your account")}
         </span>
         <UserButton appearance={userButtonAppearance} />
       </Show>
