@@ -532,6 +532,36 @@ describe("anti-cheat", () => {
     expect(board.some((row) => row.displayName === "SpeedBot")).toBe(false);
   });
 
+  test("a flagged run never sets the profile's best score or a personal best", async () => {
+    const t = setup();
+    const bot = t.withIdentity({ subject: "user_bot2", nickname: "ScoreBot" });
+    await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000002" });
+    const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000002" });
+
+    // Score points at bot speed (flags the run), then die.
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(bot, "bot-key-00000002", start.run.runId, key, true, 100);
+      key = result.nextQuestion!.key;
+    }
+    let last;
+    for (let i = 0; i < 3; i++) {
+      last = await answer(bot, "bot-key-00000002", start.run.runId, key, false, 100);
+      if (last.nextQuestion) key = last.nextQuestion.key;
+    }
+    expect(last!.run.status).toBe("dead");
+    expect(last!.run.score).toBeGreaterThan(0);
+    const gameOver = last!.events.find((e: { type: string }) => e.type === "gameOver") as {
+      isPersonalBest: boolean;
+    };
+    expect(gameOver.isPersonalBest).toBe(false);
+
+    const profile = await bot.query(api.trivia.getProfile, { playerKey: "bot-key-00000002" });
+    expect(profile!.totalRuns).toBe(1); // it still counts as played
+    expect(profile!.bestScore).toBe(0); // but never as a record
+    expect(profile!.deepestRound).toBe(0);
+  });
+
   test("a human-paced run is not flagged and ranks normally", async () => {
     const t = setup();
     const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });

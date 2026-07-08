@@ -469,11 +469,15 @@ export const submitAnswer = mutation({
         type: "gameOver",
         score,
         round,
-        isPersonalBest: score > player.bestScore,
+        isPersonalBest: !flagged && score > player.bestScore,
       });
       playerPatch.totalRuns = player.totalRuns + 1;
-      playerPatch.bestScore = Math.max(player.bestScore, score);
-      playerPatch.deepestRound = Math.max(player.deepestRound, round);
+      // A flagged (automated-looking) run counts as played but never as a
+      // best: it's excluded from leaderboards, so it can't set records either.
+      if (!flagged) {
+        playerPatch.bestScore = Math.max(player.bestScore, score);
+        playerPatch.deepestRound = Math.max(player.deepestRound, round);
+      }
       await ctx.db.patch(args.runId, {
         status: "dead",
         score,
@@ -539,10 +543,12 @@ export const submitAnswer = mutation({
       if (!nextQuestion) {
         // Ran the entire bank dry — end the run as a victory lap.
         events.push({ type: "bankExhausted" });
-        events.push({ type: "gameOver", score, round, isPersonalBest: score > player.bestScore });
+        events.push({ type: "gameOver", score, round, isPersonalBest: !flagged && score > player.bestScore });
         playerPatch.totalRuns = player.totalRuns + 1;
-        playerPatch.bestScore = Math.max(player.bestScore, score);
-        playerPatch.deepestRound = Math.max(player.deepestRound, round);
+        if (!flagged) {
+          playerPatch.bestScore = Math.max(player.bestScore, score);
+          playerPatch.deepestRound = Math.max(player.deepestRound, round);
+        }
         await ctx.db.patch(args.runId, {
           status: "dead",
           score,
