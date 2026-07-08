@@ -1,4 +1,4 @@
-// Clide's bark lines and the Producer's templates. Bark text ships to the
+// Clyde's bark lines and the Producer's templates. Bark text ships to the
 // client (it's flavor, not spoilers); story tapes, finale, and epilogue lines
 // stay server-side and arrive via Convex queries only after they're earned.
 import barksJson from "@/data/trivia/barks.json";

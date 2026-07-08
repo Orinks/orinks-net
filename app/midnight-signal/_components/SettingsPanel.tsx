@@ -131,7 +131,7 @@ export function SettingsPanel() {
           <label htmlFor="auto-question-audio">
             <span className="font-semibold text-amber-100">Auto-play question audio</span>
             <span className="block text-sm leading-6 text-zinc-400">
-              Clide reads each question aloud when its recording exists. Turn off if it overlaps
+              Clyde reads each question aloud when its recording exists. Turn off if it overlaps
               your screen reader; the R key replays it on demand.
             </span>
           </label>
@@ -173,7 +173,7 @@ export function SettingsPanel() {
           <label htmlFor="captions">
             <span className="font-semibold text-amber-100">Show captions</span>
             <span className="block text-sm leading-6 text-zinc-400">
-              A visible log of everything Clide and the Producer say. Lines without audio are
+              A visible log of everything Clyde and the Producer say. Lines without audio are
               always announced to screen readers regardless of this setting.
             </span>
           </label>
@@ -195,7 +195,7 @@ export function SettingsPanel() {
           <label htmlFor="number-shortcuts">
             <span className="font-semibold text-amber-100">Keyboard shortcuts</span>
             <span className="block text-sm leading-6 text-zinc-400">
-              Number keys 1 to 4 answer questions; R replays Clide&apos;s last line. Screen reader
+              Number keys 1 to 4 answer questions; R replays Clyde&apos;s last line. Screen reader
               users: these work in focus/forms mode. Tab and Enter always work regardless.
             </span>
           </label>
