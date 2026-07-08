@@ -40,6 +40,10 @@ export default defineSchema({
     lastSeenAt: v.number(),
     totalRuns: v.number(),
     bestScore: v.number(),
+    // Snapshot of the run that set bestScore, shown on the all-time board.
+    // Optional: rows predating the fields fall back to deepestRound/lastSeenAt.
+    bestRunRound: v.optional(v.number()),
+    bestRunAt: v.optional(v.number()),
     deepestRound: v.number(),
     totalCorrect: v.number(),
     totalAnswered: v.number(),
@@ -50,7 +54,8 @@ export default defineSchema({
   })
     .index("by_authSubject", ["authSubject"])
     .index("by_playerKey", ["playerKey"])
-    .index("by_displayName", ["displayName"]),
+    .index("by_displayName", ["displayName"])
+    .index("by_bestScore", ["bestScore"]),
 
   // One row per run. The server picks and stores currentQuestionKey so the
   // client never sees answers ahead of time; askedQuestionKeys prevents
@@ -87,7 +92,7 @@ export default defineSchema({
     .index("by_playerId", ["playerId"])
     .index("by_player_date", ["playerId", "dateKey"])
     .index("by_leaderboard", ["status", "score"])
-    .index("by_daily_leaderboard", ["status", "dateKey", "score"])
+    .index("by_daily_leaderboard", ["status", "isDaily", "dateKey", "score"])
     .index("by_weekly_leaderboard", ["status", "weekKey", "score"]),
 
   // Unlocks only — achievement definitions live in data/trivia/achievements.json.

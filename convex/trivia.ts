@@ -172,10 +172,10 @@ function normalizeForModeration(value: string): string {
     .replace(/7/g, "t")
     .replace(/[^a-z]/g, "");
 }
-function safeLeaderboardName(name: string, runId: Id<"triviaRuns">): string {
+function safeLeaderboardName(name: string, idForMask: string): string {
   const normalized = normalizeForModeration(name);
   if (PROFANITY_ROOTS.some((root) => normalized.includes(root))) {
-    return `Player ${runId.slice(-4)}`;
+    return `Player ${idForMask.slice(-4)}`;
   }
   return name;
 }
@@ -322,19 +322,37 @@ export const startRun = mutation({
     const dateKey = dateKeyOf(now);
     const isDaily = args.daily ?? false;
 
-    const existing = await getActiveRunDoc(ctx, player._id);
-    if (existing) {
-      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
-    }
-
     if (isDaily) {
       const todaysRuns = await ctx.db
         .query("triviaRuns")
         .withIndex("by_player_date", (q) => q.eq("playerId", player._id).eq("dateKey", dateKey))
         .collect();
-      if (todaysRuns.some((run) => run.isDaily && run.status === "dead")) {
+      // The daily seed is deterministic, so reseeding an in-progress attempt
+      // would deal the same questions again — a free preview. Resume instead.
+      const activeDaily = todaysRuns.find((run) => run.isDaily && run.status === "active");
+      if (activeDaily?.currentQuestionKey) {
+        const question = questionByKey.get(activeDaily.currentQuestionKey);
+        if (question) {
+          await ctx.db.patch(player._id, { lastSeenAt: now });
+          return {
+            run: publicRunState(activeDaily),
+            question: sanitizeQuestion(question),
+            runNumber: player.totalRuns + 1,
+            epilogueActive: player.finaleCompletedAt !== undefined,
+            resumed: true,
+          };
+        }
+      }
+      // One attempt per night: dead OR abandoned consumes it. Walking away
+      // from an attempt must not grant a fresh look at the same seed.
+      if (todaysRuns.some((run) => run.isDaily && run.status !== "active")) {
         throw new Error("Tonight's broadcast has already aired for you. Come back tomorrow!");
       }
+    }
+
+    const existing = await getActiveRunDoc(ctx, player._id);
+    if (existing) {
+      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
     }
 
     // Rate limit: cap how many runs a player can start per hour to blunt
@@ -387,6 +405,7 @@ export const startRun = mutation({
       question: sanitizeQuestion(question),
       runNumber: player.totalRuns + 1,
       epilogueActive: player.finaleCompletedAt !== undefined,
+      resumed: false,
     };
   },
 });
@@ -450,11 +469,19 @@ export const submitAnswer = mutation({
         type: "gameOver",
         score,
         round,
-        isPersonalBest: score > player.bestScore,
+        isPersonalBest: !flagged && score > player.bestScore,
       });
       playerPatch.totalRuns = player.totalRuns + 1;
-      playerPatch.bestScore = Math.max(player.bestScore, score);
-      playerPatch.deepestRound = Math.max(player.deepestRound, round);
+      // A flagged (automated-looking) run counts as played but never as a
+      // best: it's excluded from leaderboards, so it can't set records either.
+      if (!flagged) {
+        if (score > player.bestScore) {
+          playerPatch.bestScore = score;
+          playerPatch.bestRunRound = round;
+          playerPatch.bestRunAt = Date.now();
+        }
+        playerPatch.deepestRound = Math.max(player.deepestRound, round);
+      }
       await ctx.db.patch(args.runId, {
         status: "dead",
         score,
@@ -520,10 +547,16 @@ export const submitAnswer = mutation({
       if (!nextQuestion) {
         // Ran the entire bank dry — end the run as a victory lap.
         events.push({ type: "bankExhausted" });
-        events.push({ type: "gameOver", score, round, isPersonalBest: score > player.bestScore });
+        events.push({ type: "gameOver", score, round, isPersonalBest: !flagged && score > player.bestScore });
         playerPatch.totalRuns = player.totalRuns + 1;
-        playerPatch.bestScore = Math.max(player.bestScore, score);
-        playerPatch.deepestRound = Math.max(player.deepestRound, round);
+        if (!flagged) {
+          if (score > player.bestScore) {
+            playerPatch.bestScore = score;
+            playerPatch.bestRunRound = round;
+            playerPatch.bestRunAt = Date.now();
+          }
+          playerPatch.deepestRound = Math.max(player.deepestRound, round);
+        }
         await ctx.db.patch(args.runId, {
           status: "dead",
           score,
@@ -665,18 +698,52 @@ export const getLeaderboard = query({
     const window = Math.min(limit * 5 + 20, 500);
     const now = Date.now();
     const viewer = args.playerKey ? await getPlayer(ctx, args.playerKey) : null;
-    let runs: Doc<"triviaRuns">[];
+    const rows: Array<{
+      rank: number;
+      displayName: string;
+      score: number;
+      round: number;
+      isDaily: boolean;
+      isYou: boolean;
+      endedAt: number;
+    }> = [];
+
     if (args.scope === "alltime") {
-      runs = await ctx.db
-        .query("triviaRuns")
-        .withIndex("by_leaderboard", (q) => q.eq("status", "dead"))
+      // All-time is one row per player by construction: read profiles by best
+      // score instead of scanning runs. A run scan has a fixed window, and one
+      // grinder's runs could fill it and starve everyone else off the board.
+      // bestScore never includes flagged runs, and 0 means "no ranked score".
+      const players = await ctx.db
+        .query("triviaPlayers")
+        .withIndex("by_bestScore", (q) => q.gt("bestScore", 0))
         .order("desc")
         .take(window);
-    } else if (args.scope === "daily") {
+      for (const player of players) {
+        if (rows.length >= limit) break;
+        if (player.authSubject === undefined) continue; // accounts only
+        rows.push({
+          rank: rows.length + 1,
+          displayName: safeLeaderboardName(player.displayName, player._id),
+          score: player.bestScore,
+          round: player.bestRunRound ?? player.deepestRound,
+          isDaily: false,
+          isYou: viewer !== null && player._id === viewer._id,
+          endedAt: player.bestRunAt ?? player.lastSeenAt,
+        });
+      }
+      return rows;
+    }
+
+    let runs: Doc<"triviaRuns">[];
+    if (args.scope === "daily") {
+      // The daily board is the daily CHALLENGE board: everyone plays the same
+      // seeded episode, so free-play runs don't belong on it.
       const dateKey = args.periodKey ?? dateKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
-        .withIndex("by_daily_leaderboard", (q) => q.eq("status", "dead").eq("dateKey", dateKey))
+        .withIndex("by_daily_leaderboard", (q) =>
+          q.eq("status", "dead").eq("isDaily", true).eq("dateKey", dateKey),
+        )
         .order("desc")
         .take(window);
     } else {
@@ -691,25 +758,21 @@ export const getLeaderboard = query({
     // Public leaderboards list signed-in accounts only (guests play but don't
     // rank), and offensive account handles are masked (usernames aren't
     // content-moderated by Clerk). Guests' typed names never reach here.
-    const rows: Array<{
-      rank: number;
-      displayName: string;
-      score: number;
-      round: number;
-      isDaily: boolean;
-      isYou: boolean;
-      endedAt: number;
-    }> = [];
+    // One entry per player: runs arrive sorted by score descending, so the
+    // first run seen for a player is their best for the period.
     const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
+    const rankedPlayers = new Set<Id<"triviaPlayers">>();
     for (const run of runs) {
       if (rows.length >= limit) break;
       if (run.flagged) continue; // automated-looking runs don't rank (anti-cheat)
+      if (rankedPlayers.has(run.playerId)) continue;
       let player = playerCache.get(run.playerId);
       if (player === undefined) {
         player = await ctx.db.get(run.playerId);
         playerCache.set(run.playerId, player);
       }
       if (!player || player.authSubject === undefined) continue; // accounts only
+      rankedPlayers.add(run.playerId);
       rows.push({
         rank: rows.length + 1,
         displayName: safeLeaderboardName(player.displayName, run._id),

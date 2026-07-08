@@ -211,6 +211,43 @@ describe("daily runs", () => {
     expect(a2.nextQuestion!.key).toBe(b2.nextQuestion!.key);
   });
 
+  test("starting the daily again resumes the in-progress attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const first = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    expect(first.resumed).toBe(false);
+    await answer(t, PLAYER, first.run.runId, first.question.key, true);
+
+    // Same seed, same night: the server must hand back the same run
+    // mid-episode, never a fresh look at a deterministic question sequence.
+    const again = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    expect(again.resumed).toBe(true);
+    expect(again.run.runId).toBe(first.run.runId);
+    expect(again.run.questionNumber).toBe(2);
+    expect(again.run.score).toBeGreaterThan(0);
+  });
+
+  test("an abandoned daily consumes the night's attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    await t.mutation(api.trivia.abandonRun, { playerKey: PLAYER });
+    await expect(
+      t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true }),
+    ).rejects.toThrow(/already aired/);
+  });
+
+  test("abandoning the daily via a free run also consumes the attempt", async () => {
+    const t = setup();
+    await newPlayer(t);
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    // Starting a free run abandons the active daily server-side.
+    await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await expect(
+      t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true }),
+    ).rejects.toThrow(/already aired/);
+  });
+
   test("a finished daily cannot be replayed the same day", async () => {
     const t = setup();
     await newPlayer(t);
@@ -234,7 +271,8 @@ describe("leaderboards", () => {
     await alpha.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0001" });
     await beta.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0002" });
 
-    // Alpha scores then dies; Beta dies immediately.
+    // Alpha scores twice (with a streak bonus) then dies; Beta scores once
+    // then dies, so Alpha always outranks Beta on every board.
     const runA = await alpha.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
     let key = runA.question.key;
     for (let i = 0; i < 2; i++) {
@@ -247,17 +285,88 @@ describe("leaderboards", () => {
     }
     const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
     key = runB.question.key;
+    const scored = await answer(beta, "leader-player-0002", runB.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(beta, "leader-player-0002", runB.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
 
-    for (const scope of ["alltime", "daily", "weekly"] as const) {
+    // Free-play runs rank on the all-time and weekly boards, not the daily
+    // (the daily board is reserved for the daily challenge).
+    for (const scope of ["alltime", "weekly"] as const) {
       const board = await t.query(api.trivia.getLeaderboard, { scope });
       expect(board.length).toBe(2);
       expect(board[0].displayName).toBe("Alpha");
       expect(board[0].rank).toBe(1);
       expect(board[0].score).toBeGreaterThan(board[1].score);
+    }
+  });
+
+  test("the daily board lists daily-challenge runs only", async () => {
+    const t = setup();
+    const daily = t.withIdentity({ subject: "user_daily", nickname: "DailyDiva" });
+    const free = t.withIdentity({ subject: "user_free", nickname: "FreePlayer" });
+    await daily.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00001" });
+    await free.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00002" });
+
+    const dailyRun = await daily.mutation(api.trivia.startRun, { playerKey: "daily-board-00001", daily: true });
+    let key = dailyRun.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(daily, "daily-board-00001", dailyRun.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const freeRun = await free.mutation(api.trivia.startRun, { playerKey: "daily-board-00002" });
+    key = freeRun.question.key;
+    const scored = await answer(free, "daily-board-00002", freeRun.run.runId, key, true);
+    key = scored.nextQuestion!.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(free, "daily-board-00002", freeRun.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "daily" });
+    expect(board.length).toBe(1);
+    expect(board[0].displayName).toBe("DailyDiva");
+    // The free-play run still ranks on the broader boards.
+    const alltime = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(alltime.some((row) => row.displayName === "FreePlayer")).toBe(true);
+  });
+
+  test("a player with several finished runs gets one entry: their best", async () => {
+    const t = setup();
+    const grinder = t.withIdentity({ subject: "user_grinder", nickname: "Grinder" });
+    await grinder.mutation(api.trivia.ensurePlayer, { playerKey: "grind-key-000001" });
+
+    // Run 1: two correct answers, then out.
+    const runA = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
+    let key = runA.question.key;
+    for (let i = 0; i < 2; i++) {
+      const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, true);
+      key = result.nextQuestion!.key;
+    }
+    let bestScore = 0;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, false);
+      bestScore = result.run.score;
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    // Run 2: dies immediately with a lower score.
+    const runB = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
+    key = runB.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(grinder, "grind-key-000001", runB.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    // Free-play runs: dedup applies on the all-time and weekly boards (the
+    // daily board only lists daily-challenge runs, one per player by rule).
+    for (const scope of ["alltime", "weekly"] as const) {
+      const board = await t.query(api.trivia.getLeaderboard, { scope });
+      const mine = board.filter((row) => row.displayName === "Grinder");
+      expect(mine.length).toBe(1);
+      expect(mine[0].score).toBe(bestScore);
     }
   });
 
@@ -280,6 +389,8 @@ describe("leaderboards", () => {
     await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
     const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
     let key = run.question.key;
+    const scored = await answer(troll, "troll-key-000001", run.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(troll, "troll-key-000001", run.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -401,6 +512,8 @@ describe("account identity", () => {
     await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
     const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
     let key = start.question.key;
+    const scored = await answer(asUser, "device-key-0004", start.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const r = await answer(asUser, "device-key-0004", start.run.runId, key, false);
       if (r.nextQuestion) key = r.nextQuestion.key;
@@ -428,14 +541,46 @@ describe("anti-cheat", () => {
     expect(board.some((row) => row.displayName === "SpeedBot")).toBe(false);
   });
 
+  test("a flagged run never sets the profile's best score or a personal best", async () => {
+    const t = setup();
+    const bot = t.withIdentity({ subject: "user_bot2", nickname: "ScoreBot" });
+    await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000002" });
+    const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000002" });
+
+    // Score points at bot speed (flags the run), then die.
+    let key = start.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(bot, "bot-key-00000002", start.run.runId, key, true, 100);
+      key = result.nextQuestion!.key;
+    }
+    let last;
+    for (let i = 0; i < 3; i++) {
+      last = await answer(bot, "bot-key-00000002", start.run.runId, key, false, 100);
+      if (last.nextQuestion) key = last.nextQuestion.key;
+    }
+    expect(last!.run.status).toBe("dead");
+    expect(last!.run.score).toBeGreaterThan(0);
+    const gameOver = last!.events.find((e: { type: string }) => e.type === "gameOver") as {
+      isPersonalBest: boolean;
+    };
+    expect(gameOver.isPersonalBest).toBe(false);
+
+    const profile = await bot.query(api.trivia.getProfile, { playerKey: "bot-key-00000002" });
+    expect(profile!.totalRuns).toBe(1); // it still counts as played
+    expect(profile!.bestScore).toBe(0); // but never as a record
+    expect(profile!.deepestRound).toBe(0);
+  });
+
   test("a human-paced run is not flagged and ranks normally", async () => {
     const t = setup();
     const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });
     await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
     const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
     let key = start.question.key;
+    const scored = await answer(human, "human-key-0000001", start.run.runId, key, true); // default human pace
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
-      const r = await answer(human, "human-key-0000001", start.run.runId, key, false); // default human pace
+      const r = await answer(human, "human-key-0000001", start.run.runId, key, false);
       if (r.nextQuestion) key = r.nextQuestion.key;
     }
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
