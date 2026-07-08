@@ -87,7 +87,7 @@ export default defineSchema({
     .index("by_playerId", ["playerId"])
     .index("by_player_date", ["playerId", "dateKey"])
     .index("by_leaderboard", ["status", "score"])
-    .index("by_daily_leaderboard", ["status", "dateKey", "score"])
+    .index("by_daily_leaderboard", ["status", "isDaily", "dateKey", "score"])
     .index("by_weekly_leaderboard", ["status", "weekKey", "score"]),
 
   // Unlocks only — achievement definitions live in data/trivia/achievements.json.

@@ -673,10 +673,14 @@ export const getLeaderboard = query({
         .order("desc")
         .take(window);
     } else if (args.scope === "daily") {
+      // The daily board is the daily CHALLENGE board: everyone plays the same
+      // seeded episode, so free-play runs don't belong on it.
       const dateKey = args.periodKey ?? dateKeyOf(now);
       runs = await ctx.db
         .query("triviaRuns")
-        .withIndex("by_daily_leaderboard", (q) => q.eq("status", "dead").eq("dateKey", dateKey))
+        .withIndex("by_daily_leaderboard", (q) =>
+          q.eq("status", "dead").eq("isDaily", true).eq("dateKey", dateKey),
+        )
         .order("desc")
         .take(window);
     } else {

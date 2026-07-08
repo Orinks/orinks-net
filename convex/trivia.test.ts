@@ -252,13 +252,43 @@ describe("leaderboards", () => {
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
 
-    for (const scope of ["alltime", "daily", "weekly"] as const) {
+    // Free-play runs rank on the all-time and weekly boards, not the daily
+    // (the daily board is reserved for the daily challenge).
+    for (const scope of ["alltime", "weekly"] as const) {
       const board = await t.query(api.trivia.getLeaderboard, { scope });
       expect(board.length).toBe(2);
       expect(board[0].displayName).toBe("Alpha");
       expect(board[0].rank).toBe(1);
       expect(board[0].score).toBeGreaterThan(board[1].score);
     }
+  });
+
+  test("the daily board lists daily-challenge runs only", async () => {
+    const t = setup();
+    const daily = t.withIdentity({ subject: "user_daily", nickname: "DailyDiva" });
+    const free = t.withIdentity({ subject: "user_free", nickname: "FreePlayer" });
+    await daily.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00001" });
+    await free.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00002" });
+
+    const dailyRun = await daily.mutation(api.trivia.startRun, { playerKey: "daily-board-00001", daily: true });
+    let key = dailyRun.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(daily, "daily-board-00001", dailyRun.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    const freeRun = await free.mutation(api.trivia.startRun, { playerKey: "daily-board-00002" });
+    key = freeRun.question.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(free, "daily-board-00002", freeRun.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+
+    const board = await t.query(api.trivia.getLeaderboard, { scope: "daily" });
+    expect(board.length).toBe(1);
+    expect(board[0].displayName).toBe("DailyDiva");
+    // The free-play run still ranks on the broader boards.
+    const alltime = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
+    expect(alltime.some((row) => row.displayName === "FreePlayer")).toBe(true);
   });
 
   test("a player with several finished runs gets one entry: their best", async () => {
@@ -288,7 +318,9 @@ describe("leaderboards", () => {
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
 
-    for (const scope of ["alltime", "daily", "weekly"] as const) {
+    // Free-play runs: dedup applies on the all-time and weekly boards (the
+    // daily board only lists daily-challenge runs, one per player by rule).
+    for (const scope of ["alltime", "weekly"] as const) {
       const board = await t.query(api.trivia.getLeaderboard, { scope });
       const mine = board.filter((row) => row.displayName === "Grinder");
       expect(mine.length).toBe(1);
