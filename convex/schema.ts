@@ -40,6 +40,10 @@ export default defineSchema({
     lastSeenAt: v.number(),
     totalRuns: v.number(),
     bestScore: v.number(),
+    // Snapshot of the run that set bestScore, shown on the all-time board.
+    // Optional: rows predating the fields fall back to deepestRound/lastSeenAt.
+    bestRunRound: v.optional(v.number()),
+    bestRunAt: v.optional(v.number()),
     deepestRound: v.number(),
     totalCorrect: v.number(),
     totalAnswered: v.number(),
@@ -50,7 +54,8 @@ export default defineSchema({
   })
     .index("by_authSubject", ["authSubject"])
     .index("by_playerKey", ["playerKey"])
-    .index("by_displayName", ["displayName"]),
+    .index("by_displayName", ["displayName"])
+    .index("by_bestScore", ["bestScore"]),
 
   // One row per run. The server picks and stores currentQuestionKey so the
   // client never sees answers ahead of time; askedQuestionKeys prevents

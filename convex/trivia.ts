@@ -172,10 +172,10 @@ function normalizeForModeration(value: string): string {
     .replace(/7/g, "t")
     .replace(/[^a-z]/g, "");
 }
-function safeLeaderboardName(name: string, runId: Id<"triviaRuns">): string {
+function safeLeaderboardName(name: string, idForMask: string): string {
   const normalized = normalizeForModeration(name);
   if (PROFANITY_ROOTS.some((root) => normalized.includes(root))) {
-    return `Player ${runId.slice(-4)}`;
+    return `Player ${idForMask.slice(-4)}`;
   }
   return name;
 }
@@ -475,7 +475,11 @@ export const submitAnswer = mutation({
       // A flagged (automated-looking) run counts as played but never as a
       // best: it's excluded from leaderboards, so it can't set records either.
       if (!flagged) {
-        playerPatch.bestScore = Math.max(player.bestScore, score);
+        if (score > player.bestScore) {
+          playerPatch.bestScore = score;
+          playerPatch.bestRunRound = round;
+          playerPatch.bestRunAt = Date.now();
+        }
         playerPatch.deepestRound = Math.max(player.deepestRound, round);
       }
       await ctx.db.patch(args.runId, {
@@ -546,7 +550,11 @@ export const submitAnswer = mutation({
         events.push({ type: "gameOver", score, round, isPersonalBest: !flagged && score > player.bestScore });
         playerPatch.totalRuns = player.totalRuns + 1;
         if (!flagged) {
-          playerPatch.bestScore = Math.max(player.bestScore, score);
+          if (score > player.bestScore) {
+            playerPatch.bestScore = score;
+            playerPatch.bestRunRound = round;
+            playerPatch.bestRunAt = Date.now();
+          }
           playerPatch.deepestRound = Math.max(player.deepestRound, round);
         }
         await ctx.db.patch(args.runId, {
@@ -690,14 +698,44 @@ export const getLeaderboard = query({
     const window = Math.min(limit * 5 + 20, 500);
     const now = Date.now();
     const viewer = args.playerKey ? await getPlayer(ctx, args.playerKey) : null;
-    let runs: Doc<"triviaRuns">[];
+    const rows: Array<{
+      rank: number;
+      displayName: string;
+      score: number;
+      round: number;
+      isDaily: boolean;
+      isYou: boolean;
+      endedAt: number;
+    }> = [];
+
     if (args.scope === "alltime") {
-      runs = await ctx.db
-        .query("triviaRuns")
-        .withIndex("by_leaderboard", (q) => q.eq("status", "dead"))
+      // All-time is one row per player by construction: read profiles by best
+      // score instead of scanning runs. A run scan has a fixed window, and one
+      // grinder's runs could fill it and starve everyone else off the board.
+      // bestScore never includes flagged runs, and 0 means "no ranked score".
+      const players = await ctx.db
+        .query("triviaPlayers")
+        .withIndex("by_bestScore", (q) => q.gt("bestScore", 0))
         .order("desc")
         .take(window);
-    } else if (args.scope === "daily") {
+      for (const player of players) {
+        if (rows.length >= limit) break;
+        if (player.authSubject === undefined) continue; // accounts only
+        rows.push({
+          rank: rows.length + 1,
+          displayName: safeLeaderboardName(player.displayName, player._id),
+          score: player.bestScore,
+          round: player.bestRunRound ?? player.deepestRound,
+          isDaily: false,
+          isYou: viewer !== null && player._id === viewer._id,
+          endedAt: player.bestRunAt ?? player.lastSeenAt,
+        });
+      }
+      return rows;
+    }
+
+    let runs: Doc<"triviaRuns">[];
+    if (args.scope === "daily") {
       // The daily board is the daily CHALLENGE board: everyone plays the same
       // seeded episode, so free-play runs don't belong on it.
       const dateKey = args.periodKey ?? dateKeyOf(now);
@@ -722,15 +760,6 @@ export const getLeaderboard = query({
     // content-moderated by Clerk). Guests' typed names never reach here.
     // One entry per player: runs arrive sorted by score descending, so the
     // first run seen for a player is their best for the period.
-    const rows: Array<{
-      rank: number;
-      displayName: string;
-      score: number;
-      round: number;
-      isDaily: boolean;
-      isYou: boolean;
-      endedAt: number;
-    }> = [];
     const playerCache = new Map<Id<"triviaPlayers">, Doc<"triviaPlayers"> | null>();
     const rankedPlayers = new Set<Id<"triviaPlayers">>();
     for (const run of runs) {

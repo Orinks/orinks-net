@@ -271,7 +271,8 @@ describe("leaderboards", () => {
     await alpha.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0001" });
     await beta.mutation(api.trivia.ensurePlayer, { playerKey: "leader-player-0002" });
 
-    // Alpha scores then dies; Beta dies immediately.
+    // Alpha scores twice (with a streak bonus) then dies; Beta scores once
+    // then dies, so Alpha always outranks Beta on every board.
     const runA = await alpha.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
     let key = runA.question.key;
     for (let i = 0; i < 2; i++) {
@@ -284,6 +285,8 @@ describe("leaderboards", () => {
     }
     const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
     key = runB.question.key;
+    const scored = await answer(beta, "leader-player-0002", runB.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(beta, "leader-player-0002", runB.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -315,6 +318,8 @@ describe("leaderboards", () => {
     }
     const freeRun = await free.mutation(api.trivia.startRun, { playerKey: "daily-board-00002" });
     key = freeRun.question.key;
+    const scored = await answer(free, "daily-board-00002", freeRun.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(free, "daily-board-00002", freeRun.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -384,6 +389,8 @@ describe("leaderboards", () => {
     await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
     const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
     let key = run.question.key;
+    const scored = await answer(troll, "troll-key-000001", run.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(troll, "troll-key-000001", run.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -505,6 +512,8 @@ describe("account identity", () => {
     await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
     const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
     let key = start.question.key;
+    const scored = await answer(asUser, "device-key-0004", start.run.runId, key, true);
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
       const r = await answer(asUser, "device-key-0004", start.run.runId, key, false);
       if (r.nextQuestion) key = r.nextQuestion.key;
@@ -568,8 +577,10 @@ describe("anti-cheat", () => {
     await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
     const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
     let key = start.question.key;
+    const scored = await answer(human, "human-key-0000001", start.run.runId, key, true); // default human pace
+    key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
-      const r = await answer(human, "human-key-0000001", start.run.runId, key, false); // default human pace
+      const r = await answer(human, "human-key-0000001", start.run.runId, key, false);
       if (r.nextQuestion) key = r.nextQuestion.key;
     }
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
