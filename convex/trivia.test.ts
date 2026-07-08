@@ -36,6 +36,18 @@ async function newPlayer(t: ReturnType<typeof convexTest>, key = PLAYER, name = 
 // Accept either the base test client or a withIdentity accessor (both expose .mutation).
 type Caller = { mutation: ReturnType<typeof convexTest>["mutation"] };
 
+/** Completes a pending Signal Boost draft by taking the given (or first) offered boost. */
+async function draftBoost(
+  t: Caller,
+  playerKey: string,
+  runId: string,
+  result: { boosts: { offer: Array<{ key: string }> | null } },
+  boostKey?: string,
+) {
+  const key = boostKey ?? result.boosts.offer![0].key;
+  return t.mutation(api.trivia.chooseBoost, { playerKey, runId: runId as never, boostKey: key });
+}
+
 /** Answer the current question; pass correctly=true/false to steer the run. */
 async function answer(
   t: Caller,
@@ -170,7 +182,7 @@ describe("run lifecycle", () => {
     expect(story.finaleLines).toBeNull(); // no spoilers before the finale
   });
 
-  test("questions never repeat within a run", async () => {
+  test("questions never repeat within a run (across boost drafts)", async () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
@@ -178,11 +190,17 @@ describe("run lifecycle", () => {
     let questionKey = start.question.key;
     for (let i = 0; i < 15; i++) {
       const result = await answer(t, PLAYER, start.run.runId, questionKey, true);
-      if (!result.nextQuestion) break;
-      expect(seen.has(result.nextQuestion.key)).toBe(false);
-      seen.add(result.nextQuestion.key);
-      questionKey = result.nextQuestion.key;
+      let next = result.nextQuestion;
+      if (!next && result.run.status === "active" && result.run.drafting) {
+        const drafted = await draftBoost(t, PLAYER, start.run.runId, result);
+        next = drafted.question;
+      }
+      if (!next) break;
+      expect(seen.has(next.key)).toBe(false);
+      seen.add(next.key);
+      questionKey = next.key;
     }
+    expect(seen.size).toBeGreaterThan(10); // proves we crossed round boundaries
   });
 
   test("startRun abandons a previous active run", async () => {
@@ -450,15 +468,198 @@ describe("themed rounds", () => {
         categories.add(result.nextQuestion!.category);
         questionKey = result.nextQuestion!.key;
       } else {
-        // The 5th answer completes the round; a new theme is announced.
+        // The 5th answer completes the round; the next theme is unknown until
+        // the boost draft resolves (announced at draft exit, when it's true).
         const roundEvent = result.events.find(
           (e: { type: string }) => e.type === "roundComplete",
         ) as { nextCategory: string | null } | undefined;
         expect(roundEvent).toBeDefined();
-        expect(result.run.roundCategory).toBe(roundEvent!.nextCategory);
+        expect(roundEvent!.nextCategory).toBeNull();
+        expect(result.run.drafting).toBe(true);
+        const drafted = await draftBoost(t, PLAYER, start.run.runId, result);
+        expect(drafted.run.drafting).toBe(false);
+        expect(drafted.run.roundCategory).not.toBeNull();
+        expect(drafted.question!.category).toBe(drafted.run.roundCategory);
       }
     }
     expect(categories.size).toBe(1);
+  });
+});
+
+describe("signal boosts", () => {
+  /** Plays 5 correct answers to complete round 1 and reach the draft. */
+  async function completeRound1(t: Caller, playerKey: string) {
+    const start = await t.mutation(api.trivia.startRun, { playerKey });
+    let key = start.question.key;
+    let result;
+    for (let i = 0; i < 5; i++) {
+      result = await answer(t, playerKey, start.run.runId, key, true);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    return { start, result: result! };
+  }
+
+  test("completing a round posts a 3-boost offer instead of a question", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { result } = await completeRound1(t, PLAYER);
+    expect(result.nextQuestion).toBeNull();
+    expect(result.run.status).toBe("active");
+    expect(result.run.drafting).toBe(true);
+    const types = result.events.map((e: { type: string }) => e.type);
+    expect(types).toContain("roundComplete");
+    expect(types).toContain("boostOffer");
+    const offer = result.boosts.offer!;
+    expect(offer.length).toBe(3);
+    expect(new Set(offer.map((b) => b.key)).size).toBe(3);
+    for (const entry of offer) {
+      expect(entry.name.length).toBeGreaterThan(0);
+      expect(entry.rules.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("chooseBoost applies the boost and opens the themed round", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await completeRound1(t, PLAYER);
+    const pick = result.boosts.offer!.find((b) => b.kind !== "instant")!;
+    const drafted = await draftBoost(t, PLAYER, start.run.runId, result, pick.key);
+    expect(drafted.run.drafting).toBe(false);
+    expect(drafted.run.roundCategory).not.toBeNull();
+    expect(drafted.question).not.toBeNull();
+    expect(drafted.question!.category).toBe(drafted.run.roundCategory);
+    expect(drafted.boosts.owned.some((b) => b.key === pick.key)).toBe(true);
+    expect(drafted.boosts.offer).toBeNull();
+    expect(drafted.events.some((e: { type: string }) => e.type === "boostChosen")).toBe(true);
+  });
+
+  test("chooseBoost rejects a boost that isn't offered", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await completeRound1(t, PLAYER);
+    const offered = new Set(result.boosts.offer!.map((b) => b.key));
+    const notOffered = ["amplifier", "signal-lock", "night-owl-rates", "deep-cuts"].find(
+      (key) => !offered.has(key),
+    )!;
+    await expect(
+      t.mutation(api.trivia.chooseBoost, {
+        playerKey: PLAYER,
+        runId: start.run.runId as never,
+        boostKey: notOffered,
+      }),
+    ).rejects.toThrow(/isn't in tonight's offer/);
+  });
+
+  test("daily boost offers are identical for every player", async () => {
+    const t = setup();
+    await newPlayer(t, "boost-daily-0001", "Early");
+    await newPlayer(t, "boost-daily-0002", "Late");
+    const runs = [] as Array<{ playerKey: string; offer: string[] }>;
+    for (const playerKey of ["boost-daily-0001", "boost-daily-0002"]) {
+      const start = await t.mutation(api.trivia.startRun, { playerKey, daily: true });
+      let key = start.question.key;
+      let result;
+      for (let i = 0; i < 5; i++) {
+        result = await answer(t, playerKey, start.run.runId, key, true);
+        if (result.nextQuestion) key = result.nextQuestion.key;
+      }
+      runs.push({ playerKey, offer: result!.boosts.offer!.map((b: { key: string }) => b.key) });
+    }
+    expect(runs[0].offer).toEqual(runs[1].offer);
+  });
+
+  test("a mid-draft run resumes with the same offer", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { result } = await completeRound1(t, PLAYER);
+    const offerKeys = result.boosts.offer!.map((b) => b.key);
+    const active = await t.query(api.trivia.getActiveRun, { playerKey: PLAYER });
+    expect(active).not.toBeNull();
+    expect(active!.question).toBeNull();
+    expect(active!.run.drafting).toBe(true);
+    expect(active!.boosts.offer!.map((b: { key: string }) => b.key)).toEqual(offerKeys);
+  });
+
+  test("second wind absorbs the first miss of a round only", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "second-wind" });
+    const first = await answer(t, PLAYER, start.run.runId, start.question.key, false);
+    expect(first.run.lives).toBe(3); // absorbed
+    expect(
+      first.events.some(
+        (e: { type: string; key?: string }) => e.type === "boostTriggered" && e.key === "second-wind",
+      ),
+    ).toBe(true);
+    const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, false);
+    expect(second.run.lives).toBe(2); // only the first miss is free
+  });
+
+  test("amplifier raises the streak bonus to 40", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "amplifier" });
+    const first = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    const q2 = questionByKey.get(first.nextQuestion!.key)!;
+    const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, true);
+    expect(second.scoreDelta).toBe(100 * q2.difficulty + 40);
+  });
+
+  test("signal lock halves the streak instead of resetting it", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "signal-lock" });
+    let key = start.question.key;
+    for (let i = 0; i < 2; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, key, true);
+      key = result.nextQuestion!.key;
+    }
+    const wrong = await answer(t, PLAYER, start.run.runId, key, false);
+    expect(wrong.run.streak).toBe(1); // floor(2 / 2), not 0
+    expect(wrong.run.lives).toBe(2); // still costs the life
+  });
+
+  test("double broadcast doubles points and doubles life costs", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "double-broadcast" });
+    const q1 = questionByKey.get(start.question.key)!;
+    const first = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    expect(first.scoreDelta).toBe(100 * q1.difficulty * 2);
+    const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, false);
+    expect(second.run.lives).toBe(1); // 3 - 2
+  });
+
+  test("static filter eliminates two wrong choices and rejects them as answers", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "static-filter" });
+    const used = await t.mutation(api.trivia.useBoost, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      boostKey: "static-filter",
+    });
+    expect(used.eliminated.length).toBe(2);
+    expect(used.chargesLeft).toBe(1);
+    const question = questionByKey.get(start.question.key)!;
+    for (const index of used.eliminated) {
+      expect(index).not.toBe(question.answer);
+    }
+    think();
+    await expect(
+      t.mutation(api.trivia.submitAnswer, {
+        playerKey: PLAYER,
+        runId: start.run.runId as never,
+        choiceIndex: used.eliminated[0],
+      }),
+    ).rejects.toThrow(/eliminated/);
+    const result = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    expect(result.correct).toBe(true);
   });
 });
 
@@ -547,9 +748,10 @@ describe("anti-cheat", () => {
     await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000002" });
     const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000002" });
 
-    // Score points at bot speed (flags the run), then die.
+    // Score points at bot speed, then die fast — 5 fast answers flag the run
+    // and the third wrong lands before the round (and its draft) completes.
     let key = start.question.key;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const result = await answer(bot, "bot-key-00000002", start.run.runId, key, true, 100);
       key = result.nextQuestion!.key;
     }

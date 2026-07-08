@@ -2,6 +2,7 @@ import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } fr
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import { boostByKey, rollBoostOffer } from "./boosts";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 
@@ -14,6 +15,15 @@ const BASE_POINTS = 100; // per question, multiplied by difficulty
 const STREAK_BONUS = 25; // per prior consecutive correct answer
 const STREAK_BONUS_CAP = 10;
 const LEADERBOARD_LIMIT_MAX = 100;
+
+// --- Signal Boost tuning (catalog lives in data/trivia/boosts.json) ---
+const AMPLIFIER_STREAK_BONUS = 40; // replaces STREAK_BONUS
+const NIGHT_OWL_MULTIPLIER = 1.5; // difficulty 4-5 questions
+const DOUBLE_BROADCAST_MULTIPLIER = 2; // and wrong answers cost 2 lives
+const DOUBLE_BROADCAST_LIFE_COST = 2;
+const DEEP_CUTS_MULTIPLIER = 1.75; // and the difficulty band shifts up a tier
+const SPARE_FUSE_POINTS = 250; // consolation when already at max lives
+const STATIC_FILTER_ELIMINATIONS = 2;
 
 // --- Anti-cheat ---
 const MIN_ANSWER_MS = 900; // reading a question + 4 choices realistically takes longer
@@ -93,7 +103,12 @@ function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | u
 
 function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   const asked = new Set(run.askedQuestionKeys);
-  const [min, max] = difficultyRange(run.round);
+  let [min, max] = difficultyRange(run.round);
+  // Deep Cuts: this round draws from one difficulty tier higher.
+  if (run.activeRoundBoost?.key === "deep-cuts" && run.activeRoundBoost.round === run.round) {
+    min = Math.min(min + 1, 5);
+    max = Math.min(max + 1, 5);
+  }
   const unasked = questionBank.filter((q) => !asked.has(q.id));
   // Prefer: on-theme + in difficulty range → on-theme any difficulty →
   // in-range any theme → anything left.
@@ -214,6 +229,9 @@ async function unlockAchievement(
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
   | { type: "roundComplete"; round: number; nextCategory: string | null }
+  | { type: "boostOffer" }
+  | { type: "boostChosen"; key: string; name: string }
+  | { type: "boostTriggered"; key: string; name: string; detail: string }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -233,6 +251,33 @@ function publicRunState(run: Doc<"triviaRuns">) {
     questionsPerRound: QUESTIONS_PER_ROUND,
     questionNumber: run.askedQuestionKeys.length,
     roundCategory: run.roundCategory ?? null,
+    drafting: run.pendingBoostOffer !== undefined,
+  };
+}
+
+/** Client-safe boost state: owned boosts, the pending offer, filter marks. */
+function boostPublicState(run: Doc<"triviaRuns">) {
+  const owned = run.modifiers.flatMap((key) => {
+    const def = boostByKey.get(key);
+    if (!def) return [];
+    return [{
+      key,
+      name: def.name,
+      kind: def.kind,
+      rules: def.rules,
+      chargesLeft: def.kind === "charges" ? run.boostCharges?.[key] ?? 0 : null,
+    }];
+  });
+  const offer =
+    run.pendingBoostOffer?.map((key) => {
+      const def = boostByKey.get(key)!;
+      return { key, name: def.name, tagline: def.tagline, rules: def.rules, kind: def.kind };
+    }) ?? null;
+  return {
+    owned,
+    offer,
+    activeRoundBoost: run.activeRoundBoost ?? null,
+    eliminatedChoices: run.eliminatedChoices ?? [],
   };
 }
 
@@ -330,13 +375,18 @@ export const startRun = mutation({
       // The daily seed is deterministic, so reseeding an in-progress attempt
       // would deal the same questions again — a free preview. Resume instead.
       const activeDaily = todaysRuns.find((run) => run.isDaily && run.status === "active");
-      if (activeDaily?.currentQuestionKey) {
-        const question = questionByKey.get(activeDaily.currentQuestionKey);
-        if (question) {
+      if (activeDaily) {
+        // Resume mid-draft (the persisted offer, never re-rolled) or
+        // mid-question — whichever state the attempt was left in.
+        const question = activeDaily.currentQuestionKey
+          ? questionByKey.get(activeDaily.currentQuestionKey)
+          : undefined;
+        if (activeDaily.pendingBoostOffer || question) {
           await ctx.db.patch(player._id, { lastSeenAt: now });
           return {
             run: publicRunState(activeDaily),
-            question: sanitizeQuestion(question),
+            boosts: boostPublicState(activeDaily),
+            question: question ? sanitizeQuestion(question) : null,
             runNumber: player.totalRuns + 1,
             epilogueActive: player.finaleCompletedAt !== undefined,
             resumed: true,
@@ -402,6 +452,7 @@ export const startRun = mutation({
     await ctx.db.patch(player._id, { lastSeenAt: now });
     return {
       run: { ...publicRunState(run), questionNumber: 1, roundCategory: roundCategory ?? null },
+      boosts: boostPublicState(run),
       question: sanitizeQuestion(question),
       runNumber: player.totalRuns + 1,
       epilogueActive: player.finaleCompletedAt !== undefined,
@@ -427,6 +478,9 @@ export const submitAnswer = mutation({
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
+    if (run.eliminatedChoices?.includes(args.choiceIndex)) {
+      throw new Error("That choice was eliminated by Static Filter");
+    }
 
     // Anti-cheat: think time measured from the server's serve timestamp (the
     // client can't fake it). Superhuman-fast answers accumulate; enough of them
@@ -442,14 +496,67 @@ export const submitAnswer = mutation({
     let scoreDelta = 0;
     let tapesUnlocked = player.tapesUnlocked;
 
+    const ownedBoosts = new Set(run.modifiers);
+    const roundBoost =
+      run.activeRoundBoost && run.activeRoundBoost.round === round ? run.activeRoundBoost.key : null;
+
     if (correct) {
-      scoreDelta = BASE_POINTS * question.difficulty + STREAK_BONUS * Math.min(streak, STREAK_BONUS_CAP);
+      let base = BASE_POINTS * question.difficulty;
+      if (ownedBoosts.has("night-owl-rates") && question.difficulty >= 4) {
+        base *= NIGHT_OWL_MULTIPLIER;
+        events.push({
+          type: "boostTriggered",
+          key: "night-owl-rates",
+          name: "Night Owl Rates",
+          detail: "Night Owl Rates paid overtime on that one.",
+        });
+      }
+      const streakBonus = ownedBoosts.has("amplifier") ? AMPLIFIER_STREAK_BONUS : STREAK_BONUS;
+      let delta = base + streakBonus * Math.min(streak, STREAK_BONUS_CAP);
+      if (roundBoost === "double-broadcast") {
+        delta *= DOUBLE_BROADCAST_MULTIPLIER;
+        events.push({
+          type: "boostTriggered",
+          key: "double-broadcast",
+          name: "Double Broadcast",
+          detail: "Double Broadcast doubled it.",
+        });
+      } else if (roundBoost === "deep-cuts") {
+        delta *= DEEP_CUTS_MULTIPLIER;
+        events.push({
+          type: "boostTriggered",
+          key: "deep-cuts",
+          name: "Deep Cuts",
+          detail: "Deep Cuts premium applied.",
+        });
+      }
+      scoreDelta = Math.round(delta);
       score += scoreDelta;
       streak += 1;
       if (streak === 5) await unlockAchievement(ctx, player._id, "streak-5", events);
     } else {
-      lives -= 1;
-      streak = 0;
+      let lifeCost = roundBoost === "double-broadcast" ? DOUBLE_BROADCAST_LIFE_COST : 1;
+      if (ownedBoosts.has("second-wind") && wrongInRound === 0) {
+        lifeCost = 0;
+        events.push({
+          type: "boostTriggered",
+          key: "second-wind",
+          name: "Second Wind",
+          detail: "Second Wind absorbed the miss. No life lost.",
+        });
+      }
+      lives -= lifeCost;
+      if (ownedBoosts.has("signal-lock") && streak >= 2) {
+        streak = Math.floor(streak / 2);
+        events.push({
+          type: "boostTriggered",
+          key: "signal-lock",
+          name: "Signal Lock",
+          detail: `Signal Lock held your streak at ${streak}.`,
+        });
+      } else {
+        streak = 0;
+      }
       wrongInRound += 1;
     }
     answeredInRound += 1;
@@ -499,18 +606,22 @@ export const submitAnswer = mutation({
         await unlockAchievement(ctx, player._id, "night-shift", events);
       }
     } else {
-      if (answeredInRound >= QUESTIONS_PER_ROUND) {
-        // Round complete: advance and pick the next round's theme.
+      const roundJustCompleted = answeredInRound >= QUESTIONS_PER_ROUND;
+      if (roundJustCompleted) {
+        // Round complete: advance. The next theme is NOT picked here — the
+        // player drafts a Signal Boost first, and chooseBoost opens the round
+        // (so the theme is announced when it's actually true).
         const completedRound = round;
         round += 1;
-        roundCategory = pickRoundCategory(run, round);
-        events.push({ type: "roundComplete", round: completedRound, nextCategory: roundCategory ?? null });
+        roundCategory = undefined;
+        events.push({ type: "roundComplete", round: completedRound, nextCategory: null });
         if (wrongInRound === 0) await unlockAchievement(ctx, player._id, "perfect-round", events);
         if (lives === 1) await unlockAchievement(ctx, player._id, "comeback", events);
         answeredInRound = 0;
         wrongInRound = 0;
         if (round === 10) await unlockAchievement(ctx, player._id, "round-10", events);
-        if (completedRound % LIFE_EVERY_ROUNDS === 0 && lives < MAX_LIVES) {
+        const lifeCadence = ownedBoosts.has("tune-up") ? 2 : LIFE_EVERY_ROUNDS;
+        if (completedRound % lifeCadence === 0 && lives < MAX_LIVES) {
           lives += 1;
           events.push({ type: "lifeGained", lives });
         }
@@ -543,34 +654,12 @@ export const submitAnswer = mutation({
         }
       }
 
-      nextQuestion = pickQuestion({ ...run, round, roundCategory });
-      if (!nextQuestion) {
-        // Ran the entire bank dry — end the run as a victory lap.
-        events.push({ type: "bankExhausted" });
-        events.push({ type: "gameOver", score, round, isPersonalBest: !flagged && score > player.bestScore });
-        playerPatch.totalRuns = player.totalRuns + 1;
-        if (!flagged) {
-          if (score > player.bestScore) {
-            playerPatch.bestScore = score;
-            playerPatch.bestRunRound = round;
-            playerPatch.bestRunAt = Date.now();
-          }
-          playerPatch.deepestRound = Math.max(player.deepestRound, round);
-        }
-        await ctx.db.patch(args.runId, {
-          status: "dead",
-          score,
-          streak,
-          lives,
-          round,
-          answeredInRound,
-          wrongInRound,
-          fastAnswers,
-          flagged,
-          currentQuestionKey: undefined,
-          endedAt: Date.now(),
-        });
-      } else {
+      if (roundJustCompleted) {
+        // Between rounds: post the Signal Boost offer instead of a question.
+        // The offer is seeded so daily players all see the same three; it
+        // persists on the run and is never re-rolled (no offer fishing).
+        const offer = rollBoostOffer(run.modifiers, (salt) => runRoll(run, salt), round);
+        events.push({ type: "boostOffer" });
         await ctx.db.patch(args.runId, {
           score,
           streak,
@@ -579,13 +668,63 @@ export const submitAnswer = mutation({
           answeredInRound,
           wrongInRound,
           tapeDropped,
-          roundCategory,
+          roundCategory: undefined,
           fastAnswers,
           flagged,
+          pendingBoostOffer: offer,
+          currentQuestionKey: undefined,
           currentQuestionServedAt: answeredAt,
-          currentQuestionKey: nextQuestion.id,
-          askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
+          eliminatedChoices: undefined,
+          // A round-scoped boost from the previous draft has expired by now.
+          activeRoundBoost:
+            run.activeRoundBoost && run.activeRoundBoost.round >= round ? run.activeRoundBoost : undefined,
         });
+      } else {
+        nextQuestion = pickQuestion({ ...run, round, roundCategory });
+        if (!nextQuestion) {
+          // Ran the entire bank dry — end the run as a victory lap.
+          events.push({ type: "bankExhausted" });
+          events.push({ type: "gameOver", score, round, isPersonalBest: !flagged && score > player.bestScore });
+          playerPatch.totalRuns = player.totalRuns + 1;
+          if (!flagged) {
+            if (score > player.bestScore) {
+              playerPatch.bestScore = score;
+              playerPatch.bestRunRound = round;
+              playerPatch.bestRunAt = Date.now();
+            }
+            playerPatch.deepestRound = Math.max(player.deepestRound, round);
+          }
+          await ctx.db.patch(args.runId, {
+            status: "dead",
+            score,
+            streak,
+            lives,
+            round,
+            answeredInRound,
+            wrongInRound,
+            fastAnswers,
+            flagged,
+            currentQuestionKey: undefined,
+            endedAt: Date.now(),
+          });
+        } else {
+          await ctx.db.patch(args.runId, {
+            score,
+            streak,
+            lives,
+            round,
+            answeredInRound,
+            wrongInRound,
+            tapeDropped,
+            roundCategory,
+            fastAnswers,
+            flagged,
+            currentQuestionServedAt: answeredAt,
+            currentQuestionKey: nextQuestion.id,
+            askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
+            eliminatedChoices: undefined,
+          });
+        }
       }
     }
 
@@ -599,8 +738,136 @@ export const submitAnswer = mutation({
       scoreDelta,
       events,
       run: publicRunState(updatedRun),
+      boosts: boostPublicState(updatedRun),
       nextQuestion: nextQuestion ? sanitizeQuestion(nextQuestion) : null,
     };
+  },
+});
+
+/** Takes the drafted boost and opens the next round (theme + first question). */
+export const chooseBoost = mutation({
+  args: { playerKey: v.string(), runId: v.id("triviaRuns"), boostKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    if (run.status !== "active" || !run.pendingBoostOffer) throw new Error("No boost offer to choose from");
+    if (!run.pendingBoostOffer.includes(args.boostKey)) throw new Error("That boost isn't in tonight's offer");
+    const def = boostByKey.get(args.boostKey);
+    if (!def) throw new Error("Unknown boost");
+    const now = Date.now();
+    const events: GameEvent[] = [];
+
+    let lives = run.lives;
+    let score = run.score;
+    const patch: Partial<Doc<"triviaRuns">> = { pendingBoostOffer: undefined };
+    if (def.kind === "instant") {
+      // Spare Fuse: immediate life, or points when already topped up.
+      if (lives < MAX_LIVES) {
+        lives += 1;
+        patch.lives = lives;
+        events.push({ type: "lifeGained", lives });
+      } else {
+        score += SPARE_FUSE_POINTS;
+        patch.score = score;
+        events.push({
+          type: "boostTriggered",
+          key: def.key,
+          name: def.name,
+          detail: `Already at full lives — ${SPARE_FUSE_POINTS} points instead.`,
+        });
+      }
+    } else {
+      // Instant boosts are consumed on the spot and never join the loadout.
+      patch.modifiers = [...run.modifiers, args.boostKey];
+    }
+    if (def.kind === "charges") {
+      patch.boostCharges = {
+        ...(run.boostCharges ?? {}),
+        [args.boostKey]: (run.boostCharges?.[args.boostKey] ?? 0) + (def.charges ?? 1),
+      };
+    }
+    if (def.kind === "nextRound") {
+      patch.activeRoundBoost = { key: args.boostKey, round: run.round };
+    }
+    events.push({ type: "boostChosen", key: def.key, name: def.name });
+
+    // Open the round: pick the theme and serve the first question. The
+    // anti-cheat clock starts here, so draft time never counts as think time.
+    const draftedRun = { ...run, ...patch } as Doc<"triviaRuns">;
+    const roundCategory = pickRoundCategory(draftedRun, run.round);
+    const question = pickQuestion({ ...draftedRun, roundCategory });
+    if (!question) {
+      // Bank ran dry during the draft — victory lap, same as submitAnswer.
+      const flagged = run.flagged ?? false;
+      events.push({ type: "bankExhausted" });
+      events.push({ type: "gameOver", score, round: run.round, isPersonalBest: !flagged && score > player.bestScore });
+      const playerPatch: Partial<Doc<"triviaPlayers">> = {
+        lastSeenAt: now,
+        totalRuns: player.totalRuns + 1,
+      };
+      if (!flagged) {
+        if (score > player.bestScore) {
+          playerPatch.bestScore = score;
+          playerPatch.bestRunRound = run.round;
+          playerPatch.bestRunAt = now;
+        }
+        playerPatch.deepestRound = Math.max(player.deepestRound, run.round);
+      }
+      await ctx.db.patch(args.runId, { ...patch, status: "dead", currentQuestionKey: undefined, endedAt: now });
+      await ctx.db.patch(player._id, playerPatch);
+      const deadRun = (await ctx.db.get(args.runId))!;
+      return { run: publicRunState(deadRun), boosts: boostPublicState(deadRun), question: null, events };
+    }
+    await ctx.db.patch(args.runId, {
+      ...patch,
+      roundCategory,
+      currentQuestionKey: question.id,
+      askedQuestionKeys: [...run.askedQuestionKeys, question.id],
+      currentQuestionServedAt: now,
+      eliminatedChoices: undefined,
+    });
+    await ctx.db.patch(player._id, { lastSeenAt: now });
+    const updated = (await ctx.db.get(args.runId))!;
+    return {
+      run: publicRunState(updated),
+      boosts: boostPublicState(updated),
+      question: sanitizeQuestion(question),
+      events,
+    };
+  },
+});
+
+/** Activates a charge boost mid-question. v1: Static Filter only. */
+export const useBoost = mutation({
+  args: { playerKey: v.string(), runId: v.id("triviaRuns"), boostKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    if (run.status !== "active" || !run.currentQuestionKey) throw new Error("No question on the air");
+    if (args.boostKey !== "static-filter") throw new Error("That boost can't be activated");
+    const charges = run.boostCharges?.[args.boostKey] ?? 0;
+    if (charges <= 0) throw new Error("No uses left");
+    if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
+      throw new Error("Static Filter is already applied to this question");
+    }
+    const question = questionByKey.get(run.currentQuestionKey);
+    if (!question) throw new Error("Current question missing from bank");
+    const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
+    // Seeded picks: daily players who filter the same question see the same
+    // eliminations.
+    const eliminated: number[] = [];
+    for (let pick = 0; pick < STATIC_FILTER_ELIMINATIONS && wrongs.length > 0; pick++) {
+      const roll = runRoll(run, `filter:${run.currentQuestionKey}:${pick}`);
+      eliminated.push(...wrongs.splice(Math.floor(roll * wrongs.length), 1));
+    }
+    eliminated.sort((a, b) => a - b);
+    await ctx.db.patch(args.runId, {
+      eliminatedChoices: eliminated,
+      boostCharges: { ...(run.boostCharges ?? {}), [args.boostKey]: charges - 1 },
+    });
+    return { eliminated, chargesLeft: charges - 1 };
   },
 });
 
@@ -643,11 +910,22 @@ export const getActiveRun = query({
     const player = await getPlayer(ctx, args.playerKey);
     if (!player) return null;
     const run = await getActiveRunDoc(ctx, player._id);
-    if (!run || !run.currentQuestionKey) return null;
+    if (!run) return null;
+    if (run.pendingBoostOffer) {
+      // Mid-draft: the client re-enters the draft screen with the same offer.
+      return {
+        run: publicRunState(run),
+        boosts: boostPublicState(run),
+        question: null,
+        epilogueActive: player.finaleCompletedAt !== undefined,
+      };
+    }
+    if (!run.currentQuestionKey) return null;
     const question = questionByKey.get(run.currentQuestionKey);
     if (!question) return null;
     return {
       run: publicRunState(run),
+      boosts: boostPublicState(run),
       question: sanitizeQuestion(question),
       epilogueActive: player.finaleCompletedAt !== undefined,
     };
@@ -811,6 +1089,32 @@ export const getStory = query({
 });
 
 // --- Test utilities (admin-only; not callable from clients) ---
+
+/** Grants a boost to the active run outside the draft (tests/admin only). */
+export const grantBoost = internalMutation({
+  args: { playerKey: v.string(), boostKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    if (!player) throw new Error("Unknown player");
+    const run = await getActiveRunDoc(ctx, player._id);
+    if (!run) throw new Error("No active run");
+    const def = boostByKey.get(args.boostKey);
+    if (!def) throw new Error("Unknown boost");
+    const patch: Partial<Doc<"triviaRuns">> = {};
+    if (def.kind !== "instant") patch.modifiers = [...run.modifiers, args.boostKey];
+    if (def.kind === "charges") {
+      patch.boostCharges = {
+        ...(run.boostCharges ?? {}),
+        [args.boostKey]: (run.boostCharges?.[args.boostKey] ?? 0) + (def.charges ?? 1),
+      };
+    }
+    if (def.kind === "nextRound") {
+      patch.activeRoundBoost = { key: args.boostKey, round: run.round };
+    }
+    await ctx.db.patch(run._id, patch);
+    return { granted: args.boostKey };
+  },
+});
 
 export const wipePlayer = internalMutation({
   args: { playerKey: v.string() },

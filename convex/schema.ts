@@ -81,7 +81,14 @@ export default defineSchema({
     fastAnswers: v.optional(v.number()),
     flagged: v.optional(v.boolean()),
 
+    // Signal Boosts: modifiers holds owned boost keys. A non-null
+    // pendingBoostOffer means the run is drafting (between rounds, no
+    // current question); the offer persists so resume never re-rolls it.
     modifiers: v.array(v.string()),
+    pendingBoostOffer: v.optional(v.array(v.string())),
+    boostCharges: v.optional(v.record(v.string(), v.number())),
+    activeRoundBoost: v.optional(v.object({ key: v.string(), round: v.number() })),
+    eliminatedChoices: v.optional(v.array(v.number())),
     currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
     dateKey: v.string(),

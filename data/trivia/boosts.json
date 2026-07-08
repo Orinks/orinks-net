@@ -1,0 +1,68 @@
+{
+  "boosts": [
+    {
+      "key": "static-filter",
+      "name": "Static Filter",
+      "kind": "charges",
+      "charges": 2,
+      "tagline": "Two wrong answers, swallowed by the static.",
+      "rules": "Twice per run: remove two wrong choices from the current question."
+    },
+    {
+      "key": "second-wind",
+      "name": "Second Wind",
+      "kind": "passive",
+      "tagline": "Every hour of the night deserves a second wind.",
+      "rules": "The first wrong answer in each round costs no life."
+    },
+    {
+      "key": "amplifier",
+      "name": "Amplifier",
+      "kind": "passive",
+      "tagline": "Turn it up and let the streak sing.",
+      "rules": "Streak bonus raised from 25 to 40 points per consecutive correct answer."
+    },
+    {
+      "key": "signal-lock",
+      "name": "Signal Lock",
+      "kind": "passive",
+      "tagline": "A good signal bends before it breaks.",
+      "rules": "A wrong answer halves your streak instead of resetting it."
+    },
+    {
+      "key": "night-owl-rates",
+      "name": "Night Owl Rates",
+      "kind": "passive",
+      "tagline": "The hard stuff pays overtime after midnight.",
+      "rules": "Difficulty 4 and 5 questions score 50 percent extra."
+    },
+    {
+      "key": "double-broadcast",
+      "name": "Double Broadcast",
+      "kind": "nextRound",
+      "tagline": "Both towers at full power. Do not miss.",
+      "rules": "Next round only: double points, but wrong answers cost 2 lives."
+    },
+    {
+      "key": "deep-cuts",
+      "name": "Deep Cuts",
+      "kind": "nextRound",
+      "tagline": "B-sides and rarities, straight from the vault.",
+      "rules": "Next round only: harder questions, worth 75 percent extra points."
+    },
+    {
+      "key": "spare-fuse",
+      "name": "Spare Fuse",
+      "kind": "instant",
+      "tagline": "Hear that hum? The transmitter is back.",
+      "rules": "Gain a life right now. Already at full lives: 250 points instead."
+    },
+    {
+      "key": "tune-up",
+      "name": "Transmitter Tune-up",
+      "kind": "passive",
+      "tagline": "She purrs now. You did that.",
+      "rules": "Bonus life every 2nd completed round instead of every 3rd."
+    }
+  ]
+}
