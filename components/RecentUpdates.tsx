@@ -78,6 +78,12 @@ type RecentUpdatesProps = {
   includeMastodon?: boolean;
   includeSpotifyPlaylists?: boolean;
   intro?: string;
+  /** Section heading text; parameterized so other pages can host the feed. */
+  title?: string;
+  /** Section heading id — must be unique per page (a11y review). */
+  headingId?: string;
+  /** Open every category disclosure — for pages showing a single category. */
+  categoriesOpen?: boolean;
 };
 
 export async function RecentUpdates({
@@ -86,6 +92,9 @@ export async function RecentUpdates({
   includeMastodon = true,
   includeSpotifyPlaylists = false,
   intro = "Public activity from featured projects, recent music scrobbles, and Mastodon posts.",
+  title = "Recent updates",
+  headingId = "recent-updates",
+  categoriesOpen = false,
 }: RecentUpdatesProps = {}) {
   const categories = await getRecentUpdateCategories({
     includeCode,
@@ -95,10 +104,10 @@ export async function RecentUpdates({
   });
 
   return (
-    <section className="py-8" aria-labelledby="recent-updates">
+    <section className="py-8" aria-labelledby={headingId}>
       <div className="mb-4 max-w-3xl">
-        <h2 className="text-2xl font-bold text-ink" id="recent-updates">
-          Recent updates
+        <h2 className="text-2xl font-bold text-ink" id={headingId}>
+          {title}
         </h2>
         <p className="mt-2 leading-7 text-slate-700">{intro}</p>
       </div>
@@ -108,10 +117,12 @@ export async function RecentUpdates({
           <details
             className="rounded-lg border border-line bg-white p-5"
             key={category.id}
-            open={category.defaultOpen}
+            open={categoriesOpen || category.defaultOpen}
           >
-            <summary className="cursor-pointer list-none text-xl font-bold text-ink [&::-webkit-details-marker]:hidden">
-              {category.title}
+            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              {/* Heading inside the summary keeps category names reachable by
+                  heading navigation (h2 → h3 → h4, no skipped level). */}
+              <h3 className="inline text-xl font-bold text-ink">{category.title}</h3>
             </summary>
             {category.items.length > 0 ? (
               <ul className="mt-4 p-0">

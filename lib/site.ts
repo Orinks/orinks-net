@@ -7,6 +7,7 @@ export const site = {
 
 export const navItems = [
   { href: "/", label: "Home" },
+  { href: "/whats-new", label: "What's New" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/playlists", label: "Playlists" },

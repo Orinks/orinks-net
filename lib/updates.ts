@@ -103,17 +103,19 @@ export async function getRecentUpdateCategories({
     });
   }
 
-  categories.push({
-    id: "music",
-    title: "Music updates",
-    defaultOpen: includeSpotifyPlaylists,
-    items: sortByNewest(musicItems).slice(0, includeSpotifyPlaylists ? 10 : 5),
-    unavailableMessage: includeSpotifyPlaylists
-      ? "Spotify playlist updates are temporarily unavailable."
-      : process.env.LASTFM_API_KEY && process.env.LASTFM_USERNAME
-        ? "Music updates are temporarily unavailable."
-        : "Music updates need Last.fm credentials before they can appear here.",
-  });
+  if (includeLastFmTracks || includeSpotifyPlaylists) {
+    categories.push({
+      id: "music",
+      title: "Music updates",
+      defaultOpen: includeSpotifyPlaylists,
+      items: sortByNewest(musicItems).slice(0, includeSpotifyPlaylists ? 10 : 5),
+      unavailableMessage: includeSpotifyPlaylists
+        ? "Spotify playlist updates are temporarily unavailable."
+        : process.env.LASTFM_API_KEY && process.env.LASTFM_USERNAME
+          ? "Music updates are temporarily unavailable."
+          : "Music updates need Last.fm credentials before they can appear here.",
+    });
+  }
 
   if (includeMastodon) {
     categories.push({

@@ -1,0 +1,36 @@
+{
+  "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
+  "entries": [
+    {
+      "id": "2026-07-08-midnight-signal-roguelite",
+      "date": "2026-07-08",
+      "project": "The Midnight Signal",
+      "title": "The Midnight Signal becomes a full roguelite",
+      "body": [
+        "Five new systems landed in one night. After every round you now draft a Signal Boost — nine run-changing upgrades, from the Static Filter that removes two wrong choices to Double Broadcast's double-or-nothing round. Every third round a caller rings the studio: The Archivist or The Night Owl poses one hard bonus question, no lives at stake, with a reward of your choosing. Lose your last life and you hit Dead Air — one final question stands between you and sign-off. Streaks now store signal strength you can spend on the Producer's Whisper, and every night's daily broadcast plays under a shared condition, from Flat Rates to the Long Haul.",
+        "The nightly broadcast is the headline competition: one attempt per night, identical questions and conditions for every contestant, and a plain-text shareable result when your run ends."
+      ],
+      "link": { "href": "/midnight-signal", "label": "Play The Midnight Signal" }
+    },
+    {
+      "id": "2026-07-08-midnight-signal-leaderboards",
+      "date": "2026-07-08",
+      "project": "The Midnight Signal",
+      "title": "Fairer leaderboards",
+      "body": [
+        "Each contestant now appears once per board, ranked by their best run. The nightly board lists daily-challenge attempts only, walking away from a daily counts as that night's attempt, and automated-looking runs can no longer set records."
+      ],
+      "link": { "href": "/midnight-signal/leaderboard", "label": "See the leaderboard" }
+    },
+    {
+      "id": "2026-07-08-freight-fate-accounts",
+      "date": "2026-07-08",
+      "project": "Freight Fate",
+      "title": "Freight Fate online accounts",
+      "body": [
+        "Freight Fate's online features now run on the same site-wide account as the rest of the games: one sign-in, one driver profile, and control over whether you appear on the live drivers board."
+      ],
+      "link": { "href": "/freight-fate", "label": "About Freight Fate" }
+    }
+  ]
+}
