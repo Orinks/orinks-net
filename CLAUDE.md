@@ -1,0 +1,3 @@
+# orinks-net
+
+@AGENTS.md

@@ -19,6 +19,55 @@ permissions:
   contents: read
 
 jobs:
+  announcements:
+    name: Announcement check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository (full history for range diffs)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Require a What's New entry for user-facing features
+        env:
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BASE:-}" ]; then
+            RANGE="$BASE..$HEAD_SHA"
+          elif [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE" 2>/dev/null; then
+            RANGE="$BEFORE..$HEAD_SHA"
+          else
+            echo "No usable base commit (new branch or force push) — skipping announcement check."
+            exit 0
+          fi
+          echo "Checking commit range $RANGE"
+          # User-facing feature commits: conventional `feat` type, excluding
+          # internal scopes and commits explicitly marked [skip-news].
+          FEATS=$(git log --no-merges --format='%s' "$RANGE" \
+            | grep -Ei '^feat(\([^)]*\))?!?:' \
+            | grep -Evi '^feat\((ci|build|deps|dev|infra|test|tests|tooling)\)' \
+            | grep -vi '\[skip-news\]' || true)
+          if [ -z "$FEATS" ]; then
+            echo "No user-facing feature commits in range — nothing to require."
+            exit 0
+          fi
+          if git diff --name-only "$RANGE" -- data/whats-new.json | grep -q .; then
+            echo "Feature commits found and data/whats-new.json was updated. OK."
+            exit 0
+          fi
+          echo "::error::User-facing feature commits shipped without a What's New announcement."
+          echo "These feat commits are in this push/PR, but data/whats-new.json was not touched:"
+          echo "$FEATS"
+          echo ""
+          echo "Fix: add an entry to data/whats-new.json (format enforced by lib/whats-new.test.ts:"
+          echo "id 'YYYY-MM-DD-slug', strict date, descriptive link text ≥15 chars), or append"
+          echo "[skip-news] to the commit subject if the feature is genuinely not user-facing."
+          exit 1
+
   validate:
     name: Validate
     runs-on: ubuntu-latest
