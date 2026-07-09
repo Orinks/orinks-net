@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
@@ -29,6 +30,13 @@ function useAnnouncer() {
   const announceError = useCallback((message: string) => announce(setError, message), [announce]);
 
   return { politeStatus, errorStatus, announcePolite, announceError };
+}
+
+function isNameTaken(error: unknown) {
+  return (
+    error instanceof ConvexError &&
+    (error.data as { code?: string } | undefined)?.code === "name_taken"
+  );
 }
 
 export function FreightFateSetupClient() {
@@ -148,8 +156,17 @@ function DriverSetup() {
       } else {
         announcePolite("Changes saved.");
       }
-    } catch {
-      announceError("Save failed. Your changes were not applied. Please try again.");
+    } catch (error) {
+      if (isNameTaken(error)) {
+        // Exactly the client-side validation pattern above: inline error on
+        // the field plus a focus move, which itself reads the label, invalid
+        // state, and error text. No live-region announcement here -- it
+        // would fire a frame later and cut that reading off.
+        setNameError("That driver name is already taken. Choose a different name.");
+        requestAnimationFrame(() => nameRef.current?.focus());
+      } else {
+        announceError("Save failed. Your changes were not applied. Please try again.");
+      }
     } finally {
       setPending(false);
     }
