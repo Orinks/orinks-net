@@ -65,6 +65,9 @@ export default defineSchema({
     seed: v.string(),
     status: v.union(v.literal("active"), v.literal("dead"), v.literal("abandoned")),
     isDaily: v.boolean(),
+    // Daily broadcast condition (mutator), seeded from the date — identical
+    // for every player that night. Free-play runs have none.
+    mutatorKey: v.optional(v.string()),
     score: v.number(),
     round: v.number(),
     lives: v.number(),
@@ -81,7 +84,36 @@ export default defineSchema({
     fastAnswers: v.optional(v.number()),
     flagged: v.optional(v.boolean()),
 
+    // Signal Boosts: modifiers holds owned boost keys. A non-null
+    // pendingBoostOffer means the run is drafting (between rounds, no
+    // current question); the offer persists so resume never re-rolls it.
     modifiers: v.array(v.string()),
+    // Signal Strength: earned every 3rd consecutive correct answer (cap 3),
+    // spent on the Producer's Whisper (eliminate one wrong choice).
+    signalStrength: v.optional(v.number()),
+    // Dead Air: once per run, losing the last life serves one redemption
+    // question instead of ending the run. deadAirPending marks the current
+    // question as that redemption; deadAirUsed means the chance is spent.
+    deadAirUsed: v.optional(v.boolean()),
+    deadAirPending: v.optional(v.boolean()),
+    // Boss Calls: every 3rd completed round a named caller poses one bonus
+    // question (no lives at stake). phase "question" answers via
+    // answerBossCall; "reward" resolves via chooseBossReward, then the
+    // normal boost draft follows.
+    bossCall: v.optional(
+      v.object({
+        caller: v.string(), // "archivist" | "night-owl"
+        questionKey: v.string(),
+        servedAt: v.number(),
+        phase: v.union(v.literal("question"), v.literal("reward")),
+      }),
+    ),
+    pendingBoostOffer: v.optional(v.array(v.string())),
+    boostCharges: v.optional(v.record(v.string(), v.number())),
+    activeRoundBoost: v.optional(v.object({ key: v.string(), round: v.number() })),
+    eliminatedChoices: v.optional(v.array(v.number())),
+    // Which effect struck those choices out (labels differ client-side).
+    eliminatedBy: v.optional(v.union(v.literal("static-filter"), v.literal("whisper"))),
     currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
     dateKey: v.string(),

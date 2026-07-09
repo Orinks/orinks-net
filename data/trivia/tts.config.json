@@ -12,6 +12,22 @@
         "similarity_boost": 0.75,
         "style": 0.3
       }
+    },
+    "archivist": {
+      "voiceId": "pqHfZKP75CvOlQylNhV4",
+      "settings": {
+        "stability": 0.4,
+        "similarity_boost": 0.75,
+        "style": 0.3
+      }
+    },
+    "night-owl": {
+      "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+      "settings": {
+        "stability": 0.4,
+        "similarity_boost": 0.75,
+        "style": 0.3
+      }
     }
   }
 }
