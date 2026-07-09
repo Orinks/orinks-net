@@ -43,6 +43,12 @@ interface RunState {
   roundCategory: string | null;
   drafting: boolean;
   deadAir: boolean;
+  bossCall: {
+    caller: string;
+    callerName: string;
+    phase: "question" | "reward";
+    question: PublicQuestion | null;
+  } | null;
   mutator: { key: string; name: string; rules: string; intro: string } | null;
   dateKey: string;
 }
@@ -70,6 +76,8 @@ type GameEvent =
   | { type: "boostTriggered"; key: string; name: string; detail: string }
   | { type: "deadAir" }
   | { type: "deadAirSurvived" }
+  | { type: "bossCall"; caller: string; name: string }
+  | { type: "bossRewardChosen"; reward: string; detail: string }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -107,7 +115,7 @@ interface AnswerResult {
 }
 interface CaptionLine {
   seq: number;
-  speaker: "Clyde" | "Producer";
+  speaker: string; // "Clyde", "Producer", or a caller's name
   text: string;
 }
 interface StoryLine {
@@ -121,10 +129,19 @@ type Phase =
   | { kind: "intro"; runNumber: number; isDaily: boolean }
   | { kind: "question" }
   | { kind: "draft" }
-  | { kind: "feedback"; result: AnswerResult }
+  | { kind: "bossReward" }
+  | { kind: "feedback"; result: AnswerResult; callerContext?: string }
   | { kind: "tape"; tape: StoryLine; pending: GameEvent[]; result: AnswerResult }
   | { kind: "finale"; lines: StoryLine[]; pending: GameEvent[]; result: AnswerResult }
   | { kind: "gameover"; result: AnswerResult };
+
+// Boss Call rewards: self-contained button copy per the draft contract
+// (number, name, effect — no reliance on surrounding text).
+const BOSS_REWARDS: Array<{ key: "life" | "points" | "filter"; label: string }> = [
+  { key: "life", label: "Extra life. One more life, effective immediately — at full lives it becomes 250 points." },
+  { key: "points", label: "Station credit. Plus 300 points, on the spot." },
+  { key: "filter", label: "Static Filter charge. One more use of Static Filter — it removes two wrong choices on a question." },
+];
 
 function categoryLabel(category: string | null | undefined): string {
   if (!category) return "Mixed bag";
@@ -144,6 +161,8 @@ export function GameApp() {
   const submitAnswerMutation = useMutation(api.trivia.submitAnswer);
   const chooseBoostMutation = useMutation(api.trivia.chooseBoost);
   const activateBoostMutation = useMutation(api.trivia.useBoost);
+  const answerBossCallMutation = useMutation(api.trivia.answerBossCall);
+  const chooseBossRewardMutation = useMutation(api.trivia.chooseBossReward);
   const abandonRunMutation = useMutation(api.trivia.abandonRun);
   const completeFinaleMutation = useMutation(api.trivia.completeFinale);
 
@@ -157,6 +176,10 @@ export function GameApp() {
   const [chosenIndex, setChosenIndex] = useState<number | null>(null);
   const [boosts, setBoosts] = useState<BoostState | null>(null);
   const [draftChosen, setDraftChosen] = useState<string | null>(null); // double-activation guard, mirrors chosenIndex
+  const [rewardChosen, setRewardChosen] = useState<string | null>(null); // same guard for the boss reward screen
+  // Two choice screens can stack (reward → draft); a brief hold keeps a
+  // number key pressed for one from landing on the other (a11y consult).
+  const shortcutHoldUntil = useRef(0);
   const [copyFallback, setCopyFallback] = useState(false); // clipboard API failed: show selectable text
   const copyFallbackRef = useRef<HTMLTextAreaElement>(null);
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
@@ -237,18 +260,25 @@ export function GameApp() {
   /**
    * One voice per line (accessibility requirement): if a clip exists, play it
    * and keep the caption silent; if not, the caption text is announced so
-   * screen reader users miss nothing. Returns the text for optional bundling.
+   * screen reader users miss nothing. Every line carries its speaker's name
+   * in both text channels — captions and announcements — so callers are
+   * never misattributed to Clyde (a11y consult, Boss Calls).
    */
   const speakHostLine = useCallback(
-    (text: string, audioPath: string | undefined, bundle: string[] | null): Promise<void> => {
-      addCaption("Clyde", text);
+    (
+      text: string,
+      audioPath: string | undefined,
+      bundle: string[] | null,
+      speaker = "Clyde",
+    ): Promise<void> => {
+      addCaption(speaker, text);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
         return playHostClip(audioPath);
       }
       if (bundle) {
-        bundle.push(`Clyde: ${text}`);
+        bundle.push(`${speaker}: ${text}`);
       } else {
-        announce(`Clyde: ${text}`);
+        announce(`${speaker}: ${text}`);
       }
       return Promise.resolve();
     },
@@ -262,6 +292,16 @@ export function GameApp() {
       speakHostLine(bark.text, manifestRef.current.barks[bark.id] ?? manifestRef.current.story[bark.id], bundle);
     },
     [epilogueBarks, speakHostLine],
+  );
+
+  /** A caller's voiced line (their own ElevenLabs voice), speaker-attributed. */
+  const speakCallerLine = useCallback(
+    (callerKey: string, callerName: string, moment: string, bundle: string[] | null): Promise<void> => {
+      const bark = pickBark(`boss-${callerKey}-${moment}`, null);
+      if (!bark) return Promise.resolve();
+      return speakHostLine(bark.text, manifestRef.current.barks[bark.id], bundle, callerName);
+    },
+    [speakHostLine],
   );
 
   /** Producer output: device voice when enabled, otherwise the polite live region. */
@@ -325,9 +365,15 @@ export function GameApp() {
     if (!music?.started) return;
     if (phase.kind === "title" || phase.kind === "intro") {
       void music.playLoop(MUSIC_TRACKS.title);
-    } else if (phase.kind === "question" || phase.kind === "feedback" || phase.kind === "tape" || phase.kind === "draft") {
-      // The draft keeps the question bed running deliberately — the player is
-      // still mid-episode, just between rounds (explicit, not fallthrough).
+    } else if (
+      phase.kind === "question" ||
+      phase.kind === "feedback" ||
+      phase.kind === "tape" ||
+      phase.kind === "draft" ||
+      phase.kind === "bossReward"
+    ) {
+      // The draft and the caller's reward screen keep the question bed
+      // running deliberately — still mid-episode (explicit, not fallthrough).
       void music.playLoop(MUSIC_TRACKS.bed);
     } else if (phase.kind === "finale") {
       void music.playOnce(MUSIC_TRACKS.finale);
@@ -370,7 +416,24 @@ export function GameApp() {
         setDraftChosen(null);
         // Both resume paths re-anchor the night's condition (a11y consult).
         const conditions = started.run.mutator ? ` Conditions: ${started.run.mutator.name}.` : "";
-        if (started.resumed && !started.question) {
+        if (started.resumed && !started.question && started.run.bossCall) {
+          // The daily was left mid-boss-call: same caller, same question.
+          const boss = started.run.bossCall;
+          if (boss.phase === "question" && boss.question) {
+            setQuestion(boss.question);
+            setPhase({ kind: "question" });
+            announce(
+              `Resuming tonight's broadcast.${conditions} Caller on the line: ${boss.callerName}. One question. No lives at stake.`,
+            );
+            serveQuestionAudio(boss.question.key);
+          } else {
+            setRewardChosen(null);
+            setPhase({ kind: "bossReward" });
+            announce(
+              `Resuming tonight's broadcast.${conditions} ${boss.callerName} is pleased — choose your reward. 3 options.`,
+            );
+          }
+        } else if (started.resumed && !started.question) {
           // The daily was left mid-draft: re-enter the draft with the same
           // persisted offer (the server never re-rolls it).
           setPhase({ kind: "draft" });
@@ -447,6 +510,24 @@ export function GameApp() {
     setDraftChosen(null);
     // No show-open on resume: the player is mid-episode, get them back fast.
     const conditions = resumable.run.mutator ? ` Conditions: ${resumable.run.mutator.name}.` : "";
+    if (!resumable.question && resumable.run.bossCall) {
+      const boss = resumable.run.bossCall;
+      if (boss.phase === "question" && boss.question) {
+        setQuestion(boss.question);
+        setPhase({ kind: "question" });
+        announce(
+          `Resuming the broadcast.${conditions} Caller on the line: ${boss.callerName}. One question. No lives at stake.`,
+        );
+        serveQuestionAudio(boss.question.key);
+      } else {
+        setRewardChosen(null);
+        setPhase({ kind: "bossReward" });
+        announce(
+          `Resuming the broadcast.${conditions} ${boss.callerName} is pleased — choose your reward. 3 options.`,
+        );
+      }
+      return;
+    }
     if (!resumable.question && resumable.run.drafting) {
       setPhase({ kind: "draft" });
       announce(
@@ -473,9 +554,63 @@ export function GameApp() {
     serveQuestionAudio(question.key);
   }, [question, serveQuestionAudio]);
 
+  /** Boss Call answers: no scoring, no life risk, caller-voiced reactions. */
+  const answerCaller = useCallback(
+    async (index: number) => {
+      if (!run?.bossCall || !question || chosenIndex !== null || busy) return;
+      if (boosts?.eliminatedChoices.includes(index)) {
+        announce(`Choice ${index + 1} is eliminated.`);
+        return;
+      }
+      const { caller, callerName } = run.bossCall;
+      setBusy(true);
+      setChosenIndex(index);
+      try {
+        const result = (await answerBossCallMutation({
+          playerKey,
+          runId: run.runId,
+          choiceIndex: index,
+        })) as AnswerResult;
+        setRun(result.run);
+        setBoosts(result.boosts);
+        const bundle: string[] = [];
+        musicRef.current?.playEffect(result.correct ? STINGS.correct : STINGS.wrong);
+        // The caller reacts in their own voice — no Clyde bark, and never the
+        // last-life audio: no lives are at stake here (a11y consult).
+        void speakCallerLine(caller, callerName, result.correct ? "pleased" : "disappointed", bundle);
+        if (result.correct) {
+          bundle.push(`Correct! ${callerName} is pleased.`);
+        } else {
+          bundle.push(`Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`);
+          bundle.push("No harm done — no lives at stake on caller questions.");
+        }
+        if (result.explanation) bundle.push(result.explanation);
+        bundle.forEach((line) => announce(line));
+        // The caller framing must survive into the re-readable feedback
+        // panel — live run state forgets the call once it's answered.
+        setPhase({
+          kind: "feedback",
+          result,
+          callerContext: `Caller on the line: ${callerName} · one question, no lives at stake`,
+        });
+      } catch {
+        setChosenIndex(null);
+        announce("The signal dropped. Your answer didn't go through — try again.", "alert");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [announce, answerBossCallMutation, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, question, run, speakCallerLine],
+  );
+
   const chooseAnswer = useCallback(
     async (index: number) => {
       if (!run || !question || chosenIndex !== null || busy) return;
+      if (run.bossCall?.phase === "question") {
+        // The caller question rides the same panel but its own mutation.
+        await answerCaller(index);
+        return;
+      }
       if (boosts?.eliminatedChoices.includes(index)) {
         // Never a silent no-op: the player (or their shortcut key) hit a
         // choice Static Filter already removed.
@@ -547,6 +682,11 @@ export function GameApp() {
             // Passive boosts are never silent — their effect rides the same
             // feedback utterance (a11y review).
             bundle.push(event.detail);
+          } else if (event.type === "bossCall") {
+            // Name the voice before it ever speaks: system line here, the
+            // caller's own voiced intro after "Take the call" (a11y consult).
+            playBark("boss-call", bundle);
+            bundle.push(`Caller on the line: ${event.name}. One question. No lives at stake.`);
           } else if (event.type === "deadAir") {
             // After the status line, so "0 lives" is heard before the
             // reprieve (a11y consult: state first, twist second).
@@ -575,7 +715,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, submitAnswerMutation],
+    [announce, answerCaller, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, submitAnswerMutation],
   );
 
   const advanceAfterFeedback = useCallback(
@@ -635,6 +775,24 @@ export function GameApp() {
         setChosenIndex(null);
         setPhase({ kind: "question" });
         void flavorDone.then(() => serveQuestionAudio(nextKey));
+      } else if (result.run.bossCall?.phase === "question" && result.run.bossCall.question) {
+        // Taking the call: the caller question rides the normal question
+        // panel; the caller was named in the feedback bundle, and their
+        // voiced intro plays before Clyde relays the question clip.
+        const boss = result.run.bossCall;
+        const bossQuestion = boss.question!;
+        setQuestion(bossQuestion);
+        setQuestionNumber(result.run.questionNumber);
+        setChosenIndex(null);
+        setPhase({ kind: "question" });
+        announce(`Caller on the line: ${boss.callerName}. One question. No lives at stake.`);
+        void speakCallerLine(boss.caller, boss.callerName, "intro", null).then(() =>
+          serveQuestionAudio(bossQuestion.key),
+        );
+      } else if (result.run.bossCall?.phase === "reward") {
+        setRewardChosen(null);
+        setPhase({ kind: "bossReward" });
+        announce("Choose your reward. 3 options.");
       } else if (result.run.status === "active" && result.run.drafting) {
         // Between rounds: the Signal Boost draft. Short announcement only —
         // the option buttons carry their own rules text (a11y review).
@@ -648,7 +806,51 @@ export function GameApp() {
         setPhase({ kind: "gameover", result });
       }
     },
-    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakHostLine, story?.tapes],
+    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, story?.tapes],
+  );
+
+  /** Resolves the won Boss Call, then rolls straight into the boost draft. */
+  const pickReward = useCallback(
+    async (reward: "life" | "points" | "filter") => {
+      if (!run || rewardChosen !== null || busy) return;
+      setBusy(true);
+      setRewardChosen(reward);
+      try {
+        const res = await chooseBossRewardMutation({ playerKey, runId: run.runId, reward });
+        const nextRun = res.run as RunState;
+        const nextBoosts = res.boosts as BoostState;
+        setRun(nextRun);
+        setBoosts(nextBoosts);
+        const bundle: string[] = [];
+        // Reward outcome leads; the draft entry follows in the same
+        // utterance (a11y consult: never let the draft announcement fire
+        // without the reward outcome leading it).
+        for (const event of res.events as GameEvent[]) {
+          if (event.type === "lifeGained") {
+            musicRef.current?.playEffect(STINGS.lifeGained);
+            bundle.push(`Extra life taken. ${event.lives} lives.`);
+          } else if (event.type === "bossRewardChosen") {
+            bundle.push(event.detail);
+          }
+        }
+        setDraftChosen(null);
+        // Brief hold so a number key meant for the reward can't land on the
+        // draft that replaces it (a11y consult).
+        shortcutHoldUntil.current = Date.now() + 800;
+        setPhase({ kind: "draft" });
+        playBark("boost-offer", null);
+        bundle.push(
+          `Round ${nextRun.round - 1} complete. Choose your Signal Boost. ${nextBoosts.offer?.length ?? 3} options.`,
+        );
+        bundle.forEach((line) => announce(line));
+      } catch {
+        setRewardChosen(null);
+        announce("The signal dropped. Your pick didn't go through — try again.", "alert");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [announce, busy, chooseBossRewardMutation, playBark, playerKey, rewardChosen, run],
   );
 
   /** Takes the drafted boost; the server applies it and opens the next round. */
@@ -786,6 +988,9 @@ export function GameApp() {
         void replayHostClip();
         return;
       }
+      // Stacked choice screens: ignore number keys during the brief hold so a
+      // press meant for one screen can't land on its replacement.
+      if (Date.now() < shortcutHoldUntil.current) return;
       if (phase.kind === "question" && question && chosenIndex === null) {
         const num = Number.parseInt(event.key, 10);
         if (num >= 1 && num <= question.choices.length) {
@@ -800,10 +1005,17 @@ export function GameApp() {
           void pickBoost(boosts.offer[num - 1].key);
         }
       }
+      if (phase.kind === "bossReward" && rewardChosen === null) {
+        const num = Number.parseInt(event.key, 10);
+        if (num >= 1 && num <= BOSS_REWARDS.length) {
+          event.preventDefault();
+          void pickReward(BOSS_REWARDS[num - 1].key);
+        }
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [boosts?.offer, chooseAnswer, chosenIndex, draftChosen, phase.kind, pickBoost, question, replayHostClip, settings?.numberShortcuts]);
+  }, [boosts?.offer, chooseAnswer, chosenIndex, draftChosen, phase.kind, pickBoost, pickReward, question, replayHostClip, rewardChosen, settings?.numberShortcuts]);
 
   const toggleHostPaused = useCallback(() => {
     setHostPaused((prev) => {
@@ -985,7 +1197,7 @@ export function GameApp() {
           The Producer (the show&apos;s second voice) can speak through your device&apos;s speech
           synthesis. It&apos;s off by default — screen reader users usually prefer announcements
           through their own screen reader. Keyboard shortcuts: 1 to 4 answer questions and pick
-          Signal Boosts between rounds, R replays Clyde&apos;s last line. Both can be changed in
+          Signal Boosts between rounds, R replays the last spoken line. Both can be changed in
           Settings. Questions include material from{" "}
           <a className={`underline ${focusRing}`} href="https://opentdb.com">
             Open Trivia Database
@@ -1064,12 +1276,43 @@ export function GameApp() {
         </section>
       ) : null}
 
+      {phase.kind === "bossReward" && run?.bossCall?.phase === "reward" ? (
+        <section aria-labelledby="reward-heading" className="mt-6">
+          <h2
+            className="text-xl font-semibold text-amber-200"
+            id="reward-heading"
+            ref={panelHeadingRef}
+            tabIndex={-1}
+          >
+            {run.bossCall.callerName} is pleased — choose your reward
+          </h2>
+          <div aria-labelledby="reward-heading" className="mt-4 grid gap-3" role="group">
+            {BOSS_REWARDS.map((option, index) => (
+              <button
+                aria-disabled={rewardChosen !== null}
+                aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
+                className={`${secondaryButton} justify-start text-left`}
+                key={option.key}
+                onClick={() => void pickReward(option.key)}
+                type="button"
+              >
+                {index + 1}. {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {(phase.kind === "question" || phase.kind === "feedback") && question ? (
         <section aria-labelledby="question-heading" className="mt-6">
           <p className="text-sm text-zinc-400">
-            {run?.deadAir
-              ? `Dead air — one final question · Round ${run.round}`
-              : `Question ${questionNumber} · Round ${run?.round} · Theme: ${categoryLabel(run?.roundCategory)}`}
+            {phase.kind === "feedback" && phase.callerContext
+              ? phase.callerContext
+              : run?.bossCall?.phase === "question"
+                ? `Caller on the line: ${run.bossCall.callerName} · one question, no lives at stake`
+                : run?.deadAir
+                  ? `Dead air — one final question · Round ${run.round}`
+                  : `Question ${questionNumber} · Round ${run?.round} · Theme: ${categoryLabel(run?.roundCategory)}`}
           </p>
           <h2 className="mt-2 text-xl font-semibold" id="question-heading" ref={questionHeadingRef} tabIndex={-1}>
             {question.prompt}
@@ -1129,7 +1372,9 @@ export function GameApp() {
               {phase.result.correct
                 ? `You picked the right answer: ${question.choices[phase.result.correctIndex]}.`
                 : `Your answer: ${chosenIndex !== null ? question.choices[chosenIndex] : "none"}. Correct answer: ${question.choices[phase.result.correctIndex]}.`}
-              {phase.result.correct ? ` Plus ${phase.result.scoreDelta} points.` : ""}
+              {phase.result.correct && phase.result.scoreDelta > 0
+                ? ` Plus ${phase.result.scoreDelta} points.`
+                : ""}
             </p>
           ) : null}
           {phase.result.explanation ? <p className="mt-2 leading-7 text-zinc-400">{phase.result.explanation}</p> : null}
@@ -1142,9 +1387,17 @@ export function GameApp() {
               ? "Continue"
               : phase.result.run.deadAir
                 ? "Face the final question"
-                : phase.result.run.drafting
-                  ? "Choose your Signal Boost"
-                  : "Next question"}
+                : phase.result.events.some((e) => e.type === "tapeUnlocked" || e.type === "finaleReady")
+                  ? // A tape/finale screen serves first; promising the call or
+                    // draft here would name the wrong destination.
+                    "Continue"
+                  : phase.result.run.bossCall?.phase === "question"
+                    ? "Take the call"
+                    : phase.result.run.bossCall?.phase === "reward"
+                      ? "Choose your reward"
+                      : phase.result.run.drafting
+                        ? "Choose your Signal Boost"
+                        : "Next question"}
           </button>
         </section>
       ) : null}
@@ -1235,7 +1488,7 @@ export function GameApp() {
 
       <div className="mt-8 flex flex-wrap gap-3 border-t border-amber-700 pt-4">
         <button className={secondaryButton} onClick={() => void replayHostClip()} type="button">
-          Replay Clyde&apos;s last line
+          Replay the last spoken line
         </button>
         <button className={secondaryButton} onClick={toggleHostPaused} type="button">
           {hostPaused ? "Resume host audio" : "Pause host audio"}
@@ -1243,7 +1496,7 @@ export function GameApp() {
         <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
           {musicMuted ? "Unmute music" : "Mute music"}
         </button>
-        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" || phase.kind === "draft" ? (
+        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" || phase.kind === "draft" || phase.kind === "bossReward" ? (
           <button className={secondaryButton} onClick={() => void quitRun()} type="button">
             Quit run
           </button>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-09T00:28:52.583Z",
+  "generatedAt": "2026-07-09T00:43:36.244Z",
   "barks": {
     "run-intro-01": "/audio/trivia/barks/2abf47b123c6b243.mp3",
     "run-intro-02": "/audio/trivia/barks/44fb53a7ae47beb0.mp3",
@@ -82,7 +82,15 @@
     "dead-air-01": "/audio/trivia/barks/0e3916ae7d5368e4.mp3",
     "dead-air-02": "/audio/trivia/barks/fb73422ad96f8a00.mp3",
     "dead-air-survived-01": "/audio/trivia/barks/50122136d34d8c1e.mp3",
-    "dead-air-survived-02": "/audio/trivia/barks/9a1f47669e7cb1c2.mp3"
+    "dead-air-survived-02": "/audio/trivia/barks/9a1f47669e7cb1c2.mp3",
+    "boss-call-01": "/audio/trivia/barks/8a97ec7447928e9e.mp3",
+    "boss-call-02": "/audio/trivia/barks/7c4ea1b0860fff6e.mp3",
+    "boss-archivist-intro-01": "/audio/trivia/barks/d7dfd5dea9b4d72e.mp3",
+    "boss-archivist-pleased-01": "/audio/trivia/barks/7be63ce7bbbab7e3.mp3",
+    "boss-archivist-disappointed-01": "/audio/trivia/barks/8ecaa56a42250227.mp3",
+    "boss-night-owl-intro-01": "/audio/trivia/barks/a36df8b8716a8eed.mp3",
+    "boss-night-owl-pleased-01": "/audio/trivia/barks/f157e1fa9edd43c5.mp3",
+    "boss-night-owl-disappointed-01": "/audio/trivia/barks/ae513bc12e0a1a17.mp3"
   },
   "questions": {
     "gt-0001": "/audio/trivia/questions/3ed982afd571ac2b.mp3",

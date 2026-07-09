@@ -745,6 +745,119 @@ describe("daily mutators", () => {
   });
 });
 
+describe("boss calls", () => {
+  /** Plays three full rounds correctly (drafting between) up to the caller. */
+  async function playToBossCall(t: Caller, playerKey: string) {
+    const start = await t.mutation(api.trivia.startRun, { playerKey });
+    let key = start.question!.key;
+    let result;
+    for (let round = 1; round <= 3; round++) {
+      for (let i = 0; i < 5; i++) {
+        result = await answer(t, playerKey, start.run.runId, key, true);
+        if (result.nextQuestion) key = result.nextQuestion.key;
+      }
+      if (round < 3) {
+        const safePick = result!.boosts.offer!.find((b: { kind: string }) => b.kind !== "instant")!.key;
+        const drafted = await draftBoost(t, playerKey, start.run.runId, result!, safePick);
+        key = drafted.question!.key;
+      }
+    }
+    return { start, result: result! };
+  }
+
+  test("completing round 3 rings a caller instead of the draft", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { result } = await playToBossCall(t, PLAYER);
+    expect(result.nextQuestion).toBeNull();
+    expect(result.run.drafting).toBe(false);
+    expect(result.run.bossCall).not.toBeNull();
+    expect(result.run.bossCall!.phase).toBe("question");
+    expect(result.run.bossCall!.question).not.toBeNull();
+    expect(["The Archivist", "The Night Owl"]).toContain(result.run.bossCall!.callerName);
+    const types = result.events.map((e: { type: string }) => e.type);
+    expect(types).toContain("bossCall");
+    expect(types).not.toContain("boostOffer");
+  });
+
+  test("a correct caller answer opens the reward, then the draft follows", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await playToBossCall(t, PLAYER);
+    const bossQuestion = questionByKey.get(result.run.bossCall!.question!.key)!;
+    think();
+    const res = await t.mutation(api.trivia.answerBossCall, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      choiceIndex: bossQuestion.answer,
+    });
+    expect(res.correct).toBe(true);
+    expect(res.run.bossCall!.phase).toBe("reward");
+    expect(res.run.drafting).toBe(false);
+
+    const reward = await t.mutation(api.trivia.chooseBossReward, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      reward: "points",
+    });
+    expect(reward.run.score).toBe(res.run.score + 300);
+    expect(reward.run.bossCall).toBeNull();
+    expect(reward.run.drafting).toBe(true); // the commercial break still happens
+  });
+
+  test("a wrong caller answer costs nothing and the draft follows", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await playToBossCall(t, PLAYER);
+    const bossQuestion = questionByKey.get(result.run.bossCall!.question!.key)!;
+    const livesBefore = result.run.lives;
+    think();
+    const res = await t.mutation(api.trivia.answerBossCall, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      choiceIndex: (bossQuestion.answer + 1) % bossQuestion.choices.length,
+    });
+    expect(res.correct).toBe(false);
+    expect(res.run.lives).toBe(livesBefore); // no lives at stake
+    expect(res.run.bossCall).toBeNull();
+    expect(res.run.drafting).toBe(true);
+    expect(res.events.some((e: { type: string }) => e.type === "boostOffer")).toBe(true);
+  });
+
+  test("the filter reward adds a Static Filter charge", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await playToBossCall(t, PLAYER);
+    const bossQuestion = questionByKey.get(result.run.bossCall!.question!.key)!;
+    think();
+    await t.mutation(api.trivia.answerBossCall, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      choiceIndex: bossQuestion.answer,
+    });
+    const reward = await t.mutation(api.trivia.chooseBossReward, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      reward: "filter",
+    });
+    const filter = reward.boosts.owned.find((b: { key: string }) => b.key === "static-filter");
+    expect(filter).toBeDefined();
+    expect(filter!.chargesLeft).toBeGreaterThanOrEqual(1);
+  });
+
+  test("a run resumes mid-call with the same caller and question", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { result } = await playToBossCall(t, PLAYER);
+    const active = await t.query(api.trivia.getActiveRun, { playerKey: PLAYER });
+    expect(active).not.toBeNull();
+    expect(active!.question).toBeNull();
+    expect(active!.run.bossCall!.phase).toBe("question");
+    expect(active!.run.bossCall!.question!.key).toBe(result.run.bossCall!.question!.key);
+    expect(active!.run.bossCall!.callerName).toBe(result.run.bossCall!.callerName);
+  });
+});
+
 describe("dead air", () => {
   /** Burns all three lives; returns the response that entered Dead Air. */
   async function reachDeadAir(t: Caller, playerKey: string) {

@@ -26,6 +26,14 @@ const DEEP_CUTS_MULTIPLIER = 1.75; // and the difficulty band shifts up a tier
 const SPARE_FUSE_POINTS = 250; // consolation when already at max lives
 const STATIC_FILTER_ELIMINATIONS = 2;
 
+// --- Boss Call tuning ---
+const BOSS_CALL_EVERY_ROUNDS = 3;
+const BOSS_REWARD_POINTS = 300;
+const BOSS_CALLERS = [
+  { key: "archivist", name: "The Archivist" },
+  { key: "night-owl", name: "The Night Owl" },
+] as const;
+
 // --- Daily mutator tuning (catalog lives in data/trivia/mutators.json) ---
 const FLAT_RATES_BASE_MULTIPLIER = 2; // and the streak bonus is 0 that night
 const HEAVY_ROTATION_MULTIPLIER = 1.5; // and the difficulty band shifts up
@@ -168,6 +176,33 @@ function pickDeadAirQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   return null;
 }
 
+/** Boss Call question: the hardest unasked question available, seeded. */
+function pickBossQuestion(run: Doc<"triviaRuns">, forRound: number): BankQuestion | null {
+  const asked = new Set(run.askedQuestionKeys);
+  for (const minDifficulty of [5, 4, 1]) {
+    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
+    if (candidates.length > 0) {
+      const roll = runRoll(run, `boss-question:${forRound}`);
+      return candidates[Math.floor(roll * candidates.length)];
+    }
+  }
+  return null;
+}
+
+/** Client-safe boss call state (the question only while it's answerable). */
+function bossPublicState(run: Doc<"triviaRuns">) {
+  if (!run.bossCall) return null;
+  const caller = BOSS_CALLERS.find((c) => c.key === run.bossCall!.caller);
+  const question =
+    run.bossCall.phase === "question" ? questionByKey.get(run.bossCall.questionKey) : undefined;
+  return {
+    caller: run.bossCall.caller,
+    callerName: caller?.name ?? "A caller",
+    phase: run.bossCall.phase,
+    question: question ? sanitizeQuestion(question) : null,
+  };
+}
+
 async function getPlayerByKey(ctx: QueryCtx | MutationCtx, playerKey: string) {
   return ctx.db
     .query("triviaPlayers")
@@ -275,6 +310,8 @@ type GameEvent =
   | { type: "boostTriggered"; key: string; name: string; detail: string }
   | { type: "deadAir" }
   | { type: "deadAirSurvived" }
+  | { type: "bossCall"; caller: string; name: string }
+  | { type: "bossRewardChosen"; reward: string; detail: string }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -297,6 +334,7 @@ function publicRunState(run: Doc<"triviaRuns">) {
     roundCategory: run.roundCategory ?? null,
     drafting: run.pendingBoostOffer !== undefined,
     deadAir: run.deadAirPending === true,
+    bossCall: bossPublicState(run),
     mutator: mutator
       ? { key: mutator.key, name: mutator.name, rules: mutator.rules, intro: mutator.intro }
       : null,
@@ -432,7 +470,7 @@ export const startRun = mutation({
         const question = activeDaily.currentQuestionKey
           ? questionByKey.get(activeDaily.currentQuestionKey)
           : undefined;
-        if (activeDaily.pendingBoostOffer || question) {
+        if (activeDaily.pendingBoostOffer || activeDaily.bossCall || question) {
           await ctx.db.patch(player._id, { lastSeenAt: now });
           return {
             run: publicRunState(activeDaily),
@@ -749,12 +787,7 @@ export const submitAnswer = mutation({
       }
 
       if (roundJustCompleted) {
-        // Between rounds: post the Signal Boost offer instead of a question.
-        // The offer is seeded so daily players all see the same three; it
-        // persists on the run and is never re-rolled (no offer fishing).
-        const offer = rollBoostOffer(run.modifiers, (salt) => runRoll(run, salt), round);
-        events.push({ type: "boostOffer" });
-        await ctx.db.patch(args.runId, {
+        const betweenRounds: Partial<Doc<"triviaRuns">> = {
           score,
           streak,
           lives,
@@ -765,7 +798,6 @@ export const submitAnswer = mutation({
           roundCategory: undefined,
           fastAnswers,
           flagged,
-          pendingBoostOffer: offer,
           deadAirPending: undefined,
           currentQuestionKey: undefined,
           currentQuestionServedAt: answeredAt,
@@ -773,7 +805,36 @@ export const submitAnswer = mutation({
           // A round-scoped boost from the previous draft has expired by now.
           activeRoundBoost:
             run.activeRoundBoost && run.activeRoundBoost.round >= round ? run.activeRoundBoost : undefined,
-        });
+        };
+        const completedRoundNumber = round - 1;
+        const bossQuestion =
+          completedRoundNumber % BOSS_CALL_EVERY_ROUNDS === 0
+            ? pickBossQuestion(run, completedRoundNumber)
+            : null;
+        if (bossQuestion) {
+          // Every 3rd round: a caller rings the show with one bonus question
+          // (no lives at stake). The draft follows once the call resolves.
+          const roll = runRoll(run, `boss-caller:${completedRoundNumber}`);
+          const caller = BOSS_CALLERS[Math.floor(roll * BOSS_CALLERS.length)];
+          events.push({ type: "bossCall", caller: caller.key, name: caller.name });
+          await ctx.db.patch(args.runId, {
+            ...betweenRounds,
+            bossCall: {
+              caller: caller.key,
+              questionKey: bossQuestion.id,
+              servedAt: answeredAt,
+              phase: "question",
+            },
+            askedQuestionKeys: [...run.askedQuestionKeys, bossQuestion.id],
+          });
+        } else {
+          // Between rounds: post the Signal Boost offer instead of a question.
+          // The offer is seeded so daily players all see the same three; it
+          // persists on the run and is never re-rolled (no offer fishing).
+          const offer = rollBoostOffer(run.modifiers, (salt) => runRoll(run, salt), round);
+          events.push({ type: "boostOffer" });
+          await ctx.db.patch(args.runId, { ...betweenRounds, pendingBoostOffer: offer });
+        }
       } else {
         nextQuestion = pickQuestion({ ...run, round, roundCategory });
         if (!nextQuestion) {
@@ -942,21 +1003,24 @@ export const useBoost = mutation({
     const player = await requirePlayer(ctx, args.playerKey);
     const run = await ctx.db.get(args.runId);
     if (!run || run.playerId !== player._id) throw new Error("Run not found");
-    if (run.status !== "active" || !run.currentQuestionKey) throw new Error("No question on the air");
+    // The filter works on the regular question or a Boss Call question.
+    const filterTargetKey =
+      run.bossCall?.phase === "question" ? run.bossCall.questionKey : run.currentQuestionKey;
+    if (run.status !== "active" || !filterTargetKey) throw new Error("No question on the air");
     if (args.boostKey !== "static-filter") throw new Error("That boost can't be activated");
     const charges = run.boostCharges?.[args.boostKey] ?? 0;
     if (charges <= 0) throw new Error("No uses left");
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
       throw new Error("Static Filter is already applied to this question");
     }
-    const question = questionByKey.get(run.currentQuestionKey);
+    const question = questionByKey.get(filterTargetKey);
     if (!question) throw new Error("Current question missing from bank");
     const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
     // Seeded picks: daily players who filter the same question see the same
     // eliminations.
     const eliminated: number[] = [];
     for (let pick = 0; pick < STATIC_FILTER_ELIMINATIONS && wrongs.length > 0; pick++) {
-      const roll = runRoll(run, `filter:${run.currentQuestionKey}:${pick}`);
+      const roll = runRoll(run, `filter:${filterTargetKey}:${pick}`);
       eliminated.push(...wrongs.splice(Math.floor(roll * wrongs.length), 1));
     }
     eliminated.sort((a, b) => a - b);
@@ -965,6 +1029,133 @@ export const useBoost = mutation({
       boostCharges: { ...(run.boostCharges ?? {}), [args.boostKey]: charges - 1 },
     });
     return { eliminated, chargesLeft: charges - 1 };
+  },
+});
+
+/** Answers the Boss Call question. No lives at stake either way. */
+export const answerBossCall = mutation({
+  args: { playerKey: v.string(), runId: v.id("triviaRuns"), choiceIndex: v.number() },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    if (run.status !== "active" || run.bossCall?.phase !== "question") {
+      throw new Error("No caller on the line");
+    }
+    const question = questionByKey.get(run.bossCall.questionKey);
+    if (!question) throw new Error("Caller question missing from bank");
+    if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
+      throw new Error("choiceIndex out of range");
+    }
+    if (run.eliminatedChoices?.includes(args.choiceIndex)) {
+      throw new Error("That choice was eliminated by Static Filter");
+    }
+
+    // Same anti-cheat clock as regular questions.
+    const answeredAt = Date.now();
+    const elapsed = answeredAt - run.bossCall.servedAt;
+    const fastAnswers = (run.fastAnswers ?? 0) + (elapsed < MIN_ANSWER_MS ? 1 : 0);
+    const flagged = (run.flagged ?? false) || fastAnswers >= FAST_ANSWER_FLAG;
+
+    const events: GameEvent[] = [];
+    const correct = args.choiceIndex === question.answer;
+    if (correct) {
+      await ctx.db.patch(args.runId, {
+        fastAnswers,
+        flagged,
+        bossCall: { ...run.bossCall, phase: "reward" },
+        eliminatedChoices: undefined,
+      });
+    } else {
+      // The caller hangs up; the commercial break (draft) proceeds as normal.
+      const offer = rollBoostOffer(run.modifiers, (salt) => runRoll(run, salt), run.round);
+      events.push({ type: "boostOffer" });
+      await ctx.db.patch(args.runId, {
+        fastAnswers,
+        flagged,
+        bossCall: undefined,
+        pendingBoostOffer: offer,
+        eliminatedChoices: undefined,
+      });
+    }
+    await ctx.db.patch(player._id, {
+      lastSeenAt: answeredAt,
+      totalAnswered: player.totalAnswered + 1,
+      totalCorrect: player.totalCorrect + (correct ? 1 : 0),
+    });
+    const updated = (await ctx.db.get(args.runId))!;
+    // AnswerResult-compatible so the client reuses the feedback flow.
+    return {
+      correct,
+      correctIndex: question.answer,
+      explanation: question.explanation ?? null,
+      scoreDelta: 0,
+      events,
+      run: publicRunState(updated),
+      boosts: boostPublicState(updated),
+      nextQuestion: null,
+    };
+  },
+});
+
+/** Resolves a won Boss Call: one reward, then the round's draft proceeds. */
+export const chooseBossReward = mutation({
+  args: {
+    playerKey: v.string(),
+    runId: v.id("triviaRuns"),
+    reward: v.union(v.literal("life"), v.literal("points"), v.literal("filter")),
+  },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    if (run.status !== "active" || run.bossCall?.phase !== "reward") {
+      throw new Error("No reward waiting");
+    }
+    const events: GameEvent[] = [];
+    const patch: Partial<Doc<"triviaRuns">> = { bossCall: undefined };
+    if (args.reward === "life") {
+      if (run.lives < MAX_LIVES) {
+        patch.lives = run.lives + 1;
+        events.push({ type: "lifeGained", lives: run.lives + 1 });
+      } else {
+        patch.score = run.score + SPARE_FUSE_POINTS;
+        events.push({
+          type: "bossRewardChosen",
+          reward: "life",
+          detail: `Already at full lives — ${SPARE_FUSE_POINTS} points instead. Score ${run.score + SPARE_FUSE_POINTS}.`,
+        });
+      }
+    } else if (args.reward === "points") {
+      patch.score = run.score + BOSS_REWARD_POINTS;
+      events.push({
+        type: "bossRewardChosen",
+        reward: "points",
+        detail: `Plus ${BOSS_REWARD_POINTS} points. Score ${run.score + BOSS_REWARD_POINTS}.`,
+      });
+    } else {
+      const chargesAfter = (run.boostCharges?.["static-filter"] ?? 0) + 1;
+      patch.modifiers = run.modifiers.includes("static-filter")
+        ? run.modifiers
+        : [...run.modifiers, "static-filter"];
+      patch.boostCharges = { ...(run.boostCharges ?? {}), "static-filter": chargesAfter };
+      events.push({
+        type: "bossRewardChosen",
+        reward: "filter",
+        detail: `Static Filter charge added. Static Filter: ${chargesAfter} ${chargesAfter === 1 ? "use" : "uses"} left.`,
+      });
+    }
+    // The commercial break still happens: post the round's draft offer.
+    const offer = rollBoostOffer(
+      patch.modifiers ?? run.modifiers,
+      (salt) => runRoll(run, salt),
+      run.round,
+    );
+    events.push({ type: "boostOffer" });
+    await ctx.db.patch(args.runId, { ...patch, pendingBoostOffer: offer });
+    await ctx.db.patch(player._id, { lastSeenAt: Date.now() });
+    const updated = (await ctx.db.get(args.runId))!;
+    return { run: publicRunState(updated), boosts: boostPublicState(updated), events };
   },
 });
 
@@ -1008,8 +1199,9 @@ export const getActiveRun = query({
     if (!player) return null;
     const run = await getActiveRunDoc(ctx, player._id);
     if (!run) return null;
-    if (run.pendingBoostOffer) {
-      // Mid-draft: the client re-enters the draft screen with the same offer.
+    if (run.pendingBoostOffer || run.bossCall) {
+      // Mid-draft or mid-boss-call: the client re-enters the same screen
+      // (the offer and the call both persist on the run).
       return {
         run: publicRunState(run),
         boosts: boostPublicState(run),

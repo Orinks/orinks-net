@@ -93,6 +93,18 @@ export default defineSchema({
     // question as that redemption; deadAirUsed means the chance is spent.
     deadAirUsed: v.optional(v.boolean()),
     deadAirPending: v.optional(v.boolean()),
+    // Boss Calls: every 3rd completed round a named caller poses one bonus
+    // question (no lives at stake). phase "question" answers via
+    // answerBossCall; "reward" resolves via chooseBossReward, then the
+    // normal boost draft follows.
+    bossCall: v.optional(
+      v.object({
+        caller: v.string(), // "archivist" | "night-owl"
+        questionKey: v.string(),
+        servedAt: v.number(),
+        phase: v.union(v.literal("question"), v.literal("reward")),
+      }),
+    ),
     pendingBoostOffer: v.optional(v.array(v.string())),
     boostCharges: v.optional(v.record(v.string(), v.number())),
     activeRoundBoost: v.optional(v.object({ key: v.string(), round: v.number() })),
