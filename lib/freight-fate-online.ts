@@ -70,6 +70,108 @@ export function normalizeFreightFateEventText(value: unknown, label: string, max
   return text.slice(0, maxLength);
 }
 
+// Mirrors the game's profile-filename sanitizer (alnum, space, dash,
+// underscore) so a slot name round-trips between the local file and the
+// cloud slot unchanged.
+export function normalizeFreightFateSaveName(value: unknown) {
+  if (typeof value !== "string") {
+    throw new Error("Save name is required.");
+  }
+
+  const saveName = value
+    .trim()
+    .replace(/[^A-Za-z0-9 _-]+/g, "_")
+    .replace(/\s+/g, " ")
+    .slice(0, 64);
+
+  if (!saveName) {
+    throw new Error("Save name is required.");
+  }
+
+  return saveName;
+}
+
+// Matches MAX_SAVE_BYTES in convex/freightFateSaves.ts; checked here first so
+// an oversized upload fails with a clear 413 before reaching Convex.
+export const FREIGHT_FATE_MAX_SAVE_BYTES = 900 * 1024;
+
+export function decodeFreightFateSaveContent(value: unknown) {
+  if (typeof value !== "string" || !value) {
+    throw new Error("Save content is required.");
+  }
+
+  const bytes = Buffer.from(value, "base64");
+  // Reject strings that are not valid base64 rather than silently storing
+  // whatever Buffer salvaged from them.
+  if (bytes.length === 0 || Buffer.from(bytes).toString("base64").replace(/=+$/, "") !== value.replace(/=+$/, "")) {
+    throw new Error("Save content must be base64.");
+  }
+
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+export async function postFreightFateSave(input: {
+  driverId: string;
+  driverToken: string;
+  saveName: string;
+  saveVersion: number;
+  parentRevision: number | null;
+  contentHash: string;
+  content: ArrayBuffer;
+  summary: string;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.mutation(anyApi.freightFateSaves.uploadSave, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    saveName: normalizeFreightFateSaveName(input.saveName),
+    saveVersion: input.saveVersion,
+    parentRevision: input.parentRevision,
+    contentHash: input.contentHash,
+    content: input.content,
+    summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
+    now: Date.now(),
+  });
+}
+
+export async function listFreightFateSaves(input: { driverId: string; driverToken: string }) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.query(anyApi.freightFateSaves.listSaves, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+  });
+}
+
+export async function downloadFreightFateSave(input: {
+  driverId: string;
+  driverToken: string;
+  saveName: string;
+  revision?: number;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.query(anyApi.freightFateSaves.downloadSave, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    saveName: normalizeFreightFateSaveName(input.saveName),
+    ...(input.revision === undefined ? {} : { revision: input.revision }),
+  });
+}
+
 export async function postFreightFateDriverEvent(input: {
   driverId: string;
   driverToken: string;
