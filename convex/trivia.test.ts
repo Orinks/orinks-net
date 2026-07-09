@@ -48,6 +48,23 @@ async function draftBoost(
   return t.mutation(api.trivia.chooseBoost, { playerKey, runId: runId as never, boostKey: key });
 }
 
+/** Answers wrong (through the Dead Air redemption) until the run ends. */
+async function loseRun(t: Caller, playerKey: string, runId: string, startKey: string) {
+  let key = startKey;
+  let result;
+  for (let i = 0; i < 12; i++) {
+    result = await answer(t, playerKey, runId, key, false);
+    if (result.run.status === "dead") return result;
+    if (result.nextQuestion) {
+      key = result.nextQuestion.key;
+    } else if (result.run.drafting) {
+      const drafted = await draftBoost(t, playerKey, runId, result);
+      key = drafted.question!.key;
+    }
+  }
+  throw new Error("Run refused to die");
+}
+
 /** Answer the current question; pass correctly=true/false to steer the run. */
 async function answer(
   t: Caller,
@@ -134,24 +151,19 @@ describe("run lifecycle", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
 
-    let questionKey = start.question!.key;
-    let result;
-    for (let i = 0; i < 3; i++) {
-      result = await answer(t, PLAYER, start.run.runId, questionKey, false);
-      if (result.nextQuestion) questionKey = result.nextQuestion.key;
-    }
-    expect(result!.run.status).toBe("dead");
-    expect(result!.nextQuestion).toBeNull();
-    expect(result!.events.some((e: { type: string }) => e.type === "gameOver")).toBe(true);
+    const result = await loseRun(t, PLAYER, start.run.runId, start.question!.key);
+    expect(result.run.status).toBe("dead");
+    expect(result.nextQuestion).toBeNull();
+    expect(result.events.some((e: { type: string }) => e.type === "gameOver")).toBe(true);
     expect(
-      result!.events.some(
+      result.events.some(
         (e: { type: string; key?: string }) => e.type === "achievement" && e.key === "first-run",
       ),
     ).toBe(true);
 
     const profile = await t.query(api.trivia.getProfile, { playerKey: PLAYER });
     expect(profile!.totalRuns).toBe(1);
-    expect(profile!.totalAnswered).toBe(3);
+    expect(profile!.totalAnswered).toBe(4); // 3 misses + the Dead Air redemption
     expect(profile!.totalCorrect).toBe(0);
 
     const active = await t.query(api.trivia.getActiveRun, { playerKey: PLAYER });
@@ -270,11 +282,7 @@ describe("daily runs", () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
-    let questionKey = start.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(t, PLAYER, start.run.runId, questionKey, false);
-      if (result.nextQuestion) questionKey = result.nextQuestion.key;
-    }
+    await loseRun(t, PLAYER, start.run.runId, start.question!.key);
     await expect(
       t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true }),
     ).rejects.toThrow(/already aired/);
@@ -297,18 +305,11 @@ describe("leaderboards", () => {
       const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
     }
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(alpha, "leader-player-0001", runA.run.runId, key);
     const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
     key = runB.question!.key;
     const scored = await answer(beta, "leader-player-0002", runB.run.runId, key, true);
-    key = scored.nextQuestion!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(beta, "leader-player-0002", runB.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(beta, "leader-player-0002", runB.run.runId, scored.nextQuestion!.key);
 
     // Free-play runs rank on the all-time and weekly boards, not the daily
     // (the daily board is reserved for the daily challenge).
@@ -329,19 +330,10 @@ describe("leaderboards", () => {
     await free.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00002" });
 
     const dailyRun = await daily.mutation(api.trivia.startRun, { playerKey: "daily-board-00001", daily: true });
-    let key = dailyRun.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(daily, "daily-board-00001", dailyRun.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(daily, "daily-board-00001", dailyRun.run.runId, dailyRun.question!.key);
     const freeRun = await free.mutation(api.trivia.startRun, { playerKey: "daily-board-00002" });
-    key = freeRun.question!.key;
-    const scored = await answer(free, "daily-board-00002", freeRun.run.runId, key, true);
-    key = scored.nextQuestion!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(free, "daily-board-00002", freeRun.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    const scored = await answer(free, "daily-board-00002", freeRun.run.runId, freeRun.question!.key, true);
+    await loseRun(free, "daily-board-00002", freeRun.run.runId, scored.nextQuestion!.key);
 
     const board = await t.query(api.trivia.getLeaderboard, { scope: "daily" });
     expect(board.length).toBe(1);
@@ -363,20 +355,12 @@ describe("leaderboards", () => {
       const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
     }
-    let bestScore = 0;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, false);
-      bestScore = result.run.score;
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    const endA = await loseRun(grinder, "grind-key-000001", runA.run.runId, key);
+    const bestScore = endA.run.score;
 
     // Run 2: dies immediately with a lower score.
     const runB = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
-    key = runB.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(grinder, "grind-key-000001", runB.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(grinder, "grind-key-000001", runB.run.runId, runB.question!.key);
 
     // Free-play runs: dedup applies on the all-time and weekly boards (the
     // daily board only lists daily-challenge runs, one per player by rule).
@@ -392,11 +376,7 @@ describe("leaderboards", () => {
     const t = setup();
     await newPlayer(t, "guest-leader-0001", "SomeGuest");
     const start = await t.mutation(api.trivia.startRun, { playerKey: "guest-leader-0001" });
-    let key = start.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(t, "guest-leader-0001", start.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(t, "guest-leader-0001", start.run.runId, start.question!.key);
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
     expect(board.length).toBe(0);
   });
@@ -406,13 +386,8 @@ describe("leaderboards", () => {
     const troll = t.withIdentity({ subject: "user_troll", nickname: "n1gger" });
     await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
     const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
-    let key = run.question!.key;
-    const scored = await answer(troll, "troll-key-000001", run.run.runId, key, true);
-    key = scored.nextQuestion!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(troll, "troll-key-000001", run.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    const scored = await answer(troll, "troll-key-000001", run.run.runId, run.question!.key, true);
+    await loseRun(troll, "troll-key-000001", run.run.runId, scored.nextQuestion!.key);
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
     expect(board.length).toBe(1);
     expect(board[0].displayName).not.toContain("n1gger");
@@ -442,11 +417,7 @@ describe("story gating", () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
-    let key = start.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const result = await answer(t, PLAYER, start.run.runId, key, false);
-      if (result.nextQuestion) key = result.nextQuestion.key;
-    }
+    await loseRun(t, PLAYER, start.run.runId, start.question!.key);
     const wiped = await t.mutation(internal.trivia.wipePlayer, { playerKey: PLAYER });
     expect(wiped.wiped).toBe(true);
     expect(await t.query(api.trivia.getProfile, { playerKey: PLAYER })).toBeNull();
@@ -774,6 +745,65 @@ describe("daily mutators", () => {
   });
 });
 
+describe("dead air", () => {
+  /** Burns all three lives; returns the response that entered Dead Air. */
+  async function reachDeadAir(t: Caller, playerKey: string) {
+    const start = await t.mutation(api.trivia.startRun, { playerKey });
+    let key = start.question!.key;
+    let result;
+    for (let i = 0; i < 3; i++) {
+      result = await answer(t, playerKey, start.run.runId, key, false);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    return { start, result: result! };
+  }
+
+  test("losing the last life serves a redemption question, not a game over", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { result } = await reachDeadAir(t, PLAYER);
+    expect(result.run.status).toBe("active");
+    expect(result.run.deadAir).toBe(true);
+    expect(result.run.lives).toBe(0);
+    expect(result.nextQuestion).not.toBeNull();
+    const types = result.events.map((e: { type: string }) => e.type);
+    expect(types).toContain("deadAir");
+    expect(types).not.toContain("gameOver"); // mutually exclusive (a11y consult)
+  });
+
+  test("a correct redemption answer revives the run with one life", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await reachDeadAir(t, PLAYER);
+    const survived = await answer(t, PLAYER, start.run.runId, result.nextQuestion!.key, true);
+    expect(survived.run.status).toBe("active");
+    expect(survived.run.lives).toBe(1);
+    expect(survived.run.deadAir).toBe(false);
+    expect(survived.events.some((e: { type: string }) => e.type === "deadAirSurvived")).toBe(true);
+    expect(survived.nextQuestion).not.toBeNull();
+  });
+
+  test("a wrong redemption answer ends the run for real", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await reachDeadAir(t, PLAYER);
+    const done = await answer(t, PLAYER, start.run.runId, result.nextQuestion!.key, false);
+    expect(done.run.status).toBe("dead");
+    expect(done.events.some((e: { type: string }) => e.type === "gameOver")).toBe(true);
+  });
+
+  test("dead air fires only once per run", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const { start, result } = await reachDeadAir(t, PLAYER);
+    const survived = await answer(t, PLAYER, start.run.runId, result.nextQuestion!.key, true);
+    // Back at 1 life: the next miss ends the run immediately.
+    const done = await answer(t, PLAYER, start.run.runId, survived.nextQuestion!.key, false);
+    expect(done.run.status).toBe("dead");
+    expect(done.events.some((e: { type: string }) => e.type === "deadAir")).toBe(false);
+  });
+});
+
 describe("account identity", () => {
   const IDENTITY = { subject: "user_clerk_abc", nickname: "SignalHunter", name: "Ada Vale" };
 
@@ -792,11 +822,7 @@ describe("account identity", () => {
     // Play a losing run as a guest first (builds totalAnswered).
     await t.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002", displayName: "Guest" });
     const start = await t.mutation(api.trivia.startRun, { playerKey: "device-key-0002" });
-    let key = start.question!.key;
-    for (let i = 0; i < 3; i++) {
-      const r = await answer(t, "device-key-0002", start.run.runId, key, false);
-      if (r.nextQuestion) key = r.nextQuestion.key;
-    }
+    await loseRun(t, "device-key-0002", start.run.runId, start.question!.key);
     const guestProfile = await t.query(api.trivia.getProfile, { playerKey: "device-key-0002" });
     expect(guestProfile!.totalRuns).toBe(1);
 
@@ -823,13 +849,8 @@ describe("account identity", () => {
     const asUser = t.withIdentity(IDENTITY);
     await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
     const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
-    let key = start.question!.key;
-    const scored = await answer(asUser, "device-key-0004", start.run.runId, key, true);
-    key = scored.nextQuestion!.key;
-    for (let i = 0; i < 3; i++) {
-      const r = await answer(asUser, "device-key-0004", start.run.runId, key, false);
-      if (r.nextQuestion) key = r.nextQuestion.key;
-    }
+    const scored = await answer(asUser, "device-key-0004", start.run.runId, start.question!.key, true);
+    await loseRun(asUser, "device-key-0004", start.run.runId, scored.nextQuestion!.key);
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
     expect(board.some((row) => row.displayName === "SignalHunter")).toBe(true);
   });
@@ -843,9 +864,10 @@ describe("anti-cheat", () => {
     const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000001" });
     let key = start.question!.key;
     let result;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       // ~100ms per answer: impossible to read a question + four choices that fast.
       result = await answer(bot, "bot-key-00000001", start.run.runId, key, false, 100);
+      if (result.run.status === "dead") break; // 3 misses + the Dead Air redemption
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
     expect(result!.run.status).toBe("dead");
@@ -867,8 +889,9 @@ describe("anti-cheat", () => {
       key = result.nextQuestion!.key;
     }
     let last;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       last = await answer(bot, "bot-key-00000002", start.run.runId, key, false, 100);
+      if (last.run.status === "dead") break; // through the Dead Air redemption
       if (last.nextQuestion) key = last.nextQuestion.key;
     }
     expect(last!.run.status).toBe("dead");
@@ -889,13 +912,8 @@ describe("anti-cheat", () => {
     const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });
     await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
     const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
-    let key = start.question!.key;
-    const scored = await answer(human, "human-key-0000001", start.run.runId, key, true); // default human pace
-    key = scored.nextQuestion!.key;
-    for (let i = 0; i < 3; i++) {
-      const r = await answer(human, "human-key-0000001", start.run.runId, key, false);
-      if (r.nextQuestion) key = r.nextQuestion.key;
-    }
+    const scored = await answer(human, "human-key-0000001", start.run.runId, start.question!.key, true); // default human pace
+    await loseRun(human, "human-key-0000001", start.run.runId, scored.nextQuestion!.key);
     const board = await t.query(api.trivia.getLeaderboard, { scope: "alltime" });
     expect(board.some((row) => row.displayName === "RealPlayer")).toBe(true);
   });

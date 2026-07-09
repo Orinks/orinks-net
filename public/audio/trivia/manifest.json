@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-09T00:15:51.639Z",
+  "generatedAt": "2026-07-09T00:28:52.583Z",
   "barks": {
     "run-intro-01": "/audio/trivia/barks/2abf47b123c6b243.mp3",
     "run-intro-02": "/audio/trivia/barks/44fb53a7ae47beb0.mp3",
@@ -78,7 +78,11 @@
     "mutator-intro-thin-ice": "/audio/trivia/barks/1e3f5e470412a595.mp3",
     "mutator-intro-long-haul": "/audio/trivia/barks/ccf540218c83f89b.mp3",
     "mutator-intro-heavy-rotation": "/audio/trivia/barks/5fdcc43ce2dcf6a9.mp3",
-    "mutator-intro-single-signal": "/audio/trivia/barks/b242f29929eba5d9.mp3"
+    "mutator-intro-single-signal": "/audio/trivia/barks/b242f29929eba5d9.mp3",
+    "dead-air-01": "/audio/trivia/barks/0e3916ae7d5368e4.mp3",
+    "dead-air-02": "/audio/trivia/barks/fb73422ad96f8a00.mp3",
+    "dead-air-survived-01": "/audio/trivia/barks/50122136d34d8c1e.mp3",
+    "dead-air-survived-02": "/audio/trivia/barks/9a1f47669e7cb1c2.mp3"
   },
   "questions": {
     "gt-0001": "/audio/trivia/questions/3ed982afd571ac2b.mp3",

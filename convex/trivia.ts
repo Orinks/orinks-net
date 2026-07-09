@@ -155,6 +155,19 @@ function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   return candidates[Math.floor(roll * candidates.length)];
 }
 
+/** Dead Air redemption: the hardest unasked question available, seeded. */
+function pickDeadAirQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
+  const asked = new Set(run.askedQuestionKeys);
+  for (const minDifficulty of [5, 4, 1]) {
+    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
+    if (candidates.length > 0) {
+      const roll = runRoll(run, `dead-air:${run.askedQuestionKeys.length}`);
+      return candidates[Math.floor(roll * candidates.length)];
+    }
+  }
+  return null;
+}
+
 async function getPlayerByKey(ctx: QueryCtx | MutationCtx, playerKey: string) {
   return ctx.db
     .query("triviaPlayers")
@@ -260,6 +273,8 @@ type GameEvent =
   | { type: "boostOffer" }
   | { type: "boostChosen"; key: string; name: string }
   | { type: "boostTriggered"; key: string; name: string; detail: string }
+  | { type: "deadAir" }
+  | { type: "deadAirSurvived" }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -281,6 +296,7 @@ function publicRunState(run: Doc<"triviaRuns">) {
     questionNumber: run.askedQuestionKeys.length,
     roundCategory: run.roundCategory ?? null,
     drafting: run.pendingBoostOffer !== undefined,
+    deadAir: run.deadAirPending === true,
     mutator: mutator
       ? { key: mutator.key, name: mutator.name, rules: mutator.rules, intro: mutator.intro }
       : null,
@@ -616,10 +632,37 @@ export const submitAnswer = mutation({
       totalCorrect: player.totalCorrect + (correct ? 1 : 0),
     };
 
+    // Dead Air resolution: a correct redemption answer revives the run.
+    if (run.deadAirPending && correct) {
+      lives = 1;
+      events.push({ type: "deadAirSurvived" });
+    }
+
     let nextQuestion: BankQuestion | null = null;
     const dead = lives <= 0;
+    // Dead Air entry: the last life just went and the chance is unspent —
+    // one seeded, hardest-available question decides whether the run ends.
+    const deadAirQuestion = dead && !(run.deadAirUsed ?? false) ? pickDeadAirQuestion(run) : null;
 
-    if (dead) {
+    if (dead && deadAirQuestion) {
+      events.push({ type: "deadAir" });
+      nextQuestion = deadAirQuestion;
+      await ctx.db.patch(args.runId, {
+        score,
+        streak,
+        lives: 0,
+        answeredInRound,
+        wrongInRound,
+        fastAnswers,
+        flagged,
+        deadAirUsed: true,
+        deadAirPending: true,
+        currentQuestionServedAt: answeredAt,
+        currentQuestionKey: deadAirQuestion.id,
+        askedQuestionKeys: [...run.askedQuestionKeys, deadAirQuestion.id],
+        eliminatedChoices: undefined,
+      });
+    } else if (dead) {
       // Finalize the run and roll aggregates into the player profile.
       events.push({
         type: "gameOver",
@@ -647,6 +690,7 @@ export const submitAnswer = mutation({
         wrongInRound,
         fastAnswers,
         flagged,
+        deadAirPending: undefined,
         currentQuestionKey: undefined,
         endedAt: Date.now(),
       });
@@ -722,6 +766,7 @@ export const submitAnswer = mutation({
           fastAnswers,
           flagged,
           pendingBoostOffer: offer,
+          deadAirPending: undefined,
           currentQuestionKey: undefined,
           currentQuestionServedAt: answeredAt,
           eliminatedChoices: undefined,
@@ -754,6 +799,7 @@ export const submitAnswer = mutation({
             wrongInRound,
             fastAnswers,
             flagged,
+            deadAirPending: undefined,
             currentQuestionKey: undefined,
             endedAt: Date.now(),
           });
@@ -773,6 +819,7 @@ export const submitAnswer = mutation({
             currentQuestionKey: nextQuestion.id,
             askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
             eliminatedChoices: undefined,
+            deadAirPending: undefined,
           });
         }
       }

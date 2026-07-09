@@ -96,6 +96,11 @@
     { "id": "mutator-intro-thin-ice", "trigger": "mutator-intro", "text": "Careful out there, contestant — we're on Thin Ice. Two lives to start, but the booth tops you up every other round." },
     { "id": "mutator-intro-long-haul", "trigger": "mutator-intro", "text": "Stretch your legs, night owls. It's the Long Haul: seven questions a round, all the way down." },
     { "id": "mutator-intro-heavy-rotation", "trigger": "mutator-intro", "text": "We're spinning Heavy Rotation tonight. Nothing but the hard stuff — and it pays half again extra." },
-    { "id": "mutator-intro-single-signal", "trigger": "mutator-intro", "text": "One frequency, one theme, all night long. Tonight, we ride the Single Signal." }
+    { "id": "mutator-intro-single-signal", "trigger": "mutator-intro", "text": "One frequency, one theme, all night long. Tonight, we ride the Single Signal." },
+
+    { "id": "dead-air-01", "trigger": "dead-air", "text": "We've hit dead air, contestant. One question stands between you and sign-off. Make it count." },
+    { "id": "dead-air-02", "trigger": "dead-air", "text": "The board's gone dark and the tower is holding its breath. One last question keeps us on the air." },
+    { "id": "dead-air-survived-01", "trigger": "dead-air-survived", "text": "And we're BACK! You heard it here — the signal holds!" },
+    { "id": "dead-air-survived-02", "trigger": "dead-air-survived", "text": "Unbelievable! Out of the static and back on the air. The night goes on!" }
   ]
 }

@@ -88,6 +88,11 @@ export default defineSchema({
     // pendingBoostOffer means the run is drafting (between rounds, no
     // current question); the offer persists so resume never re-rolls it.
     modifiers: v.array(v.string()),
+    // Dead Air: once per run, losing the last life serves one redemption
+    // question instead of ending the run. deadAirPending marks the current
+    // question as that redemption; deadAirUsed means the chance is spent.
+    deadAirUsed: v.optional(v.boolean()),
+    deadAirPending: v.optional(v.boolean()),
     pendingBoostOffer: v.optional(v.array(v.string())),
     boostCharges: v.optional(v.record(v.string(), v.number())),
     activeRoundBoost: v.optional(v.object({ key: v.string(), round: v.number() })),

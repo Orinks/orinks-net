@@ -42,6 +42,7 @@ interface RunState {
   questionNumber: number;
   roundCategory: string | null;
   drafting: boolean;
+  deadAir: boolean;
   mutator: { key: string; name: string; rules: string; intro: string } | null;
   dateKey: string;
 }
@@ -67,6 +68,8 @@ type GameEvent =
   | { type: "boostOffer" }
   | { type: "boostChosen"; key: string; name: string }
   | { type: "boostTriggered"; key: string; name: string; detail: string }
+  | { type: "deadAir" }
+  | { type: "deadAirSurvived" }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -381,7 +384,10 @@ export function GameApp() {
           setPhase({ kind: "question" });
           serveQuestionAudio(started.question.key);
           announce(
-            `Resuming tonight's broadcast.${conditions} Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
+            started.run.deadAir
+              ? // The redemption question isn't themed; the stakes are the context.
+                `Resuming tonight's broadcast.${conditions} Dead air — one final question. Get it right and you stay on the air.`
+              : `Resuming tonight's broadcast.${conditions} Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
           );
         } else {
           // The show opens before the first question: title theme under Clyde's
@@ -450,7 +456,11 @@ export function GameApp() {
     }
     if (!resumable.question) return; // defensive: nothing to resume into
     setPhase({ kind: "question" });
-    if (conditions) {
+    if (resumable.run.deadAir) {
+      announce(
+        `Resuming the broadcast.${conditions} Dead air — one final question. Get it right and you stay on the air.`,
+      );
+    } else if (conditions) {
       announce(`Resuming the broadcast.${conditions}`);
     }
     serveQuestionAudio(resumable.question.key);
@@ -505,6 +515,16 @@ export function GameApp() {
           bundle.push(`Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`);
         }
         if (result.explanation) bundle.push(result.explanation);
+        if (result.events.some((e) => e.type === "deadAirSurvived")) {
+          // Revival lands BEFORE the canonical status line (a11y consult:
+          // bark first, status last).
+          music?.playEffect(STINGS.lifeGained);
+          playBark("dead-air-survived", bundle);
+          // No life count here — a survival that also completes a round can
+          // change lives again; the canonical status line right after is the
+          // authoritative count (a11y delta).
+          bundle.push("You're back on the air.");
+        }
         bundle.push(
           `Score ${result.run.score}. ${result.run.lives} ${result.run.lives === 1 ? "life" : "lives"}.` +
             (result.run.streak >= 2 ? ` Streak ${result.run.streak}.` : ""),
@@ -527,6 +547,12 @@ export function GameApp() {
             // Passive boosts are never silent — their effect rides the same
             // feedback utterance (a11y review).
             bundle.push(event.detail);
+          } else if (event.type === "deadAir") {
+            // After the status line, so "0 lives" is heard before the
+            // reprieve (a11y consult: state first, twist second).
+            music?.playEffect(STINGS.lastLife);
+            playBark("dead-air", bundle);
+            bundle.push("Dead air. One final question — get it right and you stay on the air.");
           } else if (event.type === "lifeGained") {
             bundle.push(`Life regained. ${event.lives} lives.`);
           } else if (event.type === "achievement") {
@@ -590,10 +616,12 @@ export function GameApp() {
       }
       if (result.nextQuestion) {
         // Occasional flavor between questions: an archive fact or a lead-in.
-        // Kept infrequent so it stays charming at question three hundred.
+        // Kept infrequent so it stays charming at question three hundred —
+        // and never before the Dead Air redemption (wrong moment for trivia).
         const roll = Math.random();
-        const flavor =
-          roll < 0.2
+        const flavor = result.run.deadAir
+          ? null
+          : roll < 0.2
             ? pickBark("fact", epilogueBarks)
             : roll < 0.5
               ? pickBark("question-lead-in", epilogueBarks)
@@ -790,7 +818,8 @@ export function GameApp() {
     const items = [
       { label: "Score", value: String(run.score) },
       { label: "Round", value: String(run.round) },
-      { label: "Lives", value: String(run.lives) },
+      // "0" alone reads like the run is over; the suffix carries the reprieve.
+      { label: "Lives", value: run.deadAir ? "0 — dead air" : String(run.lives) },
       { label: "Streak", value: String(run.streak) },
     ];
     if (boosts && boosts.owned.length > 0) {
@@ -1038,7 +1067,9 @@ export function GameApp() {
       {(phase.kind === "question" || phase.kind === "feedback") && question ? (
         <section aria-labelledby="question-heading" className="mt-6">
           <p className="text-sm text-zinc-400">
-            Question {questionNumber} · Round {run?.round} · Theme: {categoryLabel(run?.roundCategory)}
+            {run?.deadAir
+              ? `Dead air — one final question · Round ${run.round}`
+              : `Question ${questionNumber} · Round ${run?.round} · Theme: ${categoryLabel(run?.roundCategory)}`}
           </p>
           <h2 className="mt-2 text-xl font-semibold" id="question-heading" ref={questionHeadingRef} tabIndex={-1}>
             {question.prompt}
@@ -1109,9 +1140,11 @@ export function GameApp() {
           >
             {phase.result.events.some((e) => e.type === "gameOver" || e.type === "bankExhausted")
               ? "Continue"
-              : phase.result.run.drafting
-                ? "Choose your Signal Boost"
-                : "Next question"}
+              : phase.result.run.deadAir
+                ? "Face the final question"
+                : phase.result.run.drafting
+                  ? "Choose your Signal Boost"
+                  : "Next question"}
           </button>
         </section>
       ) : null}
