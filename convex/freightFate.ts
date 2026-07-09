@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { consumeFreightFateWrite } from "./freightFateRateLimit";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -7,6 +8,10 @@ const visibility = v.union(v.literal("public"), v.literal("private"), v.literal(
 // The game sends a heartbeat roughly every minute, so three missed beats
 // (game closed, went off duty, lost connection) removes the row.
 export const PRESENCE_TTL_MS = 3 * 60_000;
+export const PRESENCE_WRITE_LIMIT = 30;
+export const DRIVER_EVENT_WRITE_LIMIT = 120;
+export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
+export const MAX_DRIVER_EVENTS = 50;
 
 // --- Account-issued driver identity (Clerk) ---
 //
@@ -59,6 +64,18 @@ function driverIdFromName(displayName: string) {
 
 function normalizeDisplayName(value: string) {
   return value.trim().replace(/\s+/g, " ").slice(0, 48) || "Freight Fate Driver";
+}
+
+function clampOccurredAt(occurredAt: number, now: number) {
+  if (occurredAt > now + DRIVER_EVENT_CLOCK_SKEW_MS) {
+    return now;
+  }
+
+  if (occurredAt < now - DRIVER_EVENT_CLOCK_SKEW_MS) {
+    return now - DRIVER_EVENT_CLOCK_SKEW_MS;
+  }
+
+  return occurredAt;
 }
 
 export const getMyDriver = query({
@@ -187,6 +204,16 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "driver_not_found" };
     }
 
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "driver-event",
+      driverId: args.driverId,
+      now: args.now,
+      limit: DRIVER_EVENT_WRITE_LIMIT,
+    });
+    if (!allowed) {
+      return { ok: false as const, reason: "rate_limited" };
+    }
+
     if (driver.driverTokenHash !== args.driverTokenHash) {
       return { ok: false as const, reason: "unauthorized" };
     }
@@ -205,11 +232,20 @@ export const recordDriverEvent = mutation({
       eventId: args.eventId,
       eventType: args.eventType,
       summary: args.summary,
-      occurredAt: args.occurredAt,
+      occurredAt: clampOccurredAt(args.occurredAt, args.now),
       createdAt: args.now,
     });
 
     await ctx.db.patch(driver._id, { updatedAt: args.now });
+
+    const events = await ctx.db
+      .query("freightFateDriverEvents")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+      .collect();
+    events.sort((a, b) => b.occurredAt - a.occurredAt || b.createdAt - a.createdAt);
+    for (const row of events.slice(MAX_DRIVER_EVENTS)) {
+      await ctx.db.delete(row._id);
+    }
 
     return { ok: true as const, duplicate: false, driverId: args.driverId };
   },
@@ -231,6 +267,16 @@ export const updatePresence = mutation({
 
     if (!driver) {
       return { ok: false as const, reason: "driver_not_found" };
+    }
+
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "presence",
+      driverId: args.driverId,
+      now: args.now,
+      limit: PRESENCE_WRITE_LIMIT,
+    });
+    if (!allowed) {
+      return { ok: false as const, reason: "rate_limited" };
     }
 
     if (driver.driverTokenHash !== args.driverTokenHash) {
@@ -325,6 +371,10 @@ export const getDriverProfile = query({
       .unique();
 
     if (!driver) {
+      return null;
+    }
+
+    if (driver.visibility === "private") {
       return null;
     }
 

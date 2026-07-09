@@ -320,7 +320,7 @@ function DriverSetup() {
                 value={name}
               />
               <p className="text-sm text-slate-600" id="displayName-hint">
-                1 to 48 characters. Shown on your public profile and the drivers board.
+                1 to 48 characters. Where this name appears depends on the Profile visibility setting.
               </p>
               {nameError ? (
                 <p className="text-sm text-red-700" id="displayName-error">
@@ -405,7 +405,9 @@ function DriverSetup() {
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>
-                    View your public driver profile
+                    {myDriver.visibility === "unlisted"
+                      ? "View your unlisted driver profile"
+                      : "View your public driver profile"}
                   </Link>
                   .
                 </p>

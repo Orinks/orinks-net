@@ -201,4 +201,10 @@ export default defineSchema({
   })
     .index("by_driver", ["driverId"])
     .index("by_driver_event", ["driverId", "eventId"]),
+  freightFateRateLimits: defineTable({
+    key: v.string(),
+    count: v.number(),
+    windowStart: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 });
