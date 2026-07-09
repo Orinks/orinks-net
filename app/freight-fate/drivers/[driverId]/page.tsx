@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 import { getFreightFateDriverProfile, normalizeFreightFateDriverId } from "@/lib/freight-fate-online";
@@ -33,7 +32,21 @@ export default async function FreightFateDriverPage({ params, searchParams }: Dr
   const profile = await getFreightFateDriverProfile(driverId);
 
   if (!profile) {
-    notFound();
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title="Freight Fate Profile Unavailable"
+          intro="This driver profile is not available. It may be private, or the link may be incorrect."
+        />
+
+        <Section title="Profile status">
+          <p>
+            Private Freight Fate profiles can still receive game posts, but Orinks does not show their
+            driver details or road journal publicly.
+          </p>
+        </Section>
+      </div>
+    );
   }
 
   const confirmed = query.setup === "confirmed";

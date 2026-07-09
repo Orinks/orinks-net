@@ -36,6 +36,7 @@ const FAILURE_STATUS: Record<string, number> = {
   too_large: 413,
   too_many_slots: 409,
   hash_mismatch: 400,
+  rate_limited: 429,
 };
 
 export async function POST(request: Request) {
