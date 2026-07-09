@@ -90,6 +90,12 @@
     { "id": "boost-tagline-double-broadcast", "trigger": "boost-tagline", "text": "Double Broadcast. Both towers at full power. Do not miss." },
     { "id": "boost-tagline-deep-cuts", "trigger": "boost-tagline", "text": "Deep Cuts. B-sides and rarities, straight from the vault." },
     { "id": "boost-tagline-spare-fuse", "trigger": "boost-tagline", "text": "Spare Fuse. Hear that hum? The transmitter is back." },
-    { "id": "boost-tagline-tune-up", "trigger": "boost-tagline", "text": "Transmitter Tune-up. She purrs now. You did that." }
+    { "id": "boost-tagline-tune-up", "trigger": "boost-tagline", "text": "Transmitter Tune-up. She purrs now. You did that." },
+
+    { "id": "mutator-intro-flat-rates", "trigger": "mutator-intro", "text": "Tonight the accountants took over the booth. Flat Rates: no streak bonus, but every question pays double." },
+    { "id": "mutator-intro-thin-ice", "trigger": "mutator-intro", "text": "Careful out there, contestant — we're on Thin Ice. Two lives to start, but the booth tops you up every other round." },
+    { "id": "mutator-intro-long-haul", "trigger": "mutator-intro", "text": "Stretch your legs, night owls. It's the Long Haul: seven questions a round, all the way down." },
+    { "id": "mutator-intro-heavy-rotation", "trigger": "mutator-intro", "text": "We're spinning Heavy Rotation tonight. Nothing but the hard stuff — and it pays half again extra." },
+    { "id": "mutator-intro-single-signal", "trigger": "mutator-intro", "text": "One frequency, one theme, all night long. Tonight, we ride the Single Signal." }
   ]
 }

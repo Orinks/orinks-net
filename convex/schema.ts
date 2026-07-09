@@ -65,6 +65,9 @@ export default defineSchema({
     seed: v.string(),
     status: v.union(v.literal("active"), v.literal("dead"), v.literal("abandoned")),
     isDaily: v.boolean(),
+    // Daily broadcast condition (mutator), seeded from the date — identical
+    // for every player that night. Free-play runs have none.
+    mutatorKey: v.optional(v.string()),
     score: v.number(),
     round: v.number(),
     lives: v.number(),

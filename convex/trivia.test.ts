@@ -663,6 +663,117 @@ describe("signal boosts", () => {
   });
 });
 
+describe("daily mutators", () => {
+  test("dailies share one seeded mutator; free runs have none", async () => {
+    const t = setup();
+    await newPlayer(t, "mut-player-00001", "One");
+    await newPlayer(t, "mut-player-00002", "Two");
+    const a = await t.mutation(api.trivia.startRun, { playerKey: "mut-player-00001", daily: true });
+    const b = await t.mutation(api.trivia.startRun, { playerKey: "mut-player-00002", daily: true });
+    expect(a.run.mutator).not.toBeNull();
+    expect(a.run.mutator!.key).toBe(b.run.mutator!.key);
+    expect(a.run.mutator!.rules.length).toBeGreaterThan(0);
+    await newPlayer(t, "mut-player-00003", "Three");
+    const free = await t.mutation(api.trivia.startRun, { playerKey: "mut-player-00003" });
+    expect(free.run.mutator).toBeNull();
+  });
+
+  test("flat rates doubles base points and kills the streak bonus", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.setMutator, { playerKey: PLAYER, mutatorKey: "flat-rates" });
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
+    const q2 = questionByKey.get(first.nextQuestion!.key)!;
+    const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, true);
+    expect(second.scoreDelta).toBe(100 * q2.difficulty * 2); // doubled base, no streak bonus
+  });
+
+  test("long haul runs 7-question rounds", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.setMutator, { playerKey: PLAYER, mutatorKey: "long-haul" });
+    let key = start.question!.key;
+    let result;
+    for (let i = 0; i < 6; i++) {
+      result = await answer(t, PLAYER, start.run.runId, key, true);
+      expect(result.run.questionsPerRound).toBe(7);
+      // No round completion through answer 6...
+      expect(result.events.some((e: { type: string }) => e.type === "roundComplete")).toBe(false);
+      key = result.nextQuestion!.key;
+    }
+    // ...the 7th answer completes the round and opens the draft.
+    result = await answer(t, PLAYER, start.run.runId, key, true);
+    expect(result!.events.some((e: { type: string }) => e.type === "roundComplete")).toBe(true);
+    expect(result!.run.drafting).toBe(true);
+  });
+
+  test("heavy rotation shifts the difficulty band up a tier", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.setMutator, { playerKey: PLAYER, mutatorKey: "heavy-rotation" });
+    // (The shifted difficulty band steers pickQuestion but has on-theme
+    // fallbacks, so only the deterministic scoring premium is asserted.)
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
+    const q2 = questionByKey.get(first.nextQuestion!.key)!;
+    const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, true);
+    expect(second.scoreDelta).toBe(Math.round(100 * q2.difficulty * 1.5) + 25);
+  });
+
+  test("single signal locks every round to one theme", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.setMutator, { playerKey: PLAYER, mutatorKey: "single-signal" });
+    // Play two full rounds; the theme picked at each draft exit must match.
+    let key = start.question!.key;
+    const roundThemes: string[] = [];
+    let result;
+    for (let round = 0; round < 2; round++) {
+      for (let i = 0; i < 5; i++) {
+        result = await answer(t, PLAYER, start.run.runId, key, true);
+        if (result.nextQuestion) key = result.nextQuestion.key;
+      }
+      expect(result!.run.drafting).toBe(true);
+      const drafted = await draftBoost(t, PLAYER, start.run.runId, result!);
+      roundThemes.push(drafted.run.roundCategory as string);
+      key = drafted.question!.key;
+    }
+    expect(roundThemes[0]).toBe(roundThemes[1]);
+  });
+
+  test("thin ice restores a life every 2nd completed round", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    await t.mutation(internal.trivia.setMutator, { playerKey: PLAYER, mutatorKey: "thin-ice" });
+    let key = start.question!.key;
+    let result;
+    // Round 1: one wrong (drop to 2 lives), then finish the round.
+    result = await answer(t, PLAYER, start.run.runId, key, false);
+    key = result.nextQuestion!.key;
+    for (let i = 0; i < 4; i++) {
+      result = await answer(t, PLAYER, start.run.runId, key, true);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    expect(result!.run.drafting).toBe(true);
+    expect(result!.events.some((e: { type: string }) => e.type === "lifeGained")).toBe(false); // round 1: no cadence hit
+    // Take a non-instant boost — Spare Fuse would restore the life early and
+    // mask the cadence assertion below.
+    const safePick = result!.boosts.offer!.find((b: { kind: string }) => b.kind !== "instant")!.key;
+    const drafted = await draftBoost(t, PLAYER, start.run.runId, result!, safePick);
+    key = drafted.question!.key;
+    // Round 2 completes → cadence 2 grants the life back.
+    for (let i = 0; i < 5; i++) {
+      result = await answer(t, PLAYER, start.run.runId, key, true);
+      if (result.nextQuestion) key = result.nextQuestion.key;
+    }
+    expect(result!.events.some((e: { type: string }) => e.type === "lifeGained")).toBe(true);
+  });
+});
+
 describe("account identity", () => {
   const IDENTITY = { subject: "user_clerk_abc", nickname: "SignalHunter", name: "Ada Vale" };
 

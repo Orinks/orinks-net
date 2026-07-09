@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T23:58:33.613Z",
+  "generatedAt": "2026-07-09T00:15:51.639Z",
   "barks": {
     "run-intro-01": "/audio/trivia/barks/2abf47b123c6b243.mp3",
     "run-intro-02": "/audio/trivia/barks/44fb53a7ae47beb0.mp3",
@@ -73,7 +73,12 @@
     "boost-tagline-double-broadcast": "/audio/trivia/barks/9c739f511d00a6da.mp3",
     "boost-tagline-deep-cuts": "/audio/trivia/barks/6ffd04553d99fb67.mp3",
     "boost-tagline-spare-fuse": "/audio/trivia/barks/1e5c21cc9ce3b5ea.mp3",
-    "boost-tagline-tune-up": "/audio/trivia/barks/b0e515dbce7991e2.mp3"
+    "boost-tagline-tune-up": "/audio/trivia/barks/b0e515dbce7991e2.mp3",
+    "mutator-intro-flat-rates": "/audio/trivia/barks/0f445bad81a4bc0f.mp3",
+    "mutator-intro-thin-ice": "/audio/trivia/barks/1e3f5e470412a595.mp3",
+    "mutator-intro-long-haul": "/audio/trivia/barks/ccf540218c83f89b.mp3",
+    "mutator-intro-heavy-rotation": "/audio/trivia/barks/5fdcc43ce2dcf6a9.mp3",
+    "mutator-intro-single-signal": "/audio/trivia/barks/b242f29929eba5d9.mp3"
   },
   "questions": {
     "gt-0001": "/audio/trivia/questions/3ed982afd571ac2b.mp3",

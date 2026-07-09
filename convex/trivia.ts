@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
 import { boostByKey, rollBoostOffer } from "./boosts";
+import { mutatorByKey, mutatorCatalog, type MutatorDef } from "./mutators";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 
@@ -24,6 +25,20 @@ const DOUBLE_BROADCAST_LIFE_COST = 2;
 const DEEP_CUTS_MULTIPLIER = 1.75; // and the difficulty band shifts up a tier
 const SPARE_FUSE_POINTS = 250; // consolation when already at max lives
 const STATIC_FILTER_ELIMINATIONS = 2;
+
+// --- Daily mutator tuning (catalog lives in data/trivia/mutators.json) ---
+const FLAT_RATES_BASE_MULTIPLIER = 2; // and the streak bonus is 0 that night
+const HEAVY_ROTATION_MULTIPLIER = 1.5; // and the difficulty band shifts up
+const THIN_ICE_START_LIVES = 2;
+const LONG_HAUL_QUESTIONS_PER_ROUND = 7;
+
+function mutatorOf(run: Pick<Doc<"triviaRuns">, "mutatorKey">): MutatorDef | null {
+  return run.mutatorKey ? (mutatorByKey.get(run.mutatorKey) ?? null) : null;
+}
+
+function questionsPerRoundOf(run: Pick<Doc<"triviaRuns">, "mutatorKey">): number {
+  return run.mutatorKey === "long-haul" ? LONG_HAUL_QUESTIONS_PER_ROUND : QUESTIONS_PER_ROUND;
+}
 
 // --- Anti-cheat ---
 const MIN_ANSWER_MS = 900; // reading a question + 4 choices realistically takes longer
@@ -92,8 +107,16 @@ function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | u
   for (const q of questionBank) {
     if (!asked.has(q.id)) counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
   }
+  const perRound = questionsPerRoundOf(run);
+  // Single Signal night: the whole broadcast rides one seeded theme for as
+  // long as it has enough unasked questions to carry a round.
+  if (run.mutatorKey === "single-signal") {
+    const all = [...new Set(questionBank.map((q) => q.category))].sort();
+    const theme = all[Math.floor(seededRandom(`${run.seed}:single-signal`)() * all.length)];
+    if ((counts.get(theme) ?? 0) >= perRound) return theme;
+  }
   const viable = [...counts.entries()]
-    .filter(([category, count]) => count >= QUESTIONS_PER_ROUND && category !== run.roundCategory)
+    .filter(([category, count]) => count >= perRound && category !== run.roundCategory)
     .map(([category]) => category)
     .sort(); // stable order so daily seeding is deterministic
   if (viable.length === 0) return undefined;
@@ -106,6 +129,11 @@ function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
   let [min, max] = difficultyRange(run.round);
   // Deep Cuts: this round draws from one difficulty tier higher.
   if (run.activeRoundBoost?.key === "deep-cuts" && run.activeRoundBoost.round === run.round) {
+    min = Math.min(min + 1, 5);
+    max = Math.min(max + 1, 5);
+  }
+  // Heavy Rotation night: everything is one tier harder (stacks with Deep Cuts).
+  if (run.mutatorKey === "heavy-rotation") {
     min = Math.min(min + 1, 5);
     max = Math.min(max + 1, 5);
   }
@@ -239,6 +267,7 @@ type GameEvent =
   | { type: "bankExhausted" };
 
 function publicRunState(run: Doc<"triviaRuns">) {
+  const mutator = mutatorOf(run);
   return {
     runId: run._id,
     status: run.status,
@@ -248,10 +277,16 @@ function publicRunState(run: Doc<"triviaRuns">) {
     lives: run.lives,
     streak: run.streak,
     answeredInRound: run.answeredInRound,
-    questionsPerRound: QUESTIONS_PER_ROUND,
+    questionsPerRound: questionsPerRoundOf(run),
     questionNumber: run.askedQuestionKeys.length,
     roundCategory: run.roundCategory ?? null,
     drafting: run.pendingBoostOffer !== undefined,
+    mutator: mutator
+      ? { key: mutator.key, name: mutator.name, rules: mutator.rules, intro: mutator.intro }
+      : null,
+    // The run's own night (share snippets must name it, not "today" — a run
+    // resumed after midnight still belongs to the night it started).
+    dateKey: run.dateKey,
   };
 }
 
@@ -417,14 +452,20 @@ export const startRun = mutation({
       throw new Error("You're starting broadcasts very fast. Take a short break and try again.");
     }
 
+    // Tonight's broadcast condition: seeded from the date, same for everyone.
+    const mutatorKey = isDaily
+      ? mutatorCatalog[Math.floor(seededRandom(`mutator:${dateKey}`)() * mutatorCatalog.length)].key
+      : undefined;
+
     const runId = await ctx.db.insert("triviaRuns", {
       playerId: player._id,
       seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
       status: "active",
       isDaily,
+      mutatorKey,
       score: 0,
       round: 1,
-      lives: START_LIVES,
+      lives: mutatorKey === "thin-ice" ? THIN_ICE_START_LIVES : START_LIVES,
       streak: 0,
       answeredInRound: 0,
       wrongInRound: 0,
@@ -497,6 +538,7 @@ export const submitAnswer = mutation({
     let tapesUnlocked = player.tapesUnlocked;
 
     const ownedBoosts = new Set(run.modifiers);
+    const mutator = mutatorOf(run);
     const roundBoost =
       run.activeRoundBoost && run.activeRoundBoost.round === round ? run.activeRoundBoost.key : null;
 
@@ -511,7 +553,14 @@ export const submitAnswer = mutation({
           detail: "Night Owl Rates paid overtime on that one.",
         });
       }
-      const streakBonus = ownedBoosts.has("amplifier") ? AMPLIFIER_STREAK_BONUS : STREAK_BONUS;
+      if (mutator?.key === "flat-rates") base *= FLAT_RATES_BASE_MULTIPLIER;
+      if (mutator?.key === "heavy-rotation") base *= HEAVY_ROTATION_MULTIPLIER;
+      const streakBonus =
+        mutator?.key === "flat-rates"
+          ? 0
+          : ownedBoosts.has("amplifier")
+            ? AMPLIFIER_STREAK_BONUS
+            : STREAK_BONUS;
       let delta = base + streakBonus * Math.min(streak, STREAK_BONUS_CAP);
       if (roundBoost === "double-broadcast") {
         delta *= DOUBLE_BROADCAST_MULTIPLIER;
@@ -606,7 +655,7 @@ export const submitAnswer = mutation({
         await unlockAchievement(ctx, player._id, "night-shift", events);
       }
     } else {
-      const roundJustCompleted = answeredInRound >= QUESTIONS_PER_ROUND;
+      const roundJustCompleted = answeredInRound >= questionsPerRoundOf(run);
       if (roundJustCompleted) {
         // Round complete: advance. The next theme is NOT picked here — the
         // player drafts a Signal Boost first, and chooseBoost opens the round
@@ -620,7 +669,8 @@ export const submitAnswer = mutation({
         answeredInRound = 0;
         wrongInRound = 0;
         if (round === 10) await unlockAchievement(ctx, player._id, "round-10", events);
-        const lifeCadence = ownedBoosts.has("tune-up") ? 2 : LIFE_EVERY_ROUNDS;
+        const lifeCadence =
+          ownedBoosts.has("tune-up") || run.mutatorKey === "thin-ice" ? 2 : LIFE_EVERY_ROUNDS;
         if (completedRound % lifeCadence === 0 && lives < MAX_LIVES) {
           lives += 1;
           events.push({ type: "lifeGained", lives });
@@ -1089,6 +1139,20 @@ export const getStory = query({
 });
 
 // --- Test utilities (admin-only; not callable from clients) ---
+
+/** Forces a mutator onto the active run (tests/admin only — normally date-seeded). */
+export const setMutator = internalMutation({
+  args: { playerKey: v.string(), mutatorKey: v.string() },
+  handler: async (ctx, args) => {
+    const player = await getPlayer(ctx, args.playerKey);
+    if (!player) throw new Error("Unknown player");
+    const run = await getActiveRunDoc(ctx, player._id);
+    if (!run) throw new Error("No active run");
+    if (!mutatorByKey.has(args.mutatorKey)) throw new Error("Unknown mutator");
+    await ctx.db.patch(run._id, { mutatorKey: args.mutatorKey });
+    return { set: args.mutatorKey };
+  },
+});
 
 /** Grants a boost to the active run outside the draft (tests/admin only). */
 export const grantBoost = internalMutation({

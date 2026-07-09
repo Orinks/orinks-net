@@ -42,6 +42,24 @@ interface RunState {
   questionNumber: number;
   roundCategory: string | null;
   drafting: boolean;
+  mutator: { key: string; name: string; rules: string; intro: string } | null;
+  dateKey: string;
+}
+
+/** "2026-07-08" → "July 8, 2026" (UTC — the run's night, not the viewer's day). */
+function formatNight(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function dailyShareText(run: RunState): string {
+  const conditions = run.mutator ? ` ("${run.mutator.name}")` : "";
+  return `The Midnight Signal — daily for ${formatNight(run.dateKey)}${conditions}: score ${run.score}, round ${run.round}.`;
 }
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
@@ -136,6 +154,8 @@ export function GameApp() {
   const [chosenIndex, setChosenIndex] = useState<number | null>(null);
   const [boosts, setBoosts] = useState<BoostState | null>(null);
   const [draftChosen, setDraftChosen] = useState<string | null>(null); // double-activation guard, mirrors chosenIndex
+  const [copyFallback, setCopyFallback] = useState(false); // clipboard API failed: show selectable text
+  const copyFallbackRef = useRef<HTMLTextAreaElement>(null);
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [hostPaused, setHostPaused] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -330,6 +350,7 @@ export function GameApp() {
       if (!playerKey || busy) return;
       setBusy(true);
       setErrorText(null);
+      setCopyFallback(false);
       announce("Starting the broadcast…");
       try {
         initSpeech(); // user gesture: unlock speechSynthesis
@@ -344,12 +365,14 @@ export function GameApp() {
         setChosenIndex(null);
         setBoosts(started.boosts as BoostState);
         setDraftChosen(null);
+        // Both resume paths re-anchor the night's condition (a11y consult).
+        const conditions = started.run.mutator ? ` Conditions: ${started.run.mutator.name}.` : "";
         if (started.resumed && !started.question) {
           // The daily was left mid-draft: re-enter the draft with the same
           // persisted offer (the server never re-rolls it).
           setPhase({ kind: "draft" });
           announce(
-            `Resuming tonight's broadcast. Round ${started.run.round - 1} complete. Choose your Signal Boost. ${started.boosts.offer?.length ?? 3} options.`,
+            `Resuming tonight's broadcast.${conditions} Round ${started.run.round - 1} complete. Choose your Signal Boost. ${started.boosts.offer?.length ?? 3} options.`,
           );
         } else if (started.resumed && started.question) {
           // Tonight's daily was already in progress: the server hands the
@@ -358,7 +381,7 @@ export function GameApp() {
           setPhase({ kind: "question" });
           serveQuestionAudio(started.question.key);
           announce(
-            `Resuming tonight's broadcast. Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
+            `Resuming tonight's broadcast.${conditions} Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
           );
         } else {
           // The show opens before the first question: title theme under Clyde's
@@ -366,7 +389,25 @@ export function GameApp() {
           setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
           const bundle: string[] = [];
           if (daily) {
-            playBark("daily-intro", bundle);
+            // The greeting and the mutator line must play in SEQUENCE — the
+            // audio player stops the current clip when a new one starts, so
+            // firing both in the same tick silences the greeting (a11y delta).
+            const greet = pickBark("daily-intro", epilogueBarks);
+            const greetDone = greet
+              ? speakHostLine(greet.text, manifestRef.current.barks[greet.id], bundle)
+              : Promise.resolve();
+            if (started.run.mutator) {
+              const mutator = started.run.mutator;
+              const clip = manifestRef.current.barks[`mutator-intro-${mutator.key}`];
+              if (clip && playerRef.current && !playerRef.current.paused) {
+                void greetDone.then(() => speakHostLine(mutator.intro, clip, null));
+              } else {
+                void speakHostLine(mutator.intro, undefined, bundle);
+              }
+              // The canonical system line: the rules always live here, never
+              // only in Clyde's flavor line (a11y consult).
+              bundle.push(`Tonight's broadcast conditions: ${mutator.name}. ${mutator.rules}`);
+            }
           } else {
             playBark(started.runNumber > 1 ? "run-intro-returning" : "run-intro", bundle);
           }
@@ -385,7 +426,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, busy, ensurePlayer, name, playBark, playerKey, producerSay, serveQuestionAudio, startRunMutation],
+    [announce, busy, ensurePlayer, epilogueBarks, name, playBark, playerKey, producerSay, serveQuestionAudio, speakHostLine, startRunMutation],
   );
 
   const resumeRun = useCallback(() => {
@@ -399,15 +440,19 @@ export function GameApp() {
     setBoosts(resumable.boosts as BoostState);
     setDraftChosen(null);
     // No show-open on resume: the player is mid-episode, get them back fast.
+    const conditions = resumable.run.mutator ? ` Conditions: ${resumable.run.mutator.name}.` : "";
     if (!resumable.question && resumable.run.drafting) {
       setPhase({ kind: "draft" });
       announce(
-        `Round ${resumable.run.round - 1} complete. Choose your Signal Boost. ${resumable.boosts.offer?.length ?? 3} options.`,
+        `Resuming the broadcast.${conditions} Round ${resumable.run.round - 1} complete. Choose your Signal Boost. ${resumable.boosts.offer?.length ?? 3} options.`,
       );
       return;
     }
     if (!resumable.question) return; // defensive: nothing to resume into
     setPhase({ kind: "question" });
+    if (conditions) {
+      announce(`Resuming the broadcast.${conditions}`);
+    }
     serveQuestionAudio(resumable.question.key);
   }, [announce, resumable, serveQuestionAudio]);
 
@@ -467,7 +512,11 @@ export function GameApp() {
         if (result.run.lives === 1 && !result.correct && result.run.status === "active") {
           playBark("last-life", bundle);
         }
-        if (result.run.streak > 0 && result.run.streak % 5 === 0) playBark("streak", bundle);
+        // Flat Rates night: streaks pay nothing, so celebrating one is
+        // confusing audio — the streak bark stays quiet (a11y consult).
+        if (result.run.streak > 0 && result.run.streak % 5 === 0 && result.run.mutator?.key !== "flat-rates") {
+          playBark("streak", bundle);
+        }
         for (const event of result.events) {
           if (event.type === "roundComplete") {
             // The next theme is NOT announced here: it isn't chosen until the
@@ -487,6 +536,7 @@ export function GameApp() {
             producerSay("tape-found", { tapeNumber: event.order, tapeTotal: event.total }, bundle);
           } else if (event.type === "gameOver") {
             playBark(event.isPersonalBest ? "high-score" : "game-over", bundle);
+            if (result.run.mutator) bundle.push(`Conditions were ${result.run.mutator.name}.`);
             producerSay("game-over", { score: event.score, round: event.round }, bundle);
           }
         }
@@ -599,6 +649,11 @@ export function GameApp() {
           } else if (event.type === "lifeGained") {
             musicRef.current?.playEffect(STINGS.lifeGained);
             bundle.push(`Life regained. ${event.lives} lives.`);
+          } else if (event.type === "gameOver") {
+            // Bank exhausted during the draft: same sign-off as chooseAnswer.
+            playBark(event.isPersonalBest ? "high-score" : "game-over", bundle);
+            if (drafted.run.mutator) bundle.push(`Conditions were ${drafted.run.mutator.name}.`);
+            producerSay("game-over", { score: event.score, round: event.round }, bundle);
           }
         }
         if (drafted.question) {
@@ -637,7 +692,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, boosts?.offer, busy, chooseBoostMutation, draftChosen, playBark, playerKey, run, serveQuestionAudio, speakHostLine],
+    [announce, boosts?.offer, busy, chooseBoostMutation, draftChosen, playBark, playerKey, producerSay, run, serveQuestionAudio, speakHostLine],
   );
 
   /** Static Filter: burn a charge to strike two wrong choices off the board. */
@@ -676,6 +731,7 @@ export function GameApp() {
     setQuestion(null);
     setBoosts(null);
     setDraftChosen(null);
+    setCopyFallback(false);
     returningToTitle.current = true; // focus the title heading, don't let focus die
     setPhase({ kind: "title" });
   }, []);
@@ -751,8 +807,35 @@ export function GameApp() {
           .join("; "),
       });
     }
+    if (run.mutator) {
+      // Last row, name + short rules: the intro announcement is ephemeral and
+      // the intro panel unmounts, so this is where the rules stay re-readable.
+      items.push({ label: "Conditions", value: `${run.mutator.name} — ${run.mutator.rules}` });
+    }
     return items;
   }, [boosts, run]);
+
+  /** Copies the daily result; on failure, exposes selectable text instead. */
+  const copyDailyResult = useCallback(
+    async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopyFallback(false); // a retry succeeded: retire the fallback text
+        announce("Result copied to clipboard."); // status channel; focus stays put
+      } catch {
+        setCopyFallback(true);
+        requestAnimationFrame(() => {
+          copyFallbackRef.current?.focus();
+          copyFallbackRef.current?.select();
+        });
+        announce(
+          "Couldn't copy automatically. The result text is selected below — press Control C (Command C on Mac) to copy.",
+          "alert",
+        );
+      }
+    },
+    [announce],
+  );
 
   if (!settings) {
     return <p className="py-8 text-center">Tuning the signal…</p>;
@@ -911,6 +994,11 @@ export function GameApp() {
             first theme: {categoryLabel(run?.roundCategory)}. The first question comes when
             you&apos;re ready.
           </p>
+          {phase.isDaily && run?.mutator ? (
+            <p className="mt-2 leading-7 text-amber-100">
+              Tonight&apos;s broadcast conditions: {run.mutator.name}. {run.mutator.rules}
+            </p>
+          ) : null}
           <button className={`${primaryButton} mt-4`} onClick={beginQuestions} type="button">
             Begin the questions
           </button>
@@ -1076,6 +1164,28 @@ export function GameApp() {
               ? " That's a new personal best!"
               : ""}
           </p>
+          {phase.result.run.isDaily ? (
+            <div className="mt-3">
+              <p className="leading-7 text-zinc-400">{dailyShareText(phase.result.run)}</p>
+              <button
+                className={`${secondaryButton} mt-2`}
+                onClick={() => void copyDailyResult(dailyShareText(phase.result.run))}
+                type="button"
+              >
+                Copy tonight&apos;s result
+              </button>
+              {copyFallback ? (
+                <textarea
+                  aria-label="Tonight's result, ready to copy"
+                  className={`mt-2 w-full rounded-md border border-amber-700 bg-zinc-900 px-3 py-2 text-amber-50 ${focusRing}`}
+                  readOnly
+                  ref={copyFallbackRef}
+                  rows={2}
+                  value={dailyShareText(phase.result.run)}
+                />
+              ) : null}
+            </div>
+          ) : null}
           <div className="mt-4 flex flex-wrap gap-3">
             <button className={primaryButton} onClick={() => void beginRun(false)} type="button">
               Start new broadcast

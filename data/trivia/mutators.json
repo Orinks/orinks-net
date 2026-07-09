@@ -1,0 +1,34 @@
+{
+  "mutators": [
+    {
+      "key": "flat-rates",
+      "name": "Flat Rates",
+      "rules": "No streak bonus tonight, but every question pays double base points.",
+      "intro": "Tonight the accountants took over the booth. Flat Rates: no streak bonus, but every question pays double."
+    },
+    {
+      "key": "thin-ice",
+      "name": "Thin Ice",
+      "rules": "Start with 2 lives; a bonus life comes every 2nd completed round.",
+      "intro": "Careful out there, contestant — we're on Thin Ice. Two lives to start, but the booth tops you up every other round."
+    },
+    {
+      "key": "long-haul",
+      "name": "Long Haul",
+      "rules": "Rounds run 7 questions instead of 5.",
+      "intro": "Stretch your legs, night owls. It's the Long Haul: seven questions a round, all the way down."
+    },
+    {
+      "key": "heavy-rotation",
+      "name": "Heavy Rotation",
+      "rules": "Harder questions all night, worth 50 percent extra points.",
+      "intro": "We're spinning Heavy Rotation tonight. Nothing but the hard stuff — and it pays half again extra."
+    },
+    {
+      "key": "single-signal",
+      "name": "Single Signal",
+      "rules": "Every round draws from the same theme, all night.",
+      "intro": "One frequency, one theme, all night long. Tonight, we ride the Single Signal."
+    }
+  ]
+}
