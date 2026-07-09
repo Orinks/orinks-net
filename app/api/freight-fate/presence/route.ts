@@ -21,6 +21,12 @@ function bearerToken(request: Request) {
   return match?.[1];
 }
 
+const FAILURE_STATUS: Record<string, number> = {
+  driver_not_found: 404,
+  unauthorized: 401,
+  rate_limited: 429,
+};
+
 export async function POST(request: Request) {
   try {
     const driverToken = normalizeFreightFateToken(bearerToken(request), "Driver token");
@@ -35,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     if (!result.ok) {
-      return NextResponse.json({ error: result.reason }, { status: result.reason === "unauthorized" ? 401 : 404 });
+      return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
     }
 
     return NextResponse.json({ ok: true, cleared: result.cleared });

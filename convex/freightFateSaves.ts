@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { QueryCtx } from "./_generated/server";
+import { consumeFreightFateWrite } from "./freightFateRateLimit";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -24,6 +25,7 @@ export const KEEP_REVISIONS = 10;
 // Distinct save names per driver. The game caps profiles well below this;
 // the limit only stops a runaway or hostile client from filling the table.
 export const MAX_SLOTS = 20;
+export const SAVE_UPLOAD_LIMIT = 30;
 
 function toHex(bytes: Uint8Array) {
   let out = "";
@@ -83,9 +85,27 @@ export const uploadSave = mutation({
     now: v.number(),
   },
   handler: async (ctx, args) => {
-    const { driver, reason } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+
     if (!driver) {
-      return { ok: false as const, reason };
+      return { ok: false as const, reason: "driver_not_found" as const };
+    }
+
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "save-upload",
+      driverId: args.driverId,
+      now: args.now,
+      limit: SAVE_UPLOAD_LIMIT,
+    });
+    if (!allowed) {
+      return { ok: false as const, reason: "rate_limited" as const };
+    }
+
+    if (driver.driverTokenHash !== args.driverTokenHash) {
+      return { ok: false as const, reason: "unauthorized" as const };
     }
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {

@@ -3,7 +3,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api } from "./_generated/api";
-import { KEEP_REVISIONS, MAX_SAVE_BYTES, MAX_SLOTS } from "./freightFateSaves";
+import { KEEP_REVISIONS, MAX_SAVE_BYTES, MAX_SLOTS, SAVE_UPLOAD_LIMIT } from "./freightFateSaves";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -199,6 +199,28 @@ describe("uploadSave", () => {
     // Existing slots keep accepting new revisions at the cap.
     const existing = await upload(t, auth, { saveName: "Driver 0", parentRevision: 1 });
     expect(existing).toMatchObject({ ok: true, revision: 2 });
+  });
+
+  test("rate limits save uploads per driver", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+
+    for (let i = 0; i < SAVE_UPLOAD_LIMIT; i += 1) {
+      const result = await upload(t, auth, {
+        saveName: "Driver",
+        parentRevision: i === 0 ? null : i,
+        summary: `revision ${i + 1}`,
+        now: 1000,
+      });
+      expect(result).toMatchObject({ ok: true, revision: i + 1 });
+    }
+
+    const limited = await upload(t, auth, {
+      saveName: "Driver",
+      parentRevision: SAVE_UPLOAD_LIMIT,
+      now: 1000,
+    });
+    expect(limited).toMatchObject({ ok: false, reason: "rate_limited" });
   });
 });
 
