@@ -118,6 +118,58 @@ describe("provisionDriver / getMyDriver", () => {
     expect(board.drivers.map((driver) => driver.driverId)).toContain(driverId);
   });
 
+  test("a display name used by another account is rejected, case-insensitively", async () => {
+    const t = setup();
+    const now = Date.now();
+    const first = t.withIdentity({ subject: SUBJECT });
+    await first.mutation(api.freightFate.provisionDriver, {
+      displayName: "Orinks",
+      visibility: "public",
+      now,
+    });
+
+    const second = t.withIdentity({ subject: OTHER });
+    for (const clash of ["Orinks", "orinks", "  ORINKS  "]) {
+      await expect(
+        second.mutation(api.freightFate.provisionDriver, {
+          displayName: clash,
+          visibility: "private",
+          now,
+        }),
+      ).rejects.toMatchObject({ data: { code: "name_taken" } });
+    }
+    // The rejected account got no driver row.
+    expect(await second.query(api.freightFate.getMyDriver, {})).toBeNull();
+
+    // A different name still works.
+    const ok = await second.mutation(api.freightFate.provisionDriver, {
+      displayName: "Orinks Junior",
+      visibility: "private",
+      now,
+    });
+    expect(typeof ok.token).toBe("string");
+
+    // Renaming onto the taken name is rejected too...
+    await expect(
+      second.mutation(api.freightFate.provisionDriver, {
+        displayName: "ORINKS",
+        visibility: "private",
+        now: now + 1,
+      }),
+    ).rejects.toMatchObject({ data: { code: "name_taken" } });
+
+    // ...but re-saving your own unchanged name (any case) never is, so a
+    // pre-existing duplicate cannot lock its owner out of the settings form.
+    const resave = await second.mutation(api.freightFate.provisionDriver, {
+      displayName: "orinks junior",
+      visibility: "unlisted",
+      now: now + 2,
+    });
+    expect(resave.rotated).toBe(false);
+    const mine = await second.query(api.freightFate.getMyDriver, {});
+    expect(mine!.visibility).toBe("unlisted");
+  });
+
   test("re-provision edits the profile in place; token only changes when rotated", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });

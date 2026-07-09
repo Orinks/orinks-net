@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
+import type { QueryCtx } from "./_generated/server";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -61,6 +62,23 @@ function normalizeDisplayName(value: string) {
   return value.trim().replace(/\s+/g, " ").slice(0, 48) || "Freight Fate Driver";
 }
 
+// Two drivers named "Orinks" on the board are indistinguishable to a player
+// hearing the list, so display names are unique across accounts. Stored
+// names are already whitespace-normalized (above), so a case-insensitive
+// compare is the whole rule. The drivers table is small and provisioning is
+// rare, so a scan beats maintaining a normalized index column.
+async function displayNameTaken(ctx: QueryCtx, displayName: string, exceptSubject: string) {
+  const key = displayName.toLowerCase();
+  const drivers = await ctx.db.query("freightFateDrivers").collect();
+  return drivers.some(
+    (driver) => driver.authSubject !== exceptSubject && driver.displayName.toLowerCase() === key,
+  );
+}
+
+// Thrown as ConvexError so the code survives production error redaction and
+// the setup page can put a specific message on the name field.
+const NAME_TAKEN = { code: "name_taken" as const };
+
 export const getMyDriver = query({
   args: {},
   handler: async (ctx) => {
@@ -115,6 +133,12 @@ export const provisionDriver = mutation({
       .unique();
 
     if (existing) {
+      // Only a rename is checked: a pre-existing duplicate (from before this
+      // rule) must not lock its owner out of saving unrelated changes.
+      const renaming = existing.displayName.toLowerCase() !== displayName.toLowerCase();
+      if (renaming && (await displayNameTaken(ctx, displayName, identity.subject))) {
+        throw new ConvexError(NAME_TAKEN);
+      }
       const patch: {
         displayName: string;
         visibility: typeof args.visibility;
@@ -135,6 +159,10 @@ export const provisionDriver = mutation({
       await ctx.db.patch(existing._id, patch);
 
       return { driverId: existing.driverId, token, rotated: token !== null };
+    }
+
+    if (await displayNameTaken(ctx, displayName, identity.subject)) {
+      throw new ConvexError(NAME_TAKEN);
     }
 
     const token = mintDriverToken();

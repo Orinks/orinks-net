@@ -45,7 +45,8 @@ function savesOf(listed: { ok: boolean; saves?: unknown }) {
 async function provisionedDriver(t: ReturnType<typeof setup>, subject = "user_2saveTest") {
   const as = t.withIdentity({ subject });
   const result = await as.mutation(api.freightFate.provisionDriver, {
-    displayName: "Cloud Hauler",
+    // Display names are unique across accounts, so derive one per subject.
+    displayName: `Cloud Hauler ${subject}`,
     visibility: "private",
     now: Date.now(),
   });
