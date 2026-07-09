@@ -99,7 +99,7 @@ describe("run lifecycle", () => {
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     expect(start.run.lives).toBe(3);
     expect(start.run.round).toBe(1);
-    expect(start.question.choices.length).toBeGreaterThanOrEqual(2);
+    expect(start.question!.choices.length).toBeGreaterThanOrEqual(2);
     expect(start.question).not.toHaveProperty("answer");
     expect(start.question).not.toHaveProperty("explanation");
     expect(start.runNumber).toBe(1);
@@ -110,8 +110,8 @@ describe("run lifecycle", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
 
-    const first = await answer(t, PLAYER, start.run.runId, start.question.key, true);
-    const q1 = questionByKey.get(start.question.key)!;
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
+    const q1 = questionByKey.get(start.question!.key)!;
     expect(first.correct).toBe(true);
     expect(first.scoreDelta).toBe(100 * q1.difficulty); // no streak bonus on first
     expect(first.run.streak).toBe(1);
@@ -134,7 +134,7 @@ describe("run lifecycle", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
 
-    let questionKey = start.question.key;
+    let questionKey = start.question!.key;
     let result;
     for (let i = 0; i < 3; i++) {
       result = await answer(t, PLAYER, start.run.runId, questionKey, false);
@@ -163,7 +163,7 @@ describe("run lifecycle", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
 
-    let questionKey = start.question.key;
+    let questionKey = start.question!.key;
     let result;
     for (let i = 0; i < 5; i++) {
       result = await answer(t, PLAYER, start.run.runId, questionKey, true);
@@ -186,8 +186,8 @@ describe("run lifecycle", () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
-    const seen = new Set([start.question.key]);
-    let questionKey = start.question.key;
+    const seen = new Set([start.question!.key]);
+    let questionKey = start.question!.key;
     for (let i = 0; i < 15; i++) {
       const result = await answer(t, PLAYER, start.run.runId, questionKey, true);
       let next = result.nextQuestion;
@@ -221,11 +221,11 @@ describe("daily runs", () => {
 
     const runA = await t.mutation(api.trivia.startRun, { playerKey: "daily-player-0001", daily: true });
     const runB = await t.mutation(api.trivia.startRun, { playerKey: "daily-player-0002", daily: true });
-    expect(runA.question.key).toBe(runB.question.key);
+    expect(runA.question!.key).toBe(runB.question!.key);
 
     // Sequences stay aligned even when one player answers wrong.
-    const a2 = await answer(t, "daily-player-0001", runA.run.runId, runA.question.key, true);
-    const b2 = await answer(t, "daily-player-0002", runB.run.runId, runB.question.key, false);
+    const a2 = await answer(t, "daily-player-0001", runA.run.runId, runA.question!.key, true);
+    const b2 = await answer(t, "daily-player-0002", runB.run.runId, runB.question!.key, false);
     expect(a2.nextQuestion!.key).toBe(b2.nextQuestion!.key);
   });
 
@@ -234,7 +234,7 @@ describe("daily runs", () => {
     await newPlayer(t);
     const first = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
     expect(first.resumed).toBe(false);
-    await answer(t, PLAYER, first.run.runId, first.question.key, true);
+    await answer(t, PLAYER, first.run.runId, first.question!.key, true);
 
     // Same seed, same night: the server must hand back the same run
     // mid-episode, never a fresh look at a deterministic question sequence.
@@ -270,7 +270,7 @@ describe("daily runs", () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
-    let questionKey = start.question.key;
+    let questionKey = start.question!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(t, PLAYER, start.run.runId, questionKey, false);
       if (result.nextQuestion) questionKey = result.nextQuestion.key;
@@ -292,7 +292,7 @@ describe("leaderboards", () => {
     // Alpha scores twice (with a streak bonus) then dies; Beta scores once
     // then dies, so Alpha always outranks Beta on every board.
     const runA = await alpha.mutation(api.trivia.startRun, { playerKey: "leader-player-0001" });
-    let key = runA.question.key;
+    let key = runA.question!.key;
     for (let i = 0; i < 2; i++) {
       const result = await answer(alpha, "leader-player-0001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
@@ -302,7 +302,7 @@ describe("leaderboards", () => {
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
     const runB = await beta.mutation(api.trivia.startRun, { playerKey: "leader-player-0002" });
-    key = runB.question.key;
+    key = runB.question!.key;
     const scored = await answer(beta, "leader-player-0002", runB.run.runId, key, true);
     key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
@@ -329,13 +329,13 @@ describe("leaderboards", () => {
     await free.mutation(api.trivia.ensurePlayer, { playerKey: "daily-board-00002" });
 
     const dailyRun = await daily.mutation(api.trivia.startRun, { playerKey: "daily-board-00001", daily: true });
-    let key = dailyRun.question.key;
+    let key = dailyRun.question!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(daily, "daily-board-00001", dailyRun.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
     }
     const freeRun = await free.mutation(api.trivia.startRun, { playerKey: "daily-board-00002" });
-    key = freeRun.question.key;
+    key = freeRun.question!.key;
     const scored = await answer(free, "daily-board-00002", freeRun.run.runId, key, true);
     key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
@@ -358,7 +358,7 @@ describe("leaderboards", () => {
 
     // Run 1: two correct answers, then out.
     const runA = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
-    let key = runA.question.key;
+    let key = runA.question!.key;
     for (let i = 0; i < 2; i++) {
       const result = await answer(grinder, "grind-key-000001", runA.run.runId, key, true);
       key = result.nextQuestion!.key;
@@ -372,7 +372,7 @@ describe("leaderboards", () => {
 
     // Run 2: dies immediately with a lower score.
     const runB = await grinder.mutation(api.trivia.startRun, { playerKey: "grind-key-000001" });
-    key = runB.question.key;
+    key = runB.question!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(grinder, "grind-key-000001", runB.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -392,7 +392,7 @@ describe("leaderboards", () => {
     const t = setup();
     await newPlayer(t, "guest-leader-0001", "SomeGuest");
     const start = await t.mutation(api.trivia.startRun, { playerKey: "guest-leader-0001" });
-    let key = start.question.key;
+    let key = start.question!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(t, "guest-leader-0001", start.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -406,7 +406,7 @@ describe("leaderboards", () => {
     const troll = t.withIdentity({ subject: "user_troll", nickname: "n1gger" });
     await troll.mutation(api.trivia.ensurePlayer, { playerKey: "troll-key-000001" });
     const run = await troll.mutation(api.trivia.startRun, { playerKey: "troll-key-000001" });
-    let key = run.question.key;
+    let key = run.question!.key;
     const scored = await answer(troll, "troll-key-000001", run.run.runId, key, true);
     key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
@@ -442,7 +442,7 @@ describe("story gating", () => {
     const t = setup();
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
-    let key = start.question.key;
+    let key = start.question!.key;
     for (let i = 0; i < 3; i++) {
       const result = await answer(t, PLAYER, start.run.runId, key, false);
       if (result.nextQuestion) key = result.nextQuestion.key;
@@ -459,8 +459,8 @@ describe("themed rounds", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     expect(start.run.roundCategory).not.toBeNull();
-    const categories = new Set([start.question.category]);
-    let questionKey = start.question.key;
+    const categories = new Set([start.question!.category]);
+    let questionKey = start.question!.key;
     for (let i = 0; i < 5; i++) {
       const result = await answer(t, PLAYER, start.run.runId, questionKey, true);
       if (i < 4) {
@@ -490,7 +490,7 @@ describe("signal boosts", () => {
   /** Plays 5 correct answers to complete round 1 and reach the draft. */
   async function completeRound1(t: Caller, playerKey: string) {
     const start = await t.mutation(api.trivia.startRun, { playerKey });
-    let key = start.question.key;
+    let key = start.question!.key;
     let result;
     for (let i = 0; i < 5; i++) {
       result = await answer(t, playerKey, start.run.runId, key, true);
@@ -557,7 +557,7 @@ describe("signal boosts", () => {
     const runs = [] as Array<{ playerKey: string; offer: string[] }>;
     for (const playerKey of ["boost-daily-0001", "boost-daily-0002"]) {
       const start = await t.mutation(api.trivia.startRun, { playerKey, daily: true });
-      let key = start.question.key;
+      let key = start.question!.key;
       let result;
       for (let i = 0; i < 5; i++) {
         result = await answer(t, playerKey, start.run.runId, key, true);
@@ -585,7 +585,7 @@ describe("signal boosts", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "second-wind" });
-    const first = await answer(t, PLAYER, start.run.runId, start.question.key, false);
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, false);
     expect(first.run.lives).toBe(3); // absorbed
     expect(
       first.events.some(
@@ -601,7 +601,7 @@ describe("signal boosts", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "amplifier" });
-    const first = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
     const q2 = questionByKey.get(first.nextQuestion!.key)!;
     const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, true);
     expect(second.scoreDelta).toBe(100 * q2.difficulty + 40);
@@ -612,7 +612,7 @@ describe("signal boosts", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "signal-lock" });
-    let key = start.question.key;
+    let key = start.question!.key;
     for (let i = 0; i < 2; i++) {
       const result = await answer(t, PLAYER, start.run.runId, key, true);
       key = result.nextQuestion!.key;
@@ -627,8 +627,8 @@ describe("signal boosts", () => {
     await newPlayer(t);
     const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "double-broadcast" });
-    const q1 = questionByKey.get(start.question.key)!;
-    const first = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    const q1 = questionByKey.get(start.question!.key)!;
+    const first = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
     expect(first.scoreDelta).toBe(100 * q1.difficulty * 2);
     const second = await answer(t, PLAYER, start.run.runId, first.nextQuestion!.key, false);
     expect(second.run.lives).toBe(1); // 3 - 2
@@ -646,7 +646,7 @@ describe("signal boosts", () => {
     });
     expect(used.eliminated.length).toBe(2);
     expect(used.chargesLeft).toBe(1);
-    const question = questionByKey.get(start.question.key)!;
+    const question = questionByKey.get(start.question!.key)!;
     for (const index of used.eliminated) {
       expect(index).not.toBe(question.answer);
     }
@@ -658,7 +658,7 @@ describe("signal boosts", () => {
         choiceIndex: used.eliminated[0],
       }),
     ).rejects.toThrow(/eliminated/);
-    const result = await answer(t, PLAYER, start.run.runId, start.question.key, true);
+    const result = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
     expect(result.correct).toBe(true);
   });
 });
@@ -681,7 +681,7 @@ describe("account identity", () => {
     // Play a losing run as a guest first (builds totalAnswered).
     await t.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0002", displayName: "Guest" });
     const start = await t.mutation(api.trivia.startRun, { playerKey: "device-key-0002" });
-    let key = start.question.key;
+    let key = start.question!.key;
     for (let i = 0; i < 3; i++) {
       const r = await answer(t, "device-key-0002", start.run.runId, key, false);
       if (r.nextQuestion) key = r.nextQuestion.key;
@@ -712,7 +712,7 @@ describe("account identity", () => {
     const asUser = t.withIdentity(IDENTITY);
     await asUser.mutation(api.trivia.ensurePlayer, { playerKey: "device-key-0004" });
     const start = await asUser.mutation(api.trivia.startRun, { playerKey: "device-key-0004" });
-    let key = start.question.key;
+    let key = start.question!.key;
     const scored = await answer(asUser, "device-key-0004", start.run.runId, key, true);
     key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {
@@ -730,7 +730,7 @@ describe("anti-cheat", () => {
     const bot = t.withIdentity({ subject: "user_bot", nickname: "SpeedBot" });
     await bot.mutation(api.trivia.ensurePlayer, { playerKey: "bot-key-00000001" });
     const start = await bot.mutation(api.trivia.startRun, { playerKey: "bot-key-00000001" });
-    let key = start.question.key;
+    let key = start.question!.key;
     let result;
     for (let i = 0; i < 3; i++) {
       // ~100ms per answer: impossible to read a question + four choices that fast.
@@ -750,7 +750,7 @@ describe("anti-cheat", () => {
 
     // Score points at bot speed, then die fast — 5 fast answers flag the run
     // and the third wrong lands before the round (and its draft) completes.
-    let key = start.question.key;
+    let key = start.question!.key;
     for (let i = 0; i < 2; i++) {
       const result = await answer(bot, "bot-key-00000002", start.run.runId, key, true, 100);
       key = result.nextQuestion!.key;
@@ -778,7 +778,7 @@ describe("anti-cheat", () => {
     const human = t.withIdentity({ subject: "user_human", nickname: "RealPlayer" });
     await human.mutation(api.trivia.ensurePlayer, { playerKey: "human-key-0000001" });
     const start = await human.mutation(api.trivia.startRun, { playerKey: "human-key-0000001" });
-    let key = start.question.key;
+    let key = start.question!.key;
     const scored = await answer(human, "human-key-0000001", start.run.runId, key, true); // default human pace
     key = scored.nextQuestion!.key;
     for (let i = 0; i < 3; i++) {

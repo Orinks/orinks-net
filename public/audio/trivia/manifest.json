@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T12:36:12.887Z",
+  "generatedAt": "2026-07-08T23:58:33.613Z",
   "barks": {
     "run-intro-01": "/audio/trivia/barks/2abf47b123c6b243.mp3",
     "run-intro-02": "/audio/trivia/barks/44fb53a7ae47beb0.mp3",
@@ -58,7 +58,22 @@
     "fact-15": "/audio/trivia/barks/e41f7770b1d8812c.mp3",
     "fact-16": "/audio/trivia/barks/10f0d926d4a052d9.mp3",
     "fact-17": "/audio/trivia/barks/4be9c5f475d5ff2f.mp3",
-    "fact-18": "/audio/trivia/barks/0524b162a8fe253a.mp3"
+    "fact-18": "/audio/trivia/barks/0524b162a8fe253a.mp3",
+    "boost-offer-01": "/audio/trivia/barks/889f2e0bce82567d.mp3",
+    "boost-offer-02": "/audio/trivia/barks/6804dc8037dec152.mp3",
+    "boost-offer-03": "/audio/trivia/barks/9fc14587ca3b26f8.mp3",
+    "boost-chosen-01": "/audio/trivia/barks/5ea8b634de75fa91.mp3",
+    "boost-chosen-02": "/audio/trivia/barks/1af06be11087ecca.mp3",
+    "boost-chosen-03": "/audio/trivia/barks/e80a6bdb4c77b708.mp3",
+    "boost-tagline-static-filter": "/audio/trivia/barks/4c0a2b55ba3579f4.mp3",
+    "boost-tagline-second-wind": "/audio/trivia/barks/b221e64543be6cda.mp3",
+    "boost-tagline-amplifier": "/audio/trivia/barks/5de55748d9c8a999.mp3",
+    "boost-tagline-signal-lock": "/audio/trivia/barks/57d594517e1c3f92.mp3",
+    "boost-tagline-night-owl-rates": "/audio/trivia/barks/0077457be10ff392.mp3",
+    "boost-tagline-double-broadcast": "/audio/trivia/barks/9c739f511d00a6da.mp3",
+    "boost-tagline-deep-cuts": "/audio/trivia/barks/6ffd04553d99fb67.mp3",
+    "boost-tagline-spare-fuse": "/audio/trivia/barks/1e5c21cc9ce3b5ea.mp3",
+    "boost-tagline-tune-up": "/audio/trivia/barks/b0e515dbce7991e2.mp3"
   },
   "questions": {
     "gt-0001": "/audio/trivia/questions/3ed982afd571ac2b.mp3",

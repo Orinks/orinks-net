@@ -73,6 +73,23 @@
     { "id": "fact-15", "trigger": "fact", "text": "My favorite instrument fact: the theremin is played without touching it at all. An instrument made of nothing but signal. I feel seen." },
     { "id": "fact-16", "trigger": "fact", "text": "Sales desk: Michael Jackson's Thriller remains the best-selling album of all time. Some records the archive expects to keep." },
     { "id": "fact-17", "trigger": "fact", "text": "Good Vibrations by the Beach Boys features the Electro-Theremin — an instrument so rare it mostly exists in that song." },
-    { "id": "fact-18", "trigger": "fact", "text": "Timekeeping fact: the metronome was patented around 1815. Musicians have resented it, faithfully, ever since." }
+    { "id": "fact-18", "trigger": "fact", "text": "Timekeeping fact: the metronome was patented around 1815. Musicians have resented it, faithfully, ever since." },
+
+    { "id": "boost-offer-01", "trigger": "boost-offer", "text": "And we'll be right back after this word from the booth. Pick yourself a boost, contestant." },
+    { "id": "boost-offer-02", "trigger": "boost-offer", "text": "Commercial break! The Producer slides three cards across the desk. Take your time." },
+    { "id": "boost-offer-03", "trigger": "boost-offer", "text": "Hold the frequency. Management says you've earned a little something. Choose wisely." },
+    { "id": "boost-chosen-01", "trigger": "boost-chosen", "text": "Fine choice. Let's get back on the air." },
+    { "id": "boost-chosen-02", "trigger": "boost-chosen", "text": "Noted and wired in. The show goes on." },
+    { "id": "boost-chosen-03", "trigger": "boost-chosen", "text": "That's the one I'd have picked. Back to the music." },
+
+    { "id": "boost-tagline-static-filter", "trigger": "boost-tagline", "text": "Static Filter. Two wrong answers, swallowed by the static." },
+    { "id": "boost-tagline-second-wind", "trigger": "boost-tagline", "text": "Second Wind. Every hour of the night deserves one." },
+    { "id": "boost-tagline-amplifier", "trigger": "boost-tagline", "text": "The Amplifier. Turn it up and let the streak sing." },
+    { "id": "boost-tagline-signal-lock", "trigger": "boost-tagline", "text": "Signal Lock. A good signal bends before it breaks." },
+    { "id": "boost-tagline-night-owl-rates", "trigger": "boost-tagline", "text": "Night Owl Rates. The hard stuff pays overtime after midnight." },
+    { "id": "boost-tagline-double-broadcast", "trigger": "boost-tagline", "text": "Double Broadcast. Both towers at full power. Do not miss." },
+    { "id": "boost-tagline-deep-cuts", "trigger": "boost-tagline", "text": "Deep Cuts. B-sides and rarities, straight from the vault." },
+    { "id": "boost-tagline-spare-fuse", "trigger": "boost-tagline", "text": "Spare Fuse. Hear that hum? The transmitter is back." },
+    { "id": "boost-tagline-tune-up", "trigger": "boost-tagline", "text": "Transmitter Tune-up. She purrs now. You did that." }
   ]
 }

@@ -41,15 +41,39 @@ interface RunState {
   questionsPerRound: number;
   questionNumber: number;
   roundCategory: string | null;
+  drafting: boolean;
 }
 type GameEvent =
   | { type: "achievement"; key: string; name: string }
   | { type: "roundComplete"; round: number; nextCategory: string | null }
+  | { type: "boostOffer" }
+  | { type: "boostChosen"; key: string; name: string }
+  | { type: "boostTriggered"; key: string; name: string; detail: string }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
   | { type: "gameOver"; score: number; round: number; isPersonalBest: boolean }
   | { type: "bankExhausted" };
+interface OwnedBoost {
+  key: string;
+  name: string;
+  kind: string;
+  rules: string;
+  chargesLeft: number | null;
+}
+interface OfferedBoost {
+  key: string;
+  name: string;
+  tagline: string;
+  rules: string;
+  kind: string;
+}
+interface BoostState {
+  owned: OwnedBoost[];
+  offer: OfferedBoost[] | null;
+  activeRoundBoost: { key: string; round: number } | null;
+  eliminatedChoices: number[];
+}
 interface AnswerResult {
   correct: boolean;
   correctIndex: number;
@@ -57,6 +81,7 @@ interface AnswerResult {
   scoreDelta: number;
   events: GameEvent[];
   run: RunState;
+  boosts: BoostState;
   nextQuestion: PublicQuestion | null;
 }
 interface CaptionLine {
@@ -74,6 +99,7 @@ type Phase =
   | { kind: "title" }
   | { kind: "intro"; runNumber: number; isDaily: boolean }
   | { kind: "question" }
+  | { kind: "draft" }
   | { kind: "feedback"; result: AnswerResult }
   | { kind: "tape"; tape: StoryLine; pending: GameEvent[]; result: AnswerResult }
   | { kind: "finale"; lines: StoryLine[]; pending: GameEvent[]; result: AnswerResult }
@@ -95,6 +121,8 @@ export function GameApp() {
   const ensurePlayer = useMutation(api.trivia.ensurePlayer);
   const startRunMutation = useMutation(api.trivia.startRun);
   const submitAnswerMutation = useMutation(api.trivia.submitAnswer);
+  const chooseBoostMutation = useMutation(api.trivia.chooseBoost);
+  const activateBoostMutation = useMutation(api.trivia.useBoost);
   const abandonRunMutation = useMutation(api.trivia.abandonRun);
   const completeFinaleMutation = useMutation(api.trivia.completeFinale);
 
@@ -106,6 +134,8 @@ export function GameApp() {
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
   const [questionNumber, setQuestionNumber] = useState(1);
   const [chosenIndex, setChosenIndex] = useState<number | null>(null);
+  const [boosts, setBoosts] = useState<BoostState | null>(null);
+  const [draftChosen, setDraftChosen] = useState<string | null>(null); // double-activation guard, mirrors chosenIndex
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [hostPaused, setHostPaused] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -272,7 +302,9 @@ export function GameApp() {
     if (!music?.started) return;
     if (phase.kind === "title" || phase.kind === "intro") {
       void music.playLoop(MUSIC_TRACKS.title);
-    } else if (phase.kind === "question" || phase.kind === "feedback" || phase.kind === "tape") {
+    } else if (phase.kind === "question" || phase.kind === "feedback" || phase.kind === "tape" || phase.kind === "draft") {
+      // The draft keeps the question bed running deliberately — the player is
+      // still mid-episode, just between rounds (explicit, not fallthrough).
       void music.playLoop(MUSIC_TRACKS.bed);
     } else if (phase.kind === "finale") {
       void music.playOnce(MUSIC_TRACKS.finale);
@@ -310,7 +342,16 @@ export function GameApp() {
         setQuestion(started.question);
         setQuestionNumber(started.run.questionNumber);
         setChosenIndex(null);
-        if (started.resumed) {
+        setBoosts(started.boosts as BoostState);
+        setDraftChosen(null);
+        if (started.resumed && !started.question) {
+          // The daily was left mid-draft: re-enter the draft with the same
+          // persisted offer (the server never re-rolls it).
+          setPhase({ kind: "draft" });
+          announce(
+            `Resuming tonight's broadcast. Round ${started.run.round - 1} complete. Choose your Signal Boost. ${started.boosts.offer?.length ?? 3} options.`,
+          );
+        } else if (started.resumed && started.question) {
           // Tonight's daily was already in progress: the server hands the
           // attempt back mid-episode. No show-open — its "first theme" and
           // "first question" copy would be false. Mirror resumeRun instead.
@@ -355,10 +396,20 @@ export function GameApp() {
     setQuestion(resumable.question);
     setQuestionNumber(resumable.run.questionNumber);
     setChosenIndex(null);
+    setBoosts(resumable.boosts as BoostState);
+    setDraftChosen(null);
     // No show-open on resume: the player is mid-episode, get them back fast.
+    if (!resumable.question && resumable.run.drafting) {
+      setPhase({ kind: "draft" });
+      announce(
+        `Round ${resumable.run.round - 1} complete. Choose your Signal Boost. ${resumable.boosts.offer?.length ?? 3} options.`,
+      );
+      return;
+    }
+    if (!resumable.question) return; // defensive: nothing to resume into
     setPhase({ kind: "question" });
     serveQuestionAudio(resumable.question.key);
-  }, [resumable, serveQuestionAudio]);
+  }, [announce, resumable, serveQuestionAudio]);
 
   /** Leaves the on-air intro for the first question. */
   const beginQuestions = useCallback(() => {
@@ -370,6 +421,12 @@ export function GameApp() {
   const chooseAnswer = useCallback(
     async (index: number) => {
       if (!run || !question || chosenIndex !== null || busy) return;
+      if (boosts?.eliminatedChoices.includes(index)) {
+        // Never a silent no-op: the player (or their shortcut key) hit a
+        // choice Static Filter already removed.
+        announce(`Choice ${index + 1} is eliminated.`);
+        return;
+      }
       setBusy(true);
       setChosenIndex(index);
       try {
@@ -380,6 +437,7 @@ export function GameApp() {
           clientHour: new Date().getHours(),
         })) as AnswerResult;
         setRun(result.run);
+        setBoosts(result.boosts);
 
         const bundle: string[] = [];
         // Earcons fire immediately, at low gain, outside the ducking chain, and
@@ -412,9 +470,14 @@ export function GameApp() {
         if (result.run.streak > 0 && result.run.streak % 5 === 0) playBark("streak", bundle);
         for (const event of result.events) {
           if (event.type === "roundComplete") {
+            // The next theme is NOT announced here: it isn't chosen until the
+            // Signal Boost draft resolves (announced at draft exit instead).
             playBark("round-transition", bundle);
             producerSay("round-transition", { round: event.round + 1 }, bundle);
-            bundle.push(`Next round's theme: ${categoryLabel(event.nextCategory)}.`);
+          } else if (event.type === "boostTriggered") {
+            // Passive boosts are never silent — their effect rides the same
+            // feedback utterance (a11y review).
+            bundle.push(event.detail);
           } else if (event.type === "lifeGained") {
             bundle.push(`Life regained. ${event.lives} lives.`);
           } else if (event.type === "achievement") {
@@ -436,7 +499,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, busy, chosenIndex, playBark, playerKey, producerSay, question, run, submitAnswerMutation],
+    [announce, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, submitAnswerMutation],
   );
 
   const advanceAfterFeedback = useCallback(
@@ -477,13 +540,10 @@ export function GameApp() {
       }
       if (result.nextQuestion) {
         // Occasional flavor between questions: an archive fact or a lead-in.
-        // Skipped after round transitions (Clyde already spoke) and kept
-        // infrequent so it stays charming at question three hundred.
-        const hadRoundEvent = result.events.some((e) => e.type === "roundComplete");
+        // Kept infrequent so it stays charming at question three hundred.
         const roll = Math.random();
-        const flavor = hadRoundEvent
-          ? null
-          : roll < 0.2
+        const flavor =
+          roll < 0.2
             ? pickBark("fact", epilogueBarks)
             : roll < 0.5
               ? pickBark("question-lead-in", epilogueBarks)
@@ -497,18 +557,125 @@ export function GameApp() {
         setChosenIndex(null);
         setPhase({ kind: "question" });
         void flavorDone.then(() => serveQuestionAudio(nextKey));
+      } else if (result.run.status === "active" && result.run.drafting) {
+        // Between rounds: the Signal Boost draft. Short announcement only —
+        // the option buttons carry their own rules text (a11y review).
+        setDraftChosen(null);
+        setPhase({ kind: "draft" });
+        playBark("boost-offer", null);
+        announce(
+          `Round ${result.run.round - 1} complete. Choose your Signal Boost. ${result.boosts.offer?.length ?? 3} options.`,
+        );
       } else {
         setPhase({ kind: "gameover", result });
       }
     },
-    [completeFinaleMutation, epilogueBarks, playerKey, playHostClip, serveQuestionAudio, speakHostLine, story?.tapes],
+    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakHostLine, story?.tapes],
   );
+
+  /** Takes the drafted boost; the server applies it and opens the next round. */
+  const pickBoost = useCallback(
+    async (boostKey: string) => {
+      if (!run || draftChosen !== null || busy) return;
+      setBusy(true);
+      setDraftChosen(boostKey);
+      try {
+        const offerEntry = boosts?.offer?.find((b) => b.key === boostKey);
+        const drafted = await chooseBoostMutation({ playerKey, runId: run.runId, boostKey });
+        setRun(drafted.run as RunState);
+        setBoosts(drafted.boosts as BoostState);
+        const bundle: string[] = [];
+        // Clyde reads the chosen boost's tagline (voiced clip when it exists),
+        // then a short confirmation bark.
+        if (offerEntry) {
+          void speakHostLine(offerEntry.tagline, manifestRef.current.barks[`boost-tagline-${boostKey}`], bundle);
+        }
+        playBark("boost-chosen", bundle);
+        for (const event of drafted.events as GameEvent[]) {
+          if (event.type === "boostChosen") {
+            bundle.push(`${event.name} is yours.`);
+          } else if (event.type === "boostTriggered") {
+            bundle.push(event.detail);
+          } else if (event.type === "lifeGained") {
+            musicRef.current?.playEffect(STINGS.lifeGained);
+            bundle.push(`Life regained. ${event.lives} lives.`);
+          }
+        }
+        if (drafted.question) {
+          // The theme is announced here, at draft exit — the moment it's true.
+          // Announce BEFORE the phase change so confirmation → theme lands
+          // ahead of the question heading focus (parity with chooseAnswer).
+          bundle.push(`Round ${drafted.run.round}. Theme: ${categoryLabel(drafted.run.roundCategory as string | null)}.`);
+          bundle.forEach((line) => announce(line));
+          const nextKey = drafted.question.key;
+          setQuestion(drafted.question);
+          setQuestionNumber(drafted.run.questionNumber);
+          setChosenIndex(null);
+          setPhase({ kind: "question" });
+          serveQuestionAudio(nextKey);
+        } else {
+          // The bank ran dry during the draft — the run ended as a victory lap.
+          bundle.forEach((line) => announce(line));
+          setPhase({
+            kind: "gameover",
+            result: {
+              correct: true,
+              correctIndex: 0,
+              explanation: null,
+              scoreDelta: 0,
+              events: drafted.events as GameEvent[],
+              run: drafted.run as RunState,
+              boosts: drafted.boosts as BoostState,
+              nextQuestion: null,
+            },
+          });
+        }
+      } catch {
+        setDraftChosen(null);
+        announce("The signal dropped. Your pick didn't go through — try again.", "alert");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [announce, boosts?.offer, busy, chooseBoostMutation, draftChosen, playBark, playerKey, run, serveQuestionAudio, speakHostLine],
+  );
+
+  /** Static Filter: burn a charge to strike two wrong choices off the board. */
+  const activateStaticFilter = useCallback(async () => {
+    if (!run || !question || busy || chosenIndex !== null) return;
+    const chargesLeft = boosts?.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0;
+    if (chargesLeft <= 0 || (boosts?.eliminatedChoices.length ?? 0) > 0) return;
+    setBusy(true);
+    try {
+      const used = await activateBoostMutation({ playerKey, runId: run.runId, boostKey: "static-filter" });
+      setBoosts((prev) =>
+        prev
+          ? {
+              ...prev,
+              eliminatedChoices: used.eliminated,
+              owned: prev.owned.map((b) =>
+                b.key === "static-filter" ? { ...b, chargesLeft: used.chargesLeft } : b,
+              ),
+            }
+          : prev,
+      );
+      announce(
+        `Static Filter applied. Choices ${used.eliminated.map((i: number) => i + 1).join(" and ")} eliminated. ${used.chargesLeft} ${used.chargesLeft === 1 ? "use" : "uses"} left.`,
+      );
+    } catch {
+      announce("The signal dropped. Static Filter didn't go through — try again.", "alert");
+    } finally {
+      setBusy(false);
+    }
+  }, [activateBoostMutation, announce, boosts, busy, chosenIndex, playerKey, question, run]);
 
   const backToTitle = useCallback(() => {
     playerRef.current?.stop();
     stopProducer();
     setRun(null);
     setQuestion(null);
+    setBoosts(null);
+    setDraftChosen(null);
     returningToTitle.current = true; // focus the title heading, don't let focus die
     setPhase({ kind: "title" });
   }, []);
@@ -542,10 +709,17 @@ export function GameApp() {
           void chooseAnswer(num - 1);
         }
       }
+      if (phase.kind === "draft" && boosts?.offer && draftChosen === null) {
+        const num = Number.parseInt(event.key, 10);
+        if (num >= 1 && num <= boosts.offer.length) {
+          event.preventDefault();
+          void pickBoost(boosts.offer[num - 1].key);
+        }
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [chooseAnswer, chosenIndex, phase.kind, question, replayHostClip, settings?.numberShortcuts]);
+  }, [boosts?.offer, chooseAnswer, chosenIndex, draftChosen, phase.kind, pickBoost, question, replayHostClip, settings?.numberShortcuts]);
 
   const toggleHostPaused = useCallback(() => {
     setHostPaused((prev) => {
@@ -555,18 +729,30 @@ export function GameApp() {
     });
   }, []);
 
-  const statusItems = useMemo(
-    () =>
-      run
-        ? [
-            { label: "Score", value: String(run.score) },
-            { label: "Round", value: String(run.round) },
-            { label: "Lives", value: String(run.lives) },
-            { label: "Streak", value: String(run.streak) },
-          ]
-        : [],
-    [run],
-  );
+  const statusItems = useMemo(() => {
+    if (!run) return [];
+    const items = [
+      { label: "Score", value: String(run.score) },
+      { label: "Round", value: String(run.round) },
+      { label: "Lives", value: String(run.lives) },
+      { label: "Streak", value: String(run.streak) },
+    ];
+    if (boosts && boosts.owned.length > 0) {
+      // The re-checkable record; every CHANGE is announced when it happens,
+      // so this list stays non-live (a11y review).
+      items.push({
+        label: "Boosts",
+        value: boosts.owned
+          .map((b) =>
+            b.chargesLeft !== null
+              ? `${b.name}, ${b.chargesLeft} ${b.chargesLeft === 1 ? "use" : "uses"} left`
+              : b.name,
+          )
+          .join("; "),
+      });
+    }
+    return items;
+  }, [boosts, run]);
 
   if (!settings) {
     return <p className="py-8 text-center">Tuning the signal…</p>;
@@ -686,8 +872,9 @@ export function GameApp() {
         <p className="mt-6 text-sm leading-6 text-zinc-400">
           The Producer (the show&apos;s second voice) can speak through your device&apos;s speech
           synthesis. It&apos;s off by default — screen reader users usually prefer announcements
-          through their own screen reader. Keyboard shortcuts: 1 to 4 answer questions, R replays
-          Clyde&apos;s last line. Both can be changed in Settings. Questions include material from{" "}
+          through their own screen reader. Keyboard shortcuts: 1 to 4 answer questions and pick
+          Signal Boosts between rounds, R replays Clyde&apos;s last line. Both can be changed in
+          Settings. Questions include material from{" "}
           <a className={`underline ${focusRing}`} href="https://opentdb.com">
             Open Trivia Database
           </a>{" "}
@@ -730,6 +917,36 @@ export function GameApp() {
         </section>
       ) : null}
 
+      {phase.kind === "draft" && boosts?.offer ? (
+        <section aria-labelledby="draft-heading" className="mt-6">
+          <h2
+            className="text-xl font-semibold text-amber-200"
+            id="draft-heading"
+            ref={panelHeadingRef}
+            tabIndex={-1}
+          >
+            Round {(run?.round ?? 2) - 1} complete — choose a Signal Boost
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Word from the booth: pick one before we go back on the air. No rush — the signal holds.
+          </p>
+          <div aria-labelledby="draft-heading" className="mt-4 grid gap-3" role="group">
+            {boosts.offer.map((boost, index) => (
+              <button
+                aria-disabled={draftChosen !== null}
+                aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
+                className={`${secondaryButton} justify-start text-left`}
+                key={boost.key}
+                onClick={() => void pickBoost(boost.key)}
+                type="button"
+              >
+                {index + 1}. {boost.name}. {boost.tagline} {boost.rules}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {(phase.kind === "question" || phase.kind === "feedback") && question ? (
         <section aria-labelledby="question-heading" className="mt-6">
           <p className="text-sm text-zinc-400">
@@ -739,19 +956,42 @@ export function GameApp() {
             {question.prompt}
           </h2>
           <div aria-labelledby="question-heading" className="mt-4 grid gap-3" role="group">
-            {question.choices.map((choice, index) => (
+            {question.choices.map((choice, index) => {
+              const eliminated = boosts?.eliminatedChoices.includes(index) ?? false;
+              return (
+                <button
+                  aria-disabled={chosenIndex !== null || eliminated}
+                  aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
+                  className={`${secondaryButton} justify-start text-left ${eliminated ? "line-through opacity-70" : ""}`}
+                  key={choice}
+                  onClick={() => void chooseAnswer(index)}
+                  type="button"
+                >
+                  {index + 1}. {eliminated ? "(static — eliminated) " : ""}
+                  {choice}
+                </button>
+              );
+            })}
+          </div>
+          {phase.kind === "question" &&
+          boosts?.owned.some(
+            (b) => b.key === "static-filter" && ((b.chargesLeft ?? 0) > 0 || boosts.eliminatedChoices.length > 0),
+          ) ? (
+            <div aria-label="Signal Boosts" className="mt-3" role="group">
               <button
-                aria-disabled={chosenIndex !== null}
-                aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
-                className={`${secondaryButton} justify-start text-left`}
-                key={choice}
-                onClick={() => void chooseAnswer(index)}
+                aria-disabled={
+                  busy || chosenIndex !== null || boosts.eliminatedChoices.length > 0
+                }
+                className={secondaryButton}
+                onClick={() => void activateStaticFilter()}
                 type="button"
               >
-                {index + 1}. {choice}
+                {boosts.eliminatedChoices.length > 0
+                  ? "Static Filter applied"
+                  : `Use Static Filter — ${boosts.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0} left`}
               </button>
-            ))}
-          </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -781,7 +1021,9 @@ export function GameApp() {
           >
             {phase.result.events.some((e) => e.type === "gameOver" || e.type === "bankExhausted")
               ? "Continue"
-              : "Next question"}
+              : phase.result.run.drafting
+                ? "Choose your Signal Boost"
+                : "Next question"}
           </button>
         </section>
       ) : null}
@@ -858,7 +1100,7 @@ export function GameApp() {
         <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
           {musicMuted ? "Unmute music" : "Mute music"}
         </button>
-        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" ? (
+        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" || phase.kind === "draft" ? (
           <button className={secondaryButton} onClick={() => void quitRun()} type="button">
             Quit run
           </button>
