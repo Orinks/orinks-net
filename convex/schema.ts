@@ -163,6 +163,34 @@ export default defineSchema({
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
+  // Cloud saves: one metadata row per uploaded revision, content bytes in a
+  // separate table so listing revisions never reads the blobs. A "slot" is
+  // (driverId, saveName) — the game has one local save file per profile name
+  // and mirrors each to its own slot. Revisions are monotonic per slot; only
+  // the newest few are kept (pruned inside the upload mutation).
+  freightFateSaves: defineTable({
+    driverId: v.string(),
+    saveName: v.string(),
+    revision: v.number(),
+    // The game's SAVE_VERSION at upload time, so old clients can refuse a
+    // save from a newer game instead of mangling it.
+    saveVersion: v.number(),
+    // sha256 hex of the content bytes, verified server-side at upload and
+    // re-checked by the game after download.
+    contentHash: v.string(),
+    sizeBytes: v.number(),
+    // Short player-facing description ("Level 12, $48,300, in Chicago") the
+    // game speaks when offering a restore; never parsed.
+    summary: v.string(),
+    contentId: v.id("freightFateSaveContent"),
+    createdAt: v.number(),
+  })
+    .index("by_slot", ["driverId", "saveName", "revision"])
+    .index("by_driver", ["driverId"]),
+  freightFateSaveContent: defineTable({
+    driverId: v.string(),
+    content: v.bytes(), // gzipped profile JSON, exactly as the game sent it
+  }).index("by_driver", ["driverId"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),
     eventId: v.string(),
