@@ -11,6 +11,7 @@
     { "id": "prod-daily", "trigger": "daily-intro", "template": "Tonight's broadcast, {date}. All contestants receive identical questions. Synchronization: engaged." },
     { "id": "prod-tape", "trigger": "tape-found", "template": "Archive item recovered. Cataloging. Tape {tapeNumber} of {tapeTotal}." },
     { "id": "prod-achievement", "trigger": "achievement", "template": "Achievement unlocked: {achievementName}. Adding to permanent record." },
+    { "id": "prod-whisper", "trigger": "whisper", "template": "Analysis: it is not choice {choice}." },
 
     { "id": "prod-epilogue-intro", "trigger": "run-intro-epilogue", "template": "Contestant: {name}. Episode {runNumber}. Signal integrity: warm." },
     { "id": "prod-epilogue-gameover", "trigger": "game-over-epilogue", "template": "Broadcast concluded. Final score: {score}. Archive annotation: Vernon would have liked this one." }

@@ -26,6 +26,10 @@ const DEEP_CUTS_MULTIPLIER = 1.75; // and the difficulty band shifts up a tier
 const SPARE_FUSE_POINTS = 250; // consolation when already at max lives
 const STATIC_FILTER_ELIMINATIONS = 2;
 
+// --- Signal Strength (lifeline economy) tuning ---
+const SIGNAL_CAP = 3;
+const SIGNAL_EVERY_STREAK = 3; // every 3rd consecutive correct answer
+
 // --- Boss Call tuning ---
 const BOSS_CALL_EVERY_ROUNDS = 3;
 const BOSS_REWARD_POINTS = 300;
@@ -312,6 +316,7 @@ type GameEvent =
   | { type: "deadAirSurvived" }
   | { type: "bossCall"; caller: string; name: string }
   | { type: "bossRewardChosen"; reward: string; detail: string }
+  | { type: "signalGained"; strength: number }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -335,6 +340,7 @@ function publicRunState(run: Doc<"triviaRuns">) {
     drafting: run.pendingBoostOffer !== undefined,
     deadAir: run.deadAirPending === true,
     bossCall: bossPublicState(run),
+    signalStrength: run.signalStrength ?? 0,
     mutator: mutator
       ? { key: mutator.key, name: mutator.name, rules: mutator.rules, intro: mutator.intro }
       : null,
@@ -367,6 +373,7 @@ function boostPublicState(run: Doc<"triviaRuns">) {
     offer,
     activeRoundBoost: run.activeRoundBoost ?? null,
     eliminatedChoices: run.eliminatedChoices ?? [],
+    eliminatedBy: run.eliminatedBy ?? null,
   };
 }
 
@@ -574,7 +581,7 @@ export const submitAnswer = mutation({
       throw new Error("choiceIndex out of range");
     }
     if (run.eliminatedChoices?.includes(args.choiceIndex)) {
-      throw new Error("That choice was eliminated by Static Filter");
+      throw new Error("That choice was eliminated");
     }
 
     // Anti-cheat: think time measured from the server's serve timestamp (the
@@ -593,6 +600,7 @@ export const submitAnswer = mutation({
 
     const ownedBoosts = new Set(run.modifiers);
     const mutator = mutatorOf(run);
+    let signalStrength = run.signalStrength ?? 0;
     const roundBoost =
       run.activeRoundBoost && run.activeRoundBoost.round === round ? run.activeRoundBoost.key : null;
 
@@ -636,6 +644,10 @@ export const submitAnswer = mutation({
       scoreDelta = Math.round(delta);
       score += scoreDelta;
       streak += 1;
+      if (streak % SIGNAL_EVERY_STREAK === 0 && signalStrength < SIGNAL_CAP) {
+        signalStrength += 1;
+        events.push({ type: "signalGained", strength: signalStrength });
+      }
       if (streak === 5) await unlockAchievement(ctx, player._id, "streak-5", events);
     } else {
       let lifeCost = roundBoost === "double-broadcast" ? DOUBLE_BROADCAST_LIFE_COST : 1;
@@ -688,6 +700,7 @@ export const submitAnswer = mutation({
       await ctx.db.patch(args.runId, {
         score,
         streak,
+        signalStrength,
         lives: 0,
         answeredInRound,
         wrongInRound,
@@ -698,7 +711,7 @@ export const submitAnswer = mutation({
         currentQuestionServedAt: answeredAt,
         currentQuestionKey: deadAirQuestion.id,
         askedQuestionKeys: [...run.askedQuestionKeys, deadAirQuestion.id],
-        eliminatedChoices: undefined,
+        eliminatedChoices: undefined, eliminatedBy: undefined,
       });
     } else if (dead) {
       // Finalize the run and roll aggregates into the player profile.
@@ -790,6 +803,7 @@ export const submitAnswer = mutation({
         const betweenRounds: Partial<Doc<"triviaRuns">> = {
           score,
           streak,
+          signalStrength,
           lives,
           round,
           answeredInRound,
@@ -801,7 +815,7 @@ export const submitAnswer = mutation({
           deadAirPending: undefined,
           currentQuestionKey: undefined,
           currentQuestionServedAt: answeredAt,
-          eliminatedChoices: undefined,
+          eliminatedChoices: undefined, eliminatedBy: undefined,
           // A round-scoped boost from the previous draft has expired by now.
           activeRoundBoost:
             run.activeRoundBoost && run.activeRoundBoost.round >= round ? run.activeRoundBoost : undefined,
@@ -868,6 +882,7 @@ export const submitAnswer = mutation({
           await ctx.db.patch(args.runId, {
             score,
             streak,
+            signalStrength,
             lives,
             round,
             answeredInRound,
@@ -879,7 +894,7 @@ export const submitAnswer = mutation({
             currentQuestionServedAt: answeredAt,
             currentQuestionKey: nextQuestion.id,
             askedQuestionKeys: [...run.askedQuestionKeys, nextQuestion.id],
-            eliminatedChoices: undefined,
+            eliminatedChoices: undefined, eliminatedBy: undefined,
             deadAirPending: undefined,
           });
         }
@@ -983,7 +998,7 @@ export const chooseBoost = mutation({
       currentQuestionKey: question.id,
       askedQuestionKeys: [...run.askedQuestionKeys, question.id],
       currentQuestionServedAt: now,
-      eliminatedChoices: undefined,
+      eliminatedChoices: undefined, eliminatedBy: undefined,
     });
     await ctx.db.patch(player._id, { lastSeenAt: now });
     const updated = (await ctx.db.get(args.runId))!;
@@ -993,6 +1008,37 @@ export const chooseBoost = mutation({
       question: sanitizeQuestion(question),
       events,
     };
+  },
+});
+
+/** Producer's Whisper: spend 1 signal to eliminate ONE wrong choice. */
+export const useSignal = mutation({
+  args: { playerKey: v.string(), runId: v.id("triviaRuns") },
+  handler: async (ctx, args) => {
+    const player = await requirePlayer(ctx, args.playerKey);
+    const run = await ctx.db.get(args.runId);
+    if (!run || run.playerId !== player._id) throw new Error("Run not found");
+    const targetKey =
+      run.bossCall?.phase === "question" ? run.bossCall.questionKey : run.currentQuestionKey;
+    if (run.status !== "active" || !targetKey) throw new Error("No question on the air");
+    const signal = run.signalStrength ?? 0;
+    if (signal <= 0) throw new Error("No signal strength stored");
+    // One elimination effect per question: Whisper and Static Filter are
+    // mutually exclusive, whichever lands first.
+    if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
+      throw new Error("An elimination is already applied to this question");
+    }
+    const question = questionByKey.get(targetKey);
+    if (!question) throw new Error("Current question missing from bank");
+    const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
+    const roll = runRoll(run, `whisper:${targetKey}`);
+    const eliminated = wrongs[Math.floor(roll * wrongs.length)];
+    await ctx.db.patch(args.runId, {
+      eliminatedChoices: [eliminated],
+      eliminatedBy: "whisper",
+      signalStrength: signal - 1,
+    });
+    return { eliminated, signalLeft: signal - 1 };
   },
 });
 
@@ -1011,7 +1057,7 @@ export const useBoost = mutation({
     const charges = run.boostCharges?.[args.boostKey] ?? 0;
     if (charges <= 0) throw new Error("No uses left");
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
-      throw new Error("Static Filter is already applied to this question");
+      throw new Error("An elimination is already applied to this question");
     }
     const question = questionByKey.get(filterTargetKey);
     if (!question) throw new Error("Current question missing from bank");
@@ -1026,6 +1072,7 @@ export const useBoost = mutation({
     eliminated.sort((a, b) => a - b);
     await ctx.db.patch(args.runId, {
       eliminatedChoices: eliminated,
+      eliminatedBy: "static-filter",
       boostCharges: { ...(run.boostCharges ?? {}), [args.boostKey]: charges - 1 },
     });
     return { eliminated, chargesLeft: charges - 1 };
@@ -1048,10 +1095,12 @@ export const answerBossCall = mutation({
       throw new Error("choiceIndex out of range");
     }
     if (run.eliminatedChoices?.includes(args.choiceIndex)) {
-      throw new Error("That choice was eliminated by Static Filter");
+      throw new Error("That choice was eliminated");
     }
 
-    // Same anti-cheat clock as regular questions.
+    // Same anti-cheat clock as regular questions. Caller answers touch
+    // neither streak nor signal strength (documented: no earning here, so
+    // no signalGained event can be dropped by the client's caller path).
     const answeredAt = Date.now();
     const elapsed = answeredAt - run.bossCall.servedAt;
     const fastAnswers = (run.fastAnswers ?? 0) + (elapsed < MIN_ANSWER_MS ? 1 : 0);
@@ -1064,7 +1113,7 @@ export const answerBossCall = mutation({
         fastAnswers,
         flagged,
         bossCall: { ...run.bossCall, phase: "reward" },
-        eliminatedChoices: undefined,
+        eliminatedChoices: undefined, eliminatedBy: undefined,
       });
     } else {
       // The caller hangs up; the commercial break (draft) proceeds as normal.
@@ -1075,7 +1124,7 @@ export const answerBossCall = mutation({
         flagged,
         bossCall: undefined,
         pendingBoostOffer: offer,
-        eliminatedChoices: undefined,
+        eliminatedChoices: undefined, eliminatedBy: undefined,
       });
     }
     await ctx.db.patch(player._id, {

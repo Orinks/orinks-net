@@ -745,6 +745,86 @@ describe("daily mutators", () => {
   });
 });
 
+describe("signal strength", () => {
+  test("every 3rd consecutive correct answer stores a signal, capped at 3", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    let key = start.question!.key;
+    for (let i = 1; i <= 12; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, key, true);
+      const gained = result.events.find((e: { type: string }) => e.type === "signalGained");
+      if (i === 3) {
+        expect(result.run.signalStrength).toBe(1);
+        expect(gained).toBeDefined();
+      }
+      if (i === 9) expect(result.run.signalStrength).toBe(3);
+      if (i === 12) {
+        expect(result.run.signalStrength).toBe(3); // capped
+        expect(gained).toBeUndefined();
+      }
+      if (result.nextQuestion) {
+        key = result.nextQuestion.key;
+      } else if (result.run.drafting) {
+        const safePick = result.boosts.offer!.find((b: { kind: string }) => b.kind !== "instant")!.key;
+        const drafted = await draftBoost(t, PLAYER, start.run.runId, result, safePick);
+        key = drafted.question!.key;
+      }
+    }
+  });
+
+  test("the producer's whisper eliminates one wrong choice for one signal", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    let key = start.question!.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, key, true);
+      key = result.nextQuestion!.key;
+    }
+    const whispered = await t.mutation(api.trivia.useSignal, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+    });
+    expect(whispered.signalLeft).toBe(0);
+    const question = questionByKey.get(key)!;
+    expect(whispered.eliminated).not.toBe(question.answer);
+    // The eliminated choice can't be answered...
+    think();
+    await expect(
+      t.mutation(api.trivia.submitAnswer, {
+        playerKey: PLAYER,
+        runId: start.run.runId as never,
+        choiceIndex: whispered.eliminated,
+      }),
+    ).rejects.toThrow(/eliminated/);
+    // ...and a second whisper has no signal to spend.
+    await expect(
+      t.mutation(api.trivia.useSignal, { playerKey: PLAYER, runId: start.run.runId as never }),
+    ).rejects.toThrow(/No signal strength/);
+  });
+
+  test("whisper and static filter are mutually exclusive per question", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    let key = start.question!.key;
+    for (let i = 0; i < 3; i++) {
+      const result = await answer(t, PLAYER, start.run.runId, key, true);
+      key = result.nextQuestion!.key;
+    }
+    await t.mutation(internal.trivia.grantBoost, { playerKey: PLAYER, boostKey: "static-filter" });
+    await t.mutation(api.trivia.useBoost, {
+      playerKey: PLAYER,
+      runId: start.run.runId as never,
+      boostKey: "static-filter",
+    });
+    await expect(
+      t.mutation(api.trivia.useSignal, { playerKey: PLAYER, runId: start.run.runId as never }),
+    ).rejects.toThrow(/already applied/);
+  });
+});
+
 describe("boss calls", () => {
   /** Plays three full rounds correctly (drafting between) up to the caller. */
   async function playToBossCall(t: Caller, playerKey: string) {

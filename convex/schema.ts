@@ -88,6 +88,9 @@ export default defineSchema({
     // pendingBoostOffer means the run is drafting (between rounds, no
     // current question); the offer persists so resume never re-rolls it.
     modifiers: v.array(v.string()),
+    // Signal Strength: earned every 3rd consecutive correct answer (cap 3),
+    // spent on the Producer's Whisper (eliminate one wrong choice).
+    signalStrength: v.optional(v.number()),
     // Dead Air: once per run, losing the last life serves one redemption
     // question instead of ending the run. deadAirPending marks the current
     // question as that redemption; deadAirUsed means the chance is spent.
@@ -109,6 +112,8 @@ export default defineSchema({
     boostCharges: v.optional(v.record(v.string(), v.number())),
     activeRoundBoost: v.optional(v.object({ key: v.string(), round: v.number() })),
     eliminatedChoices: v.optional(v.array(v.number())),
+    // Which effect struck those choices out (labels differ client-side).
+    eliminatedBy: v.optional(v.union(v.literal("static-filter"), v.literal("whisper"))),
     currentQuestionKey: v.optional(v.string()),
     askedQuestionKeys: v.array(v.string()),
     dateKey: v.string(),

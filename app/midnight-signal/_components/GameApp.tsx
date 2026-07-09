@@ -49,6 +49,7 @@ interface RunState {
     phase: "question" | "reward";
     question: PublicQuestion | null;
   } | null;
+  signalStrength: number;
   mutator: { key: string; name: string; rules: string; intro: string } | null;
   dateKey: string;
 }
@@ -78,6 +79,7 @@ type GameEvent =
   | { type: "deadAirSurvived" }
   | { type: "bossCall"; caller: string; name: string }
   | { type: "bossRewardChosen"; reward: string; detail: string }
+  | { type: "signalGained"; strength: number }
   | { type: "lifeGained"; lives: number }
   | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
   | { type: "finaleReady" }
@@ -102,6 +104,7 @@ interface BoostState {
   offer: OfferedBoost[] | null;
   activeRoundBoost: { key: string; round: number } | null;
   eliminatedChoices: number[];
+  eliminatedBy: "static-filter" | "whisper" | null;
 }
 interface AnswerResult {
   correct: boolean;
@@ -163,6 +166,7 @@ export function GameApp() {
   const activateBoostMutation = useMutation(api.trivia.useBoost);
   const answerBossCallMutation = useMutation(api.trivia.answerBossCall);
   const chooseBossRewardMutation = useMutation(api.trivia.chooseBossReward);
+  const whisperMutation = useMutation(api.trivia.useSignal);
   const abandonRunMutation = useMutation(api.trivia.abandonRun);
   const completeFinaleMutation = useMutation(api.trivia.completeFinale);
 
@@ -682,6 +686,10 @@ export function GameApp() {
             // Passive boosts are never silent — their effect rides the same
             // feedback utterance (a11y review).
             bundle.push(event.detail);
+          } else if (event.type === "signalGained") {
+            // Same framing as the status row so the ephemeral announcement
+            // and the re-checkable record match (a11y consult).
+            bundle.push(`Signal strength up. ${event.strength} of 3 stored.`);
           } else if (event.type === "bossCall") {
             // Name the voice before it ever speaks: system line here, the
             // caller's own voiced intro after "Take the call" (a11y consult).
@@ -928,8 +936,12 @@ export function GameApp() {
   /** Static Filter: burn a charge to strike two wrong choices off the board. */
   const activateStaticFilter = useCallback(async () => {
     if (!run || !question || busy || chosenIndex !== null) return;
+    if ((boosts?.eliminatedChoices.length ?? 0) > 0) {
+      announce("An elimination is already applied to this question."); // never a silent no-op
+      return;
+    }
     const chargesLeft = boosts?.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0;
-    if (chargesLeft <= 0 || (boosts?.eliminatedChoices.length ?? 0) > 0) return;
+    if (chargesLeft <= 0) return;
     setBusy(true);
     try {
       const used = await activateBoostMutation({ playerKey, runId: run.runId, boostKey: "static-filter" });
@@ -953,6 +965,35 @@ export function GameApp() {
       setBusy(false);
     }
   }, [activateBoostMutation, announce, boosts, busy, chosenIndex, playerKey, question, run]);
+
+  /** Producer's Whisper: spend 1 signal, the Producer strikes one wrong choice. */
+  const activateWhisper = useCallback(async () => {
+    if (!run || !question || busy || chosenIndex !== null) return;
+    if ((boosts?.eliminatedChoices.length ?? 0) > 0) {
+      announce("An elimination is already applied to this question."); // never a silent no-op
+      return;
+    }
+    if (run.signalStrength <= 0) return;
+    setBusy(true);
+    try {
+      const used = await whisperMutation({ playerKey, runId: run.runId });
+      setRun((prev) => (prev ? { ...prev, signalStrength: used.signalLeft } : prev));
+      setBoosts((prev) =>
+        prev ? { ...prev, eliminatedChoices: [used.eliminated], eliminatedBy: "whisper" } : prev,
+      );
+      // Split utterance (a11y consult): diegetic flavor through the Producer
+      // path (device voice or live region), mechanical confirmation always
+      // through announce() — a resource spend can't hinge on device voice.
+      producerSay("whisper", { choice: used.eliminated + 1 }, null);
+      announce(
+        `Choice ${used.eliminated + 1} eliminated. Signal strength: ${used.signalLeft} of 3.`,
+      );
+    } catch {
+      announce("The signal dropped. The whisper didn't go through — try again.", "alert");
+    } finally {
+      setBusy(false);
+    }
+  }, [announce, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, producerSay, question, run, whisperMutation]);
 
   const backToTitle = useCallback(() => {
     playerRef.current?.stop();
@@ -1048,6 +1089,9 @@ export function GameApp() {
           .join("; "),
       });
     }
+    // Always visible, even at 0 — the only discoverable record that the
+    // signal economy exists before the first earn (a11y consult).
+    items.push({ label: "Signal strength", value: `${run.signalStrength} of 3` });
     if (run.mutator) {
       // Last row, name + short rules: the intro announcement is ephemeral and
       // the intro panel unmounts, so this is where the rules stay re-readable.
@@ -1329,31 +1373,58 @@ export function GameApp() {
                   onClick={() => void chooseAnswer(index)}
                   type="button"
                 >
-                  {index + 1}. {eliminated ? "(static — eliminated) " : ""}
+                  {index + 1}.{" "}
+                  {eliminated
+                    ? boosts?.eliminatedBy === "whisper"
+                      ? "(whisper — eliminated) "
+                      : "(static — eliminated) "
+                    : ""}
                   {choice}
                 </button>
               );
             })}
           </div>
-          {phase.kind === "question" &&
-          boosts?.owned.some(
-            (b) => b.key === "static-filter" && ((b.chargesLeft ?? 0) > 0 || boosts.eliminatedChoices.length > 0),
-          ) ? (
-            <div aria-label="Signal Boosts" className="mt-3" role="group">
-              <button
-                aria-disabled={
-                  busy || chosenIndex !== null || boosts.eliminatedChoices.length > 0
-                }
-                className={secondaryButton}
-                onClick={() => void activateStaticFilter()}
-                type="button"
-              >
-                {boosts.eliminatedChoices.length > 0
-                  ? "Static Filter applied"
-                  : `Use Static Filter — ${boosts.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0} left`}
-              </button>
-            </div>
-          ) : null}
+          {phase.kind === "question"
+            ? (() => {
+                const filter = boosts?.owned.find((b) => b.key === "static-filter");
+                const eliminationApplied = (boosts?.eliminatedChoices.length ?? 0) > 0;
+                const showFilter = filter && ((filter.chargesLeft ?? 0) > 0 || eliminationApplied);
+                const showWhisper = (run?.signalStrength ?? 0) > 0 || eliminationApplied;
+                if (!showFilter && !showWhisper) return null;
+                return (
+                  <div aria-label="Signal Boosts" className="mt-3 flex flex-wrap gap-3" role="group">
+                    {showFilter ? (
+                      <button
+                        aria-disabled={busy || chosenIndex !== null || eliminationApplied}
+                        className={secondaryButton}
+                        onClick={() => void activateStaticFilter()}
+                        type="button"
+                      >
+                        {eliminationApplied
+                          ? boosts!.eliminatedBy === "whisper"
+                            ? "Static Filter — unavailable, Producer's Whisper used this question"
+                            : "Static Filter applied"
+                          : `Use Static Filter — ${filter?.chargesLeft ?? 0} left`}
+                      </button>
+                    ) : null}
+                    {showWhisper ? (
+                      <button
+                        aria-disabled={busy || chosenIndex !== null || eliminationApplied}
+                        className={secondaryButton}
+                        onClick={() => void activateWhisper()}
+                        type="button"
+                      >
+                        {eliminationApplied
+                          ? boosts!.eliminatedBy === "whisper"
+                            ? "Producer's Whisper applied"
+                            : "Producer's Whisper — unavailable, Static Filter used this question"
+                          : `Producer's Whisper — uses 1 signal, ${run?.signalStrength ?? 0} stored`}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })()
+            : null}
         </section>
       ) : null}
 
