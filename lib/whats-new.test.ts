@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatAnnouncementDate, getWhatsNewEntries } from "./whats-new";
+import { formatAnnouncementDate, getWhatsNewEntries, whatsNewFeedXml } from "./whats-new";
 
 // The deploy gate for curated announcements: a malformed entry fails this
 // suite (and the build) on every dev and main push, before any deploy.
@@ -10,6 +10,22 @@ describe("whats-new announcements", () => {
     for (let i = 1; i < entries.length; i++) {
       expect(entries[i - 1].date >= entries[i].date).toBe(true);
     }
+  });
+
+  test("the RSS feed is well-formed and carries every entry", () => {
+    const xml = whatsNewFeedXml("Test Site", "https://example.com");
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(xml).toContain('<rss version="2.0"');
+    const entries = getWhatsNewEntries();
+    expect((xml.match(/<item>/g) ?? []).length).toBe(entries.length);
+    for (const entry of entries) {
+      expect(xml).toContain(`https://example.com/whats-new#${entry.id}`);
+    }
+    // Every ampersand must be part of an entity — unescaped text breaks
+    // strict feed readers.
+    expect(xml).not.toMatch(/&(?!amp;|lt;|gt;|quot;|apos;)/);
+    // pubDates are valid RFC 822 dates, never "Invalid Date".
+    expect(xml).not.toContain("Invalid Date");
   });
 
   test("every entry is fully presentable", () => {

@@ -61,3 +61,50 @@ export function formatAnnouncementDate(date: string): string {
     new Date(`${date}T00:00:00Z`),
   );
 }
+
+function escapeXml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+/**
+ * RSS 2.0 feed for /whats-new/feed.xml, built from the same validated
+ * entries — so the feed inherits the announcement deploy gate for free.
+ */
+export function whatsNewFeedXml(siteName: string, siteUrl: string): string {
+  const entries = getWhatsNewEntries();
+  const items = entries
+    .map((entry) => {
+      const link = `${siteUrl}/whats-new#${entry.id}`;
+      const description = entry.body.join(" ");
+      return [
+        "    <item>",
+        `      <title>${escapeXml(`${entry.project}: ${entry.title}`)}</title>`,
+        `      <link>${escapeXml(link)}</link>`,
+        `      <guid isPermaLink="true">${escapeXml(link)}</guid>`,
+        `      <pubDate>${new Date(`${entry.date}T00:00:00Z`).toUTCString()}</pubDate>`,
+        `      <category>${escapeXml(entry.project)}</category>`,
+        `      <description>${escapeXml(description)}</description>`,
+        "    </item>",
+      ].join("\n");
+    })
+    .join("\n");
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    "  <channel>",
+    `    <title>${escapeXml(`What's New — ${siteName}`)}</title>`,
+    `    <link>${escapeXml(`${siteUrl}/whats-new`)}</link>`,
+    `    <atom:link href="${escapeXml(`${siteUrl}/whats-new/feed.xml`)}" rel="self" type="application/rss+xml" />`,
+    "    <description>Announcements for the site, its games, and the featured projects.</description>",
+    "    <language>en-us</language>",
+    items,
+    "  </channel>",
+    "</rss>",
+    "",
+  ].join("\n");
+}

@@ -6,6 +6,9 @@ export const metadata = {
   title: "What's New",
   description:
     "Announcements and recent activity across the site, the games, and the featured projects.",
+  alternates: {
+    types: { "application/rss+xml": "/whats-new/feed.xml" },
+  },
 };
 
 // The 10 newest stay expanded and reachable by heading navigation; older
@@ -50,6 +53,14 @@ export default function WhatsNewPage() {
         intro="What changed lately: announcements for the site and its games, followed by public activity from the featured project repositories."
         title="What's New"
       />
+
+      <p className="pt-4 leading-7 text-slate-700">
+        Prefer a feed reader?{" "}
+        <a className="font-semibold text-action hover:text-action-dark" href="/whats-new/feed.xml">
+          Subscribe to the What&apos;s New RSS feed
+        </a>
+        .
+      </p>
 
       <section aria-labelledby="announcements" className="py-8">
         <h2 className="text-2xl font-bold text-ink" id="announcements">
