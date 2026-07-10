@@ -2,6 +2,16 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-09-driver-naming-rules",
+      "date": "2026-07-09",
+      "project": "Freight Fate",
+      "title": "Driver naming rules, published and enforced",
+      "body": [
+        "Driver names now have published rules: no slurs or hate speech, no hate figures or hate symbols, no profanity, no impersonation, no harassment, and at least three letters. New and updated names are screened against the rules the moment you save them, and anything offensive that was stored earlier is hidden from public pages. Moderators can also reset a name outright, in which case the setup page asks you to choose a new one."
+      ],
+      "link": { "href": "/freight-fate/online/rules", "label": "Read the driver naming rules" }
+    },
+    {
       "id": "2026-07-08-midnight-signal-roguelite",
       "date": "2026-07-08",
       "project": "The Midnight Signal",

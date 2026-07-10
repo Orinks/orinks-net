@@ -1,8 +1,9 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
+import { ConvexError } from "convex/values";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
@@ -392,5 +393,152 @@ describe("provisionDriver / getMyDriver", () => {
       now: now + 5,
     });
     expect(newOk.ok).toBe(true);
+  });
+});
+
+describe("driver name moderation", () => {
+  test("provisionDriver rejects names that fail screening, with the reason the client maps", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    for (const [displayName, reason] of [
+      ["Hitler", "blocked"],
+      ["h1tler fan", "blocked"],
+      ["!!!###", "needs_letters"],
+    ] as const) {
+      let thrown: unknown;
+      try {
+        await as.mutation(api.freightFate.provisionDriver, { displayName, visibility: "public", now });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown, displayName).toBeInstanceOf(ConvexError);
+      expect((thrown as ConvexError<{ code: string; reason: string }>).data).toEqual({
+        code: "name_rejected",
+        reason,
+      });
+    }
+
+    // Nothing was stored by the rejected attempts.
+    expect(await as.query(api.freightFate.getMyDriver, {})).toBeNull();
+  });
+
+  test("public read paths mask a stored offensive name instead of showing it", async () => {
+    const t = setup();
+    const now = Date.now();
+
+    // Seed a row that predates write-time screening.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "hitler-a1b2c3d4",
+        displayName: "Hitler",
+        visibility: "public",
+        authSubject: OTHER,
+        driverTokenHash: "irrelevant",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("freightFatePresence", {
+        driverId: "hitler-a1b2c3d4",
+        activity: "hauling",
+        detail: "I-70",
+        updatedAt: now,
+      });
+    });
+
+    const board = await t.query(api.freightFate.getPresenceBoard, { now });
+    expect(board.drivers).toHaveLength(1);
+    expect(board.drivers[0].displayName).toBe("Driver c3d4");
+
+    const profile = await t.query(api.freightFate.getDriverProfile, { driverId: "hitler-a1b2c3d4" });
+    expect(profile!.driver.displayName).toBe("Driver c3d4");
+  });
+
+  test("forceRename resets the name, flags needsRename, and a screened rename clears it", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const { driverId } = await as.mutation(api.freightFate.provisionDriver, {
+      // Clean at write time; imagine moderation later judges it abusive.
+      displayName: "Sneaky Impersonator",
+      visibility: "public",
+      now,
+    });
+
+    const renamed = await t.mutation(internal.freightFateAdmin.forceRename, { driverId });
+    expect(renamed.driverId).toBe(driverId); // id untouched without regenerateId
+    expect(renamed.displayName).toBe(`Driver ${driverId.slice(-4)}`);
+
+    const flagged = await as.query(api.freightFate.getMyDriver, {});
+    expect(flagged!.needsRename).toBe(true);
+    expect(flagged!.displayName).toBe(renamed.displayName);
+
+    // The player saves a compliant name; the flag clears.
+    await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Reformed Hauler",
+      visibility: "public",
+      now: now + 1,
+    });
+    const cleared = await as.query(api.freightFate.getMyDriver, {});
+    expect(cleared!.needsRename).toBe(false);
+    expect(cleared!.displayName).toBe("Reformed Hauler");
+  });
+
+  test("forceRename with regenerateId rewrites the slug and cascades to journal events", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    const driverTokenHash = await sha256Hex(token!);
+
+    await t.mutation(api.freightFate.recordDriverEvent, {
+      driverId,
+      driverTokenHash,
+      eventId: "evt-1",
+      eventType: "delivery",
+      summary: "Delivered reefer to Denver",
+      occurredAt: now,
+      now,
+    });
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId,
+      driverTokenHash,
+      activity: "hauling",
+      detail: "I-70",
+      now,
+    });
+
+    const renamed = await t.mutation(internal.freightFateAdmin.forceRename, {
+      driverId,
+      regenerateId: true,
+    });
+    expect(renamed.regeneratedId).toBe(true);
+    expect(renamed.driverId).not.toBe(driverId);
+    expect(normalizeDriverId(renamed.driverId)).toBe(renamed.driverId); // still canonical
+
+    // Journal history followed the driver to the new id...
+    const profile = await t.query(api.freightFate.getDriverProfile, { driverId: renamed.driverId });
+    expect(profile!.events).toHaveLength(1);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId })).toBeNull();
+
+    // ...the stale presence row is gone, and the game's next heartbeat under
+    // the old id no-ops until the player pastes the new Driver ID.
+    const board = await t.query(api.freightFate.getPresenceBoard, { now });
+    expect(board.drivers).toHaveLength(0);
+    const stale = await t.mutation(api.freightFate.updatePresence, {
+      driverId,
+      driverTokenHash,
+      activity: "hauling",
+      detail: "I-70",
+      now: now + 1,
+    });
+    expect(stale).toMatchObject({ ok: false, reason: "driver_not_found" });
   });
 });

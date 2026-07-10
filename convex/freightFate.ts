@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import type { QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
+import { maskDisplayName, screenDisplayName } from "./moderation";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -50,7 +51,7 @@ function mintDriverToken() {
 // Produce a public slug already in normalizeFreightFateDriverId's canonical
 // form (lowercase, [a-z0-9_-], no leading/trailing dash, 8..64) so the id the
 // game echoes back round-trips through that normalizer unchanged.
-function driverIdFromName(displayName: string) {
+export function driverIdFromName(displayName: string) {
   const base =
     displayName
       .trim()
@@ -122,6 +123,7 @@ export const getMyDriver = query({
       createdAt: driver.createdAt,
       updatedAt: driver.updatedAt,
       hasToken: true,
+      needsRename: driver.needsRename === true,
     };
   },
 });
@@ -144,6 +146,14 @@ export const provisionDriver = mutation({
 
     const displayName = normalizeDisplayName(args.displayName);
 
+    // Enforce the published naming rules (/freight-fate/online/rules) before
+    // the name is stored or a public slug is derived from it. The client maps
+    // the reason to its inline field error.
+    const verdict = screenDisplayName(displayName);
+    if (!verdict.ok) {
+      throw new ConvexError({ code: "name_rejected", reason: verdict.reason });
+    }
+
     const existing = await ctx.db
       .query("freightFateDrivers")
       .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
@@ -160,11 +170,15 @@ export const provisionDriver = mutation({
         displayName: string;
         visibility: typeof args.visibility;
         updatedAt: number;
+        // Patching undefined removes the field: a screened name satisfies a
+        // moderation force-rename, so the flag clears here.
+        needsRename: undefined;
         driverTokenHash?: string;
       } = {
         displayName,
         visibility: args.visibility,
         updatedAt: args.now,
+        needsRename: undefined,
       };
 
       let token: string | null = null;
@@ -376,7 +390,8 @@ export const getPresenceBoard = query({
       }
       drivers.push({
         driverId: row.driverId,
-        displayName: driver.displayName,
+        // Safety net for names stored before write-time screening existed.
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
         activity: row.activity,
         detail: row.detail,
         updatedAt: row.updatedAt,
@@ -416,7 +431,8 @@ export const getDriverProfile = query({
     return {
       driver: {
         driverId: driver.driverId,
-        displayName: driver.displayName,
+        // Safety net for names stored before write-time screening existed.
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
         visibility: driver.visibility,
         createdAt: driver.createdAt,
         updatedAt: driver.updatedAt,
