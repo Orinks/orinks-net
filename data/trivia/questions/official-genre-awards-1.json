@@ -1,0 +1,1391 @@
+{
+  "minigame": "official-genre-awards-1",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "official-genre-awards-1-001",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which song won Song Of The Year at the 2024 Latin GRAMMY Awards?",
+      "choices": ["Derrumbe", "A Fuego Lento", "Amigos", "Te Lo Agradezco"],
+      "answer": 0,
+      "explanation": "Derrumbe took Song Of The Year at the 25th Annual Latin GRAMMY Awards.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 25th Annual list marks Derrumbe as the Song Of The Year winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-002",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Who received Best New Artist at the 2024 Latin GRAMMY Awards?",
+      "choices": ["Agris", "Ela Taubert", "Latin Mafia", "Sofi Saar"],
+      "answer": 1,
+      "explanation": "Ela Taubert is identified as the Best New Artist winner for the 25th Annual awards.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2024 nominee list labels Ela Taubert as the Best New Artist winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-003",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "world-signal",
+      "prompt": "Which artist won the 2024 Best Pop Vocal Album award with El Viaje?",
+      "choices": ["Caloncho", "Emilia", "Luis Fonsi", "Mau y Ricky"],
+      "answer": 2,
+      "explanation": "Luis Fonsi's El Viaje won Best Pop Vocal Album at the 25th Annual Latin GRAMMY Awards.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list pairs winner El Viaje with Luis Fonsi in Best Pop Vocal Album."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-004",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "instrument-detective",
+      "prompt": "Which album won Best Traditional Pop Vocal Album at the 2024 Latin GRAMMY Awards?",
+      "choices": ["Obras Maestras", "Mar Adentro", "Almas Paralelas", "García"],
+      "answer": 3,
+      "explanation": "García by Kany García earned Best Traditional Pop Vocal Album in 2024.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 25th Annual list marks García as the Best Traditional Pop Vocal Album winner."
+      },
+      "pronunciation": { "García": "gar-SEE-ah" }
+    },
+    {
+      "id": "official-genre-awards-1-005",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "studio-lab",
+      "prompt": "Complete the 2024 Latin GRAMMY result: Best Pop Song went to which title?",
+      "choices": ["Feriado", "A La Mitad", "Dime Quién", "Igual Que Un Ángel"],
+      "answer": 0,
+      "explanation": "Feriado, written by members of Rawayana's creative team, won Best Pop Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 25th Annual results identify Feriado as Best Pop Song."
+      },
+      "pronunciation": {
+        "Dime Quién": "DEE-meh kee-EN",
+        "Igual Que Un Ángel": "ee-GWAHL keh oon AHN-hel"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-006",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "night-timeline",
+      "prompt": "Who won the 2024 Best Latin Electronic Music Performance for the Tiësto remix of Bzrp Music Sessions, Vol. 53?",
+      "choices": ["Alok & Pickle", "Bizarrap & Shakira", "Ale Acosta & Valeria Castro", "Vikina Featuring Deorro"],
+      "answer": 1,
+      "explanation": "Bizarrap and Shakira won the category with the Tiësto remix of their Music Sessions collaboration.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list names Bizarrap and Shakira as winners for the Tiësto remix."
+      },
+      "pronunciation": {
+        "Bzrp": "BIZ-ah-rap",
+        "Tiësto": "tee-ESS-toh"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-007",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "archive-clue",
+      "prompt": "The 2024 Latin GRAMMY archive marks which title as Best Urban Fusion/Performance?",
+      "choices": ["Nadie Sabe", "Corazon Vacio", "Tranky Funky", "S91"],
+      "answer": 2,
+      "explanation": "Trueno's Tranky Funky is the listed Best Urban Fusion/Performance winner.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 25th Annual results mark Tranky Funky by Trueno as the category winner."
+      },
+      "pronunciation": { "S91": "ess ninety-one" }
+    },
+    {
+      "id": "official-genre-awards-1-008",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "odd-one-out",
+      "prompt": "Which act is attached to the 2024 Best Reggaeton Performance winner Perro Negro?",
+      "choices": ["J Balvin Featuring Jowell & Randy & De La Ghetto", "Kali Uchis Featuring Karol G", "Karol G Featuring Peso Pluma", "Bad Bunny Featuring Feid"],
+      "answer": 3,
+      "explanation": "Perro Negro by Bad Bunny featuring Feid won Best Reggaeton Performance.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category listing pairs winner Perro Negro with Bad Bunny featuring Feid."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-009",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Who won the 2024 Best Urban Music Album award with Mañana Será Bonito (Bichota Season)?",
+      "choices": ["Karol G", "Bad Bunny", "Eladio Carrión", "Álvaro Díaz"],
+      "answer": 0,
+      "explanation": "Karol G won Best Urban Music Album for Mañana Será Bonito (Bichota Season).",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 official list marks Karol G's album as the Best Urban Music Album winner."
+      },
+      "pronunciation": {
+        "Mañana Será Bonito": "mah-NYAH-nah seh-RAH boh-NEE-toh",
+        "Eladio Carrión": "eh-LAH-dee-oh kah-ree-ON",
+        "Álvaro Díaz": "AHL-vah-roh DEE-ahs"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-010",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which title is listed as the 2024 Best Rap/Hip Hop Song winner?",
+      "choices": ["Bendecido", "Aprender A Amar", "Blam Blam", "Thunder y Lightning"],
+      "answer": 1,
+      "explanation": "Aprender A Amar, performed by Nathy Peluso, won Best Rap/Hip Hop Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 25th Annual list identifies Aprender A Amar as the winning song."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-011",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "world-signal",
+      "prompt": "Which song earned the 2024 Latin GRAMMY for Best Urban Song?",
+      "choices": ["Columbia", "El Cielo", "Bonita", "La Falda"],
+      "answer": 2,
+      "explanation": "Daddy Yankee's Bonita won Best Urban Song at the 25th Annual awards.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category results label Bonita as Best Urban Song."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-012",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "instrument-detective",
+      "prompt": "Which release won Best Rock Album at the 2024 Latin GRAMMY Awards?",
+      "choices": ["Diáspora Live Vol.1", "Herencia Lebón", "Mi Mejor Enemigo", "El Dorado (En Vivo)"],
+      "answer": 3,
+      "explanation": "Aterciopelados won Best Rock Album for El Dorado (En Vivo).",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 official list marks El Dorado (En Vivo) as Best Rock Album."
+      },
+      "pronunciation": {
+        "Diáspora": "dee-AH-spoh-rah",
+        "Lebón": "leh-BON"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-013",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "studio-lab",
+      "prompt": "Which title completed the 2024 Best Rock Song winner line?",
+      "choices": ["No Me Preguntes (Live)", "Animal Temporal", "Camaleónica", "Qué Más Quieres"],
+      "answer": 0,
+      "explanation": "No Me Preguntes (Live), performed by Draco Rosa, won Best Rock Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list identifies No Me Preguntes (Live) as the Best Rock Song winner."
+      },
+      "pronunciation": {
+        "Camaleónica": "kah-mah-leh-OH-nee-kah",
+        "Qué Más Quieres": "keh mahs kee-EH-res"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-014",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "night-timeline",
+      "prompt": "At the 2024 Latin GRAMMYs, which album won Best Pop/Rock Album?",
+      "choices": ["Jet Love", "Reflejos De Lo Eterno", "Adentro", "Jay De La Cueva"],
+      "answer": 1,
+      "explanation": "Draco Rosa's Reflejos De Lo Eterno received Best Pop/Rock Album.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 25th Annual results mark Reflejos De Lo Eterno as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-015",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "archive-clue",
+      "prompt": "The 2024 awards archive gives Best Pop/Rock Song to which title?",
+      "choices": ["Acapulco", "Afilá", "5 Horas Menos", "Diciembre"],
+      "answer": 2,
+      "explanation": "5 Horas Menos by Conociendo Rusia featuring Natalia Lafourcade won the category.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list marks 5 Horas Menos as Best Pop/Rock Song."
+      },
+      "pronunciation": {
+        "Afilá": "ah-fee-LAH",
+        "5 Horas Menos": "SEEN-koh OH-rahs MEH-nohs"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-016",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "odd-one-out",
+      "prompt": "Which album is marked as the 2024 Best Alternative Music Album winner?",
+      "choices": ["Por Cesárea", "Híper", "Pandora", "Autopoiética"],
+      "answer": 3,
+      "explanation": "Mon Laferte won Best Alternative Music Album with Autopoiética.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2024 category list labels Autopoiética as the winning album."
+      },
+      "pronunciation": {
+        "Por Cesárea": "por seh-SAH-reh-ah",
+        "Híper": "EE-pehr",
+        "Autopoiética": "ow-toh-poh-YEH-tee-kah"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-017",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Who performed the 2024 Best Alternative Song winner El Día Que Perdí Mi Juventud?",
+      "choices": ["Nathy Peluso", "Francisca Valenzuela", "Nicole Horts", "Maria Vertiz"],
+      "answer": 0,
+      "explanation": "Nathy Peluso performed El Día Que Perdí Mi Juventud, the winning Best Alternative Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list pairs the winning song El Día Que Perdí Mi Juventud with Nathy Peluso."
+      },
+      "pronunciation": { "El Día Que Perdí Mi Juventud": "el DEE-ah keh pehr-DEE mee hoo-ven-TOOD" }
+    },
+    {
+      "id": "official-genre-awards-1-018",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "At the 2024 Latin GRAMMYs, which category did Siembra: 45° Aniversario win?",
+      "choices": ["Best Cumbia/Vallenato Album", "Best Salsa Album", "Best Traditional Tropical Album", "Best Contemporary Tropical Album"],
+      "answer": 1,
+      "explanation": "Siembra: 45° Aniversario by Rubén Blades and Roberto Delgado & Orquesta won Best Salsa Album.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2024 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-25th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official results place Siembra: 45° Aniversario as the Best Salsa Album winner."
+      },
+      "pronunciation": { "Siembra: 45° Aniversario": "see-EM-brah, forty-five degrees ah-nee-vehr-SAH-ree-oh" }
+    },
+    {
+      "id": "official-genre-awards-1-019",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "world-signal",
+      "prompt": "Who won the 2023 Best Pop Vocal Album award with Tu Historia?",
+      "choices": ["Pablo Alborán", "Pedro Capó", "Julieta Venegas", "Camilo"],
+      "answer": 2,
+      "explanation": "Julieta Venegas won Best Pop Vocal Album for Tu Historia at the 24th Annual awards.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2023 list pairs winning album Tu Historia with Julieta Venegas."
+      },
+      "pronunciation": {
+        "Pablo Alborán": "PAH-bloh ahl-boh-RAHN",
+        "Pedro Capó": "PEH-droh kah-POH"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-020",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "instrument-detective",
+      "prompt": "Which album won Best Traditional Pop Vocal Album at the 2023 Latin GRAMMY Awards?",
+      "choices": ["A Ciegas", "Que Me Duela", "Placeres y Pecados", "Décimo Cuarto"],
+      "answer": 3,
+      "explanation": "Décimo Cuarto by Andrés Cepeda won Best Traditional Pop Vocal Album.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 24th Annual list marks Décimo Cuarto as the category winner."
+      },
+      "pronunciation": { "Décimo Cuarto": "DEH-see-moh KWAHR-toh" }
+    },
+    {
+      "id": "official-genre-awards-1-021",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "studio-lab",
+      "prompt": "Which artist completed the 2023 Best Urban Music Album winner pairing for Mañana Será Bonito?",
+      "choices": ["Karol G", "Rauw Alejandro", "Feid", "Nicki Nicole"],
+      "answer": 0,
+      "explanation": "Karol G's Mañana Será Bonito won Best Urban Music Album in 2023.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list names Karol G and Mañana Será Bonito as the winning pairing."
+      },
+      "pronunciation": { "Mañana Será Bonito": "mah-NYAH-nah seh-RAH boh-NEE-toh" }
+    },
+    {
+      "id": "official-genre-awards-1-022",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "night-timeline",
+      "prompt": "At the 2023 Latin GRAMMYs, which title won Best Rap/Hip Hop Song?",
+      "choices": ["Leche De Tigre", "Coco Chanel", "Si Tú Me Quieres", "Un X100to"],
+      "answer": 1,
+      "explanation": "Coco Chanel, performed by Eladio Carrión featuring Bad Bunny, won Best Rap/Hip Hop Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 24th Annual results identify Coco Chanel as the category winner."
+      },
+      "pronunciation": {
+        "Si Tú Me Quieres": "see too meh kee-EH-res",
+        "Un X100to": "oon por see-EN-toh",
+        "Eladio Carrión": "eh-LAH-dee-oh kah-ree-ON"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-023",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "archive-clue",
+      "prompt": "The 2023 archive marks which release as Best Rock Album?",
+      "choices": ["Íntimo Extremo - 30 Años", "Cowboys De La A3", "Sólo D' Lira", "Dopelganga"],
+      "answer": 2,
+      "explanation": "Molotov's Sólo D' Lira earned the 2023 Best Rock Album award.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category list labels Sólo D' Lira as the Best Rock Album winner."
+      },
+      "pronunciation": {
+        "Íntimo Extremo - 30 Años": "EEN-tee-moh eks-TREH-moh, thirty AHN-yohs",
+        "Cowboys De La A3": "COW-boys deh lah ah tres",
+        "Sólo D' Lira": "SOH-loh deh LEE-rah"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-024",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "odd-one-out",
+      "prompt": "Which title is the 2023 Best Rock Song winner?",
+      "choices": ["Depredadores", "El Piso Es Lava", "Gris", "Leche De Tigre"],
+      "answer": 3,
+      "explanation": "Leche De Tigre by Diamante Eléctrico featuring Adrián Quesada won Best Rock Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2023 official results mark Leche De Tigre as Best Rock Song."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-025",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Which album received the 2023 Latin GRAMMY for Best Pop/Rock Album?",
+      "choices": ["Vida Cotidiana", "El Diablo En El Cuerpo", "Trinchera Avanzada", "Tripolar"],
+      "answer": 0,
+      "explanation": "Juanes won Best Pop/Rock Album with Vida Cotidiana.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee-and-winner list identifies Vida Cotidiana as the winning album."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-026",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which title topped Best Alternative Music Album at the 2023 Latin GRAMMY Awards?",
+      "choices": ["Vida Cotidiana", "Bolero Apocalíptico", "El Hombrecito Del Mar", "Trinchera Avanzada"],
+      "answer": 1,
+      "explanation": "Monsieur Periné won Best Alternative Music Album for Bolero Apocalíptico.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2023 list marks Bolero Apocalíptico as the category winner."
+      },
+      "pronunciation": {
+        "Bolero Apocalíptico": "boh-LEH-roh ah-poh-kah-LEEP-tee-koh",
+        "Monsieur Periné": "muh-SYUR peh-ree-NAY"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-027",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "world-signal",
+      "prompt": "Who performed the 2023 Best Alternative Song winner El Lado Oscuro Del Corazón?",
+      "choices": ["Cami", "iLe & Mon Laferte", "Dante Spinetta", "El David Aguilar"],
+      "answer": 2,
+      "explanation": "Dante Spinetta performed and wrote El Lado Oscuro Del Corazón, the winning song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official listing pairs winner El Lado Oscuro Del Corazón with Dante Spinetta."
+      },
+      "pronunciation": { "El Lado Oscuro Del Corazón": "el LAH-doh ohs-KOO-roh del koh-rah-SON" }
+    },
+    {
+      "id": "official-genre-awards-1-028",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "instrument-detective",
+      "prompt": "Which 2023 category was won by Niche Sinfónico?",
+      "choices": ["Best Cumbia/Vallenato Album", "Best Traditional Tropical Album", "Best Contemporary Tropical Album", "Best Salsa Album"],
+      "answer": 3,
+      "explanation": "Niche Sinfónico by Grupo Niche and Colombia's national symphony orchestra won Best Salsa Album.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 24th Annual results place Niche Sinfónico in Best Salsa Album as the winner."
+      },
+      "pronunciation": { "Niche Sinfónico": "NEE-cheh seen-FOH-nee-koh" }
+    },
+    {
+      "id": "official-genre-awards-1-029",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "studio-lab",
+      "prompt": "Complete the 2023 winner pairing: Escalona Nunca Se Había Grabado Así belongs to which artist?",
+      "choices": ["Carlos Vives", "Ana Del Castillo", "Gregorio Uribe", "Los Ángeles Azules"],
+      "answer": 0,
+      "explanation": "Carlos Vives won Best Cumbia/Vallenato Album with Escalona Nunca Se Había Grabado Así.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list pairs the winning album Escalona Nunca Se Había Grabado Así with Carlos Vives."
+      },
+      "pronunciation": {
+        "Escalona Nunca Se Había Grabado Así": "es-kah-LOH-nah NOON-kah seh ah-BEE-ah grah-BAH-doh ah-SEE",
+        "Los Ángeles Azules": "lohs AHN-heh-less ah-SOO-less"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-030",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "night-timeline",
+      "prompt": "Which pair shared the 2023 Best Merengue/Bachata Album award?",
+      "choices": [
+        "Cuatro26 — Manny Cruz and Road Trip — Manny Manuel",
+        "Fórmula, Vol. 3 — Romeo Santos and A Mi Manera — Sergio Vargas",
+        "Trópico, Vol. 2 — Pavel Núñez and Cuatro26 — Manny Cruz",
+        "Road Trip — Manny Manuel and Trópico, Vol. 2 — Pavel Núñez"
+      ],
+      "answer": 1,
+      "explanation": "Fórmula, Vol. 3 by Romeo Santos and A Mi Manera by Sergio Vargas tied for the award.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list labels Fórmula, Vol. 3 and A Mi Manera as tied winners."
+      },
+      "pronunciation": {
+        "Fórmula": "FOR-moo-lah",
+        "Trópico": "TROH-pee-koh",
+        "Núñez": "NOON-yes"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-031",
+      "category": "latin-and-ibero-american",
+      "difficulty": 1,
+      "format": "archive-clue",
+      "prompt": "The 2023 archive pairs Best Traditional Tropical Album winner Vida with which artist?",
+      "choices": ["Estrella Acosta", "La Sonora Santanera", "Omara Portuondo", "Orquesta Failde"],
+      "answer": 2,
+      "explanation": "Omara Portuondo won Best Traditional Tropical Album with Vida.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official results list Vida by Omara Portuondo as the category winner."
+      },
+      "pronunciation": { "Omara Portuondo": "oh-MAH-rah por-too-ON-doh" }
+    },
+    {
+      "id": "official-genre-awards-1-032",
+      "category": "latin-and-ibero-american",
+      "difficulty": 2,
+      "format": "odd-one-out",
+      "prompt": "Which artist is attached to the 2023 Best Contemporary Tropical Album winner 5:10 am?",
+      "choices": ["Mike Bahía", "Silvestre Dangond", "Gusi", "Luis Fernando Borjas"],
+      "answer": 3,
+      "explanation": "Luis Fernando Borjas won Best Contemporary Tropical Album for 5:10 am.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 24th Annual list pairs winning album 5:10 am with Luis Fernando Borjas."
+      },
+      "pronunciation": {
+        "Mike Bahía": "myk bah-EE-ah",
+        "5:10 am": "five ten A M"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-033",
+      "category": "latin-and-ibero-american",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Which title won Best Tropical Song at the 2023 Latin GRAMMY Awards?",
+      "choices": ["Si Tú Me Quieres", "Ambulancia", "El Merengue", "Que Me Quedes Tú"],
+      "answer": 0,
+      "explanation": "Si Tú Me Quieres, performed by Fonseca and Juan Luis Guerra, won Best Tropical Song.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2023 category results mark Si Tú Me Quieres as the winner."
+      },
+      "pronunciation": {
+        "Si Tú Me Quieres": "see too meh kee-EH-res",
+        "Que Me Quedes Tú": "keh meh KEH-des too"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-034",
+      "category": "latin-and-ibero-american",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which album topped Best Singer-Songwriter Album at the 2023 Latin GRAMMY Awards?",
+      "choices": ["Nueve", "De Todas Las Flores", "Tierra De Promesas", "El Equilibrista"],
+      "answer": 1,
+      "explanation": "Natalia Lafourcade's De Todas Las Flores won Best Singer-Songwriter Album.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official list identifies De Todas Las Flores as the winning singer-songwriter album."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-035",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "world-signal",
+      "prompt": "Who performed the 2023 Latin GRAMMY Song Of The Year, Shakira: Bzrp Music Sessions, Vol. 53?",
+      "choices": ["Camilo & Alejandro Sanz", "Fonseca & Juan Luis Guerra", "Bizarrap Featuring Shakira", "Karol G Featuring Shakira"],
+      "answer": 2,
+      "explanation": "Bizarrap featuring Shakira performed the Song Of The Year winner.",
+      "source": {
+        "publisher": "Latin Recording Academy",
+        "title": "Complete Nominations List | Latin GRAMMY 2023 Nominees | LatinGRAMMY.com",
+        "url": "https://www.latingrammy.com/en/awards/nominees-24th-annual-latin-grammy-awards",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 24th Annual list marks the Bizarrap featuring Shakira entry as Song Of The Year."
+      },
+      "pronunciation": { "Bzrp": "BIZ-ah-rap" }
+    },
+    {
+      "id": "official-genre-awards-1-036",
+      "category": "country-bluegrass-americana",
+      "difficulty": 1,
+      "format": "instrument-detective",
+      "prompt": "Which album won the 2025 GRAMMY for Best Contemporary Country Album?",
+      "choices": ["F-1 Trillion", "Deeper Well", "Higher", "COWBOY CARTER"],
+      "answer": 3,
+      "explanation": "Beyoncé's COWBOY CARTER won the 2025 Best Contemporary Country Album award.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Contemporary Country Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-contemporary-country-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page identifies COWBOY CARTER as the winner."
+      },
+      "pronunciation": {
+        "Beyoncé": "bee-YON-say",
+        "F-1 Trillion": "F one trillion"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-037",
+      "category": "country-bluegrass-americana",
+      "difficulty": 2,
+      "format": "studio-lab",
+      "prompt": "The 2025 Best Contemporary Country Album list pairs Deeper Well with which artist?",
+      "choices": ["Kacey Musgraves", "Post Malone", "Chris Stapleton", "Lainey Wilson"],
+      "answer": 0,
+      "explanation": "Deeper Well appears among the 2025 nominees under Kacey Musgraves.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Contemporary Country Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-contemporary-country-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category page lists Deeper Well as Kacey Musgraves' nominated album."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-038",
+      "category": "country-bluegrass-americana",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "Who won the 2025 Best Country Solo Performance award with It Takes A Woman?",
+      "choices": ["Beyoncé", "Chris Stapleton", "Jelly Roll", "Kacey Musgraves"],
+      "answer": 1,
+      "explanation": "Chris Stapleton won Best Country Solo Performance for It Takes A Woman.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Solo Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-solo-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact category-year page names Chris Stapleton and It Takes A Woman as the winner."
+      },
+      "pronunciation": {
+        "Beyoncé": "bee-YON-say",
+        "16 CARRIAGES": "sixteen carriages"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-039",
+      "category": "country-bluegrass-americana",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "Which 2025 Best Country Solo Performance nominee is paired with Shaboozey?",
+      "choices": ["16 CARRIAGES", "I Am Not Okay", "A Bar Song (Tipsy)", "The Architect"],
+      "answer": 2,
+      "explanation": "A Bar Song (Tipsy) is Shaboozey's entry on the official 2025 nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Solo Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-solo-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category page pairs nominee A Bar Song (Tipsy) with Shaboozey."
+      },
+      "pronunciation": { "16 CARRIAGES": "sixteen carriages" }
+    },
+    {
+      "id": "official-genre-awards-1-040",
+      "category": "country-bluegrass-americana",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Which title is the 2025 Best Country Duo/Group Performance winner?",
+      "choices": ["Cowboys Cry Too", "Break Mine", "I Had Some Help", "II MOST WANTED"],
+      "answer": 3,
+      "explanation": "II MOST WANTED by Beyoncé featuring Miley Cyrus won the duo/group performance award.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Duo/Group Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-duo-group-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 category page marks II MOST WANTED as the winner."
+      },
+      "pronunciation": { "II MOST WANTED": "two most wanted" }
+    },
+    {
+      "id": "official-genre-awards-1-041",
+      "category": "country-bluegrass-americana",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which artists are paired with 2025 nominee Cowboys Cry Too?",
+      "choices": ["Kelsea Ballerini & Noah Kahan", "Beyoncé & Miley Cyrus", "Post Malone & Morgan Wallen", "Dan + Shay"],
+      "answer": 0,
+      "explanation": "Cowboys Cry Too appears under Kelsea Ballerini and Noah Kahan on the category page.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Duo/Group Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-duo-group-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs Cowboys Cry Too with Kelsea Ballerini and Noah Kahan."
+      },
+      "pronunciation": { "Beyoncé": "bee-YON-say" }
+    },
+    {
+      "id": "official-genre-awards-1-042",
+      "category": "country-bluegrass-americana",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Who won the 2025 Best Americana Performance award with American Dreaming?",
+      "choices": ["Beyoncé", "Sierra Ferrell", "Madison Cunningham", "Sarah Jarosz"],
+      "answer": 1,
+      "explanation": "Sierra Ferrell won Best Americana Performance for American Dreaming.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Americana Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-americana-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page names Sierra Ferrell and American Dreaming as the winner."
+      },
+      "pronunciation": { "Beyoncé": "bee-YON-say" }
+    },
+    {
+      "id": "official-genre-awards-1-043",
+      "category": "country-bluegrass-americana",
+      "difficulty": 3,
+      "format": "world-signal",
+      "prompt": "Which 2025 Americana Performance nominee is paired with Gillian Welch and David Rawlings?",
+      "choices": ["YA YA", "Subtitles", "Empty Trainload Of Sky", "Runaway Train"],
+      "answer": 2,
+      "explanation": "Empty Trainload Of Sky is the Gillian Welch and David Rawlings nominee.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Americana Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-americana-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page lists Empty Trainload Of Sky under Gillian Welch and David Rawlings."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-044",
+      "category": "country-bluegrass-americana",
+      "difficulty": 4,
+      "format": "instrument-detective",
+      "prompt": "Which album won the 2025 Best Bluegrass Album GRAMMY?",
+      "choices": ["I Built A World", "Songs Of Love And Life", "Earl Jam", "Live Vol. 1"],
+      "answer": 3,
+      "explanation": "Billy Strings won Best Bluegrass Album with Live Vol. 1.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Bluegrass Album – Grammy",
+        "url": "https://www.grammy.com/awards/categories/best-bluegrass-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page identifies Live Vol. 1 as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-045",
+      "category": "country-bluegrass-americana",
+      "difficulty": 5,
+      "format": "studio-lab",
+      "prompt": "Complete the 2025 bluegrass nominee pairing: Earl Jam belongs to which artist?",
+      "choices": ["Tony Trischka", "Bronwyn Keith-Hynes", "Sister Sadie", "Dan Tyminski"],
+      "answer": 0,
+      "explanation": "Earl Jam is listed as Tony Trischka's Best Bluegrass Album nominee.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Bluegrass Album – Grammy",
+        "url": "https://www.grammy.com/awards/categories/best-bluegrass-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs nominee Earl Jam with Tony Trischka."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-046",
+      "category": "country-bluegrass-americana",
+      "difficulty": 1,
+      "format": "night-timeline",
+      "prompt": "At the 2024 GRAMMYs, which title won Best Country Solo Performance?",
+      "choices": ["In Your Love", "White Horse", "Fast Car", "Buried"],
+      "answer": 1,
+      "explanation": "Chris Stapleton's White Horse won Best Country Solo Performance in 2024.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Solo Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-solo-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 category page marks White Horse as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-047",
+      "category": "country-bluegrass-americana",
+      "difficulty": 2,
+      "format": "archive-clue",
+      "prompt": "Which artist is paired with 2024 Country Solo Performance nominee The Last Thing On My Mind?",
+      "choices": ["Brandy Clark", "Luke Combs", "Dolly Parton", "Tyler Childers"],
+      "answer": 2,
+      "explanation": "The Last Thing On My Mind appears under Dolly Parton on the nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Solo Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-solo-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact category-year page pairs The Last Thing On My Mind with Dolly Parton."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-048",
+      "category": "country-bluegrass-americana",
+      "difficulty": 3,
+      "format": "odd-one-out",
+      "prompt": "Which artists won the 2024 Best Country Duo/Group Performance award?",
+      "choices": ["Dierks Bentley & Billy Strings", "Jelly Roll & Lainey Wilson", "Carly Pearce & Chris Stapleton", "Zach Bryan & Kacey Musgraves"],
+      "answer": 3,
+      "explanation": "Zach Bryan and Kacey Musgraves won for I Remember Everything.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Duo/Group Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-duo-group-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page names Zach Bryan and Kacey Musgraves as the winners."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-049",
+      "category": "country-bluegrass-americana",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which 2024 duo/group nominee is paired with Jelly Roll and Lainey Wilson?",
+      "choices": ["Save Me", "High Note", "Nobody's Nobody", "We Don't Fight Anymore"],
+      "answer": 0,
+      "explanation": "Save Me is listed under Jelly Roll and Lainey Wilson in the 2024 category.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Country Duo/Group Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-country-duo-group-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs Save Me with Jelly Roll and Lainey Wilson."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-050",
+      "category": "country-bluegrass-americana",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which album won Best Americana Album at the 2024 GRAMMYs?",
+      "choices": ["Brandy Clark", "Weathervanes", "The Chicago Sessions", "The Returner"],
+      "answer": 1,
+      "explanation": "Jason Isbell And The 400 Unit won Best Americana Album with Weathervanes.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Americana Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-americana-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page identifies Weathervanes as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-051",
+      "category": "country-bluegrass-americana",
+      "difficulty": 1,
+      "format": "world-signal",
+      "prompt": "Who is paired with 2024 Best Americana Album nominee You're The One?",
+      "choices": ["Rodney Crowell", "Brandy Clark", "Rhiannon Giddens", "Allison Russell"],
+      "answer": 2,
+      "explanation": "You're The One is listed as Rhiannon Giddens' nominated album.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Americana Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-americana-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page pairs You're The One with Rhiannon Giddens."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-052",
+      "category": "country-bluegrass-americana",
+      "difficulty": 2,
+      "format": "instrument-detective",
+      "prompt": "Who won the 2024 Best Bluegrass Album award with City Of Gold?",
+      "choices": ["Sam Bush", "Michael Cleveland", "Billy Strings", "Molly Tuttle"],
+      "answer": 3,
+      "explanation": "Molly Tuttle and Golden Highway won Best Bluegrass Album for City Of Gold.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Bluegrass Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-bluegrass-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact category-year page names Molly Tuttle and City Of Gold as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-053",
+      "category": "country-bluegrass-americana",
+      "difficulty": 3,
+      "format": "studio-lab",
+      "prompt": "Which album completes the 2024 bluegrass nominee pairing for Willie Nelson?",
+      "choices": ["Bluegrass", "Mighty Poplar", "Me/And/Dad", "Lovin' Of The Game"],
+      "answer": 0,
+      "explanation": "Willie Nelson's album Bluegrass appears among the official 2024 nominees.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Bluegrass Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-bluegrass-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs the nominee Bluegrass with Willie Nelson."
+      },
+      "pronunciation": { "Me/And/Dad": "me and dad" }
+    },
+    {
+      "id": "official-genre-awards-1-054",
+      "category": "country-bluegrass-americana",
+      "difficulty": 4,
+      "format": "night-timeline",
+      "prompt": "At the 2024 GRAMMYs, which title won Best American Roots Performance?",
+      "choices": ["Butterfly", "Eve Was Black", "Inventing The Wheel", "You Louisiana Man"],
+      "answer": 1,
+      "explanation": "Allison Russell won Best American Roots Performance with Eve Was Black.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best American Roots Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-american-roots-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page marks Eve Was Black as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-055",
+      "category": "country-bluegrass-americana",
+      "difficulty": 5,
+      "format": "archive-clue",
+      "prompt": "Which artist is paired with 2024 American Roots Performance nominee Butterfly?",
+      "choices": ["Madison Cunningham", "Rhiannon Giddens", "Jon Batiste", "Blind Boys of Alabama"],
+      "answer": 2,
+      "explanation": "Butterfly appears as Jon Batiste's nominee on the official category page.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best American Roots Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-american-roots-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 nominee list pairs Butterfly with Jon Batiste."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-056",
+      "category": "jazz",
+      "difficulty": 1,
+      "format": "odd-one-out",
+      "prompt": "Which title is marked as the 2025 Best Jazz Performance winner?",
+      "choices": ["Phoenix Reimagined (Live)", "Juno", "Little Fears", "Twinkle Twinkle Little Me"],
+      "answer": 3,
+      "explanation": "Samara Joy featuring Sullivan Fortner won with Twinkle Twinkle Little Me.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page identifies Twinkle Twinkle Little Me as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-057",
+      "category": "jazz",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which artists are paired with 2025 Best Jazz Performance nominee Juno?",
+      "choices": ["Chick Corea & Béla Fleck", "Samara Joy & Sullivan Fortner", "Lakecia Benjamin & Randy Brecker", "Nicole Zuraitis & Dan Pugach"],
+      "answer": 0,
+      "explanation": "Juno appears under Chick Corea and Béla Fleck on the 2025 nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Performance 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-performance/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs Juno with Chick Corea and Béla Fleck."
+      },
+      "pronunciation": { "Béla Fleck": "BAY-lah fleck" }
+    },
+    {
+      "id": "official-genre-awards-1-058",
+      "category": "jazz",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Who won the 2024 Best Jazz Performance award with Tight?",
+      "choices": ["Jon Batiste", "Samara Joy", "Lakecia Benjamin", "Fred Hersch"],
+      "answer": 1,
+      "explanation": "Samara Joy won Best Jazz Performance for Tight in 2024.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page names Samara Joy and Tight as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-059",
+      "category": "jazz",
+      "difficulty": 4,
+      "format": "world-signal",
+      "prompt": "Which 2024 Jazz Performance nominee is paired with Fred Hersch and Esperanza Spalding?",
+      "choices": ["Basquiat", "Movement 18' (Heroes)", "But Not For Me", "Vulnerable (Live)"],
+      "answer": 2,
+      "explanation": "But Not For Me is listed under Fred Hersch and Esperanza Spalding.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Performance 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-performance/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs But Not For Me with Fred Hersch and Esperanza Spalding."
+      },
+      "pronunciation": { "Movement 18' (Heroes)": "Movement eighteen, Heroes" }
+    },
+    {
+      "id": "official-genre-awards-1-060",
+      "category": "jazz",
+      "difficulty": 5,
+      "format": "instrument-detective",
+      "prompt": "Which album won Best Jazz Vocal Album at the 2025 GRAMMYs?",
+      "choices": ["Journey In Black", "Wildflowers Vol. 1", "Milton + esperanza", "A Joyful Holiday"],
+      "answer": 3,
+      "explanation": "Samara Joy won Best Jazz Vocal Album with A Joyful Holiday.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Vocal Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-vocal-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page marks A Joyful Holiday as the winner."
+      },
+      "pronunciation": { "Milton + esperanza": "Milton plus eh-speh-RAHN-sah" }
+    },
+    {
+      "id": "official-genre-awards-1-061",
+      "category": "jazz",
+      "difficulty": 1,
+      "format": "studio-lab",
+      "prompt": "Which artists complete the 2025 Jazz Vocal Album nominee pairing for My Ideal?",
+      "choices": ["Catherine Russell & Sean Mason", "Kurt Elling & Sullivan Fortner", "Milton Nascimento & Esperanza Spalding", "Christie Dashiell"],
+      "answer": 0,
+      "explanation": "My Ideal appears under Catherine Russell and Sean Mason on the nominee page.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Vocal Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-vocal-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs My Ideal with Catherine Russell and Sean Mason."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-062",
+      "category": "jazz",
+      "difficulty": 2,
+      "format": "night-timeline",
+      "prompt": "Who won the 2024 Best Jazz Vocal Album award with How Love Begins?",
+      "choices": ["Gordon Goodwin", "Nicole Zuraitis", "Fred Hersch & Esperanza Spalding", "Cécile McLorin Salvant"],
+      "answer": 1,
+      "explanation": "Nicole Zuraitis won Best Jazz Vocal Album for How Love Begins.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Vocal Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-vocal-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact category-year page names Nicole Zuraitis and How Love Begins as the winner."
+      },
+      "pronunciation": { "Cécile McLorin Salvant": "say-SEEL muh-KLOHR-in sal-VAHNT" }
+    },
+    {
+      "id": "official-genre-awards-1-063",
+      "category": "jazz",
+      "difficulty": 3,
+      "format": "archive-clue",
+      "prompt": "Who is paired with 2024 Jazz Vocal Album nominee Mélusine?",
+      "choices": ["Gordon Goodwin", "Fred Hersch & Esperanza Spalding", "Cécile McLorin Salvant", "Gretchen Parlato & Lionel Loueke"],
+      "answer": 2,
+      "explanation": "Mélusine is Cécile McLorin Salvant's entry on the 2024 nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Vocal Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-vocal-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page pairs nominee Mélusine with Cécile McLorin Salvant."
+      },
+      "pronunciation": {
+        "Cécile McLorin Salvant": "say-SEEL muh-KLOHR-in sal-VAHNT",
+        "Mélusine": "may-loo-ZEEN"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-064",
+      "category": "jazz",
+      "difficulty": 4,
+      "format": "odd-one-out",
+      "prompt": "Which title is marked as the 2025 Best Jazz Instrumental Album winner?",
+      "choices": ["Owl Song", "Beyond This Place", "Solo Game", "Remembrance"],
+      "answer": 3,
+      "explanation": "Chick Corea and Béla Fleck won Best Jazz Instrumental Album with Remembrance.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Instrumental Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-instrumental-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page identifies Remembrance as the winner."
+      },
+      "pronunciation": { "Béla Fleck": "BAY-lah fleck" }
+    },
+    {
+      "id": "official-genre-awards-1-065",
+      "category": "jazz",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Who is paired with 2025 Jazz Instrumental Album nominee Phoenix Reimagined (Live)?",
+      "choices": ["Lakecia Benjamin", "Sullivan Fortner", "Kenny Barron", "Ambrose Akinmusire"],
+      "answer": 0,
+      "explanation": "Phoenix Reimagined (Live) appears under Lakecia Benjamin on the nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Instrumental Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-instrumental-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs Phoenix Reimagined (Live) with Lakecia Benjamin."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-066",
+      "category": "jazz",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Who won the 2024 Best Jazz Instrumental Album award with The Winds Of Change?",
+      "choices": ["Kenny Barron", "Billy Childs", "Lakecia Benjamin", "Pat Metheny"],
+      "answer": 1,
+      "explanation": "Billy Childs won Best Jazz Instrumental Album for The Winds Of Change.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Instrumental Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-instrumental-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page names Billy Childs and The Winds Of Change as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-067",
+      "category": "jazz",
+      "difficulty": 2,
+      "format": "world-signal",
+      "prompt": "Who is paired with 2024 Jazz Instrumental Album nominee Dream Box?",
+      "choices": ["Kenny Barron", "Lakecia Benjamin", "Pat Metheny", "Adam W. Blackstone"],
+      "answer": 2,
+      "explanation": "Dream Box is listed as Pat Metheny's nominee in the 2024 category.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Jazz Instrumental Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-jazz-instrumental-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs Dream Box with Pat Metheny."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-068",
+      "category": "jazz",
+      "difficulty": 3,
+      "format": "instrument-detective",
+      "prompt": "Who won the 2025 Best Large Jazz Ensemble Album award with Bianca Reimagined?",
+      "choices": ["John Beasley", "Orrin Evans", "Miguel Zenón", "Dan Pugach"],
+      "answer": 3,
+      "explanation": "Dan Pugach Big Band won for Bianca Reimagined: Music For Paws And Persistence.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Large Jazz Ensemble Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-large-jazz-ensemble-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page names Dan Pugach and Bianca Reimagined as the winner."
+      },
+      "pronunciation": { "Miguel Zenón": "mee-GEHL seh-NOHN" }
+    },
+    {
+      "id": "official-genre-awards-1-069",
+      "category": "jazz",
+      "difficulty": 4,
+      "format": "studio-lab",
+      "prompt": "Which album completes the 2025 large-ensemble nominee pairing for Miguel Zenón?",
+      "choices": ["Golden City", "Returning To Forever", "And So It Goes", "Walk A Mile In My Shoe"],
+      "answer": 0,
+      "explanation": "Golden City is Miguel Zenón's entry on the Best Large Jazz Ensemble Album list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Large Jazz Ensemble Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-large-jazz-ensemble-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs nominee Golden City with Miguel Zenón."
+      },
+      "pronunciation": { "Miguel Zenón": "mee-GEHL seh-NOHN" }
+    },
+    {
+      "id": "official-genre-awards-1-070",
+      "category": "jazz",
+      "difficulty": 5,
+      "format": "night-timeline",
+      "prompt": "At the 2024 GRAMMYs, which album won Best Large Jazz Ensemble Album?",
+      "choices": ["Dynamic Maximum Tension", "Basie Swings The Blues", "Olympians", "The Charles Mingus Centennial Sessions"],
+      "answer": 1,
+      "explanation": "The Count Basie Orchestra directed by Scotty Barnhart won with Basie Swings The Blues.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Large Jazz Ensemble Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-large-jazz-ensemble-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2024 category page marks Basie Swings The Blues as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-071",
+      "category": "jazz",
+      "difficulty": 1,
+      "format": "archive-clue",
+      "prompt": "Which artist is paired with 2024 large-ensemble nominee Dynamic Maximum Tension?",
+      "choices": ["Scotty Barnhart", "Mingus Big Band", "Darcy James Argue", "Vincent Mendoza"],
+      "answer": 2,
+      "explanation": "Dynamic Maximum Tension appears under Darcy James Argue in the 2024 category.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Large Jazz Ensemble Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-large-jazz-ensemble-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs Dynamic Maximum Tension with Darcy James Argue."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-072",
+      "category": "jazz",
+      "difficulty": 2,
+      "format": "odd-one-out",
+      "prompt": "Which title is marked as the 2025 Best Latin Jazz Album winner?",
+      "choices": ["Spain Forever Again", "COLLAB", "Time And Again", "Cubop Lives!"],
+      "answer": 3,
+      "explanation": "Cubop Lives! won Best Latin Jazz Album at the 2025 GRAMMYs.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Latin Jazz Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-latin-jazz-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact 2025 category page identifies Cubop Lives! as the winner."
+      }
+    },
+    {
+      "id": "official-genre-awards-1-073",
+      "category": "jazz",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Who is paired with 2025 Latin Jazz Album nominee Time And Again?",
+      "choices": ["Eliane Elias", "Tomatito", "Hamilton de Holanda", "Chucho Valdés"],
+      "answer": 0,
+      "explanation": "Time And Again appears under Eliane Elias on the 2025 nominee list.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Latin Jazz Album 2025 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-latin-jazz-album/2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official category page pairs nominee Time And Again with Eliane Elias."
+      },
+      "pronunciation": {
+        "Chucho Valdés": "CHOO-choh val-DESS",
+        "Eliane Elias": "eh-lee-AH-nee eh-LEE-ahs"
+      }
+    },
+    {
+      "id": "official-genre-awards-1-074",
+      "category": "jazz",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Who won the 2024 Best Latin Jazz Album award with El Arte Del Bolero Vol. 2?",
+      "choices": ["Eliane Elias", "Miguel Zenón & Luis Perdomo", "Bobby Sanabria", "Luciana Souza & Trio Corrente"],
+      "answer": 1,
+      "explanation": "Miguel Zenón and Luis Perdomo won for El Arte Del Bolero Vol. 2.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Latin Jazz Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-latin-jazz-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The exact category-year page names Miguel Zenón and Luis Perdomo as the winners."
+      },
+      "pronunciation": { "Miguel Zenón": "mee-GEHL seh-NOHN" }
+    },
+    {
+      "id": "official-genre-awards-1-075",
+      "category": "jazz",
+      "difficulty": 5,
+      "format": "world-signal",
+      "prompt": "Which 2024 Latin Jazz Album nominee is paired with Eliane Elias?",
+      "choices": ["My Heart Speaks", "Vox Humana", "Quietude", "Cometa"],
+      "answer": 2,
+      "explanation": "Quietude is listed as Eliane Elias' nominated album in the 2024 category.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Latin Jazz Album 2024 Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-latin-jazz-album/2024/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official nominee list pairs Quietude with Eliane Elias."
+      }
+    }
+  ]
+}
