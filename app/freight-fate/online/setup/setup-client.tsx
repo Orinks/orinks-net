@@ -162,17 +162,28 @@ function DriverSetup() {
       return;
     }
 
+    // Shows a rejection on the name field. Moving focus makes the reader
+    // announce label, invalid state, and error text in one pass — but when
+    // the submit came from Enter inside the field itself, focus() is a no-op
+    // and nothing would be read, so that case falls back to the live region.
+    function showNameError(rejection: NameError) {
+      setNameError(rejection);
+      if (document.activeElement === nameRef.current) {
+        announceError(rejection.message);
+      } else {
+        requestAnimationFrame(() => nameRef.current?.focus());
+      }
+    }
+
     const trimmed = name.trim();
     if (trimmed.length < 3 || trimmed.length > 48) {
-      setNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
-      requestAnimationFrame(() => nameRef.current?.focus());
+      showNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
       return;
     }
     // Mirrors the server's minimum-letters rule so the common case gets
     // instant feedback instead of a round-trip rejection.
     if ((trimmed.match(/\p{L}/gu) ?? []).length < 3) {
-      setNameError(LETTERS_ERROR);
-      requestAnimationFrame(() => nameRef.current?.focus());
+      showNameError(LETTERS_ERROR);
       return;
     }
 
@@ -197,14 +208,11 @@ function DriverSetup() {
       }
     } catch (error) {
       // A name rejection (taken or moderated) is field feedback, not a save
-      // failure. Exactly the client-side validation pattern above: inline
-      // error on the field plus a focus move, which itself reads the label,
-      // invalid state, and error text. No live-region announcement here --
-      // it would fire a frame later and cut that reading off.
+      // failure: inline error + focus move (or the live-region fallback),
+      // same as the client-side checks above.
       const rejection = nameRejection(error);
       if (rejection) {
-        setNameError(rejection);
-        requestAnimationFrame(() => nameRef.current?.focus());
+        showNameError(rejection);
       } else {
         announceError("Save failed. Your changes were not applied. Please try again.");
       }
