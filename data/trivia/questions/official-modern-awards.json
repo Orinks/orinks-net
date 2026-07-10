@@ -1,0 +1,1027 @@
+{
+  "minigame": "official-modern-awards",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "oma-0001",
+      "category": "pop",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "At the 2024 Grammy Awards, which recording won Best Pop Solo Performance?",
+      "choices": ["Flowers", "Easy On Me", "Truth Hurts", "Shape Of You"],
+      "answer": 0,
+      "explanation": "Miley Cyrus’s “Flowers” is listed as the 2024 Best Pop Solo Performance winner.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-solo-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive lists Miley Cyrus and “Flowers” as the 2024 winner."
+      }
+    },
+    {
+      "id": "oma-0002",
+      "category": "pop",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The Grammy archive pairs the 2021 Best Pop Solo Performance award with which artist?",
+      "choices": ["Lizzo", "Harry Styles", "Ed Sheeran", "Pharrell Williams"],
+      "answer": 1,
+      "explanation": "Harry Styles won the 2021 category with “Watermelon Sugar.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-solo-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2021 row names Harry Styles as the winner for “Watermelon Sugar.”"
+      }
+    },
+    {
+      "id": "oma-0003",
+      "category": "pop",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Pop Solo Performance timeline, what follows Olivia Rodrigo’s 2022 win with “drivers license” as the 2023 winner?",
+      "choices": ["Hello", "Royals", "Easy On Me", "Happy (Live)"],
+      "answer": 2,
+      "explanation": "Adele’s “Easy On Me” took the award in 2023, one year after “drivers license.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-solo-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive places “drivers license” in 2022 and Adele’s “Easy On Me” in 2023."
+      }
+    },
+    {
+      "id": "oma-0004",
+      "category": "pop",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive tags “Joanne (Where Do You Think You're Goin'?)” as the 2019 Best Pop Solo Performance winner. Which artist is named?",
+      "choices": ["Lorde", "Adele", "Lizzo", "Lady Gaga"],
+      "answer": 3,
+      "explanation": "Lady Gaga is the artist attached to the 2019 winning performance.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-solo-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2019 row pairs Lady Gaga with “Joanne (Where Do You Think You're Goin'?).”"
+      }
+    },
+    {
+      "id": "oma-0005",
+      "category": "pop",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One title in this 2026 Best Pop Solo Performance field is marked as the winner. Which title is it?",
+      "choices": ["Messy", "DAISIES", "Manchild", "Disease"],
+      "answer": 0,
+      "explanation": "“Messy,” performed by Lola Young, is the winner in the 2026 field.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-solo-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 nominees section marks Lola Young’s “Messy” as the winner."
+      }
+    },
+    {
+      "id": "oma-0006",
+      "category": "pop",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which collaboration won Best Pop Duo/Group Performance at the 2025 Grammys?",
+      "choices": ["Doja Cat and SZA", "Lady Gaga and Bruno Mars", "SZA and Phoebe Bridgers", "Sam Smith and Kim Petras"],
+      "answer": 1,
+      "explanation": "Lady Gaga and Bruno Mars won in 2025 with “Die With A Smile.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Duo/Group Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive names Lady Gaga, Bruno Mars, and “Die With A Smile” in the 2025 winner row."
+      }
+    },
+    {
+      "id": "oma-0007",
+      "category": "pop",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2024 Best Pop Duo/Group Performance entry links “Ghost In The Machine” with which pair?",
+      "choices": ["Lady Gaga and Ariana Grande", "Gotye and Kimbra", "SZA and Phoebe Bridgers", "Tony Bennett and Amy Winehouse"],
+      "answer": 2,
+      "explanation": "SZA and Phoebe Bridgers are credited on the 2024 winning performance.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Duo/Group Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 row pairs SZA and Phoebe Bridgers with “Ghost In The Machine.”"
+      }
+    },
+    {
+      "id": "oma-0008",
+      "category": "pop",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "The category timeline reads 2021 “Rain On Me,” 2022 “Kiss Me More,” and 2023 which winning title?",
+      "choices": ["Shallow", "Stressed Out", "Get Lucky", "Unholy"],
+      "answer": 3,
+      "explanation": "“Unholy” is the Best Pop Duo/Group Performance winner listed for 2023.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Duo/Group Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The winner table shows “Rain On Me” for 2021, “Kiss Me More” for 2022, and “Unholy” for 2023."
+      }
+    },
+    {
+      "id": "oma-0009",
+      "category": "pop",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "Which act does the archive credit with the 2018 Best Pop Duo/Group Performance winner “Feel It Still”?",
+      "choices": ["Portugal. The Man", "Twenty One Pilots", "A Great Big World and Christina Aguilera", "Mark Ronson and Bruno Mars"],
+      "answer": 0,
+      "explanation": "Portugal. The Man won the 2018 category with “Feel It Still.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Duo/Group Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2018 archive row names Portugal. The Man and “Feel It Still.”"
+      }
+    },
+    {
+      "id": "oma-0010",
+      "category": "pop",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One title in the 2026 Best Pop Duo/Group Performance field is marked as the winner. Which title is it?",
+      "choices": ["Golden [From \"KPop Demon Hunters\"]", "Defying Gravity", "Gabriela", "30 For 30"],
+      "answer": 1,
+      "explanation": "Cynthia Erivo and Ariana Grande won with “Defying Gravity.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Duo/Group Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 field marks “Defying Gravity” as the winning title."
+      }
+    },
+    {
+      "id": "oma-0011",
+      "category": "pop",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which album won Best Pop Vocal Album at the 2024 Grammys?",
+      "choices": ["Harry's House", "Future Nostalgia", "Midnights", "Short n' Sweet"],
+      "answer": 2,
+      "explanation": "Taylor Swift’s “Midnights” is the category’s 2024 winner.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Vocal Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-vocal-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 row lists Taylor Swift and “Midnights” as the winner."
+      }
+    },
+    {
+      "id": "oma-0012",
+      "category": "pop",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2021 Best Pop Vocal Album entry pairs “Future Nostalgia” with which artist?",
+      "choices": ["Ariana Grande", "Taylor Swift", "Billie Eilish", "Dua Lipa"],
+      "answer": 3,
+      "explanation": "Dua Lipa won the 2021 award for “Future Nostalgia.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Vocal Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-vocal-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive’s 2021 winner row pairs Dua Lipa with “Future Nostalgia.”"
+      }
+    },
+    {
+      "id": "oma-0013",
+      "category": "pop",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Pop Vocal Album timeline, which album sits at 2022 between 2021’s “Future Nostalgia” and 2023’s “Harry's House”?",
+      "choices": ["Sour", "Sweetener", "Stronger", "Breakaway"],
+      "answer": 0,
+      "explanation": "Olivia Rodrigo’s “Sour” holds the 2022 spot in that sequence.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Vocal Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-vocal-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive lists “Future Nostalgia” in 2021, “Sour” in 2022, and “Harry's House” in 2023."
+      }
+    },
+    {
+      "id": "oma-0014",
+      "category": "pop",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “Sweetener” as the 2019 Best Pop Vocal Album winner. Which artist made it?",
+      "choices": ["Billie Eilish", "Ariana Grande", "Kelly Clarkson", "Lady Gaga"],
+      "answer": 1,
+      "explanation": "Ariana Grande is the artist credited for the 2019 winner “Sweetener.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Vocal Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-vocal-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2019 row pairs Ariana Grande with “Sweetener.”"
+      }
+    },
+    {
+      "id": "oma-0015",
+      "category": "pop",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One album in the 2026 Best Pop Vocal Album field is marked as the winner. Which album is it?",
+      "choices": ["SWAG", "Man's Best Friend", "MAYHEM", "Something Beautiful"],
+      "answer": 2,
+      "explanation": "Lady Gaga’s “MAYHEM” is marked as the 2026 winner.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Pop Vocal Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-pop-vocal-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 nominees section identifies “MAYHEM” as the winning album."
+      }
+    },
+    {
+      "id": "oma-0016",
+      "category": "rock-and-metal",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which recording won Best Rock Performance at the 2025 Grammys?",
+      "choices": ["Not Strong Enough", "Broken Horses", "Making A Fire", "Now And Then"],
+      "answer": 3,
+      "explanation": "The Beatles won the 2025 category with “Now And Then.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 archive row names The Beatles and “Now And Then” as the winner."
+      }
+    },
+    {
+      "id": "oma-0017",
+      "category": "rock-and-metal",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2024 Best Metal Performance entry pairs “72 Seasons” with which act?",
+      "choices": ["Metallica", "Dream Theater", "Body Count", "Ghost"],
+      "answer": 0,
+      "explanation": "Metallica won the 2024 Best Metal Performance award with “72 Seasons.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Metal Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-metal-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive’s 2024 row pairs Metallica with “72 Seasons.”"
+      }
+    },
+    {
+      "id": "oma-0018",
+      "category": "rock-and-metal",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rock Song timeline, which title fills the 2022 slot between 2021’s “Stay High” and 2023’s “Broken Horses”?",
+      "choices": ["Girls In Their Summer Clothes", "Waiting On A War", "City Of Blinding Lights", "Don't Wanna Fight"],
+      "answer": 1,
+      "explanation": "“Waiting On A War” is the winning title listed for 2022.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive places “Stay High” in 2021, “Waiting On A War” in 2022, and “Broken Horses” in 2023."
+      }
+    },
+    {
+      "id": "oma-0019",
+      "category": "rock-and-metal",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “This Is Why” as the 2024 Best Rock Album winner. Which band is credited?",
+      "choices": ["Foo Fighters", "The Strokes", "Paramore", "Rolling Stones"],
+      "answer": 2,
+      "explanation": "Paramore is the band credited with the 2024 winner “This Is Why.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 winner row pairs Paramore with “This Is Why.”"
+      }
+    },
+    {
+      "id": "oma-0020",
+      "category": "rock-and-metal",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One album in the 2026 Best Alternative Music Album field is marked as the winner. Which album is it?",
+      "choices": ["SABLE, fABLE", "Ego Death At A Bachelorette Party", "DON'T TAP THE GLASS", "Songs Of A Lost World"],
+      "answer": 3,
+      "explanation": "The Cure won the 2026 category with “Songs Of A Lost World.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Alternative Music Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-alternative-music-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 field marks The Cure’s “Songs Of A Lost World” as the winner."
+      }
+    },
+    {
+      "id": "oma-0021",
+      "category": "rock-and-metal",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which artist won the 2021 Best Rock Performance Grammy with “Shameika”?",
+      "choices": ["Fiona Apple", "Brandi Carlile", "Gary Clark, Jr.", "Chris Cornell"],
+      "answer": 0,
+      "explanation": "Fiona Apple is the 2021 winner for “Shameika.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2021 row identifies Fiona Apple and “Shameika” as the winner."
+      }
+    },
+    {
+      "id": "oma-0022",
+      "category": "rock-and-metal",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2022 Best Metal Performance entry links “The Alien” with which band?",
+      "choices": ["Tool", "Dream Theater", "Body Count", "Mastodon"],
+      "answer": 1,
+      "explanation": "Dream Theater won the 2022 category with “The Alien.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Metal Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-metal-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive pairs Dream Theater with “The Alien” in 2022."
+      }
+    },
+    {
+      "id": "oma-0023",
+      "category": "rock-and-metal",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rock Song timeline, which title follows “Broken Horses” in 2023 as the 2024 winner?",
+      "choices": ["Broken Man", "Waiting On A War", "Not Strong Enough", "Stay High"],
+      "answer": 2,
+      "explanation": "“Not Strong Enough” follows “Broken Horses” in the archive’s winner sequence.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The table lists “Broken Horses” for 2023 and “Not Strong Enough” for 2024."
+      }
+    },
+    {
+      "id": "oma-0024",
+      "category": "rock-and-metal",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “The New Abnormal” as the 2021 Best Rock Album winner. Which band made it?",
+      "choices": ["Cage The Elephant", "The War On Drugs", "Foo Fighters", "The Strokes"],
+      "answer": 3,
+      "explanation": "The Strokes won the 2021 award with “The New Abnormal.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2021 winner row pairs The Strokes with “The New Abnormal.”"
+      }
+    },
+    {
+      "id": "oma-0025",
+      "category": "rock-and-metal",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Among these recent Best Alternative Music Album winners, which title belongs to the 2025 award?",
+      "choices": ["All Born Screaming", "Fetch The Bolt Cutters", "Father Of The Bride", "Sleep Well Beast"],
+      "answer": 0,
+      "explanation": "St. Vincent’s “All Born Screaming” is the winner listed for 2025.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Alternative Music Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-alternative-music-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive lists “All Born Screaming” in the 2025 winner row."
+      }
+    },
+    {
+      "id": "oma-0026",
+      "category": "rock-and-metal",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which artist won Best Rock Performance at the 2023 Grammys with “Broken Horses”?",
+      "choices": ["boygenius", "Brandi Carlile", "Foo Fighters", "Fiona Apple"],
+      "answer": 1,
+      "explanation": "Brandi Carlile won the 2023 category with “Broken Horses.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2023 row names Brandi Carlile and “Broken Horses” as the winner."
+      }
+    },
+    {
+      "id": "oma-0027",
+      "category": "rock-and-metal",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2023 Best Metal Performance entry names which winning work?",
+      "choices": ["The Alien", "Bum-Rush", "Degradation Rules", "Electric Messiah"],
+      "answer": 2,
+      "explanation": "Ozzy Osbourne and Tony Iommi won the 2023 award with “Degradation Rules.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Metal Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-metal-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive’s 2023 row lists “Degradation Rules” as the winning work."
+      }
+    },
+    {
+      "id": "oma-0028",
+      "category": "rock-and-metal",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rock Song timeline, which title occupies 2021 after 2020’s “This Land” and before 2022’s “Waiting On A War”?",
+      "choices": ["Run", "Masseduction", "Blackstar", "Stay High"],
+      "answer": 3,
+      "explanation": "Brittany Howard’s “Stay High” is the Best Rock Song winner for 2021.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive sequence shows “This Land” in 2020, “Stay High” in 2021, and “Waiting On A War” in 2022."
+      }
+    },
+    {
+      "id": "oma-0029",
+      "category": "rock-and-metal",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive credits “Hackney Diamonds” with the 2025 Best Rock Album award. Which band recorded it?",
+      "choices": ["Rolling Stones", "Paramore", "Foo Fighters", "Muse"],
+      "answer": 0,
+      "explanation": "Rolling Stones are credited with the 2025 winner “Hackney Diamonds.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rock Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rock-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 winner row pairs Rolling Stones with “Hackney Diamonds.”"
+      }
+    },
+    {
+      "id": "oma-0030",
+      "category": "rock-and-metal",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Among these Best Alternative Music Album winners, which title belongs to the 2024 award?",
+      "choices": ["Colors", "The Record", "Wet Leg", "St. Vincent"],
+      "answer": 1,
+      "explanation": "boygenius won the 2024 category with “The Record.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Alternative Music Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-alternative-music-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive places “The Record” in the 2024 winner row."
+      }
+    },
+    {
+      "id": "oma-0031",
+      "category": "hip-hop-and-rap",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which recording won Best Rap Performance at the 2025 Grammys?",
+      "choices": ["The Heart Part 5", "Family Ties", "Not Like Us", "Savage"],
+      "answer": 2,
+      "explanation": "Kendrick Lamar won the 2025 category with “Not Like Us.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-performance-2/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 winner row pairs Kendrick Lamar with “Not Like Us.”"
+      }
+    },
+    {
+      "id": "oma-0032",
+      "category": "hip-hop-and-rap",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2024 Best Melodic Rap Performance entry pairs “All My Life” with which duo?",
+      "choices": ["Rapsody and Erykah Badu", "Kendrick Lamar and Rihanna", "Eminem and Rihanna", "Durk Banks and J. Cole"],
+      "answer": 3,
+      "explanation": "Durk Banks and J. Cole are listed on the 2024 winner “All My Life.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Melodic Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-melodic-rap-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive’s 2024 row pairs Durk Banks and J. Cole with “All My Life.”"
+      }
+    },
+    {
+      "id": "oma-0033",
+      "category": "hip-hop-and-rap",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rap Song timeline, which title occupies 2022 between 2021’s “Savage” and 2023’s “The Heart Part 5”?",
+      "choices": ["Jail", "A Lot", "God's Plan", "Alright"],
+      "answer": 0,
+      "explanation": "“Jail” is the Best Rap Song winner listed for 2022.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive places “Savage” in 2021, “Jail” in 2022, and “The Heart Part 5” in 2023."
+      }
+    },
+    {
+      "id": "oma-0034",
+      "category": "hip-hop-and-rap",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “MICHAEL” as the 2024 Best Rap Album winner. Which artist made it?",
+      "choices": ["Doechii", "Killer Mike", "Kendrick Lamar", "Nas"],
+      "answer": 1,
+      "explanation": "Killer Mike won the 2024 category with “MICHAEL.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 winner row pairs Killer Mike with “MICHAEL.”"
+      }
+    },
+    {
+      "id": "oma-0035",
+      "category": "hip-hop-and-rap",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Among these recent Best Rap Performance winners, which title belongs to the 2026 award?",
+      "choices": ["Racks In The Middle", "The Heart Part 5", "Chains & Whips", "Family Ties"],
+      "answer": 2,
+      "explanation": "“Chains & Whips” is the Best Rap Performance winner listed for 2026.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-performance-2/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 nominees section marks “Chains & Whips” as the winning performance."
+      }
+    },
+    {
+      "id": "oma-0036",
+      "category": "hip-hop-and-rap",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which recording won Best Melodic Rap Performance at the 2021 Grammys?",
+      "choices": ["Higher", "This Is America", "LOYALTY.", "Lockdown"],
+      "answer": 3,
+      "explanation": "Anderson .Paak won the 2021 category with “Lockdown.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Melodic Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-melodic-rap-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2021 winner row names Anderson .Paak and “Lockdown.”"
+      }
+    },
+    {
+      "id": "oma-0037",
+      "category": "hip-hop-and-rap",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2023 Best Rap Song entry names which winning title?",
+      "choices": ["The Heart Part 5", "Jail", "A Lot", "Hotline Bling"],
+      "answer": 0,
+      "explanation": "“The Heart Part 5” is the Best Rap Song winner recorded for 2023.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive lists “The Heart Part 5” in the 2023 winner row."
+      }
+    },
+    {
+      "id": "oma-0038",
+      "category": "hip-hop-and-rap",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rap Album timeline, which album follows 2024’s “MICHAEL” as the 2025 winner?",
+      "choices": ["Mr. Morale & The Big Steppers", "Alligator Bites Never Heal", "Call Me If You Get Lost", "My Beautiful Dark Twisted Fantasy"],
+      "answer": 1,
+      "explanation": "Doechii’s “Alligator Bites Never Heal” is the winner listed for 2025.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive lists “MICHAEL” in 2024 and “Alligator Bites Never Heal” in 2025."
+      }
+    },
+    {
+      "id": "oma-0039",
+      "category": "hip-hop-and-rap",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive credits “Family Ties” with the 2022 Best Rap Performance award. Which pair is listed?",
+      "choices": ["Megan Pete and Beyoncé Knowles", "Kendrick Lamar and Jay Rock", "Baby Keem and Kendrick Lamar", "Ben Haggerty and Ryan Lewis"],
+      "answer": 2,
+      "explanation": "Baby Keem and Kendrick Lamar won the 2022 award with “Family Ties.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-performance-2/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2022 row pairs Baby Keem and Kendrick Lamar with “Family Ties.”"
+      }
+    },
+    {
+      "id": "oma-0040",
+      "category": "hip-hop-and-rap",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Among these Best Melodic Rap Performance winners, which title belongs to the 2026 award?",
+      "choices": ["Higher", "Lockdown", "3:AM", "luther"],
+      "answer": 3,
+      "explanation": "Kendrick Lamar and SZA won the category with “luther.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Melodic Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-melodic-rap-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 field marks “luther” as the winning performance."
+      }
+    },
+    {
+      "id": "oma-0041",
+      "category": "hip-hop-and-rap",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which song won Best Rap Song at the 2025 Grammys?",
+      "choices": ["Not Like Us", "SCIENTISTS & ENGINEERS", "The Heart Part 5", "Jail"],
+      "answer": 0,
+      "explanation": "“Not Like Us” is the Best Rap Song winner listed for 2025.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive records “Not Like Us” as the 2025 winner."
+      }
+    },
+    {
+      "id": "oma-0042",
+      "category": "hip-hop-and-rap",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2022 Best Rap Album entry pairs “Call Me If You Get Lost” with which artist?",
+      "choices": ["Nas", "Tyler, The Creator", "Kendrick Lamar", "Cardi B"],
+      "answer": 1,
+      "explanation": "Tyler, The Creator won the 2022 category with “Call Me If You Get Lost.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2022 winner row pairs Tyler, The Creator with “Call Me If You Get Lost.”"
+      }
+    },
+    {
+      "id": "oma-0043",
+      "category": "hip-hop-and-rap",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best Rap Performance timeline, which title occupies 2023 between 2022’s “Family Ties” and 2024’s “SCIENTISTS & ENGINEERS”?",
+      "choices": ["Not Like Us", "Savage", "The Heart Part 5", "Bubblin"],
+      "answer": 2,
+      "explanation": "Kendrick Lamar’s “The Heart Part 5” is the winner listed for 2023.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-performance-2/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive sequence shows “Family Ties” in 2022, “The Heart Part 5” in 2023, and “SCIENTISTS & ENGINEERS” in 2024."
+      }
+    },
+    {
+      "id": "oma-0044",
+      "category": "hip-hop-and-rap",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “3:AM” as the 2025 Best Melodic Rap Performance winner. Which pair is credited?",
+      "choices": ["Future and Drake", "Kendrick Lamar and Rihanna", "Eminem and Rihanna", "Rapsody and Erykah Badu"],
+      "answer": 3,
+      "explanation": "Rapsody and Erykah Badu are credited on the 2025 winner “3:AM.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Melodic Rap Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-melodic-rap-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 row pairs Rapsody and Erykah Badu with “3:AM.”"
+      }
+    },
+    {
+      "id": "oma-0045",
+      "category": "hip-hop-and-rap",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One album in the 2026 Best Rap Album field is marked as the winner. Which album is it?",
+      "choices": ["GNX", "Igor", "DAMN.", "MICHAEL"],
+      "answer": 0,
+      "explanation": "Kendrick Lamar’s “GNX” is marked as the 2026 Best Rap Album winner.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Rap Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rap-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 nominees section identifies “GNX” as the winning album."
+      }
+    },
+    {
+      "id": "oma-0046",
+      "category": "rb-soul-and-disco",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which recording won Best Traditional R&B Performance at the 2023 Grammys?",
+      "choices": ["Fight For You", "PLASTIC OFF THE SOFA", "Anything For You", "Good Morning"],
+      "answer": 1,
+      "explanation": "Beyoncé won the 2023 category with “PLASTIC OFF THE SOFA.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Traditional R&B Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-traditional-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2023 winner row pairs Beyoncé Knowles with “PLASTIC OFF THE SOFA.”"
+      }
+    },
+    {
+      "id": "oma-0047",
+      "category": "rb-soul-and-disco",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2024 Best R&B Solo Performance entry pairs “ICU” with which artist?",
+      "choices": ["Muni Long", "Jazmine Sullivan", "Coco Jones", "Beyoncé Knowles"],
+      "answer": 2,
+      "explanation": "Coco Jones won the 2024 category with “ICU.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 archive row pairs Coco Jones with “ICU.”"
+      }
+    },
+    {
+      "id": "oma-0048",
+      "category": "rb-soul-and-disco",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best R&B Song timeline, which title follows 2024’s “Snooze” as the 2025 winner?",
+      "choices": ["CUFF IT", "Leave The Door Open", "Better Than I Imagined", "Saturn"],
+      "answer": 3,
+      "explanation": "“Saturn” is the Best R&B Song winner listed for 2025.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive lists “Snooze” for 2024 and “Saturn” for 2025."
+      }
+    },
+    {
+      "id": "oma-0049",
+      "category": "rb-soul-and-disco",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive lists “11:11 (Deluxe)” as the 2025 Best R&B Album winner. Which artist made it?",
+      "choices": ["Chris Brown", "Victoria Monét", "Robert Glasper", "Jazmine Sullivan"],
+      "answer": 0,
+      "explanation": "Chris Brown is the artist credited with the 2025 winner “11:11 (Deluxe).”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 winner row pairs Chris Brown with “11:11 (Deluxe).”"
+      }
+    },
+    {
+      "id": "oma-0050",
+      "category": "rb-soul-and-disco",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "One title in the 2026 Best Traditional R&B Performance field is marked as the winner. Which title is it?",
+      "choices": ["Here We Are", "VIBES DON'T LIE", "UPTOWN", "LOVE YOU TOO"],
+      "answer": 1,
+      "explanation": "Leon Thomas won the 2026 category with “VIBES DON'T LIE.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Traditional R&B Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-traditional-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2026 nominees section marks “VIBES DON'T LIE” as the winning performance."
+      }
+    },
+    {
+      "id": "oma-0051",
+      "category": "rb-soul-and-disco",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which recording won Best R&B Solo Performance at the 2021 Grammys?",
+      "choices": ["Come Home", "Best Part", "Black Parade", "That's What I Like"],
+      "answer": 2,
+      "explanation": "Beyoncé won the 2021 category with “Black Parade.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2021 winner row pairs Beyoncé Knowles with “Black Parade.”"
+      }
+    },
+    {
+      "id": "oma-0052",
+      "category": "rb-soul-and-disco",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2023 Best R&B Song entry names which winning title?",
+      "choices": ["Snooze", "Saturn", "Leave The Door Open", "CUFF IT"],
+      "answer": 3,
+      "explanation": "“CUFF IT” is the winning title listed for 2023.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The category archive records “CUFF IT” in the 2023 winner row."
+      }
+    },
+    {
+      "id": "oma-0053",
+      "category": "rb-soul-and-disco",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "In the Best R&B Album timeline, which album occupies 2023 between 2022’s “Heaux Tales” and 2024’s “JAGUAR II”?",
+      "choices": ["Black Radio III", "Bigger Love", "Ventura", "H.E.R."],
+      "answer": 0,
+      "explanation": "Robert Glasper’s “Black Radio III” holds the 2023 spot in that sequence.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive shows “Heaux Tales” in 2022, “Black Radio III” in 2023, and “JAGUAR II” in 2024."
+      }
+    },
+    {
+      "id": "oma-0054",
+      "category": "rb-soul-and-disco",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "The archive credits “Good Morning” with the 2024 Best Traditional R&B Performance award. Which pair is listed?",
+      "choices": ["H.E.R. and Ledisi Young", "PJ Morton and Susan Carol", "Leon Bridges and Lizzo", "Lalah Hathaway and Gary Clark Jr."],
+      "answer": 1,
+      "explanation": "PJ Morton and Susan Carol are credited on the 2024 winner “Good Morning.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best Traditional R&B Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-traditional-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 winner row pairs PJ Morton and Susan Carol with “Good Morning.”"
+      }
+    },
+    {
+      "id": "oma-0055",
+      "category": "rb-soul-and-disco",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Among these recent Best R&B Solo Performance winners, which title belongs to the 2025 award?",
+      "choices": ["Pick Up Your Feelings", "Leave The Door Open", "Made For Me (Live On BET)", "Earned It (Fifty Shades Of Grey)"],
+      "answer": 2,
+      "explanation": "Muni Long’s “Made For Me (Live On BET)” is the winner listed for 2025.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Solo Performance Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-performance/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The archive places “Made For Me (Live On BET)” in the 2025 winner row."
+      }
+    },
+    {
+      "id": "oma-0056",
+      "category": "rb-soul-and-disco",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which song won Best R&B Song at the 2024 Grammys?",
+      "choices": ["Saturn", "CUFF IT", "Leave The Door Open", "Snooze"],
+      "answer": 3,
+      "explanation": "“Snooze” is the Best R&B Song winner listed for 2024.",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Song Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-song/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 winner row records “Snooze” as the winning song."
+      }
+    },
+    {
+      "id": "oma-0057",
+      "category": "rb-soul-and-disco",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "The 2024 Best R&B Album entry pairs “JAGUAR II” with which artist?",
+      "choices": ["Victoria Monét", "Robert Glasper", "Jazmine Sullivan", "Anderson .Paak"],
+      "answer": 0,
+      "explanation": "Victoria Monét won the 2024 category with “JAGUAR II.”",
+      "source": {
+        "publisher": "Recording Academy",
+        "title": "Best R&B Album Grammy Award Winners & Nominees",
+        "url": "https://www.grammy.com/awards/categories/best-rb-album/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2024 archive row pairs Victoria Monét with “JAGUAR II.”"
+      }
+    },
+    {
+      "id": "oma-0058",
+      "category": "rb-soul-and-disco",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "On the Rock Hall timeline, in which year was Donna Summer inducted as a Performer?",
+      "choices": ["2011", "2013", "2015", "2017"],
+      "answer": 1,
+      "explanation": "Donna Summer entered the Rock & Roll Hall of Fame as a Performer in 2013.",
+      "source": {
+        "publisher": "Rock & Roll Hall of Fame",
+        "title": "Donna Summer | Rock & Roll Hall of Fame",
+        "url": "https://rockhall.com/inductees/donna-summer/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Donna Summer’s official inductee page gives 2013 as her induction year and Performer as her category."
+      }
+    },
+    {
+      "id": "oma-0059",
+      "category": "rb-soul-and-disco",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "Which Rock Hall induction category is listed for Nile Rodgers in 2017?",
+      "choices": ["Performer", "Musical Influence", "Musical Excellence", "Ahmet Ertegun Award"],
+      "answer": 2,
+      "explanation": "Nile Rodgers was inducted in the Musical Excellence category in 2017.",
+      "source": {
+        "publisher": "Rock & Roll Hall of Fame",
+        "title": "Nile Rodgers | Rock & Roll Hall of Fame",
+        "url": "https://rockhall.com/inductees/nile-rodgers/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Nile Rodgers’s official inductee page lists 2017 and the Musical Excellence category."
+      }
+    },
+    {
+      "id": "oma-0060",
+      "category": "rb-soul-and-disco",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Which complete induction record matches Kool & the Gang’s Rock Hall page?",
+      "choices": ["2021 — Performer — inducted by LL Cool J", "2022 — Musical Excellence — inducted by Jimmy Jam", "2023 — Performer — inducted by George Clinton", "2024 — Performer — inducted by Chuck D"],
+      "answer": 3,
+      "explanation": "Kool & the Gang were inducted as Performers in 2024, with Chuck D presenting the induction.",
+      "source": {
+        "publisher": "Rock & Roll Hall of Fame",
+        "title": "Kool & the Gang | Rock & Roll Hall of Fame",
+        "url": "https://rockhall.com/inductees/kool-and-the-gang/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page lists 2024, Performer, and Chuck D in the induction fields for Kool & the Gang."
+      }
+    }
+  ]
+}
