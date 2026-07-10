@@ -1,0 +1,1559 @@
+{
+  "minigame": "official-global-charts-awards",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "esc-basel-winner-artist",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which artist won the Eurovision Song Contest at Basel 2025?",
+      "choices": ["KAJ", "Lucio Corsi", "Tommy Cash", "JJ"],
+      "answer": 3,
+      "explanation": "JJ won the Basel 2025 Grand Final for Austria with “Wasted Love.”",
+      "pronunciation": {
+        "JJ": "jay jay",
+        "KAJ": "kye"
+      },
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official scoreboard marks JJ as the winner in first place with 436 points."
+      }
+    },
+    {
+      "id": "esc-basel-winning-song",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Which song won the Eurovision Song Contest at Basel 2025?",
+      "choices": [
+        "New Day Will Rise",
+        "Wasted Love",
+        "Espresso Macchiato",
+        "Bara Bada Bastu"
+      ],
+      "answer": 1,
+      "explanation": "“Wasted Love,” performed by JJ for Austria, won the Grand Final.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The first-place scoreboard entry names JJ’s song “Wasted Love.”"
+      }
+    },
+    {
+      "id": "esc-basel-winning-country",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which country won the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Israel", "Sweden", "Austria", "Switzerland"],
+      "answer": 2,
+      "explanation": "Austria won the Grand Final through JJ’s performance of “Wasted Love.”",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Austria occupies first place on the official Grand Final scoreboard."
+      }
+    },
+    {
+      "id": "esc-basel-runner-up-country",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which country finished second in the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Sweden", "Estonia", "Austria", "Israel"],
+      "answer": 3,
+      "explanation": "Israel finished second with 357 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official scoreboard places Israel second with 357 points."
+      }
+    },
+    {
+      "id": "esc-basel-runner-up-artist",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which artist represented the second-place entry at Basel 2025?",
+      "choices": ["Louane", "Yuval Raphael", "Klavdia", "Claude"],
+      "answer": 1,
+      "explanation": "Yuval Raphael represented Israel and finished second with “New Day Will Rise.”",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The second-place scoreboard entry pairs Israel with Yuval Raphael."
+      }
+    },
+    {
+      "id": "esc-basel-third-place-song",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which song finished third in the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Bird of Pray", "Voyage", "Espresso Macchiato", "maman"],
+      "answer": 2,
+      "explanation": "Tommy Cash’s “Espresso Macchiato” placed third for Estonia.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The third-place entry is Estonia’s Tommy Cash with “Espresso Macchiato.”"
+      }
+    },
+    {
+      "id": "esc-basel-fourth-place-artist",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which act finished fourth at the Basel 2025 Eurovision Grand Final?",
+      "choices": ["KAJ", "JJ", "Ziferblat", "Erika Vikman"],
+      "answer": 0,
+      "explanation": "KAJ placed fourth for Sweden with “Bara Bada Bastu.”",
+      "pronunciation": {
+        "JJ": "jay jay",
+        "KAJ": "kye"
+      },
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The scoreboard lists Sweden’s KAJ in fourth place with 321 points."
+      }
+    },
+    {
+      "id": "esc-basel-fifth-place-country",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which country finished fifth in the Basel 2025 Eurovision Grand Final?",
+      "choices": ["France", "Greece", "Italy", "Finland"],
+      "answer": 2,
+      "explanation": "Italy finished fifth with 256 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official scoreboard places Italy fifth with 256 points."
+      }
+    },
+    {
+      "id": "esc-basel-sixth-place-artist",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which artist finished sixth at the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Klavdia", "Louane", "Claude", "Tommy Cash"],
+      "answer": 0,
+      "explanation": "Klavdia placed sixth for Greece with “Asteromáta.”",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The sixth-place scoreboard entry names Greece’s artist Klavdia."
+      }
+    },
+    {
+      "id": "esc-basel-seventh-place-song",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which song finished seventh in the Basel 2025 Eurovision Grand Final?",
+      "choices": [
+        "New Day Will Rise",
+        "Bara Bada Bastu",
+        "Espresso Macchiato",
+        "maman"
+      ],
+      "answer": 3,
+      "explanation": "Louane’s “maman” finished seventh for France.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The seventh-place entry pairs France and Louane with “maman.”"
+      }
+    },
+    {
+      "id": "esc-basel-eighth-place-song",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which song placed eighth in the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Bird of Pray", "Zjerm", "Voyage", "New Day Will Rise"],
+      "answer": 1,
+      "explanation": "Shkodra Elektronike’s “Zjerm” placed eighth for Albania.",
+      "pronunciation": {
+        "Zjerm": "zyairm"
+      },
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The eighth-place scoreboard entry identifies Albania’s song as “Zjerm.”"
+      }
+    },
+    {
+      "id": "esc-basel-ninth-place-artist",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which act finished ninth in the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Ziferblat", "KAJ", "Claude", "Erika Vikman"],
+      "answer": 0,
+      "explanation": "Ziferblat finished ninth for Ukraine with “Bird of Pray.”",
+      "pronunciation": {
+        "KAJ": "kye"
+      },
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The ninth-place scoreboard entry lists Ukraine’s act Ziferblat."
+      }
+    },
+    {
+      "id": "esc-basel-tenth-place-country",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which country completed the top ten at the Basel 2025 Eurovision Grand Final?",
+      "choices": ["Netherlands", "Switzerland", "Finland", "Albania"],
+      "answer": 1,
+      "explanation": "Host country Switzerland finished tenth with 214 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The scoreboard places Switzerland tenth with 214 points."
+      }
+    },
+    {
+      "id": "esc-basel-tied-points-higher-place",
+      "category": "eurovision",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Albania and Ukraine each earned 218 points at Basel 2025. Which country placed eighth?",
+      "choices": ["Ukraine", "Albania", "France", "Finland"],
+      "answer": 1,
+      "explanation": "Albania placed eighth, one position above Ukraine despite their equal totals.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The scoreboard gives both countries 218 points and ranks Albania eighth and Ukraine ninth."
+      }
+    },
+    {
+      "id": "esc-basel-zero-audience-country",
+      "category": "eurovision",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which top-ten country received zero audience points in the Basel 2025 Grand Final?",
+      "choices": ["Switzerland", "France", "Italy", "Netherlands"],
+      "answer": 0,
+      "explanation": "Switzerland’s 214-point total came entirely from the jury score.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Switzerland’s scoreboard row shows 214 jury points and 0 audience points."
+      }
+    },
+    {
+      "id": "esc-basel-top-ten-highest-jury",
+      "category": "eurovision",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which country earned the largest jury score among the Basel 2025 top ten?",
+      "choices": ["France", "Italy", "Sweden", "Austria"],
+      "answer": 3,
+      "explanation": "Austria led the top ten’s jury scores with 258 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Austria’s jury score is 258, higher than every other top-ten jury total."
+      }
+    },
+    {
+      "id": "esc-basel-top-ten-highest-audience",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which country earned the largest audience score among the Basel 2025 top ten?",
+      "choices": ["Estonia", "Austria", "France", "Israel"],
+      "answer": 3,
+      "explanation": "Israel led the top ten’s audience scores with 297 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Israel’s audience score is 297, the largest among the listed top ten."
+      }
+    },
+    {
+      "id": "esc-basel-running-order-twenty-six",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which country performed twenty-sixth in the Basel 2025 Grand Final running order?",
+      "choices": ["France", "Sweden", "Albania", "Switzerland"],
+      "answer": 2,
+      "explanation": "Albania performed last in running-order position 26.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Albania’s scoreboard row gives its running-order position as 26."
+      }
+    },
+    {
+      "id": "esc-basel-running-order-twenty-three",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which country performed in running-order position 23 at Basel 2025?",
+      "choices": ["Sweden", "Greece", "France", "Italy"],
+      "answer": 0,
+      "explanation": "Sweden’s KAJ performed in position 23.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Sweden row lists running order 23."
+      }
+    },
+    {
+      "id": "esc-basel-two-hundred-fifty-six-points",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which country finished with 256 points in the Basel 2025 Grand Final?",
+      "choices": ["Greece", "France", "Netherlands", "Italy"],
+      "answer": 3,
+      "explanation": "Italy finished fifth with 256 points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Italy’s official scoreboard total is 256 points."
+      }
+    },
+    {
+      "id": "esc-basel-one-hundred-eighty-jury",
+      "category": "eurovision",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which country received 180 jury points in the Basel 2025 Grand Final?",
+      "choices": ["Italy", "Sweden", "France", "Netherlands"],
+      "answer": 2,
+      "explanation": "France received 180 jury points and 50 audience points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "France’s scoreboard row reports a jury score of 180."
+      }
+    },
+    {
+      "id": "esc-basel-one-hundred-twenty-six-audience",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which country received 126 audience points in the Basel 2025 Grand Final?",
+      "choices": ["Greece", "Italy", "Finland", "Ukraine"],
+      "answer": 0,
+      "explanation": "Greece received 126 audience points and 105 jury points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Greece’s scoreboard row reports an audience score of 126."
+      }
+    },
+    {
+      "id": "esc-basel-after-italy",
+      "category": "eurovision",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "Which country appears immediately after fifth-place Italy in the Basel 2025 final ranking?",
+      "choices": ["Greece", "France", "Albania", "Sweden"],
+      "answer": 0,
+      "explanation": "Greece follows Italy in sixth place.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The final ranking lists Italy fifth and Greece sixth."
+      }
+    },
+    {
+      "id": "esc-basel-third-place-country",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which country took third place with 356 points at Basel 2025?",
+      "choices": ["Israel", "Greece", "Estonia", "Austria"],
+      "answer": 2,
+      "explanation": "Estonia placed third, one point behind Israel.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The scoreboard places Estonia third with 356 points."
+      }
+    },
+    {
+      "id": "esc-basel-runner-up-margin",
+      "category": "eurovision",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "How many points separated second-place Israel from third-place Estonia at Basel 2025?",
+      "choices": ["One point", "Two points", "Five points", "Ten points"],
+      "answer": 0,
+      "explanation": "Israel scored 357 and Estonia scored 356, a one-point margin.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The adjacent scoreboard totals are 357 for Israel and 356 for Estonia."
+      }
+    },
+    {
+      "id": "esc-basel-sweden-audience-score",
+      "category": "eurovision",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "What audience score did fourth-place Sweden receive at Basel 2025?",
+      "choices": ["126 points", "178 points", "258 points", "195 points"],
+      "answer": 3,
+      "explanation": "Sweden received 195 audience points.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Sweden’s scoreboard row shows 195 audience points."
+      }
+    },
+    {
+      "id": "esc-basel-running-order-four",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which country performed fourth in the Basel 2025 Grand Final running order?",
+      "choices": ["Israel", "France", "Greece", "Italy"],
+      "answer": 0,
+      "explanation": "Israel performed fourth in the running order and finished second.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Israel’s scoreboard row lists its running-order position as four."
+      }
+    },
+    {
+      "id": "esc-basel-albania-act",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which act represented Albania in the Basel 2025 Grand Final?",
+      "choices": [
+        "Yuval Raphael",
+        "Shkodra Elektronike",
+        "Tommy Cash",
+        "Erika Vikman"
+      ],
+      "answer": 1,
+      "explanation": "Shkodra Elektronike represented Albania with “Zjerm.”",
+      "pronunciation": {
+        "Shkodra Elektronike": "shkoh-drah eh-lek-troh-nee-keh"
+      },
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Albania scoreboard entry names Shkodra Elektronike as its act."
+      }
+    },
+    {
+      "id": "esc-basel-ukraine-song",
+      "category": "eurovision",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which song represented Ukraine in the Basel 2025 Grand Final?",
+      "choices": [
+        "Espresso Macchiato",
+        "Bird of Pray",
+        "New Day Will Rise",
+        "Bara Bada Bastu"
+      ],
+      "answer": 1,
+      "explanation": "Ziferblat represented Ukraine with “Bird of Pray.”",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Ukraine scoreboard entry names the song “Bird of Pray.”"
+      }
+    },
+    {
+      "id": "esc-basel-podium-order",
+      "category": "eurovision",
+      "difficulty": 2,
+      "format": "night-timeline",
+      "prompt": "Which sequence gives the Basel 2025 Eurovision podium from first through third?",
+      "choices": [
+        "Israel, Austria, Estonia",
+        "Austria, Estonia, Israel",
+        "Austria, Israel, Estonia",
+        "Estonia, Israel, Austria"
+      ],
+      "answer": 2,
+      "explanation": "Austria won, Israel finished second, and Estonia placed third.",
+      "source": {
+        "publisher": "Eurovision Song Contest",
+        "title": "Grand Final | Basel 2025",
+        "url": "https://www.eurovision.com/eurovision-song-contest/basel-2025/basel-2025-grand-final/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The first three official scoreboard rows are Austria, Israel, and Estonia in that order."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-leader",
+      "category": "global-recording-charts",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Who topped the IFPI Global Artist Chart for 2025?",
+      "choices": ["Drake", "Taylor Swift", "Stray Kids", "The Weeknd"],
+      "answer": 1,
+      "explanation": "Taylor Swift ranked first on the 2025 Global Artist Chart.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s Top 20 Global Artist Chart 2025 places Taylor Swift at number one."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-second",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which act ranked second on the IFPI Global Artist Chart for 2025?",
+      "choices": ["SEVENTEEN", "Drake", "Stray Kids", "Bad Bunny"],
+      "answer": 2,
+      "explanation": "Stray Kids reached number two, their highest position to that point.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 artist table ranks Stray Kids second, up from fifth in the prior year."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-third",
+      "category": "global-recording-charts",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Who held third place on the IFPI Global Artist Chart for 2025?",
+      "choices": ["The Weeknd", "Bad Bunny", "Drake", "Kendrick Lamar"],
+      "answer": 2,
+      "explanation": "Drake ranked third on the chart.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s 2025 Global Artist Chart lists Drake in position three."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-fourth",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which artist ranked fourth on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Billie Eilish",
+        "Morgan Wallen",
+        "Sabrina Carpenter",
+        "The Weeknd"
+      ],
+      "answer": 3,
+      "explanation": "The Weeknd rose to fourth place for 2025.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official 2025 table places The Weeknd fourth, after a prior-year rank of seven."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-fifth",
+      "category": "global-recording-charts",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Who ranked fifth on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Kendrick Lamar",
+        "Bad Bunny",
+        "Morgan Wallen",
+        "Sabrina Carpenter"
+      ],
+      "answer": 1,
+      "explanation": "Bad Bunny ranked fifth after placing twentieth the year before.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s table gives Bad Bunny a 2025 rank of five and a prior-year rank of twenty."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-sixth",
+      "category": "global-recording-charts",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which artist occupied sixth place on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Morgan Wallen",
+        "Billie Eilish",
+        "Lady Gaga",
+        "Kendrick Lamar"
+      ],
+      "answer": 3,
+      "explanation": "Kendrick Lamar ranked sixth for 2025.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The IFPI Global Artist Chart 2025 places Kendrick Lamar sixth."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-seventh",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Who ranked seventh on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Morgan Wallen",
+        "Sabrina Carpenter",
+        "Billie Eilish",
+        "Lady Gaga"
+      ],
+      "answer": 0,
+      "explanation": "Morgan Wallen ranked seventh, up from thirteenth.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The 2025 table lists Morgan Wallen seventh with a prior-year rank of thirteen."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-eighth",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which artist ranked eighth on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Lady Gaga",
+        "Billie Eilish",
+        "Sabrina Carpenter",
+        "Ariana Grande"
+      ],
+      "answer": 2,
+      "explanation": "Sabrina Carpenter ranked eighth for 2025.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s 2025 artist table places Sabrina Carpenter eighth."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-ninth",
+      "category": "global-recording-charts",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Who held ninth place on the IFPI Global Artist Chart for 2025?",
+      "choices": [
+        "Lady Gaga",
+        "Sabrina Carpenter",
+        "Taylor Swift",
+        "Billie Eilish"
+      ],
+      "answer": 3,
+      "explanation": "Billie Eilish ranked ninth on the 2025 chart.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Global Artist Chart 2025 lists Billie Eilish in ninth place."
+      }
+    },
+    {
+      "id": "ifpi-2025-artist-chart-tenth",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which artist completed the IFPI Global Artist Chart's 2025 top ten?",
+      "choices": ["Ariana Grande", "Lady Gaga", "Billie Eilish", "SZA"],
+      "answer": 1,
+      "explanation": "Lady Gaga re-entered the chart in tenth place.",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "SZA": "sizza"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI places Lady Gaga tenth and marks her as re-entering from 2020."
+      }
+    },
+    {
+      "id": "ifpi-2025-bad-bunny-rise",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "night-timeline",
+      "prompt": "Which 2025 top-ten artist rose from number 20 to number five on IFPI's chart?",
+      "choices": ["The Weeknd", "Bad Bunny", "Morgan Wallen", "Stray Kids"],
+      "answer": 1,
+      "explanation": "Bad Bunny moved from twentieth in the prior year to fifth in 2025.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Bad Bunny’s table row shows prior-year position 20 and 2025 position five."
+      }
+    },
+    {
+      "id": "ifpi-2025-stray-kids-rise",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "night-timeline",
+      "prompt": "Which act advanced from fifth in 2024 to second on IFPI's 2025 artist chart?",
+      "choices": ["Stray Kids", "Drake", "The Weeknd", "SEVENTEEN"],
+      "answer": 0,
+      "explanation": "Stray Kids rose three positions to number two.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Stray Kids row pairs a prior-year rank of five with a 2025 rank of two."
+      }
+    },
+    {
+      "id": "ifpi-2025-lady-gaga-reentry",
+      "category": "global-recording-charts",
+      "difficulty": 3,
+      "format": "night-timeline",
+      "prompt": "Which artist re-entered IFPI's Global Artist Chart from 2020 and ranked tenth in 2025?",
+      "choices": ["Ed Sheeran", "SZA", "Justin Bieber", "Lady Gaga"],
+      "answer": 3,
+      "explanation": "Lady Gaga returned to the chart at number ten, with 2020 shown as her prior appearance.",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "SZA": "sizza"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Lady Gaga’s row is ranked tenth and carries the prior-year notation “RE (2020).”"
+      }
+    },
+    {
+      "id": "ifpi-2025-morgan-wallen-rise",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "night-timeline",
+      "prompt": "Who moved from thirteenth to seventh on IFPI's Global Artist Chart in 2025?",
+      "choices": [
+        "Kendrick Lamar",
+        "Sabrina Carpenter",
+        "Billie Eilish",
+        "Morgan Wallen"
+      ],
+      "answer": 3,
+      "explanation": "Morgan Wallen rose six positions, from thirteenth to seventh.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift named IFPI’s Official Biggest-Selling Global Artist of the Year for a sixth time",
+        "url": "https://www.ifpi.org/taylor-swift-named-ifpis-official-biggest-selling-global-artist-of-the-year-for-a-sixth-time/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Morgan Wallen’s table row shows a prior-year rank of thirteen and a 2025 rank of seven."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-leader",
+      "category": "global-recording-charts",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which track topped the IFPI Global Single Chart for 2025?",
+      "choices": [
+        "Beautiful Things",
+        "Not Like Us",
+        "APT.",
+        "Die With A Smile"
+      ],
+      "answer": 2,
+      "explanation": "ROSÉ and Bruno Mars topped the chart with “APT.”",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "APT.": "ah-pah-teu"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s Top 20 Global Single Chart 2025 ranks “APT.” first with 2.06 billion equivalents."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-second",
+      "category": "global-recording-charts",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which song ranked second on the IFPI Global Single Chart for 2025?",
+      "choices": ["Ordinary", "Beautiful Things", "Golden", "Lose Control"],
+      "answer": 2,
+      "explanation": "HUNTR/X ranked second with “Golden.”",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official singles table places HUNTR/X and “Golden” second at 2.00 billion."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-third",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which Alex Warren track placed third on IFPI's 2025 Global Single Chart?",
+      "choices": ["Messy", "Ordinary", "Lose Control", "Timeless"],
+      "answer": 1,
+      "explanation": "Alex Warren’s “Ordinary” ranked third with 1.90 billion equivalents.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The singles table ranks Alex Warren’s “Ordinary” third with 1.90 billion."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-one-point-eight-six-billion",
+      "category": "global-recording-charts",
+      "difficulty": 1,
+      "format": "chart-wire",
+      "prompt": "Which 2025 IFPI global single recorded 1.86 billion subscription-stream equivalents?",
+      "choices": [
+        "BIRDS OF A FEATHER",
+        "Beautiful Things",
+        "Die With A Smile",
+        "Lose Control"
+      ],
+      "answer": 2,
+      "explanation": "Lady Gaga and Bruno Mars reached 1.86 billion with “Die With A Smile.”",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The number-four row lists “Die With A Smile” with 1.86 billion equivalents."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-fifth",
+      "category": "global-recording-charts",
+      "difficulty": 3,
+      "format": "chart-wire",
+      "prompt": "Which Benson Boone song ranked fifth on IFPI's 2025 Global Single Chart?",
+      "choices": [
+        "Lose Control",
+        "Beautiful Things",
+        "That's So True",
+        "Messy"
+      ],
+      "answer": 1,
+      "explanation": "Benson Boone’s “Beautiful Things” ranked fifth.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The fifth row of IFPI’s singles table pairs Benson Boone with “Beautiful Things.”"
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-sixth",
+      "category": "global-recording-charts",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which Billie Eilish song ranked sixth on IFPI's 2025 Global Single Chart?",
+      "choices": [
+        "BIRDS OF A FEATHER",
+        "Beautiful Things",
+        "Die With A Smile",
+        "That's So True"
+      ],
+      "answer": 0,
+      "explanation": "“BIRDS OF A FEATHER” ranked sixth with 1.29 billion equivalents.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI’s sixth-place row lists Billie Eilish and “BIRDS OF A FEATHER.”"
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-eighth",
+      "category": "global-recording-charts",
+      "difficulty": 4,
+      "format": "chart-wire",
+      "prompt": "Which track by Kendrick Lamar and SZA ranked eighth on IFPI's 2025 singles chart?",
+      "choices": ["luther", "Not Like Us", "Timeless", "Pink Pony Club"],
+      "answer": 0,
+      "explanation": "Kendrick Lamar and SZA ranked eighth with “luther.”",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "SZA": "sizza"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The eighth-place row pairs Kendrick Lamar and SZA with “luther” at 1.18 billion."
+      }
+    },
+    {
+      "id": "ifpi-2025-single-chart-tenth",
+      "category": "global-recording-charts",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "Which Kendrick Lamar solo track placed tenth on IFPI's 2025 Global Single Chart?",
+      "choices": ["luther", "Not Like Us", "Soda Pop", "back to friends"],
+      "answer": 1,
+      "explanation": "Kendrick Lamar’s “Not Like Us” ranked tenth with 1.06 billion equivalents.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The tenth-place row names Kendrick Lamar’s “Not Like Us” at 1.06 billion."
+      }
+    },
+    {
+      "id": "ifpi-2025-top-two-single-gap",
+      "category": "global-recording-charts",
+      "difficulty": 5,
+      "format": "chart-wire",
+      "prompt": "What separated the top two IFPI Global Singles of 2025 in subscription-stream equivalents?",
+      "choices": [
+        "0.02 billion",
+        "0.04 billion",
+        "0.10 billion",
+        "0.06 billion"
+      ],
+      "answer": 3,
+      "explanation": "“APT.” had 2.06 billion and “Golden” had 2.00 billion, a gap of 0.06 billion.",
+      "pronunciation": {
+        "IFPI": "I F P I"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Rosé and Bruno Mars’ APT. crowned IFPI’s Biggest-Selling Global Single of the Year 2025",
+        "url": "https://www.ifpi.org/rose-and-bruno-mars-apt-crowned-ifpis-biggest-selling-global-single-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "IFPI reports 2.06 billion for “APT.” and 2.00 billion for “Golden.”"
+      }
+    },
+    {
+      "id": "ifpi-2025-global-album-leader",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which release topped the IFPI Global Album Chart for 2025?",
+      "choices": [
+        "The Life of a Showgirl",
+        "I'm The Problem",
+        "KPop Demon Hunters",
+        "Short n' Sweet"
+      ],
+      "answer": 0,
+      "explanation": "Taylor Swift’s “The Life of a Showgirl” topped the all-formats album chart.",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "KPop": "K pop"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift’s The Life of a Showgirl named IFPI’s Official Biggest-Selling Global Album of the Year 2025",
+        "url": "https://www.ifpi.org/taylor-swifts-the-life-of-a-showgirl-named-ifpis-official-biggest-selling-global-album-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Top 20 IFPI Global Album Chart 2025 lists “The Life of a Showgirl” at number one."
+      }
+    },
+    {
+      "id": "ifpi-2025-streaming-album-leader",
+      "category": "global-recording-charts",
+      "difficulty": 2,
+      "format": "chart-wire",
+      "prompt": "Which album topped IFPI's Global Streaming Album Chart for 2025?",
+      "choices": [
+        "SOS",
+        "DeBÍ TiRAR MáS FOToS",
+        "I'm The Problem",
+        "KPop Demon Hunters"
+      ],
+      "answer": 2,
+      "explanation": "Morgan Wallen’s “I'm The Problem” ranked first on the streaming album chart.",
+      "pronunciation": {
+        "IFPI": "I F P I",
+        "SOS": "S O S",
+        "KPop": "K pop",
+        "DeBÍ TiRAR MáS FOToS": "deh bee tee rahr mahs foh-tohs"
+      },
+      "source": {
+        "publisher": "IFPI",
+        "title": "Taylor Swift’s The Life of a Showgirl named IFPI’s Official Biggest-Selling Global Album of the Year 2025",
+        "url": "https://www.ifpi.org/taylor-swifts-the-life-of-a-showgirl-named-ifpis-official-biggest-selling-global-album-of-the-year-2025/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Global Streaming Album Chart 2025 places Morgan Wallen’s “I'm The Problem” first."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-artist-year",
+      "category": "japan-gold-disc",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Who received the domestic Artist of the Year honor at the 39th Japan Gold Disc Awards?",
+      "choices": ["Mrs. GREEN APPLE", "Snow Man", "SEVENTEEN", "SixTONES"],
+      "answer": 0,
+      "explanation": "Mrs. GREEN APPLE received the domestic Artist of the Year honor.",
+      "pronunciation": {
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Artist Award section names Mrs. GREEN APPLE as domestic Artist of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-best-asian-artist",
+      "category": "japan-gold-disc",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which act received Best Asian Artist at the 39th Japan Gold Disc Awards?",
+      "choices": ["aespa", "BOYNEXTDOOR", "ZEROBASEONE", "SEVENTEEN"],
+      "answer": 3,
+      "explanation": "SEVENTEEN received the Best Asian Artist honor.",
+      "pronunciation": {
+        "aespa": "es-pa"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Artist Award section identifies SEVENTEEN as Best Asian Artist."
+      }
+    },
+    {
+      "id": "jgd-39-asian-new-artist-year",
+      "category": "japan-gold-disc",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Who won Asian New Artist of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": ["NEXZ", "ME:I", "aespa", "IS:SUE"],
+      "answer": 2,
+      "explanation": "aespa received the Asian New Artist of the Year honor.",
+      "pronunciation": {
+        "aespa": "es-pa",
+        "NEXZ": "nex zee",
+        "ME:I": "me eye",
+        "IS:SUE": "issue"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Asian New Artist Award section names aespa as New Artist of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-asian-best-three-zerobaseone",
+      "category": "japan-gold-disc",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which act was selected among the Best Three Asian New Artists at the 39th awards?",
+      "choices": ["INI", "SixTONES", "ZEROBASEONE", "Snow Man"],
+      "answer": 2,
+      "explanation": "ZEROBASEONE was one of the three selected Asian new artists.",
+      "pronunciation": {
+        "INI": "I N I",
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best3 Asian new artists list includes ZEROBASEONE."
+      }
+    },
+    {
+      "id": "jgd-39-asian-best-three-boynextdoor",
+      "category": "japan-gold-disc",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Which act joined the Best Three Asian New Artists list at the 39th awards?",
+      "choices": ["Mrs. GREEN APPLE", "SixTONES", "Snow Man", "BOYNEXTDOOR"],
+      "answer": 3,
+      "explanation": "BOYNEXTDOOR was named among the Best Three Asian New Artists.",
+      "pronunciation": {
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best3 Asian new artists list includes BOYNEXTDOOR."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-best-five-new-nexz",
+      "category": "japan-gold-disc",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Which act made the Best Five Domestic New Artists list at the 39th awards?",
+      "choices": ["INI", "ZEROBASEONE", "NEXZ", "SixTONES"],
+      "answer": 2,
+      "explanation": "NEXZ was selected as one of the Best Five Domestic New Artists.",
+      "pronunciation": {
+        "NEXZ": "nex zee",
+        "INI": "I N I",
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best5 domestic new artists section includes NEXZ."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-best-five-new-issue",
+      "category": "japan-gold-disc",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which act appears among the Best Five Domestic New Artists at the 39th awards?",
+      "choices": ["IS:SUE", "SEVENTEEN", "Stray Kids", "aespa"],
+      "answer": 0,
+      "explanation": "IS:SUE was one of the Best Five Domestic New Artists.",
+      "pronunciation": {
+        "IS:SUE": "issue",
+        "aespa": "es-pa"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official Best5 domestic new artists list includes IS:SUE."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-best-five-new-mei",
+      "category": "japan-gold-disc",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which group was included in the Best Five Domestic New Artists at the 39th awards?",
+      "choices": ["BOYNEXTDOOR", "ZEROBASEONE", "aespa", "ME:I"],
+      "answer": 3,
+      "explanation": "ME:I was selected for the Best Five Domestic New Artists list.",
+      "pronunciation": {
+        "ME:I": "me eye",
+        "aespa": "es-pa"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best5 domestic new artists section names ME:I."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-album-year",
+      "category": "japan-gold-disc",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which release won Domestic Album of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": ["RAYS", "THE VIBES", "LOST CORNER", "+Alpha"],
+      "answer": 0,
+      "explanation": "Snow Man’s “RAYS” received Domestic Album of the Year.",
+      "pronunciation": {
+        "+Alpha": "plus Alpha"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The domestic Album Award section identifies Snow Man’s “RAYS” as Album of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-best-five-album-vibes",
+      "category": "japan-gold-disc",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which SixTONES release made the Best Five Domestic Albums at the 39th awards?",
+      "choices": ["GIANT", "THE VIBES", "Human Universe", "VVS"],
+      "answer": 1,
+      "explanation": "SixTONES placed “THE VIBES” among the Best Five Domestic Albums.",
+      "pronunciation": {
+        "VVS": "V V S",
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best5 domestic albums list pairs SixTONES with “THE VIBES.”"
+      }
+    },
+    {
+      "id": "jgd-39-asian-album-year",
+      "category": "japan-gold-disc",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Which release received Asian Album of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": ["GIANT", "17 IS RIGHT HERE", "SPILL THE FEELS", "RAYS"],
+      "answer": 1,
+      "explanation": "SEVENTEEN’s best album “17 IS RIGHT HERE” received the honor.",
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Asian Album Award section names SEVENTEEN BEST ALBUM “17 IS RIGHT HERE” as Album of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-asian-best-three-album-giant",
+      "category": "japan-gold-disc",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which Stray Kids release was named among the Best Three Asian Albums at the 39th awards?",
+      "choices": ["THE VIBES", "RAYS", "LOST CORNER", "GIANT"],
+      "answer": 3,
+      "explanation": "Stray Kids’ “GIANT” was one of the Best Three Asian Albums.",
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Best3 Asian albums list pairs Stray Kids with “GIANT.”"
+      }
+    },
+    {
+      "id": "jgd-39-soundtrack-album-year",
+      "category": "japan-gold-disc",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which release won Soundtrack Album of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": [
+        "FINAL FANTASY VII REBIRTH Original Soundtrack",
+        "Human Universe",
+        "Step Into Paradise",
+        "PRODUCE 101 JAPAN THE GIRLS"
+      ],
+      "answer": 0,
+      "explanation": "“FINAL FANTASY VII REBIRTH Original Soundtrack” received the soundtrack album honor.",
+      "pronunciation": {
+        "VII": "seven"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The genre album section lists “FINAL FANTASY VII REBIRTH Original Soundtrack” as Soundtrack Album of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-concept-album-year",
+      "category": "japan-gold-disc",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Which title received Concept Album of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": [
+        "PRODUCE 101 JAPAN THE GIRLS",
+        "FINAL FANTASY VII REBIRTH Original Soundtrack",
+        "SEVENTEEN BEST ALBUM 17 IS RIGHT HERE",
+        "TM NETWORK TRIBUTE ALBUM -40th CELEBRATION-"
+      ],
+      "answer": 0,
+      "explanation": "“PRODUCE 101 JAPAN THE GIRLS” won Concept Album of the Year.",
+      "pronunciation": {
+        "VII": "seven"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_1\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Concept Album of the Year entry names “PRODUCE 101 JAPAN THE GIRLS.”"
+      }
+    },
+    {
+      "id": "jgd-39-single-year",
+      "category": "japan-gold-disc",
+      "difficulty": 1,
+      "format": "award-desk",
+      "prompt": "Which Snow Man release won Single of the Year at the 39th Japan Gold Disc Awards?",
+      "choices": [
+        "Life goes on / We are young",
+        "LOVE TRIGGER / We'll go together",
+        "Social Path featuring LiSA / Super Bowl",
+        "BREAKOUT / Kimi wa Boku no Mono"
+      ],
+      "answer": 1,
+      "explanation": "“LOVE TRIGGER / We'll go together” received Single of the Year.",
+      "pronunciation": {
+        "LiSA": "lee-sah",
+        "Kimi wa Boku no Mono": "kee-mee wah boh-koo noh moh-noh"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Single Award section pairs Snow Man with “LOVE TRIGGER / We'll go together” as Single of the Year."
+      }
+    },
+    {
+      "id": "jgd-39-domestic-video-year",
+      "category": "japan-gold-disc",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Which SixTONES title won Domestic Music Video of the Year at the 39th awards?",
+      "choices": ["THE VIBES", "VVS", "GIANT", "RAYS"],
+      "answer": 1,
+      "explanation": "SixTONES won the domestic video honor with “VVS.”",
+      "pronunciation": {
+        "VVS": "V V S",
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The domestic Music Video of the Year entry names SixTONES and “VVS.”"
+      }
+    },
+    {
+      "id": "jgd-39-asian-video-year",
+      "category": "japan-gold-disc",
+      "difficulty": 2,
+      "format": "award-desk",
+      "prompt": "Which act received Asian Music Video of the Year at the 39th awards?",
+      "choices": ["King & Prince", "SixTONES", "Stray Kids", "Snow Man"],
+      "answer": 2,
+      "explanation": "The Stray Kids “MANIAC” encore tour video received the Asian honor.",
+      "pronunciation": {
+        "SixTONES": "Stones"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Asian Music Video of the Year entry names “Stray Kids 2nd World Tour ‘MANIAC’ ENCORE in JAPAN.”"
+      }
+    },
+    {
+      "id": "jgd-39-domestic-download-song",
+      "category": "japan-gold-disc",
+      "difficulty": 4,
+      "format": "award-desk",
+      "prompt": "Which track won Domestic Song of the Year by Download at the 39th awards?",
+      "choices": [
+        "Beautiful Things",
+        "New Day Will Rise",
+        "BIRDS OF A FEATHER",
+        "Bling-Bang-Bang-Born"
+      ],
+      "answer": 3,
+      "explanation": "Creepy Nuts won the domestic download honor with “Bling-Bang-Bang-Born.”",
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The domestic Song of the Year by Download entry pairs Creepy Nuts with “Bling-Bang-Bang-Born.”"
+      }
+    },
+    {
+      "id": "jgd-39-asian-download-song",
+      "category": "japan-gold-disc",
+      "difficulty": 5,
+      "format": "award-desk",
+      "prompt": "Which ILLIT song won Asian Song of the Year by Download at the 39th awards?",
+      "choices": ["Ordinary", "Lose Control", "Magnetic", "Beautiful Things"],
+      "answer": 2,
+      "explanation": "ILLIT received the Asian download honor for “Magnetic.”",
+      "pronunciation": {
+        "ILLIT": "eye-lit"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The Asian Song of the Year by Download entry names ILLIT’s “Magnetic.”"
+      }
+    },
+    {
+      "id": "jgd-39-international-streaming-song",
+      "category": "japan-gold-disc",
+      "difficulty": 3,
+      "format": "award-desk",
+      "prompt": "Which track won International Song of the Year by Streaming at the 39th awards?",
+      "choices": ["Golden", "APT.", "Ordinary", "Magnetic"],
+      "answer": 1,
+      "explanation": "ROSÉ and Bruno Mars received the international streaming honor for “APT.”",
+      "pronunciation": {
+        "APT.": "ah-pah-teu"
+      },
+      "source": {
+        "publisher": "Japan Gold Disc Award",
+        "title": "第39回日本ゴールドディスク大賞｜THE GOLD DISC",
+        "url": "https://www.golddisc.jp/award/39/Prize_2\u002ehtml",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The international Song of the Year by Streaming entry names “APT.” by ROSÉ and Bruno Mars."
+      }
+    }
+  ]
+}
