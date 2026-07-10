@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-10T13:44:28.552Z",
+  "generatedAt": "2026-07-10T18:08:32.227Z",
   "barks": {
     "run-intro-01": "/audio/trivia/barks/2abf47b123c6b243.mp3",
     "run-intro-02": "/audio/trivia/barks/44fb53a7ae47beb0.mp3",
@@ -269,6 +269,11 @@
     "mb-155c8dd0": "/audio/trivia/questions/f535663b0cbd2be9.mp3",
     "mb-a2341d8c": "/audio/trivia/questions/fe61dc5b3d80e48f.mp3",
     "mb-6848169f": "/audio/trivia/questions/7cef6ff9f7119586.mp3",
+    "official-needle-drop-001": "/audio/trivia/questions/47e4a0e239ef456f.mp3",
+    "official-needle-drop-002": "/audio/trivia/questions/f1d6a9f394c5bb6a.mp3",
+    "official-needle-drop-003": "/audio/trivia/questions/1a2734d253e40d93.mp3",
+    "official-needle-drop-004": "/audio/trivia/questions/707192021c5c230a.mp3",
+    "official-needle-drop-005": "/audio/trivia/questions/41fa8870174019e7.mp3",
     "official-genre-awards-1-001": "/audio/trivia/questions/2a719cd69e796db8.mp3",
     "official-genre-awards-1-002": "/audio/trivia/questions/85e5f220c5aca6b2.mp3",
     "official-genre-awards-1-003": "/audio/trivia/questions/678f5c36f55683b9.mp3",
