@@ -30,6 +30,14 @@ const DUCK_RAMP_S = 0.15;
 const DUCK_SAFETY_MS = 20000; // a duck may never stick (a11y review P0)
 const EFFECTS_LEVEL = 0.5; // ≈ -6 dB relative to speech
 
+export function effectiveMusicLevel(
+  volume: number,
+  muted: boolean,
+  suppressionCount: number,
+) {
+  return muted || suppressionCount > 0 ? 0 : volume;
+}
+
 export class MusicEngine {
   private ctx: AudioContext | null = null;
   private musicGain: GainNode | null = null;
@@ -39,6 +47,7 @@ export class MusicEngine {
   private loopSource: AudioBufferSourceNode | null = null;
   private currentTrack: string | null = null;
   private duckCount = 0;
+  private suppressionCount = 0;
   private volume: number;
   private muted: boolean;
   effectsEnabled: boolean;
@@ -65,7 +74,11 @@ export class MusicEngine {
     this.duckGain = this.ctx.createGain();
     this.musicGain = this.ctx.createGain();
     this.effectsGain = this.ctx.createGain();
-    this.musicGain.gain.value = this.muted ? 0 : this.volume;
+    this.musicGain.gain.value = effectiveMusicLevel(
+      this.volume,
+      this.muted,
+      this.suppressionCount,
+    );
     this.effectsGain.gain.value = EFFECTS_LEVEL;
     this.duckGain.connect(this.musicGain);
     this.musicGain.connect(this.ctx.destination);
@@ -143,16 +156,35 @@ export class MusicEngine {
 
   setVolume(volume: number) {
     this.volume = volume;
-    if (this.ctx && this.musicGain && !this.muted) {
-      this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
-    }
+    this.applyMusicLevel();
   }
 
   setMuted(muted: boolean) {
     this.muted = muted;
+    this.applyMusicLevel();
+  }
+
+  private applyMusicLevel() {
     if (this.ctx && this.musicGain) {
-      this.musicGain.gain.setTargetAtTime(muted ? 0 : this.volume, this.ctx.currentTime, 0.05);
+      this.musicGain.gain.setTargetAtTime(
+        effectiveMusicLevel(this.volume, this.muted, this.suppressionCount),
+        this.ctx.currentTime,
+        0.05,
+      );
     }
+  }
+
+  /** Suppresses program music during a mystery clip and restores the exact prior setting. */
+  suppress(): () => void {
+    this.suppressionCount += 1;
+    this.applyMusicLevel();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.suppressionCount = Math.max(0, this.suppressionCount - 1);
+      this.applyMusicLevel();
+    };
   }
 
   /**
@@ -182,6 +214,7 @@ export class MusicEngine {
   }
 
   dispose() {
+    this.suppressionCount = 0;
     this.stopMusic();
     if (this.ctx) {
       void this.ctx.close().catch(() => undefined);

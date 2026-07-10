@@ -22,6 +22,7 @@ export function fetchManifest(): Promise<AudioManifest> {
 /** Plays one host clip at a time with pause/resume/replay and independent volume (WCAG 1.4.2). */
 export class HostAudioPlayer {
   private audio: HTMLAudioElement | null = null;
+  private finishCurrent: (() => void) | null = null;
   private lastUrl: string | null = null;
   private _volume: number;
   paused = false;
@@ -44,9 +45,20 @@ export class HostAudioPlayer {
     audio.volume = this._volume;
     this.audio = audio;
     return new Promise((resolve) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => resolve();
-      audio.play().catch(() => resolve());
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        audio.onended = null;
+        audio.onerror = null;
+        if (this.audio === audio) this.audio = null;
+        if (this.finishCurrent === finish) this.finishCurrent = null;
+        resolve();
+      };
+      this.finishCurrent = finish;
+      audio.onended = finish;
+      audio.onerror = finish;
+      audio.play().catch(finish);
     });
   }
 
@@ -72,18 +84,23 @@ export class HostAudioPlayer {
   }
 
   stop() {
-    if (this.audio) {
-      this.audio.onended = null;
-      this.audio.onerror = null;
-      this.audio.pause();
-      this.audio = null;
+    const audio = this.audio;
+    const finish = this.finishCurrent;
+    this.audio = null;
+    this.finishCurrent = null;
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
     }
+    finish?.();
   }
 }
 
 // --- Producer speech (speechSynthesis) ---
 
 let currentUtterance: SpeechSynthesisUtterance | null = null; // hold a ref: GC kills speech mid-utterance
+const activeSpeechFinishes = new Set<() => void>();
 let speechReady = false;
 
 /** Must be called from a user gesture (Start Broadcast) before first speak. */
@@ -119,12 +136,14 @@ export function speakProducer(text: string): Promise<void> {
       if (done) return;
       done = true;
       clearTimeout(safety);
+      activeSpeechFinishes.delete(finish);
       if (currentUtterance === utterance) currentUtterance = null;
       resolve();
     };
     utterance.onend = finish;
     utterance.onerror = finish;
     const safety = setTimeout(finish, Math.min(20000, 2000 + text.length * 80));
+    activeSpeechFinishes.add(finish);
     window.speechSynthesis.speak(utterance);
   });
 }
@@ -132,5 +151,6 @@ export function speakProducer(text: string): Promise<void> {
 export function stopProducer() {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
+  for (const finish of [...activeSpeechFinishes]) finish();
   currentUtterance = null;
 }
