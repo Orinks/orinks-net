@@ -11,10 +11,14 @@ describe("mystery clip playback state", () => {
 
     state = reduceMysteryClipState(state, { type: "activate" });
     expect(state).toMatchObject({ phase: "loading", attempt: 1 });
-    expect(mysteryClipButtonLabel(state)).toBe("Stop mystery clip");
+    expect(mysteryClipButtonLabel(state)).toBe("Loading mystery clip");
 
     state = reduceMysteryClipState(state, { type: "playing", attempt: 1 });
-    expect(mysteryClipButtonLabel(state)).toBe("Stop mystery clip");
+    expect(mysteryClipButtonLabel(state)).toBe("Pause mystery clip");
+
+    state = reduceMysteryClipState(state, { type: "paused", attempt: 1 });
+    expect(mysteryClipButtonLabel(state)).toBe("Resume mystery clip");
+    state = reduceMysteryClipState(state, { type: "playing", attempt: 1 });
 
     state = reduceMysteryClipState(state, { type: "stop" });
     expect(state.phase).toBe("idle");
@@ -24,7 +28,7 @@ describe("mystery clip playback state", () => {
     expect(state.attempt).toBe(3);
     state = reduceMysteryClipState(state, { type: "playing", attempt: 3 });
     state = reduceMysteryClipState(state, { type: "ended", attempt: 3 });
-    expect(mysteryClipButtonLabel(state)).toBe("Play mystery clip");
+    expect(mysteryClipButtonLabel(state)).toBe("Replay mystery clip");
 
     state = reduceMysteryClipState(state, { type: "activate" });
     expect(state).toMatchObject({ phase: "loading", attempt: 4 });
@@ -35,7 +39,7 @@ describe("mystery clip playback state", () => {
     state = reduceMysteryClipState(state, { type: "failed", attempt: 1 });
 
     expect(state.phase).toBe("failed");
-    expect(mysteryClipButtonLabel(state)).toBe("Play mystery clip");
+    expect(mysteryClipButtonLabel(state)).toBe("Retry mystery clip");
   });
 
   test("ignores stale callbacks after reset or a newer attempt", () => {

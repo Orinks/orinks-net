@@ -2,6 +2,7 @@ export type MysteryClipPhase =
   | "idle"
   | "loading"
   | "playing"
+  | "paused"
   | "ended"
   | "failed";
 
@@ -14,7 +15,7 @@ export interface MysteryClipState {
 
 export type MysteryClipEvent =
   | { type: "activate" }
-  | { type: "playing" | "ended" | "failed"; attempt: number }
+  | { type: "playing" | "paused" | "ended" | "failed"; attempt: number }
   | { type: "loading-announced" | "failure-announced"; attempt: number }
   | { type: "stop" }
   | { type: "reset" };
@@ -45,8 +46,12 @@ export function reduceMysteryClipState(
   if (event.attempt !== state.attempt) return state;
 
   if (event.type === "playing") {
-    if (state.phase !== "loading") return state;
+    if (state.phase !== "loading" && state.phase !== "paused") return state;
     return { ...state, phase: "playing" };
+  }
+  if (event.type === "paused") {
+    if (state.phase !== "playing") return state;
+    return { ...state, phase: "paused" };
   }
   if (event.type === "ended") {
     if (state.phase !== "playing" && state.phase !== "loading") return state;
@@ -65,7 +70,11 @@ export function reduceMysteryClipState(
 }
 
 export function mysteryClipButtonLabel(state: MysteryClipState): string {
-  if (state.phase === "loading" || state.phase === "playing") return "Stop mystery clip";
+  if (state.phase === "failed") return "Retry mystery clip";
+  if (state.phase === "ended") return "Replay mystery clip";
+  if (state.phase === "paused") return "Resume mystery clip";
+  if (state.phase === "loading") return "Loading mystery clip";
+  if (state.phase === "playing") return "Pause mystery clip";
   return "Play mystery clip";
 }
 
@@ -75,6 +84,8 @@ export function mysteryClipStatusText(state: MysteryClipState): string {
       return "Loading mystery clip…";
     case "playing":
       return "Mystery clip playing.";
+    case "paused":
+      return "Mystery clip paused.";
     case "ended":
       return "Mystery clip finished.";
     case "failed":

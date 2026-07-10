@@ -1,6 +1,7 @@
 import type { MysteryClipEvent } from "./mysteryClipMachine";
 
 interface ClipAudio {
+  src: string;
   preload: string;
   currentTime: number;
   onplaying: ((event: Event) => unknown) | null;
@@ -17,12 +18,12 @@ interface MysteryClipPlaybackOptions {
   beforePlay: () => void;
   suppressMusic: () => () => void;
   onState: (event: MysteryClipEvent) => void;
-  createAudio?: (url: string) => ClipAudio;
+  createAudio?: () => ClipAudio;
   schedule?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
   cancelSchedule?: (timer: ReturnType<typeof setTimeout>) => void;
 }
 
-const LOADING_ANNOUNCEMENT_MS = 500;
+const LOADING_ANNOUNCEMENT_MS = 2000;
 
 /** Owns one streamed mystery clip and guarantees synchronous, idempotent cleanup. */
 export class MysteryClipPlayback {
@@ -35,7 +36,7 @@ export class MysteryClipPlayback {
   constructor(options: MysteryClipPlaybackOptions) {
     this.options = {
       ...options,
-      createAudio: options.createAudio ?? ((url) => new Audio(url)),
+      createAudio: options.createAudio ?? (() => new Audio()),
       schedule: options.schedule ?? setTimeout,
       cancelSchedule: options.cancelSchedule ?? clearTimeout,
     };
@@ -52,17 +53,16 @@ export class MysteryClipPlayback {
     this.options.onState({ type: "activate" });
     this.releaseSuppression = this.options.suppressMusic();
 
-    const audio = this.options.createAudio(
-      `/api/midnight-signal/clips/${encodeURIComponent(clipId)}`,
-    );
-    audio.preload = "metadata";
+    const audio = this.options.createAudio();
+    audio.preload = "none";
+    audio.src = `/api/midnight-signal/clips/${encodeURIComponent(clipId)}`;
     this.audio = audio;
 
     const current = () => this.audio === audio && this.attempt === attempt;
     const finish = (type: "ended" | "failed", message: string) => {
       if (!current()) return;
       this.clearLoadingTimer();
-      this.audio = null;
+      if (type === "failed") this.audio = null;
       this.releaseMusic();
       this.options.onState({ type, attempt });
       this.options.announce(message);
@@ -85,6 +85,40 @@ export class MysteryClipPlayback {
     void audio.play().catch(() => {
       finish("failed", "Mystery clip unavailable. Use the text clue, or try again.");
     });
+  }
+
+  pause() {
+    const audio = this.audio;
+    if (!audio) return;
+    this.clearLoadingTimer();
+    audio.pause();
+    this.releaseMusic();
+    this.options.onState({ type: "paused", attempt: this.attempt });
+    this.options.announce("Mystery clip paused.");
+  }
+
+  resume() {
+    const audio = this.audio;
+    if (!audio) return;
+    this.options.beforePlay();
+    this.releaseSuppression = this.options.suppressMusic();
+    void audio.play().catch(() => {
+      if (this.audio !== audio) return;
+      this.audio = null;
+      audio.onplaying = null;
+      audio.onended = null;
+      audio.onerror = null;
+      this.releaseMusic();
+      this.options.onState({ type: "failed", attempt: this.attempt });
+      this.options.announce("Mystery clip unavailable. Use the text clue, or try again.");
+    });
+  }
+
+  replay() {
+    const audio = this.audio;
+    if (!audio) return;
+    audio.currentTime = 0;
+    this.resume();
   }
 
   stop(shouldAnnounce = true) {

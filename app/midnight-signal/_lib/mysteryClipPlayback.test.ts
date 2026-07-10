@@ -9,6 +9,7 @@ function harness() {
   const beforePlay = vi.fn();
   const timers: Array<() => void> = [];
   const audio = {
+    src: "",
     preload: "",
     currentTime: 9,
     onplaying: null as (() => void) | null,
@@ -41,13 +42,33 @@ describe("mystery clip streaming lifecycle", () => {
     await Promise.resolve();
 
     expect(beforePlay).toHaveBeenCalledOnce();
-    expect(audio.preload).toBe("metadata");
+    expect(audio.preload).toBe("none");
+    expect(audio.src).toBe("/api/midnight-signal/clips/ms-clip-7f3a91c2");
     expect(events[0]).toEqual({ type: "activate" });
     expect(announcements).toEqual([]);
     timers[0]();
     expect(announcements).toEqual(["Loading mystery clip."]);
     audio.onplaying?.();
     expect(announcements.at(-1)).toBe("Mystery clip playing.");
+  });
+
+  test("pauses, resumes, and replays without replacing the active media element", async () => {
+    const { announcements, audio, events, playback, release } = harness();
+    playback.play("ms-clip-7f3a91c2");
+    audio.onplaying?.();
+    playback.pause();
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    expect(events.at(-1)).toEqual({ type: "paused", attempt: 1 });
+
+    playback.resume();
+    await Promise.resolve();
+    expect(audio.play).toHaveBeenCalledTimes(2);
+    audio.onplaying?.();
+    playback.pause();
+    playback.replay();
+    expect(audio.currentTime).toBe(0);
+    expect(announcements).toContain("Mystery clip paused.");
   });
 
   test("stops synchronously, resets media, releases suppression, and invalidates callbacks", () => {
