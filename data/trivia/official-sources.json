@@ -70,6 +70,14 @@
       "hosts": ["rockhall.com", "www.rockhall.com"]
     },
     {
+      "publisher": "The Blues Foundation",
+      "hosts": ["blues.org", "www.blues.org"]
+    },
+    {
+      "publisher": "Gospel Music Association",
+      "hosts": ["doveawards.com", "www.doveawards.com"]
+    },
+    {
       "publisher": "Recording Industry Association of Japan",
       "hosts": ["riaj.or.jp", "www.riaj.or.jp", "adm.riaj.or.jp"]
     },
