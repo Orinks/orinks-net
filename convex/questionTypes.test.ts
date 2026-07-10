@@ -304,6 +304,33 @@ describe("canonical question validation", () => {
       ),
     ).not.toContain("question.pronunciation.unused");
   });
+
+  test("requests pronunciation review for non-ASCII names, not smart punctuation", () => {
+    const smartQuotes = validateQuestion(
+      validQuestion({ prompt: "Which title follows “First Song”?" }),
+      sourcePolicy,
+    );
+    expect(smartQuotes.warnings.map((issue) => issue.code)).not.toContain(
+      "question.pronunciation.review",
+    );
+
+    const accentedName = validateQuestion(
+      validQuestion({ choices: ["Kora", "Tiësto", "Bandoneon", "Shakuhachi"] }),
+      sourcePolicy,
+    );
+    expect(accentedName.warnings.map((issue) => issue.code)).toContain(
+      "question.pronunciation.review",
+    );
+    expect(
+      validateQuestion(
+        validQuestion({
+          choices: ["Kora", "Tiësto", "Bandoneon", "Shakuhachi"],
+          pronunciation: {},
+        }),
+        sourcePolicy,
+      ).warnings.map((issue) => issue.code),
+    ).not.toContain("question.pronunciation.review");
+  });
 });
 
 describe("private-to-public projections", () => {

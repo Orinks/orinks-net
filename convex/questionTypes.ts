@@ -659,6 +659,12 @@ function validatePronunciation(
     }
   }
 }
+function hasPronunciationSensitiveUnicode(text: string): boolean {
+  return [...text].some(
+    (character) =>
+      character.codePointAt(0)! > 0x7f && /[\p{L}\p{N}\p{S}]/u.test(character),
+  );
+}
 
 export function validateQuestion(
   value: unknown,
@@ -802,7 +808,10 @@ export function validateQuestion(
     );
   }
 
-  if (/[^\x00-\x7F]/.test(visibleText) && value.pronunciation === undefined) {
+  if (
+    hasPronunciationSensitiveUnicode(visibleText) &&
+    value.pronunciation === undefined
+  ) {
     addIssue(
       warnings,
       "question.pronunciation.review",
