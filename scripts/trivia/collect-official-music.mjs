@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Collects normalized music-related records from official cultural data sources
  * for offline editorial review. It does not generate questions or run at app
@@ -162,4 +161,4 @@ async function main() {
 }
 
 const entry = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : "";
-if (entry === import.meta.url) await main();
+if (entry === import.meta.url) void main();

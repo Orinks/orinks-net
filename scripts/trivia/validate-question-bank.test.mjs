@@ -1,10 +1,13 @@
 // @vitest-environment node
 
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
-import { runQuestionBankValidator } from "./validate-question-bank.mjs";
+
+const validatorPath = fileURLToPath(new URL("./validate-question-bank.mjs", import.meta.url));
 
 const temporaryDirectories = [];
 
@@ -51,16 +54,14 @@ function policy() {
   };
 }
 
-function capture() {
-  const stdout = [];
-  const stderr = [];
+function runValidator(args) {
+  const result = spawnSync(process.execPath, ["--no-warnings", validatorPath, ...args], {
+    encoding: "utf8",
+  });
   return {
-    stdout,
-    stderr,
-    io: {
-      log: (message = "") => stdout.push(String(message)),
-      error: (message = "") => stderr.push(String(message)),
-    },
+    exitCode: result.status,
+    stderr: result.stderr,
+    stdout: result.stdout,
   };
 }
 
@@ -71,16 +72,11 @@ describe("question-bank validator CLI", () => {
     const sources = path.join(directory, "sources.json");
     writeJson(bank, { questions: [validQuestion()] });
     writeJson(sources, policy());
-    const output = capture();
+    const output = runValidator(["--sources", sources, bank]);
 
-    const exitCode = await runQuestionBankValidator(
-      ["--sources", sources, bank],
-      output.io,
-    );
-
-    expect(exitCode).toBe(0);
-    expect(output.stdout.join("\n")).toContain("1 valid question");
-    expect(output.stderr).toEqual([]);
+    expect(output.exitCode).toBe(0);
+    expect(output.stdout).toContain("1 valid question");
+    expect(output.stderr).toBe("");
   });
 
   test("returns a failure for a hard error while warnings remain non-fatal", async () => {
@@ -90,20 +86,16 @@ describe("question-bank validator CLI", () => {
     const sources = path.join(directory, "sources.json");
     writeJson(badBank, { questions: [{ ...validQuestion(), format: "unknown" }] });
     writeJson(sources, policy());
-    const badOutput = capture();
+    const badOutput = runValidator(["--sources", sources, badBank]);
 
-    expect(
-      await runQuestionBankValidator(["--sources", sources, badBank], badOutput.io),
-    ).toBe(1);
-    expect(badOutput.stderr.join("\n")).toContain("question.format.invalid");
+    expect(badOutput.exitCode).toBe(1);
+    expect(badOutput.stderr).toContain("question.format.invalid");
 
     const longPrompt = Array.from({ length: 26 }, (_, index) => `word${index}`).join(" ");
     writeJson(warningBank, { questions: [validQuestion({ prompt: `${longPrompt}?` })] });
-    const warningOutput = capture();
-    expect(
-      await runQuestionBankValidator(["--sources", sources, warningBank], warningOutput.io),
-    ).toBe(0);
-    expect(warningOutput.stdout.join("\n")).toContain("Warnings (1)");
+    const warningOutput = runValidator(["--sources", sources, warningBank]);
+    expect(warningOutput.exitCode).toBe(0);
+    expect(warningOutput.stdout).toContain("Warnings (1)");
   });
 
   test("audits legacy banks incrementally but final-gate mode fails them clearly", async () => {
@@ -125,23 +117,24 @@ describe("question-bank validator CLI", () => {
       ],
     });
 
-    const auditOutput = capture();
-    expect(
-      await runQuestionBankValidator(
-        ["--sources", sources, "--questions-dir", directory],
-        auditOutput.io,
-      ),
-    ).toBe(0);
-    expect(auditOutput.stdout.join("\n")).toContain("Legacy bank skipped: legacy.json");
+    const auditOutput = runValidator([
+      "--sources",
+      sources,
+      "--questions-dir",
+      directory,
+    ]);
+    expect(auditOutput.exitCode).toBe(0);
+    expect(auditOutput.stdout).toContain("Legacy bank skipped: legacy.json");
 
-    const finalOutput = capture();
-    expect(
-      await runQuestionBankValidator(
-        ["--final-gate", "--sources", sources, "--questions-dir", directory],
-        finalOutput.io,
-      ),
-    ).toBe(1);
-    expect(finalOutput.stderr.join("\n")).toContain("legacy.active_bank");
-    expect(finalOutput.stderr.join("\n")).toContain("legacy.json");
+    const finalOutput = runValidator([
+      "--final-gate",
+      "--sources",
+      sources,
+      "--questions-dir",
+      directory,
+    ]);
+    expect(finalOutput.exitCode).toBe(1);
+    expect(finalOutput.stderr).toContain("legacy.active_bank");
+    expect(finalOutput.stderr).toContain("legacy.json");
   });
 });
