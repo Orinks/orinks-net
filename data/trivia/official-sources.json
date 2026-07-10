@@ -29,6 +29,22 @@
       "hosts": ["grammy.com", "www.grammy.com"]
     },
     {
+      "publisher": "The Pulitzer Prizes",
+      "hosts": ["pulitzer.org", "www.pulitzer.org"]
+    },
+    {
+      "publisher": "Academy of Motion Picture Arts and Sciences",
+      "hosts": ["oscars.org", "www.oscars.org"]
+    },
+    {
+      "publisher": "British Academy of Film and Television Arts",
+      "hosts": ["bafta.org", "www.bafta.org"]
+    },
+    {
+      "publisher": "Tony Awards",
+      "hosts": ["tonyawards.com", "www.tonyawards.com"]
+    },
+    {
       "publisher": "Latin Recording Academy",
       "hosts": ["latingrammy.com", "www.latingrammy.com"]
     },

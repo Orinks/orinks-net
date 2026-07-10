@@ -1,0 +1,546 @@
+{
+  "minigame": "official-classical-soundtrack",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "cst-0001", "category": "classical-opera-composition", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which work won the 2026 Pulitzer Prize for Music?",
+      "choices": ["Sky Islands", "Adagio (For Wadada Leo Smith)", "Picaflor: A Future Myth", "The Central Park Five"], "answer": 2,
+      "explanation": "Gabriela Lena Frank's Picaflor: A Future Myth won the 2026 Pulitzer Prize for Music.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official Music category archive identifies Picaflor: A Future Myth by Gabriela Lena Frank as the 2026 winner."}
+    },
+    {
+      "id": "cst-0002", "category": "film-and-television-music", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which film won the 2024 Oscar for Music (Original Score)?",
+      "choices": ["Poor Things", "Oppenheimer", "American Fiction", "Killers of the Flower Moon"], "answer": 1,
+      "explanation": "Oppenheimer won Music (Original Score) at the 96th Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 96th Academy Awards | 2024", "url": "https://www.oscars.org/oscars/ceremonies/2024", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2024 ceremony results mark Oppenheimer as the Music (Original Score) winner."}
+    },
+    {
+      "id": "cst-0003", "category": "game-stage-and-soundtrack", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which game won the 2026 BAFTA Games Award for Music?",
+      "choices": ["Dispatch", "Clair Obscur: Expedition 33", "Death Stranding 2: On The Beach", "Ghost of Yōtei"], "answer": 3,
+      "explanation": "Ghost of Yōtei won the 2026 BAFTA Games Award for Music.",
+      "pronunciation": {"Yōtei": "YOH-tay"},
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists Ghost of Yōtei as the 2026 winner."}
+    },
+    {
+      "id": "cst-0004", "category": "classical-opera-composition", "difficulty": 1, "format": "night-timeline",
+      "prompt": "Which 2025 Pulitzer Music winner follows 2024's Adagio (For Wadada Leo Smith) in the archive?",
+      "choices": ["Sky Islands", "The Comet", "Voiceless Mass", "Omar"], "answer": 0,
+      "explanation": "Sky Islands is the 2025 winner following the 2024 winner Adagio (For Wadada Leo Smith).",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Adagio (For Wadada Leo Smith) for 2024 and Sky Islands by Susie Ibarra for 2025."}
+    },
+    {
+      "id": "cst-0005", "category": "film-and-television-music", "difficulty": 3, "format": "award-desk",
+      "prompt": "Who composed the Oscar-winning original score for Oppenheimer?",
+      "choices": ["Robbie Robertson", "Laura Karpman", "Jerskin Fendrix", "Ludwig Göransson"], "answer": 3,
+      "explanation": "Ludwig Göransson is credited with Oppenheimer's winning original score.",
+      "pronunciation": {"Ludwig Göransson": "LOOD-vig YUR-an-son"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 96th Academy Awards | 2024", "url": "https://www.oscars.org/oscars/ceremonies/2024", "accessedAt": "2026-07-10", "evidenceSummary": "The official Music (Original Score) results pair winner Oppenheimer with Ludwig Göransson."}
+    },
+    {
+      "id": "cst-0006", "category": "game-stage-and-soundtrack", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which game won the 2025 BAFTA Games Award for Music?",
+      "choices": ["Astro Bot", "Helldivers 2", "Star Wars Outlaws", "Black Myth: Wukong"], "answer": 1,
+      "explanation": "Helldivers 2 won the 2025 BAFTA Games Award for Music.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists Helldivers 2 as the 2025 winner."}
+    },
+    {
+      "id": "cst-0007", "category": "classical-opera-composition", "difficulty": 5, "format": "award-desk",
+      "prompt": "Which work won the 2024 Pulitzer Prize for Music?",
+      "choices": ["Paper Pianos", "Monochromatic Light (Afterlife)", "Double Concerto", "Adagio (For Wadada Leo Smith)"], "answer": 3,
+      "explanation": "Tyshawn Sorey's Adagio (For Wadada Leo Smith) won the 2024 Pulitzer Prize for Music.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Adagio (For Wadada Leo Smith) by Tyshawn Sorey as the 2024 winner."}
+    },
+    {
+      "id": "cst-0008", "category": "film-and-television-music", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which song won the 2024 Oscar for Music (Original Song)?",
+      "choices": ["What Was I Made For?", "Wahzhazhe (A Song For My People)", "I'm Just Ken", "It Never Went Away"], "answer": 0,
+      "explanation": "What Was I Made For? won Music (Original Song) at the 96th Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 96th Academy Awards | 2024", "url": "https://www.oscars.org/oscars/ceremonies/2024", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2024 ceremony results mark What Was I Made For? as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0009", "category": "game-stage-and-soundtrack", "difficulty": 1, "format": "award-desk",
+      "prompt": "Who is credited for Baldur's Gate 3, the 2024 BAFTA Games Music winner?",
+      "choices": ["John Paesano", "Kenneth C M Young", "Borislav Slavov", "Keith Leary"], "answer": 2,
+      "explanation": "BAFTA credits Borislav Slavov for the winning music of Baldur's Gate 3.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "The 2024 Games / Music results name Baldur's Gate 3 as winner and credit Borislav Slavov."}
+    },
+    {
+      "id": "cst-0010", "category": "classical-opera-composition", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which pair composed Omar, the 2023 Pulitzer Music winner?",
+      "choices": ["Tyshawn Sorey and Mary Kouyoumdjian", "Rhiannon Giddens and Michael Abels", "Raven Chacon and Andy Akiho", "Ellen Reid and Roxie Perkins"], "answer": 1,
+      "explanation": "Rhiannon Giddens and Michael Abels composed the Pulitzer-winning opera Omar.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Omar by Rhiannon Giddens and Michael Abels as the 2023 winner."}
+    },
+    {
+      "id": "cst-0011", "category": "film-and-television-music", "difficulty": 2, "format": "award-desk",
+      "prompt": "The 2024 Oscar-winning song What Was I Made For? came from which film?",
+      "choices": ["Flamin' Hot", "American Symphony", "Barbie", "Killers of the Flower Moon"], "answer": 2,
+      "explanation": "The Academy lists What Was I Made For? as a song from Barbie.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 96th Academy Awards | 2024", "url": "https://www.oscars.org/oscars/ceremonies/2024", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Song) results identify What Was I Made For? as from Barbie."}
+    },
+    {
+      "id": "cst-0012", "category": "game-stage-and-soundtrack", "difficulty": 5, "format": "night-timeline",
+      "prompt": "In which year did God of War Ragnarök win BAFTA's Games Music award?",
+      "choices": ["2023", "2022", "2024", "2021"], "answer": 0,
+      "explanation": "God of War Ragnarök appears as BAFTA's 2023 Games Music winner.",
+      "pronunciation": {"Ragnarök": "RAG-nuh-rohk"},
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists God of War Ragnarök as the 2023 winner."}
+    },
+    {
+      "id": "cst-0013", "category": "classical-opera-composition", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which work for organ and ensemble won the 2022 Pulitzer Prize for Music?",
+      "choices": ["Voiceless Mass", "Seven Pillars", "Stride", "The Central Park Five"], "answer": 0,
+      "explanation": "Raven Chacon's Voiceless Mass, a work for organ and ensemble, won the 2022 prize.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive names Voiceless Mass by Raven Chacon as the 2022 winner and describes it as a work for organ and ensemble."}
+    },
+    {
+      "id": "cst-0014", "category": "film-and-television-music", "difficulty": 5, "format": "night-timeline",
+      "prompt": "In which ceremony year did What Was I Made For? win the Original Song Oscar?",
+      "choices": ["2022", "2024", "2020", "2023"], "answer": 1,
+      "explanation": "What Was I Made For? won at the 2024 Academy Awards ceremony.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 96th Academy Awards | 2024", "url": "https://www.oscars.org/oscars/ceremonies/2024", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2024 ceremony page lists What Was I Made For? as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0015", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which trio is credited for Returnal, BAFTA's 2022 Games Music winner?",
+      "choices": ["John Paesano, Scott Hanau and Alex Hackford", "Bear McCreary, Keith Leary and Peter Scaturro", "Bobby Krlic, Joe Thwaites and Harry Krueger", "Ludvig Forssell, Peter Scaturro and Keith Leary"], "answer": 2,
+      "explanation": "BAFTA credits Bobby Krlic, Joe Thwaites and Harry Krueger for Returnal.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "The 2022 Games / Music results list Returnal as winner and credit Bobby Krlic, Joe Thwaites and Harry Krueger."}
+    },
+    {
+      "id": "cst-0016", "category": "classical-opera-composition", "difficulty": 2, "format": "award-desk",
+      "prompt": "Who composed Stride, the 2021 Pulitzer Music winner?",
+      "choices": ["Raven Chacon", "Anthony Davis", "Tyshawn Sorey", "Tania León"], "answer": 3,
+      "explanation": "Tania León composed Stride.",
+      "pronunciation": {"Tania León": "TAHN-yah leh-OHN"},
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Stride by Tania León as the 2021 Pulitzer Music winner."}
+    },
+    {
+      "id": "cst-0017", "category": "film-and-television-music", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which film won the 2023 Oscar for Music (Original Score)?",
+      "choices": ["All Quiet on the Western Front", "Babylon", "Everything Everywhere All at Once", "The Fabelmans"], "answer": 0,
+      "explanation": "All Quiet on the Western Front won Music (Original Score) at the 95th Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 95th Academy Awards | 2023", "url": "https://www.oscars.org/oscars/ceremonies/2023", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2023 ceremony results mark All Quiet on the Western Front as the Music (Original Score) winner."}
+    },
+    {
+      "id": "cst-0018", "category": "game-stage-and-soundtrack", "difficulty": 5, "format": "award-desk",
+      "prompt": "Which game won the 2021 BAFTA Games Award for Music?",
+      "choices": ["The Legend of Zelda: Breath of the Wild", "Marvel's Spider-Man: Miles Morales", "Sackboy: A Big Adventure", "The Last of Us Part II"], "answer": 1,
+      "explanation": "Marvel's Spider-Man: Miles Morales won the 2021 BAFTA Games Award for Music.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists Marvel's Spider-Man: Miles Morales as the 2021 winner."}
+    },
+    {
+      "id": "cst-0019", "category": "classical-opera-composition", "difficulty": 4, "format": "night-timeline",
+      "prompt": "Which Pulitzer Music winner immediately precedes Stride in the archive's yearly sequence?",
+      "choices": ["Adagio (For Wadada Leo Smith)", "The Central Park Five", "In for a Penny, In for a Pound", "Partita for 8 Voices"], "answer": 1,
+      "explanation": "The Central Park Five is the 2020 winner immediately before 2021 winner Stride.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists The Central Park Five by Anthony Davis for 2020 immediately before Stride for 2021."}
+    },
+    {
+      "id": "cst-0020", "category": "film-and-television-music", "difficulty": 2, "format": "award-desk",
+      "prompt": "Who composed the Oscar-winning original score for All Quiet on the Western Front?",
+      "choices": ["James Newton Howard", "Carter Burwell", "Volker Bertelmann", "John Williams"], "answer": 2,
+      "explanation": "Volker Bertelmann is credited with the film's winning original score.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 95th Academy Awards | 2023", "url": "https://www.oscars.org/oscars/ceremonies/2023", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Score) results pair winner All Quiet on the Western Front with Volker Bertelmann."}
+    },
+    {
+      "id": "cst-0021", "category": "game-stage-and-soundtrack", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which artist is credited for Disco Elysium, BAFTA's 2020 Games Music winner?",
+      "choices": ["Martin Stig Andersen", "Ludvig Forssell", "Petri Alanko", "British Sea Power"], "answer": 3,
+      "explanation": "BAFTA credits British Sea Power for Disco Elysium.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "The 2020 Games / Music results list Disco Elysium as winner and credit British Sea Power."}
+    },
+    {
+      "id": "cst-0022", "category": "classical-opera-composition", "difficulty": 1, "format": "award-desk",
+      "prompt": "Who composed p r i s m, the 2019 Pulitzer Music winner?",
+      "choices": ["Julia Wolfe", "Du Yun", "Ellen Reid", "Caroline Shaw"], "answer": 2,
+      "explanation": "Ellen Reid composed the Pulitzer-winning operatic work p r i s m.",
+      "pronunciation": {"p r i s m": "prism"},
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies p r i s m by Ellen Reid as the 2019 winner."}
+    },
+    {
+      "id": "cst-0023", "category": "film-and-television-music", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which song won the 2023 Oscar for Music (Original Song)?",
+      "choices": ["Applause", "Hold My Hand", "Lift Me Up", "Naatu Naatu"], "answer": 3,
+      "explanation": "Naatu Naatu won Music (Original Song) at the 95th Academy Awards.",
+      "pronunciation": {"Naatu Naatu": "NAH-too NAH-too"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 95th Academy Awards | 2023", "url": "https://www.oscars.org/oscars/ceremonies/2023", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2023 ceremony results mark Naatu Naatu as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0024", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which game won the 2019 BAFTA Games Award for Music?",
+      "choices": ["God of War", "Celeste", "GRIS", "Tetris Effect"], "answer": 0,
+      "explanation": "God of War won the 2019 BAFTA Games Award for Music.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists God of War as the 2019 winner."}
+    },
+    {
+      "id": "cst-0025", "category": "classical-opera-composition", "difficulty": 5, "format": "award-desk",
+      "prompt": "Which recording won the 2018 Pulitzer Prize for Music?",
+      "choices": ["DAMN.", "Quartet", "Sustain", "Still"], "answer": 0,
+      "explanation": "Kendrick Lamar's DAMN. won the 2018 Pulitzer Prize for Music.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies DAMN. by Kendrick Lamar as the 2018 winner."}
+    },
+    {
+      "id": "cst-0026", "category": "film-and-television-music", "difficulty": 5, "format": "award-desk",
+      "prompt": "The 2023 Oscar-winning song Naatu Naatu came from which film?",
+      "choices": ["Tell It like a Woman", "RRR", "Top Gun: Maverick", "Black Panther: Wakanda Forever"], "answer": 1,
+      "explanation": "The Academy lists Naatu Naatu as a song from RRR.",
+      "pronunciation": {"Naatu Naatu": "NAH-too NAH-too"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 95th Academy Awards | 2023", "url": "https://www.oscars.org/oscars/ceremonies/2023", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Song) results identify Naatu Naatu as from RRR."}
+    },
+    {
+      "id": "cst-0027", "category": "game-stage-and-soundtrack", "difficulty": 2, "format": "night-timeline",
+      "prompt": "In which year did Cuphead win BAFTA's Games Music award?",
+      "choices": ["2019", "2017", "2018", "2016"], "answer": 2,
+      "explanation": "Cuphead appears as BAFTA's 2018 Games Music winner.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "BAFTA's Games / Music archive lists Cuphead as the 2018 winner."}
+    },
+    {
+      "id": "cst-0028", "category": "classical-opera-composition", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which opera won the 2017 Pulitzer Prize for Music?",
+      "choices": ["Ipsa Dixit", "Angel's Bone", "Bound to the Bow", "Anthracite Fields"], "answer": 1,
+      "explanation": "Du Yun's Angel's Bone won the 2017 Pulitzer Prize for Music.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Angel's Bone by Du Yun as the 2017 winner and describes it as an operatic work."}
+    },
+    {
+      "id": "cst-0029", "category": "film-and-television-music", "difficulty": 3, "format": "night-timeline",
+      "prompt": "In which ceremony year did Naatu Naatu win the Original Song Oscar?",
+      "choices": ["2023", "2021", "2025", "2022"], "answer": 0,
+      "explanation": "Naatu Naatu won at the 2023 Academy Awards ceremony.",
+      "pronunciation": {"Naatu Naatu": "NAH-too NAH-too"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 95th Academy Awards | 2023", "url": "https://www.oscars.org/oscars/ceremonies/2023", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2023 ceremony page lists Naatu Naatu as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0030", "category": "game-stage-and-soundtrack", "difficulty": 4, "format": "award-desk",
+      "prompt": "Who is credited for Virginia, BAFTA's 2017 Games Music winner?",
+      "choices": ["Austin Wintory", "Mick Gordon", "Jeff Russo", "Lyndon Holland"], "answer": 3,
+      "explanation": "BAFTA credits Lyndon Holland for Virginia.",
+      "source": {"publisher": "British Academy of Film and Television Arts", "title": "Music - Bafta", "url": "https://www.bafta.org/awards/games/music-games/", "accessedAt": "2026-07-10", "evidenceSummary": "The 2017 Games / Music results list Virginia as winner and credit Lyndon Holland."}
+    },
+    {
+      "id": "cst-0031", "category": "classical-opera-composition", "difficulty": 4, "format": "award-desk",
+      "prompt": "Who composed In for a Penny, In for a Pound, the 2016 Pulitzer Music winner?",
+      "choices": ["Jalalu-Kalvert Nelson", "Christopher Cerrone", "Henry Threadgill", "John Zorn"], "answer": 2,
+      "explanation": "Henry Threadgill composed In for a Penny, In for a Pound.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies In for a Penny, In for a Pound by Henry Threadgill as the 2016 winner."}
+    },
+    {
+      "id": "cst-0032", "category": "film-and-television-music", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which film won the 2022 Oscar for Music (Original Score)?",
+      "choices": ["The Power of the Dog", "Encanto", "Don't Look Up", "Dune"], "answer": 3,
+      "explanation": "Dune won Music (Original Score) at the 94th Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 94th Academy Awards | 2022", "url": "https://www.oscars.org/oscars/ceremonies/2022", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2022 ceremony results mark Dune as the Music (Original Score) winner."}
+    },
+    {
+      "id": "cst-0033", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which show won the 2026 Tony Award for Best Original Score?",
+      "choices": ["Schmigadoon!", "Maybe Happy Ending", "Suffs", "Kimberly Akimbo"], "answer": 0,
+      "explanation": "Schmigadoon! won the 2026 Tony Award for Best Original Score.",
+      "pronunciation": {"Schmigadoon!": "shmig-uh-DOON"},
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Schmigadoon! as the 2026 Best Original Score winner."}
+    },
+    {
+      "id": "cst-0034", "category": "classical-opera-composition", "difficulty": 2, "format": "night-timeline",
+      "prompt": "Which 2015 Pulitzer Music winner follows Become Ocean in the archive's yearly sequence?",
+      "choices": ["The Aristos", "Xiaoxiang", "Partita for 8 Voices", "Anthracite Fields"], "answer": 3,
+      "explanation": "Anthracite Fields is the 2015 winner following 2014 winner Become Ocean.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Become Ocean for 2014 and Anthracite Fields by Julia Wolfe for 2015."}
+    },
+    {
+      "id": "cst-0035", "category": "film-and-television-music", "difficulty": 5, "format": "award-desk",
+      "prompt": "Who composed the Oscar-winning original score for Dune?",
+      "choices": ["Germaine Franco", "Hans Zimmer", "Jonny Greenwood", "Nicholas Britell"], "answer": 1,
+      "explanation": "Hans Zimmer is credited with Dune's winning original score.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 94th Academy Awards | 2022", "url": "https://www.oscars.org/oscars/ceremonies/2022", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Score) results pair winner Dune with Hans Zimmer."}
+    },
+    {
+      "id": "cst-0036", "category": "game-stage-and-soundtrack", "difficulty": 5, "format": "award-desk",
+      "prompt": "Who wrote the score for 2025 Tony winner Maybe Happy Ending?",
+      "choices": ["Cinco Paul and Shaina Taub", "David Lindsay-Abaire and Jeanine Tesori", "Will Aronson and Hue Park", "Toby Marlow and Lucy Moss"], "answer": 2,
+      "explanation": "Will Aronson and Hue Park wrote the music and lyrics for Maybe Happy Ending.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive names Maybe Happy Ending as the 2025 winner and credits Will Aronson and Hue Park with music and lyrics."}
+    },
+    {
+      "id": "cst-0037", "category": "classical-opera-composition", "difficulty": 3, "format": "award-desk",
+      "prompt": "Who composed Become Ocean, the 2014 Pulitzer Music winner?",
+      "choices": ["John Luther Adams", "Gabriela Lena Frank", "Caroline Shaw", "Kevin Puts"], "answer": 0,
+      "explanation": "John Luther Adams composed Become Ocean.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Become Ocean by John Luther Adams as the 2014 winner."}
+    },
+    {
+      "id": "cst-0038", "category": "film-and-television-music", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which song won the 2022 Oscar for Music (Original Song)?",
+      "choices": ["Somehow You Do", "Dos Oruguitas", "No Time To Die", "Down To Joy"], "answer": 2,
+      "explanation": "No Time To Die won Music (Original Song) at the 94th Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 94th Academy Awards | 2022", "url": "https://www.oscars.org/oscars/ceremonies/2022", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2022 ceremony results mark No Time To Die as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0039", "category": "game-stage-and-soundtrack", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which show won the 2024 Tony Award for Best Original Score?",
+      "choices": ["Maybe Happy Ending", "Suffs", "Kimberly Akimbo", "SIX: The Musical"], "answer": 1,
+      "explanation": "Suffs won the 2024 Tony Award for Best Original Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Suffs as the 2024 Best Original Score winner."}
+    },
+    {
+      "id": "cst-0040", "category": "classical-opera-composition", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which a cappella work won the 2013 Pulitzer Prize for Music?",
+      "choices": ["Pieces of Winter Sky", "Ten Freedom Summers", "Partita for 8 Voices", "Become Ocean"], "answer": 2,
+      "explanation": "Caroline Shaw's Partita for 8 Voices won the 2013 prize.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive names Partita for 8 Voices by Caroline Shaw as the 2013 winner and describes it as an a cappella work."}
+    },
+    {
+      "id": "cst-0041", "category": "film-and-television-music", "difficulty": 1, "format": "award-desk",
+      "prompt": "Who wrote the music and lyrics for Oscar-winning song No Time To Die?",
+      "choices": ["Billie Eilish and Finneas O'Connell", "DIXSON and Diane Warren", "Lin-Manuel Miranda and Van Morrison", "Hans Zimmer and Jonny Greenwood"], "answer": 0,
+      "explanation": "The Academy credits Billie Eilish and Finneas O'Connell with the song's music and lyrics.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 94th Academy Awards | 2022", "url": "https://www.oscars.org/oscars/ceremonies/2022", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Song) results credit Billie Eilish and Finneas O'Connell for winner No Time To Die."}
+    },
+    {
+      "id": "cst-0042", "category": "game-stage-and-soundtrack", "difficulty": 4, "format": "night-timeline",
+      "prompt": "In which year did Kimberly Akimbo win the Tony Award for Best Original Score?",
+      "choices": ["2022", "2024", "2025", "2023"], "answer": 3,
+      "explanation": "Kimberly Akimbo won Best Original Score in 2023.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Kimberly Akimbo as the 2023 Best Original Score winner."}
+    },
+    {
+      "id": "cst-0043", "category": "classical-opera-composition", "difficulty": 5, "format": "award-desk",
+      "prompt": "Who composed Silent Night: Opera in Two Acts, the 2012 Pulitzer Music winner?",
+      "choices": ["Mark Campbell", "Kevin Puts", "Tod Machover", "Andrew Norman"], "answer": 1,
+      "explanation": "Kevin Puts composed Silent Night: Opera in Two Acts.",
+      "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive identifies Silent Night: Opera in Two Acts by Kevin Puts as the 2012 winner."}
+    },
+    {
+      "id": "cst-0044", "category": "film-and-television-music", "difficulty": 4, "format": "night-timeline",
+      "prompt": "In which ceremony year did No Time To Die win the Original Song Oscar?",
+      "choices": ["2020", "2023", "2021", "2022"], "answer": 3,
+      "explanation": "No Time To Die won at the 2022 Academy Awards ceremony.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 94th Academy Awards | 2022", "url": "https://www.oscars.org/oscars/ceremonies/2022", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2022 ceremony page lists No Time To Die as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0045", "category": "game-stage-and-soundtrack", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which show won the 2022 Tony Award for Best Original Score?",
+      "choices": ["A Christmas Carol (2019)", "Hadestown", "SIX: The Musical", "The Band's Visit"], "answer": 2,
+      "explanation": "SIX: The Musical won the 2022 Tony Award for Best Original Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists SIX: The Musical as the 2022 Best Original Score winner."}
+    },
+    {
+      "id": "cst-0046", "category": "classical-opera-composition", "difficulty": 1, "format": "award-desk",
+      "prompt": "Who composed Ortiz: Dzonot, the 2026 Best Classical Contemporary Composition Grammy winner?",
+      "choices": ["Jessie Montgomery", "Caroline Shaw", "Jennifer Higdon", "Gabriela Ortiz"], "answer": 3,
+      "explanation": "Gabriela Ortiz composed Ortiz: Dzonot.",
+      "pronunciation": {"Dzonot": "dzo-NOTE"},
+      "source": {"publisher": "Recording Academy", "title": "Best Classical Contemporary Composition Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-contemporary-classical-composition/", "accessedAt": "2026-07-10", "evidenceSummary": "The official category page lists Gabriela Ortiz and Ortiz: Dzonot as the 2026 winner."}
+    },
+    {
+      "id": "cst-0047", "category": "film-and-television-music", "difficulty": 5, "format": "award-desk",
+      "prompt": "Which film won the 2021 Oscar for Music (Original Score)?",
+      "choices": ["Da 5 Bloods", "Minari", "Soul", "News of the World"], "answer": 2,
+      "explanation": "Soul won Music (Original Score) at the 93rd Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 93rd Academy Awards | 2021", "url": "https://www.oscars.org/oscars/ceremonies/2021", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2021 ceremony results mark Soul as the Music (Original Score) winner."}
+    },
+    {
+      "id": "cst-0048", "category": "game-stage-and-soundtrack", "difficulty": 1, "format": "award-desk",
+      "prompt": "Who composed the score for 2020 Tony winner A Christmas Carol?",
+      "choices": ["Trey Parker, Robert Lopez and Matt Stone", "Christopher Nightingale", "Jason Robert Brown", "Lin-Manuel Miranda"], "answer": 1,
+      "explanation": "Christopher Nightingale composed the score for A Christmas Carol.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists A Christmas Carol (2019) as the 2020 winner and credits Christopher Nightingale with music."}
+    },
+    {
+      "id": "cst-0049", "category": "classical-opera-composition", "difficulty": 5, "format": "night-timeline",
+      "prompt": "Which 2025 Grammy-winning composition follows Montgomery: Rounds in the category's yearly table?",
+      "choices": ["Ortiz: Revolución Diamantina", "Adams, John Luther: Become Ocean", "Rouse: Symphony No. 5", "Higdon: Harp Concerto"], "answer": 0,
+      "explanation": "Ortiz: Revolución Diamantina is the 2025 winner following 2024 winner Montgomery: Rounds.",
+      "pronunciation": {"Revolución Diamantina": "reh-voh-loo-SYOHN dee-ah-mahn-TEE-nah"},
+      "source": {"publisher": "Recording Academy", "title": "Best Classical Contemporary Composition Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-contemporary-classical-composition/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table lists Montgomery: Rounds for 2024 and Ortiz: Revolución Diamantina for 2025."}
+    },
+    {
+      "id": "cst-0050", "category": "film-and-television-music", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which team composed the Oscar-winning original score for Soul?",
+      "choices": ["Terence Blanchard and James Newton Howard", "Trent Reznor, Atticus Ross and Jon Batiste", "Emile Mosseri and Terence Blanchard", "Trent Reznor, Atticus Ross and Emile Mosseri"], "answer": 1,
+      "explanation": "Trent Reznor, Atticus Ross and Jon Batiste composed Soul's winning score.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 93rd Academy Awards | 2021", "url": "https://www.oscars.org/oscars/ceremonies/2021", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Score) results pair winner Soul with Trent Reznor, Atticus Ross and Jon Batiste."}
+    },
+    {
+      "id": "cst-0051", "category": "game-stage-and-soundtrack", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which show won the 2019 Tony Award for Best Original Score?",
+      "choices": ["Hadestown", "The Band's Visit", "Dear Evan Hansen", "Hamilton"], "answer": 0,
+      "explanation": "Hadestown won the 2019 Tony Award for Best Original Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Hadestown as the 2019 Best Original Score winner."}
+    },
+    {
+      "id": "cst-0052", "category": "classical-opera-composition", "difficulty": 2, "format": "award-desk",
+      "prompt": "Who composed Montgomery: Rounds, the 2024 Classical Contemporary Composition Grammy winner?",
+      "choices": ["Gabriela Ortiz", "Jessie Montgomery", "Kevin Puts", "Christopher Rouse"], "answer": 1,
+      "explanation": "Jessie Montgomery composed Montgomery: Rounds.",
+      "source": {"publisher": "Recording Academy", "title": "Best Classical Contemporary Composition Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-contemporary-classical-composition/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table pairs Jessie Montgomery with Montgomery: Rounds for 2024."}
+    },
+    {
+      "id": "cst-0053", "category": "film-and-television-music", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which song won the 2021 Oscar for Music (Original Song)?",
+      "choices": ["Fight For You", "Hear My Voice", "Husavik", "Io Sì (Seen)"], "answer": 0,
+      "explanation": "Fight For You won Music (Original Song) at the 93rd Academy Awards.",
+      "pronunciation": {"Io Sì": "EE-oh SEE"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 93rd Academy Awards | 2021", "url": "https://www.oscars.org/oscars/ceremonies/2021", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2021 ceremony results mark Fight For You as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0054", "category": "game-stage-and-soundtrack", "difficulty": 5, "format": "award-desk",
+      "prompt": "Who wrote the music and lyrics for 2018 Tony score winner The Band's Visit?",
+      "choices": ["Benj Pasek and Justin Paul", "Jeanine Tesori and Lisa Kron", "Trey Parker and Robert Lopez", "David Yazbek"], "answer": 3,
+      "explanation": "David Yazbek wrote the music and lyrics for The Band's Visit.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive lists The Band's Visit as the 2018 Original Musical Score winner and credits David Yazbek with music and lyrics."}
+    },
+    {
+      "id": "cst-0055", "category": "classical-opera-composition", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which work won the 2023 Grammy for Best Classical Contemporary Composition?",
+      "choices": ["Montgomery: Rounds", "Shaw: Narrow Sea", "Rouse: Symphony No. 5", "Puts: Contact"], "answer": 3,
+      "explanation": "Puts: Contact won Best Classical Contemporary Composition in 2023.",
+      "source": {"publisher": "Recording Academy", "title": "Best Classical Contemporary Composition Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-contemporary-classical-composition/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table lists Kevin Puts and Puts: Contact for 2023."}
+    },
+    {
+      "id": "cst-0056", "category": "film-and-television-music", "difficulty": 3, "format": "award-desk",
+      "prompt": "The 2021 Oscar-winning song Fight For You came from which film?",
+      "choices": ["The Trial of the Chicago 7", "The Life Ahead", "Eurovision Song Contest: The Story of Fire Saga", "Judas and the Black Messiah"], "answer": 3,
+      "explanation": "The Academy lists Fight For You as a song from Judas and the Black Messiah.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 93rd Academy Awards | 2021", "url": "https://www.oscars.org/oscars/ceremonies/2021", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Song) results identify Fight For You as from Judas and the Black Messiah."}
+    },
+    {
+      "id": "cst-0057", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "night-timeline",
+      "prompt": "Which Tony Original Musical Score winner immediately followed Hamilton in the archive?",
+      "choices": ["The Bridges of Madison County", "The Band's Visit", "Dear Evan Hansen", "A Christmas Carol (2019)"], "answer": 2,
+      "explanation": "Dear Evan Hansen won in 2017, immediately after Hamilton's 2016 win.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Hamilton as the 2016 Original Musical Score winner and Dear Evan Hansen as the 2017 winner."}
+    },
+    {
+      "id": "cst-0058", "category": "classical-opera-composition", "difficulty": 3, "format": "award-desk",
+      "prompt": "Who composed Shaw: Narrow Sea, the 2022 Classical Contemporary Composition Grammy winner?",
+      "choices": ["Jennifer Higdon", "Christopher Rouse", "Caroline Shaw", "Gabriela Ortiz"], "answer": 2,
+      "explanation": "Caroline Shaw composed Shaw: Narrow Sea.",
+      "source": {"publisher": "Recording Academy", "title": "Best Classical Contemporary Composition Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-contemporary-classical-composition/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table pairs Caroline Shaw with Shaw: Narrow Sea for 2022."}
+    },
+    {
+      "id": "cst-0059", "category": "film-and-television-music", "difficulty": 2, "format": "night-timeline",
+      "prompt": "In which ceremony year did Fight For You win the Original Song Oscar?",
+      "choices": ["2019", "2022", "2021", "2020"], "answer": 2,
+      "explanation": "Fight For You won at the 2021 Academy Awards ceremony.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 93rd Academy Awards | 2021", "url": "https://www.oscars.org/oscars/ceremonies/2021", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2021 ceremony page lists Fight For You as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0060", "category": "game-stage-and-soundtrack", "difficulty": 4, "format": "award-desk",
+      "prompt": "Who wrote the music and lyrics for 2016 Tony score winner Hamilton?",
+      "choices": ["Lin-Manuel Miranda", "Benj Pasek and Justin Paul", "Cyndi Lauper", "Jason Robert Brown"], "answer": 0,
+      "explanation": "Lin-Manuel Miranda wrote Hamilton's music and lyrics.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive lists Hamilton as the 2016 Original Musical Score winner and credits Lin-Manuel Miranda with music and lyrics."}
+    },
+    {
+      "id": "cst-0061", "category": "classical-opera-composition", "difficulty": 5, "format": "award-desk",
+      "prompt": "Which recording won the 2026 Grammy for Best Opera Recording?",
+      "choices": ["Heggie: Intelligence", "Saariaho: Adriana Mater", "Blanchard: Champion", "Glass: Akhnaten"], "answer": 0,
+      "explanation": "Heggie: Intelligence won Best Opera Recording in 2026.",
+      "source": {"publisher": "Recording Academy", "title": "Best Opera Recording Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-opera-recording/", "accessedAt": "2026-07-10", "evidenceSummary": "The official category page lists Heggie: Intelligence as the 2026 Best Opera Recording winner."}
+    },
+    {
+      "id": "cst-0062", "category": "film-and-television-music", "difficulty": 3, "format": "award-desk",
+      "prompt": "Which film won the 2020 Oscar for Music (Original Score)?",
+      "choices": ["1917", "Joker", "Little Women", "Marriage Story"], "answer": 1,
+      "explanation": "Joker won Music (Original Score) at the 92nd Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 92nd Academy Awards | 2020", "url": "https://www.oscars.org/oscars/ceremonies/2020", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2020 ceremony results mark Joker as the Music (Original Score) winner."}
+    },
+    {
+      "id": "cst-0063", "category": "game-stage-and-soundtrack", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which show won the 2015 Tony Award for Original Musical Score?",
+      "choices": ["Hamilton", "Fun Home", "Kinky Boots", "Newsies"], "answer": 1,
+      "explanation": "Fun Home won the 2015 Tony Award for Original Musical Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Fun Home as the 2015 Original Musical Score winner."}
+    },
+    {
+      "id": "cst-0064", "category": "classical-opera-composition", "difficulty": 3, "format": "night-timeline",
+      "prompt": "Which 2025 Best Opera Recording winner follows Blanchard: Champion in the Grammy table?",
+      "choices": ["Glass: Akhnaten", "Heggie: Intelligence", "Saariaho: Adriana Mater", "Blanchard: Fire Shut Up In My Bones"], "answer": 2,
+      "explanation": "Saariaho: Adriana Mater is the 2025 winner following 2024 winner Blanchard: Champion.",
+      "source": {"publisher": "Recording Academy", "title": "Best Opera Recording Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-opera-recording/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table lists Blanchard: Champion for 2024 and Saariaho: Adriana Mater for 2025."}
+    },
+    {
+      "id": "cst-0065", "category": "film-and-television-music", "difficulty": 4, "format": "award-desk",
+      "prompt": "Who composed the Oscar-winning original score for Joker?",
+      "choices": ["Alexandre Desplat", "Trent Reznor and Atticus Ross", "Thomas Newman", "Hildur Guðnadóttir"], "answer": 3,
+      "explanation": "Hildur Guðnadóttir is credited with Joker's winning original score.",
+      "pronunciation": {"Hildur Guðnadóttir": "HIL-dur GUTH-nah-doh-teer"},
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 92nd Academy Awards | 2020", "url": "https://www.oscars.org/oscars/ceremonies/2020", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Score) results pair winner Joker with Hildur Guðnadóttir."}
+    },
+    {
+      "id": "cst-0066", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "award-desk",
+      "prompt": "Who wrote the music and lyrics for 2014 Tony score winner The Bridges of Madison County?",
+      "choices": ["Cyndi Lauper", "Jason Robert Brown", "Alan Menken and Jack Feldman", "Trey Parker, Robert Lopez and Matt Stone"], "answer": 1,
+      "explanation": "Jason Robert Brown wrote the music and lyrics for The Bridges of Madison County.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official archive lists The Bridges of Madison County as the 2014 winner and credits Jason Robert Brown with music and lyrics."}
+    },
+    {
+      "id": "cst-0067", "category": "classical-opera-composition", "difficulty": 4, "format": "award-desk",
+      "prompt": "Which recording won the 2024 Grammy for Best Opera Recording?",
+      "choices": ["Glass: Akhnaten", "Blanchard: Champion", "Saariaho: Adriana Mater", "Gershwin: Porgy And Bess"], "answer": 1,
+      "explanation": "Blanchard: Champion won Best Opera Recording in 2024.",
+      "source": {"publisher": "Recording Academy", "title": "Best Opera Recording Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-opera-recording/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table lists Blanchard: Champion as the 2024 Best Opera Recording winner."}
+    },
+    {
+      "id": "cst-0068", "category": "film-and-television-music", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which song won the 2020 Oscar for Music (Original Song)?",
+      "choices": ["(I'm Gonna) Love Me Again", "I Can't Let You Throw Yourself Away", "Stand Up", "I'm Standing With You"], "answer": 0,
+      "explanation": "(I'm Gonna) Love Me Again won Music (Original Song) at the 92nd Academy Awards.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 92nd Academy Awards | 2020", "url": "https://www.oscars.org/oscars/ceremonies/2020", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2020 ceremony results mark (I'm Gonna) Love Me Again as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0069", "category": "game-stage-and-soundtrack", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which show won the 2013 Tony Award for Original Musical Score?",
+      "choices": ["Hadestown", "The Book of Mormon", "Newsies", "Kinky Boots"], "answer": 3,
+      "explanation": "Kinky Boots won the 2013 Tony Award for Original Musical Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Kinky Boots as the 2013 Original Musical Score winner."}
+    },
+    {
+      "id": "cst-0070", "category": "classical-opera-composition", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which conductor is listed first for 2023 Best Opera Recording winner Blanchard: Fire Shut Up In My Bones?",
+      "choices": ["Yannick Nézet-Séguin", "Karen Kamensek", "Michael Tilson Thomas", "Esa-Pekka Salonen"], "answer": 0,
+      "explanation": "Yannick Nézet-Séguin is the first-listed winner and conductor for the recording.",
+      "pronunciation": {"Yannick Nézet-Séguin": "yah-NEEK nay-ZAY say-GAN"},
+      "source": {"publisher": "Recording Academy", "title": "Best Opera Recording 2023 Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-opera-recording/2023/", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2023 winner credits identify Yannick Nézet-Séguin as conductor for Blanchard: Fire Shut Up In My Bones."}
+    },
+    {
+      "id": "cst-0071", "category": "film-and-television-music", "difficulty": 5, "format": "award-desk",
+      "prompt": "Who wrote the music and lyric for Oscar-winning song (I'm Gonna) Love Me Again?",
+      "choices": ["Randy Newman", "Diane Warren", "Elton John and Bernie Taupin", "Kristen Anderson-Lopez and Robert Lopez"], "answer": 2,
+      "explanation": "The Academy credits Elton John with music and Bernie Taupin with lyric.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 92nd Academy Awards | 2020", "url": "https://www.oscars.org/oscars/ceremonies/2020", "accessedAt": "2026-07-10", "evidenceSummary": "The Music (Original Song) results credit Elton John with music and Bernie Taupin with lyric for the winner."}
+    },
+    {
+      "id": "cst-0072", "category": "game-stage-and-soundtrack", "difficulty": 5, "format": "night-timeline",
+      "prompt": "In which year did Newsies win the Tony Award for Original Musical Score?",
+      "choices": ["2012", "2013", "2011", "2014"], "answer": 0,
+      "explanation": "Newsies won Original Musical Score in 2012.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists Newsies as the 2012 Original Musical Score winner."}
+    },
+    {
+      "id": "cst-0073", "category": "classical-opera-composition", "difficulty": 1, "format": "award-desk",
+      "prompt": "Which recording won the 2022 Grammy for Best Opera Recording?",
+      "choices": ["Picker: Fantastic Mr. Fox", "Gershwin: Porgy And Bess", "Blanchard: Fire Shut Up In My Bones", "Glass: Akhnaten"], "answer": 3,
+      "explanation": "Glass: Akhnaten won Best Opera Recording in 2022.",
+      "source": {"publisher": "Recording Academy", "title": "Best Opera Recording Grammy Award Winners & Nominees", "url": "https://www.grammy.com/awards/categories/best-opera-recording/", "accessedAt": "2026-07-10", "evidenceSummary": "The official previous-winners table lists Glass: Akhnaten as the 2022 Best Opera Recording winner."}
+    },
+    {
+      "id": "cst-0074", "category": "film-and-television-music", "difficulty": 1, "format": "night-timeline",
+      "prompt": "In which ceremony year did (I'm Gonna) Love Me Again win the Original Song Oscar?",
+      "choices": ["2019", "2020", "2021", "2018"], "answer": 1,
+      "explanation": "(I'm Gonna) Love Me Again won at the 2020 Academy Awards ceremony.",
+      "source": {"publisher": "Academy of Motion Picture Arts and Sciences", "title": "The 92nd Academy Awards | 2020", "url": "https://www.oscars.org/oscars/ceremonies/2020", "accessedAt": "2026-07-10", "evidenceSummary": "The official 2020 ceremony page lists (I'm Gonna) Love Me Again as the Music (Original Song) winner."}
+    },
+    {
+      "id": "cst-0075", "category": "game-stage-and-soundtrack", "difficulty": 2, "format": "award-desk",
+      "prompt": "Which show won the 2011 Tony Award for Original Musical Score?",
+      "choices": ["The Bridges of Madison County", "A Christmas Carol (2019)", "The Book of Mormon", "Dear Evan Hansen"], "answer": 2,
+      "explanation": "The Book of Mormon won the 2011 Tony Award for Original Musical Score.",
+      "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The official Tony winners archive lists The Book of Mormon as the 2011 Original Musical Score winner."}
+    }
+  ]
+}
