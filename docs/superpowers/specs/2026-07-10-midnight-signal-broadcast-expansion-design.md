@@ -297,7 +297,7 @@ Manual verification follows the approved acceptance matrix for regular entry, da
 
 ## Reference Sources
 
-- [Audius Open Music License](https://audius.org/open-music-license.pdf)
+- [Audius Open Music License (PDF)](https://audius.org/open-music-license.pdf)
 - [Audius API documentation](https://api.audius.co/v1)
 - [Feed.fm guidance for licensed music trivia clips](https://blog.feed.fm/dont-miss-a-beat-why-music-trivia-apps-need-licensed-music-clips)
 - [Feed Clips terms and conditions](https://www.feed.fm/clips-terms-conditions)

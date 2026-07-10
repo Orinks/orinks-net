@@ -43,7 +43,7 @@ export function presentAnswerDisclosure(
     {
       kind: "official-source",
       href: disclosure.source.url,
-      label: `Official source: ${disclosure.source.title} — ${disclosure.source.publisher}`,
+      label: `${disclosure.source.title}${isPdfUrl(disclosure.source.url) ? " (PDF)" : ""}`,
     },
   ];
   const clip = disclosure.clipAttribution;
@@ -52,12 +52,12 @@ export function presentAnswerDisclosure(
       {
         kind: "clip-source",
         href: clip.sourceUrl,
-        label: `Mystery clip source: ${clip.sourceTitle} — ${clip.creator}`,
+        label: `${clip.sourceTitle} — ${clip.creator}`,
       },
       {
         kind: "license",
         href: clip.licenseUrl,
-        label: `License: ${clip.licenseTitle}${isPdfUrl(clip.licenseUrl) ? " (PDF)" : ""}`,
+        label: `${clip.licenseTitle}${isPdfUrl(clip.licenseUrl) ? " (PDF)" : ""}`,
       },
     );
   }

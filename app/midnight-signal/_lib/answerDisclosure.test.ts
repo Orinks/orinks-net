@@ -21,8 +21,7 @@ describe("answer disclosure presentation", () => {
         {
           kind: "official-source",
           href: officialOnly.source.url,
-          label:
-            "Official source: Best Dance Recording Grammy Award Winners & Nominees — Recording Academy",
+          label: "Best Dance Recording Grammy Award Winners & Nominees",
         },
       ],
       copyrightNotice: null,
@@ -43,9 +42,9 @@ describe("answer disclosure presentation", () => {
     });
 
     expect(result.links.map((link) => link.label)).toEqual([
-      "Official source: Best Dance Recording Grammy Award Winners & Nominees — Recording Academy",
-      "Mystery clip source: Jazcardan - Funky Road — Jazcardan",
-      "License: Audius Open Music License (PDF)",
+      "Best Dance Recording Grammy Award Winners & Nominees",
+      "Jazcardan - Funky Road — Jazcardan",
+      "Audius Open Music License (PDF)",
     ]);
     expect(result.copyrightNotice).toBe("Copyright © 2026 Jazcardan.");
   });
@@ -62,7 +61,7 @@ describe("answer disclosure presentation", () => {
         sourceUrl: "https://example.com/track",
       },
     });
-    expect(result.links.at(-1)?.label).toBe("License: Publisher license");
+    expect(result.links.at(-1)?.label).toBe("Publisher license");
   });
 });
 
