@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyPronunciationAliases,
   assertSafeGenerationBudget,
   audioHash,
+  buildQuestionAudioPlan,
   buildQuestionNarration,
   validateGenerationBudget,
   verifyAudioManifest,
@@ -24,6 +26,42 @@ describe("trivia audio planning", () => {
     );
   });
 
+  test("applies authored speech aliases without changing the visible narration", () => {
+    const plan = buildQuestionAudioPlan({
+      prompt: "Which recording features Tiësto?",
+      choices: ["Bzrp", "First", "Second", "Third"],
+      pronunciation: {
+        Tiësto: "tee-ES-toh",
+        Bzrp: "Bizarrap",
+      },
+    });
+
+    expect(plan.text).toBe(
+      "Which recording features tee-ES-toh? Your choices are... 1: Bizarrap. 2: First. 3: Second. 4: Third.",
+    );
+    expect(plan.displayText).toBe(
+      "Which recording features Tiësto? Your choices are... 1: Bzrp. 2: First. 3: Second. 4: Third.",
+    );
+  });
+
+  test("uses longest literal matches once without rewriting replacement text", () => {
+    expect(
+      applyPronunciationAliases("A Tribe Called Quest and Tribe", {
+        Tribe: "tryb",
+        "A Tribe Called Quest": "A Tribe Called Quest",
+      }),
+    ).toBe("A Tribe Called Quest and tryb");
+  });
+
+  test("rejects invalid or stale pronunciation guidance", () => {
+    expect(() => applyPronunciationAliases("Visible text", { Missing: "MIS-ing" })).toThrow(
+      /does not appear in the narration/,
+    );
+    expect(() => applyPronunciationAliases("Visible text", { Visible: "" })).toThrow(
+      /non-empty string aliases/,
+    );
+  });
+
   test("changes the content hash for text, voice, model, or settings changes", () => {
     const base = {
       id: "question-1",
@@ -43,6 +81,22 @@ describe("trivia audio planning", () => {
     for (const [item, model] of variants) {
       expect(audioHash(item, model)).not.toBe(hash);
     }
+  });
+
+  test("changes the content hash when authored pronunciation guidance changes", () => {
+    const base = {
+      id: "question-1",
+      text: "Which artist? Your choices are... 1: tee-ES-toh. 2: B. 3: C. 4: D.",
+      pronunciation: { Tiësto: "tee-ES-toh" },
+      voice,
+    };
+
+    expect(
+      audioHash(
+        { ...base, pronunciation: { Tiësto: "tee-EHS-toh" } },
+        "eleven_flash_v2_5",
+      ),
+    ).not.toBe(audioHash(base, "eleven_flash_v2_5"));
   });
 
   test("forbids an unlimited live run but permits a complete dry-run plan", () => {

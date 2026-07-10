@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url";
 import {
   assertSafeGenerationBudget,
   audioHash,
-  buildQuestionNarration,
+  buildQuestionAudioPlan,
   validateGenerationBudget,
 } from "./trivia-audio-core.mjs";
 
@@ -101,14 +101,14 @@ export function collectItems(config) {
   const items = [];
   const seenIds = new Set();
 
-  function addItem(kind, id, text, voiceName, sourceFile) {
+  function addItem(kind, id, text, voiceName, sourceFile, metadata = {}) {
     if (!id || typeof id !== "string") fail(`${sourceFile}: item missing string "id"`);
     if (seenIds.has(id)) fail(`${sourceFile}: duplicate id "${id}"`);
     seenIds.add(id);
     if (!text || typeof text !== "string") fail(`${sourceFile}: item "${id}" missing string text`);
     const voice = config.voices[voiceName];
     if (!voice) fail(`${sourceFile}: item "${id}" references unknown voice "${voiceName}"`);
-    items.push({ kind, id, text, voiceName, voice });
+    items.push({ kind, id, text, voiceName, voice, ...metadata });
   }
 
   const barks = loadJson("data/trivia/barks.json");
@@ -154,8 +154,23 @@ export function collectItems(config) {
         fail(`${relPath}: question "${q.id}" has out-of-range answer index`);
       }
       if (q.voice === false) continue; // authored as text/screen-reader only
-      const questionText = buildQuestionNarration(q);
-      addItem("questions", q.id, questionText, typeof q.voice === "string" ? q.voice : bankVoice, relPath);
+      let audioPlan;
+      try {
+        audioPlan = buildQuestionAudioPlan(q);
+      } catch (error) {
+        fail(`${relPath}: question "${q.id}" has invalid narration guidance: ${error.message}`);
+      }
+      addItem(
+        "questions",
+        q.id,
+        audioPlan.text,
+        typeof q.voice === "string" ? q.voice : bankVoice,
+        relPath,
+        {
+          displayText: audioPlan.displayText,
+          pronunciation: audioPlan.pronunciation,
+        },
+      );
     }
   }
 

@@ -10,14 +10,76 @@ export function buildQuestionNarration(question) {
   return `${question.prompt} Your choices are... ${choiceText}.`;
 }
 
+function pronunciationEntries(pronunciation) {
+  if (pronunciation === undefined || pronunciation === null) return [];
+  if (typeof pronunciation !== "object" || Array.isArray(pronunciation)) {
+    throw new Error("Pronunciation guidance must be an object of literal text and aliases.");
+  }
+  const entries = Object.entries(pronunciation);
+  for (const [visibleText, alias] of entries) {
+    if (
+      typeof visibleText !== "string" ||
+      visibleText.length === 0 ||
+      typeof alias !== "string" ||
+      alias.trim().length === 0
+    ) {
+      throw new Error("Pronunciation guidance requires non-empty string aliases.");
+    }
+  }
+  return entries;
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+export function applyPronunciationAliases(text, pronunciation) {
+  if (typeof text !== "string") {
+    throw new Error("Pronunciation aliases require narration text.");
+  }
+  const entries = pronunciationEntries(pronunciation);
+  if (entries.length === 0) return text;
+  for (const [visibleText] of entries) {
+    if (!text.includes(visibleText)) {
+      throw new Error(`Pronunciation term "${visibleText}" does not appear in the narration.`);
+    }
+  }
+  const longestFirst = entries.toSorted(([left], [right]) => {
+    const lengthDifference = right.length - left.length;
+    if (lengthDifference !== 0) return lengthDifference;
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
+  const aliases = new Map(longestFirst);
+  const literalPattern = new RegExp(
+    longestFirst.map(([visibleText]) => escapeRegExp(visibleText)).join("|"),
+    "gu",
+  );
+  return text.replace(literalPattern, (visibleText) => aliases.get(visibleText));
+}
+
+export function buildQuestionAudioPlan(question) {
+  const displayText = buildQuestionNarration(question);
+  return {
+    displayText,
+    text: applyPronunciationAliases(displayText, question.pronunciation),
+    pronunciation: question.pronunciation,
+  };
+}
+
 export function audioHash(item, modelId) {
   const input = [
     item.voice.voiceId,
     modelId,
     JSON.stringify(item.voice.settings ?? {}),
     item.text,
-  ].join("|");
-  return createHash("sha256").update(input).digest("hex").slice(0, 16);
+  ];
+  const canonicalPronunciation = pronunciationEntries(item.pronunciation).toSorted(
+    ([left], [right]) => (left < right ? -1 : left > right ? 1 : 0),
+  );
+  if (canonicalPronunciation.length > 0) {
+    input.push(JSON.stringify(canonicalPronunciation));
+  }
+  return createHash("sha256").update(input.join("|")).digest("hex").slice(0, 16);
 }
 
 export function validateGenerationBudget({ dryRun, budget }) {
