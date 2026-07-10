@@ -5,7 +5,9 @@
 import generalTrivia from "../data/trivia/questions/general-trivia.json";
 import musicbrainzGenerated from "../data/trivia/questions/musicbrainz-generated.json";
 import opentdbMusic from "../data/trivia/questions/opentdb-music.json";
-import type { QuestionFormat } from "./questionTypes";
+import type { MysteryClip, PublicQuestionClip, QuestionFormat } from "./questionTypes";
+
+type BankQuestionClip = Pick<MysteryClip, "id"> & Partial<Omit<MysteryClip, "id">>;
 
 export interface BankQuestion {
   id: string;
@@ -18,15 +20,17 @@ export interface BankQuestion {
   // Legacy banks do not carry the strict contract fields yet. The segment
   // planner supplies a documented format fallback until the corpus cutover.
   format?: QuestionFormat;
-  clip?: { id: string };
+  clip?: BankQuestionClip;
 }
 
 export interface PublicQuestion {
   key: string;
   category: string;
   difficulty: number;
+  format: QuestionFormat;
   prompt: string;
   choices: string[];
+  clip: PublicQuestionClip | null;
 }
 
 interface BankFile {
@@ -51,7 +55,12 @@ export function sanitizeQuestion(question: BankQuestion): PublicQuestion {
     key: question.id,
     category: question.category,
     difficulty: question.difficulty,
+    format: question.format ?? "archive-clue",
     prompt: question.prompt,
     choices: question.choices,
+    clip:
+      question.clip && typeof question.clip.textClue === "string"
+        ? { id: question.clip.id, textClue: question.clip.textClue }
+        : null,
   };
 }

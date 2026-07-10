@@ -165,7 +165,7 @@ describe("canonical question validation", () => {
 
   test("validates complete mystery clips and rejects private metadata on other formats", () => {
     const clip = {
-      id: "clip-audius-0001",
+      id: "ms-clip-7f3a91c2",
       provider: "audius" as const,
       providerAssetId: "opaque-track-id",
       startSeconds: 12,
@@ -192,6 +192,12 @@ describe("canonical question validation", () => {
     expect(errorCodes({ ...clipQuestion, clip: { ...clip, durationSeconds: 0 } })).toContain(
       "question.clip.duration",
     );
+    expect(errorCodes({ ...clipQuestion, clip: { ...clip, durationSeconds: 16 } })).toContain(
+      "question.clip.duration",
+    );
+    expect(
+      errorCodes({ ...clipQuestion, clip: { ...clip, id: "needle-drop-answer-title" } }),
+    ).toContain("question.clip.id.opaque");
     expect(
       errorCodes({
         ...clipQuestion,
@@ -202,7 +208,7 @@ describe("canonical question validation", () => {
 
   test("rejects duplicate IDs, normalized prompts, and clip IDs across files", () => {
     const clip = {
-      id: "clip-shared-0001",
+      id: "ms-clip-b4e82d16",
       provider: "remote-open" as const,
       providerAssetId: "asset-one",
       startSeconds: 0,
@@ -261,7 +267,7 @@ describe("private-to-public projections", () => {
     aliases: ["The Kora Song"],
     pronunciation: { Kora: "KOH-rah" },
     clip: {
-      id: "clip-audius-0002",
+      id: "ms-clip-29c7fd40",
       provider: "audius",
       providerAssetId: "secret-provider-id",
       startSeconds: 8,
@@ -289,7 +295,7 @@ describe("private-to-public projections", () => {
       prompt: clipQuestion.prompt,
       choices: clipQuestion.choices,
       clip: {
-        id: "clip-audius-0002",
+        id: "ms-clip-29c7fd40",
         textClue: "A West African harp-lute is the featured instrument.",
       },
     });

@@ -172,6 +172,7 @@ const ATTRIBUTION_KEYS = new Set([
 const MEDIA_FORMATS = new Set<QuestionFormat>(["needle-drop", "sound-lab"]);
 const PROVIDERS = new Set(["audius", "feed-clips", "remote-open"]);
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CLIP_ID_PATTERN = /^ms-clip-[a-f0-9]{8}$/;
 const CATCH_ALL_CHOICE = /^(?:all|none) of (?:the )?(?:above|these)$/i;
 const EXACT_HOST_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
@@ -530,9 +531,21 @@ function validateMysteryClip(
       "Mystery clips are only valid for needle-drop and sound-lab questions.",
     );
   }
-  if (!nonEmptyString(value.id, "question.clip.id", `${path}.id`, errors) || !ID_PATTERN.test(value.id)) {
-    if (typeof value.id === "string" && value.id.trim().length > 0 && !ID_PATTERN.test(value.id)) {
-      addIssue(errors, "question.clip.id", `${path}.id`, "Clip ID must be lowercase kebab-case.");
+  if (
+    !nonEmptyString(value.id, "question.clip.id", `${path}.id`, errors) ||
+    !CLIP_ID_PATTERN.test(value.id)
+  ) {
+    if (
+      typeof value.id === "string" &&
+      value.id.trim().length > 0 &&
+      !CLIP_ID_PATTERN.test(value.id)
+    ) {
+      addIssue(
+        errors,
+        "question.clip.id.opaque",
+        `${path}.id`,
+        "Clip ID must use a nonsemantic ms-clip plus eight-hex token.",
+      );
     }
   }
   if (typeof value.provider !== "string" || !PROVIDERS.has(value.provider)) {
@@ -560,13 +573,14 @@ function validateMysteryClip(
   if (
     typeof value.durationSeconds !== "number" ||
     !Number.isFinite(value.durationSeconds) ||
-    value.durationSeconds <= 0
+    value.durationSeconds < 10 ||
+    value.durationSeconds > 15
   ) {
     addIssue(
       errors,
       "question.clip.duration",
       `${path}.durationSeconds`,
-      "Clip duration must be a finite positive number.",
+      "Clip duration must be between 10 and 15 seconds.",
     );
   }
   if (nonEmptyString(value.textClue, "question.clip.text_clue", `${path}.textClue`, errors)) {
