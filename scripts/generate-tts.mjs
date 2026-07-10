@@ -16,13 +16,14 @@
  *   node scripts/generate-tts.mjs --budget 20000     # explicit live character ceiling
  *   node scripts/generate-tts.mjs --dry-run --budget 0 # complete plan; unlimited is dry-run only
  *   node scripts/generate-tts.mjs --reserve-credits 500 # retain an included-credit safety margin
+ *   node scripts/generate-tts.mjs --sync-manifest --prune-orphans # no API calls
  *   node scripts/generate-tts.mjs --only barks       # barks | questions | story
  *   node scripts/generate-tts.mjs --filter gt-00     # only items whose id contains this string
  *
  * Requires ELEVENLABS_API_KEY in the environment or .env.local (never commit it).
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -42,16 +43,22 @@ function parseArgs(argv) {
     only: null,
     filter: null,
     reserveCredits: null,
+    syncManifest: false,
+    pruneOrphans: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--dry-run") args.dryRun = true;
+    else if (arg === "--sync-manifest") args.syncManifest = true;
+    else if (arg === "--prune-orphans") args.pruneOrphans = true;
     else if (arg === "--budget") args.budget = Number(argv[++i]);
     else if (arg === "--only") args.only = argv[++i];
     else if (arg === "--filter") args.filter = argv[++i];
     else if (arg === "--reserve-credits") args.reserveCredits = Number(argv[++i]);
     else fail(`Unknown argument: ${arg}`);
   }
+  if (args.dryRun && args.syncManifest) fail("--dry-run and --sync-manifest cannot be combined");
+  if (args.pruneOrphans && !args.syncManifest) fail("--prune-orphans requires --sync-manifest");
   try {
     validateGenerationBudget(args);
   } catch (error) {
@@ -228,10 +235,10 @@ async function main() {
   const manifestAbs = path.join(root, config.manifestPath);
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!args.dryRun && !apiKey) {
+  if (!args.dryRun && !args.syncManifest && !apiKey) {
     fail("ELEVENLABS_API_KEY is not set (add it to .env.local or the environment), or use --dry-run.");
   }
-  if (!args.dryRun) {
+  if (!args.dryRun && !args.syncManifest) {
     const creditMultiplier = config.creditMultiplier;
     const reserveCredits = args.reserveCredits ?? config.reserveCredits ?? 500;
     if (!Number.isFinite(creditMultiplier) || creditMultiplier <= 0) {
@@ -290,6 +297,12 @@ async function main() {
       continue;
     }
 
+    if (args.syncManifest) {
+      stats.pending++;
+      stats.pendingChars += item.text.length;
+      continue;
+    }
+
     if (item.voice.voiceId.startsWith("REPLACE_")) {
       fail(`Voice "${item.voiceName}" still has a placeholder voiceId in tts.config.json.`);
     }
@@ -310,10 +323,27 @@ async function main() {
     writeFileSync(manifestAbs, `${JSON.stringify(manifest, null, 2)}\n`);
   }
 
+  if (args.pruneOrphans) {
+    let pruned = 0;
+    for (const kind of ["barks", "questions", "story"]) {
+      const kindDir = path.join(outputDir, kind);
+      if (!existsSync(kindDir)) continue;
+      const referenced = new Set(
+        Object.values(manifest[kind]).map((webPath) => path.basename(webPath)),
+      );
+      for (const file of readdirSync(kindDir)) {
+        if (!file.endsWith(".mp3") || referenced.has(file)) continue;
+        unlinkSync(path.join(kindDir, file));
+        pruned++;
+      }
+    }
+    console.log(`Pruned orphaned audio files: ${pruned}`);
+  }
+
   console.log("");
   console.log(`Already generated: ${stats.existing}`);
   console.log(
-    `${args.dryRun ? "Would generate" : "Generated"}: ${stats.generated} (${stats.generatedChars} chars)`,
+    `${args.dryRun ? "Would generate" : args.syncManifest ? "Generated during sync" : "Generated"}: ${stats.generated} (${stats.generatedChars} chars)`,
   );
   if (stats.pending > 0) {
     console.log(`Over budget, waiting for next batch: ${stats.pending} (${stats.pendingChars} chars)`);

@@ -176,6 +176,40 @@
           "sourceUrl": "https://audius.co/mizterbonezzmusic/los-de-la-maña"
         }
       }
+    },
+    {
+      "id": "official-sound-lab-001",
+      "category": "classical-opera-composition",
+      "difficulty": 2,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Which Audius genre tag accompanies Ben Cura's “A Stroll” excerpt?",
+      "choices": ["Ambient", "Classical", "Acoustic", "Soundtrack"],
+      "answer": 1,
+      "explanation": "Ben Cura's artist-published Audius record categorizes “A Stroll (Audius Exclusive)” as Classical.",
+      "source": {
+        "publisher": "Audius",
+        "title": "A Stroll (Audius Exclusive)",
+        "url": "https://audius.co/mrbencura/a-stroll-audius-exclusive",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist's Audius record identifies track 1d7E3 as A Stroll (Audius Exclusive), tagged Classical and streamable."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-c9458e2a",
+        "provider": "audius",
+        "providerAssetId": "1d7E3",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Ben Cura published this 2022 Audius exclusive; its catalog tag names a centuries-old concert tradition rather than a production style.",
+        "attribution": {
+          "creator": "Ben Cura",
+          "copyrightNotice": "Copyright © 2022 Ben Cura.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "A Stroll (Audius Exclusive)",
+          "sourceUrl": "https://audius.co/mrbencura/a-stroll-audius-exclusive"
+        }
+      }
     }
   ]
 }

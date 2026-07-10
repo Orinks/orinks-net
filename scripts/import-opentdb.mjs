@@ -16,7 +16,7 @@
  *   node scripts/import-opentdb.mjs                     # import up to 100 questions
  *   node scripts/import-opentdb.mjs --amount 300        # bigger haul (50 per API call, 5s apart)
  *   node scripts/import-opentdb.mjs --difficulty easy   # easy | medium | hard
- *   node scripts/import-opentdb.mjs --out data/trivia/questions/opentdb-music.json
+ *   node scripts/import-opentdb.mjs --out data/trivia/questions/retired/opentdb-music.json
  */
 
 import { createHash } from "node:crypto";
@@ -40,7 +40,7 @@ function parseArgs(argv) {
   const args = {
     amount: 100,
     difficulty: null,
-    out: "data/trivia/questions/opentdb-music.json",
+    out: "data/trivia/questions/retired/opentdb-music.json",
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];

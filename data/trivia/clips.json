@@ -144,6 +144,35 @@
         "sourceTitle": "Los De La Maña",
         "sourceUrl": "https://audius.co/mizterbonezzmusic/los-de-la-maña"
       }
+    },
+    {
+      "id": "ms-clip-c9458e2a",
+      "provider": "audius",
+      "providerAssetId": "1d7E3",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Ben Cura published this 2022 Audius exclusive; its catalog tag names a centuries-old concert tradition rather than a production style.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Ben Cura",
+        "uploaderVerified": true,
+        "title": "A Stroll (Audius Exclusive)",
+        "permalink": "https://audius.co/mrbencura/a-stroll-audius-exclusive",
+        "genre": "Classical",
+        "releasedAt": "2022-02-17T11:03:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Ben Cura",
+        "copyrightNotice": "Copyright © 2022 Ben Cura.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "A Stroll (Audius Exclusive)",
+        "sourceUrl": "https://audius.co/mrbencura/a-stroll-audius-exclusive"
+      }
     }
   ]
 }

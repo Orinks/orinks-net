@@ -11,6 +11,7 @@
     "test": "vitest run",
     "trivia:validate": "node scripts/trivia/validate-question-bank.mjs",
     "tts": "node scripts/generate-tts.mjs",
+    "tts:sync": "node scripts/generate-tts.mjs --sync-manifest --prune-orphans",
     "tts:verify": "node scripts/verify-trivia-audio.mjs"
   },
   "dependencies": {

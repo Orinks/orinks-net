@@ -27,6 +27,9 @@ as game assets.
   difficulty, segment format, prompt, exactly four choices, answer,
   explanation, and exact official provenance. `voice: false` skips TTS and
   `voice: "<name>"` selects another configured voice.
+- `questions/retired/*.json` — preserved legacy banks that are excluded from
+  runtime selection and the final official-corpus gate because they do not
+  carry exact official provenance.
 - `clips.json` — the server-only mystery-clip rights ledger. It stores opaque
   game IDs, provider asset IDs, clip timing, equivalent text clues, access
   dates, immutable artist-published metadata snapshots, copyright notices,
@@ -59,17 +62,17 @@ policy live in `convex/questionTypes.ts` and `official-sources.json`. Run:
 npm run trivia:validate
 ```
 
-During the migration this audits strict files and reports the three existing
-legacy banks separately without loading them into the strict set. To exercise
-the release gate, including the 460-question and ten-format floors, run:
+This audits the active strict files. To exercise the release gate, including
+the 460-question and ten-format floors, run:
 
 ```powershell
 npm run trivia:validate -- --final-gate
 ```
 
-The final gate intentionally fails until the officially sourced corpus is
-ready and the segment engine can preserve existing run IDs. A specific staged
-bank can be checked strictly by passing its path after the command.
+The retired legacy banks remain available under `questions/retired` for
+historical reference but are never part of these active-bank checks. A
+specific staged bank can be checked strictly by passing its path after the
+command.
 
 ## Daily episode freezing during the corpus migration
 
@@ -80,12 +83,11 @@ Later starts reuse that row, so adding or reordering candidates during the day
 cannot reroll the broadcast. Answer positions are balanced by choosing a
 different question; choice text is never shuffled at runtime.
 
-The three current legacy banks do not have strict `format` metadata. Until the
-official corpus cutover, persisted plans label those questions `archive-clue`.
-This is planning metadata only and does not change their existing prompts,
-choices, scoring, or resume behavior. The stable version constants live in
-`convex/triviaVersions.ts` and must be advanced deliberately when corpus or
-planning rules change.
+The retired legacy banks do not have strict `format` metadata and are not
+selectable. Existing unfinished legacy runs are retired through the run
+recovery path before an official-source broadcast begins. The stable version
+constants live in `convex/triviaVersions.ts` and must be advanced deliberately
+when corpus or planning rules change.
 
 This validator requires Node.js 24. It directly imports the canonical
 TypeScript contract using Node 24's built-in type stripping so the CLI and the
@@ -109,6 +111,7 @@ npm run tts                     # generate up to 5000 characters
 npm run tts -- --budget 20000   # larger explicit live ceiling
 npm run tts -- --dry-run --budget 0 # complete plan; unlimited is dry-run only
 npm run tts -- --only barks     # barks first — they carry the personality
+npm run tts:sync                # rebuild manifest and prune retired/orphaned MP3s, no API calls
 npm run tts:verify              # verify hashes, files, size, and manifest coverage
 ```
 

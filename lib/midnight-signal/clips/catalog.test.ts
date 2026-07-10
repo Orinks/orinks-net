@@ -40,7 +40,7 @@ describe("validateClipCatalog", () => {
     const result = validateClipCatalog(rawCatalog);
 
     expect(result.errors).toEqual([]);
-    expect(result.clips).toHaveLength(5);
+    expect(result.clips).toHaveLength(6);
   });
 
   test("accepts a complete short Audius clip with explicit attribution", () => {

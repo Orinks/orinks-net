@@ -9,17 +9,18 @@ import {
 } from "./questionTypes";
 
 describe("official Audius needle-drop questions", () => {
-  test("validates five private questions with balanced answers and official provenance", () => {
+  test("validates six private questions across both licensed media formats", () => {
     const result = validateQuestionCorpus(
       [{ file: "official-audius-needle-drops.json", data: needleDropBank }],
       officialSources as OfficialSourcePolicy,
-      { minimumQuestions: 5 },
+      { minimumQuestions: 6 },
     );
 
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
-    expect(result.questions).toHaveLength(5);
-    expect(result.questions.map((question) => question.answer)).toEqual([0, 1, 2, 3, 0]);
+    expect(result.questions).toHaveLength(6);
+    expect(result.questions.map((question) => question.answer)).toEqual([0, 1, 2, 3, 0, 1]);
+    expect(result.stats.formats).toMatchObject({ "needle-drop": 5, "sound-lab": 1 });
     expect(result.questions.every((question) => question.source.publisher === "Audius")).toBe(true);
   });
 
@@ -47,7 +48,7 @@ describe("official Audius needle-drop questions", () => {
       expect(question.source.title).toBe(record.artistPublished.title);
     }
 
-    expect(used.size).toBe(5);
+    expect(used.size).toBe(6);
     expect(used).toEqual(new Set(ledger.keys()));
   });
 });
