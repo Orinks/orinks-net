@@ -3,6 +3,7 @@
 // server-side; the browser receives the exact safe projection below.
 import officialSources from "../data/trivia/official-sources.json";
 import genreAwards from "../data/trivia/questions/official-genre-awards-1.json";
+import globalChartsAwards from "../data/trivia/questions/official-global-charts-awards.json";
 import institutionalMusic from "../data/trivia/questions/official-institutional-music.json";
 import modernAwards from "../data/trivia/questions/official-modern-awards.json";
 import {
@@ -20,13 +21,14 @@ export type { PublicQuestion };
 const activeBanks: QuestionBankInput[] = [
   { file: "official-modern-awards.json", data: modernAwards },
   { file: "official-genre-awards-1.json", data: genreAwards },
+  { file: "official-global-charts-awards.json", data: globalChartsAwards },
   { file: "official-institutional-music.json", data: institutionalMusic },
 ];
 
 const validated = validateQuestionCorpus(
   activeBanks,
   officialSources as OfficialSourcePolicy,
-  { minimumQuestions: 200 },
+  { minimumQuestions: 300 },
 );
 
 if (validated.errors.length > 0) {
