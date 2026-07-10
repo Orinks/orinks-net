@@ -150,6 +150,27 @@ describe("run lifecycle", () => {
     expect(third.scoreDelta).toBe(0);
   });
 
+  test("reveals official provenance only after the answer resolves", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const start = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
+    const privateQuestion = questionByKey.get(start.question!.key)!;
+
+    expect(start.question).not.toHaveProperty("source");
+    const result = await answer(t, PLAYER, start.run.runId, start.question!.key, true);
+    expect(result.disclosure).toEqual({
+      source: {
+        publisher: privateQuestion.source.publisher,
+        title: privateQuestion.source.title,
+        url: privateQuestion.source.url,
+      },
+      clipAttribution: null,
+    });
+    const serialized = JSON.stringify(result.disclosure);
+    expect(serialized).not.toContain(privateQuestion.source.evidenceSummary);
+    expect(serialized).not.toContain('"answer"');
+  });
+
   test("three wrong answers end the run and finalize the profile", async () => {
     const t = setup();
     await newPlayer(t);

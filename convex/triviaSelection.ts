@@ -17,19 +17,47 @@ function chooseCandidate(
   usePlannedOrder: boolean,
 ): BankQuestion | null {
   if (candidates.length === 0) return null;
-  if (usePlannedOrder) {
-    const byId = new Map(allQuestions.map((question) => [question.id, question]));
-    const answerCounts = [0, 0, 0, 0];
-    for (const questionId of run.askedQuestionKeys) {
-      const answer = byId.get(questionId)?.answer;
-      if (answer !== undefined && answer >= 0 && answer <= 3) answerCounts[answer] += 1;
-    }
-    const availableAnswers = [...new Set(candidates.map((question) => question.answer))];
-    const leastUsed = Math.min(...availableAnswers.map((answer) => answerCounts[answer]));
-    // Candidate order breaks ties. Choice text always stays in authored order.
-    return candidates.find((question) => answerCounts[question.answer] === leastUsed) ?? candidates[0];
+  const byId = new Map(allQuestions.map((question) => [question.id, question]));
+  const answerCounts = [0, 0, 0, 0];
+  const formatCounts = new Map<BankQuestion["format"], number>();
+  let lastFormat: BankQuestion["format"] | undefined;
+  for (const questionId of run.askedQuestionKeys) {
+    const previous = byId.get(questionId);
+    if (!previous) continue;
+    answerCounts[previous.answer] += 1;
+    formatCounts.set(previous.format, (formatCounts.get(previous.format) ?? 0) + 1);
+    lastFormat = previous.format;
   }
-  return candidates[Math.floor(runRoll(run, salt) * candidates.length)];
+
+  const availableFormats = [...new Set(candidates.map((question) => question.format))];
+  const leastUsedFormatCount = Math.min(
+    ...availableFormats.map((format) => formatCounts.get(format) ?? 0),
+  );
+  let preferredFormats = availableFormats.filter(
+    (format) => (formatCounts.get(format) ?? 0) === leastUsedFormatCount,
+  );
+  if (preferredFormats.length > 1 && lastFormat) {
+    preferredFormats = preferredFormats.filter((format) => format !== lastFormat);
+  }
+
+  const chosenFormat = usePlannedOrder
+    ? candidates.find((question) => preferredFormats.includes(question.format))!.format
+    : preferredFormats.length === 1
+      ? preferredFormats[0]
+      : preferredFormats[Math.floor(runRoll(run, `${salt}:format`) * preferredFormats.length)];
+  const segmentCandidates = candidates.filter((question) => question.format === chosenFormat);
+
+  if (usePlannedOrder) {
+    const availableAnswers = [...new Set(segmentCandidates.map((question) => question.answer))];
+    const leastUsed = Math.min(...availableAnswers.map((answer) => answerCounts[answer]));
+    // Frozen candidate order breaks ties. Choice text always stays authored.
+    return (
+      segmentCandidates.find((question) => answerCounts[question.answer] === leastUsed) ??
+      segmentCandidates[0]
+    );
+  }
+  const questionSalt = availableFormats.length === 1 ? salt : `${salt}:question`;
+  return segmentCandidates[Math.floor(runRoll(run, questionSalt) * segmentCandidates.length)];
 }
 
 export function pickRoundCategory(

@@ -7,12 +7,13 @@ function candidate(
   id: string,
   difficulty: BankQuestion["difficulty"],
   answer: BankQuestion["answer"],
+  format: BankQuestion["format"] = "award-desk",
 ): BankQuestion {
   return {
     id,
     category: "Music",
     difficulty,
-    format: "award-desk",
+    format,
     prompt: id,
     choices: ["A", "B", "C", "D"],
     answer,
@@ -62,6 +63,50 @@ describe("question selection", () => {
     );
 
     expect(selected?.id).toBe("balanced-pick");
+    expect(selected?.choices).toEqual(["A", "B", "C", "D"]);
+  });
+
+  test("rotates to a different segment format when the candidate pool permits it", () => {
+    const questions = [
+      candidate("asked-award", 2, 0, "award-desk"),
+      candidate("next-award", 2, 1, "award-desk"),
+      candidate("next-world", 2, 2, "world-signal"),
+    ];
+
+    expect(
+      pickQuestion(run({ askedQuestionKeys: ["asked-award"] }), questions, true)?.id,
+    ).toBe("next-world");
+    expect(
+      pickQuestion(run({ askedQuestionKeys: ["asked-award"] }), questions, false)?.id,
+    ).toBe("next-world");
+  });
+
+  test("prefers the least-used available segment before balancing answer positions", () => {
+    const questions = [
+      candidate("world-one", 2, 0, "world-signal"),
+      candidate("world-two", 2, 1, "world-signal"),
+      candidate("world-three", 2, 2, "world-signal"),
+      candidate("timeline-one", 2, 1, "night-timeline"),
+      candidate("timeline-two", 2, 2, "night-timeline"),
+      candidate("timeline-three", 2, 3, "night-timeline"),
+      candidate("award-one", 2, 2, "award-desk"),
+      candidate("award-two", 2, 3, "award-desk"),
+    ];
+    const selected = pickQuestion(
+      run({
+        askedQuestionKeys: [
+          "world-one",
+          "timeline-one",
+          "world-two",
+          "timeline-two",
+          "award-one",
+        ],
+      }),
+      questions,
+      true,
+    );
+
+    expect(selected?.id).toBe("award-two");
     expect(selected?.choices).toEqual(["A", "B", "C", "D"]);
   });
 

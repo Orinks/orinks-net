@@ -2,4 +2,4 @@
 export const DAILY_EPISODE_CONTENT_VERSION = "official-corpus-v1";
 
 /** Increment when deterministic planning or selection rules change. */
-export const DAILY_EPISODE_RULES_VERSION = "strict-segment-engine-v2";
+export const DAILY_EPISODE_RULES_VERSION = "format-balanced-segment-engine-v3";

@@ -2,6 +2,7 @@ import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } fr
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import { createAnswerDisclosure } from "./questionTypes";
 import { boostByKey, rollBoostOffer } from "./boosts";
 import { mutatorByKey, type MutatorDef } from "./mutators";
 import { maskDisplayName } from "./moderation";
@@ -795,6 +796,7 @@ export const submitAnswer = mutation({
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
+      disclosure: createAnswerDisclosure(question),
       scoreDelta,
       events,
       run: publicRunState(updatedRun),
@@ -1035,6 +1037,7 @@ export const answerBossCall = mutation({
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
+      disclosure: createAnswerDisclosure(question),
       scoreDelta: 0,
       events,
       run: publicRunState(updated),
