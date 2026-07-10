@@ -2,6 +2,17 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-10-midnight-signal-broadcast-expansion",
+      "date": "2026-07-10",
+      "project": "The Midnight Signal",
+      "title": "More music, more ways to play the broadcast",
+      "body": [
+        "The Midnight Signal's question library now spans 466 officially verified music questions across eras, regions, traditions, instruments, charts, awards, soundtracks, recording technology, and more. Award Desk, Chart Wire, World Signal, Instrument Detective, Studio Lab, Night Timeline, Archive Clue, Odd One Out, Needle Drop, and Sound Lab rounds give regular and nightly broadcasts a more varied rhythm.",
+        "Needle Drop and Sound Lab rounds use short, licensed Audius streams that play only when you choose Play. Every audio question includes an always-available equivalent text clue, and every answer keeps its verified source, recording credit, and license available until you continue."
+      ],
+      "link": { "href": "/midnight-signal", "label": "Tune in to The Midnight Signal" }
+    },
+    {
       "id": "2026-07-10-pause-off-duty-drivers-board",
       "date": "2026-07-10",
       "project": "Freight Fate",
