@@ -11,6 +11,45 @@ import { api } from "@/convex/_generated/api";
 
 type Visibility = "public" | "private" | "unlisted";
 
+// kind picks the inline rendering: "blocked" renders PREFIX + the rules link
+// instead of message; every other kind renders message verbatim.
+type NameError = { kind: "length" | "letters" | "blocked" | "taken"; message: string };
+
+const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
+const RULES_LINK_TEXT = "driver naming rules";
+
+const LETTERS_ERROR: NameError = {
+  kind: "letters",
+  message: "Driver names must include at least three letters. Choose a different name.",
+};
+
+// provisionDriver throws ConvexError({ code: "name_taken" }) when another
+// account already uses the name, and ConvexError({ code: "name_rejected",
+// reason }) when it fails moderation screening; anything else is a real
+// failure.
+function nameRejection(error: unknown): NameError | null {
+  if (!(error instanceof ConvexError)) {
+    return null;
+  }
+  const data = error.data as { code?: string; reason?: string } | undefined;
+  if (data?.code === "name_taken") {
+    return {
+      kind: "taken",
+      message: "That driver name is already taken. Choose a different name.",
+    };
+  }
+  if (data?.code !== "name_rejected") {
+    return null;
+  }
+  if (data.reason === "needs_letters") {
+    return LETTERS_ERROR;
+  }
+  return {
+    kind: "blocked",
+    message: `${BLOCKED_MESSAGE_PREFIX}${RULES_LINK_TEXT}.`,
+  };
+}
+
 const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-action-dark";
 
@@ -30,13 +69,6 @@ function useAnnouncer() {
   const announceError = useCallback((message: string) => announce(setError, message), [announce]);
 
   return { politeStatus, errorStatus, announcePolite, announceError };
-}
-
-function isNameTaken(error: unknown) {
-  return (
-    error instanceof ConvexError &&
-    (error.data as { code?: string } | undefined)?.code === "name_taken"
-  );
 }
 
 export function FreightFateSetupClient() {
@@ -75,7 +107,7 @@ function DriverSetup() {
 
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("private");
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<NameError | null>(null);
   const [pending, setPending] = useState(false);
   // Carries BOTH values from the provision result: the reactive getMyDriver
   // query can lag the mutation, so myDriver may still be null at the moment
@@ -131,8 +163,15 @@ function DriverSetup() {
     }
 
     const trimmed = name.trim();
-    if (trimmed.length < 1 || trimmed.length > 48) {
-      setNameError("Enter a driver name of 1 to 48 characters.");
+    if (trimmed.length < 3 || trimmed.length > 48) {
+      setNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
+      requestAnimationFrame(() => nameRef.current?.focus());
+      return;
+    }
+    // Mirrors the server's minimum-letters rule so the common case gets
+    // instant feedback instead of a round-trip rejection.
+    if ((trimmed.match(/\p{L}/gu) ?? []).length < 3) {
+      setNameError(LETTERS_ERROR);
       requestAnimationFrame(() => nameRef.current?.focus());
       return;
     }
@@ -157,12 +196,14 @@ function DriverSetup() {
         announcePolite("Changes saved.");
       }
     } catch (error) {
-      if (isNameTaken(error)) {
-        // Exactly the client-side validation pattern above: inline error on
-        // the field plus a focus move, which itself reads the label, invalid
-        // state, and error text. No live-region announcement here -- it
-        // would fire a frame later and cut that reading off.
-        setNameError("That driver name is already taken. Choose a different name.");
+      // A name rejection (taken or moderated) is field feedback, not a save
+      // failure. Exactly the client-side validation pattern above: inline
+      // error on the field plus a focus move, which itself reads the label,
+      // invalid state, and error text. No live-region announcement here --
+      // it would fire a frame later and cut that reading off.
+      const rejection = nameRejection(error);
+      if (rejection) {
+        setNameError(rejection);
         requestAnimationFrame(() => nameRef.current?.focus());
       } else {
         announceError("Save failed. Your changes were not applied. Please try again.");
@@ -298,6 +339,15 @@ function DriverSetup() {
         </Section>
       ) : (
         <Section title={myDriver ? "Your driver" : "Set up your driver"}>
+          {myDriver?.needsRename ? (
+            <p className="max-w-xl rounded border border-red-300 bg-red-50 p-4 text-slate-800">
+              A moderator reset your driver name because it broke the{" "}
+              <Link className={focusRing} href="/freight-fate/online/rules">
+                driver naming rules
+              </Link>
+              . Choose a new name below and save your changes.
+            </p>
+          ) : null}
           <form
             className="max-w-xl space-y-5 rounded border border-line bg-white p-5"
             noValidate
@@ -337,12 +387,26 @@ function DriverSetup() {
                 value={name}
               />
               <p className="text-sm text-slate-600" id="displayName-hint">
-                1 to 48 characters. Where this name appears depends on the Profile visibility setting.
+                3 to 48 characters, including at least three letters. Names must follow the{" "}
+                <Link className={focusRing} href="/freight-fate/online/rules">
+                  driver naming rules
+                </Link>
+                . Where this name appears depends on the Profile visibility setting.
               </p>
               {nameError ? (
                 <p className="text-sm text-red-700" id="displayName-error">
                   <span aria-hidden="true">⚠ </span>
-                  {nameError}
+                  {nameError.kind === "blocked" ? (
+                    <>
+                      {BLOCKED_MESSAGE_PREFIX}
+                      <Link className={focusRing} href="/freight-fate/online/rules">
+                        {RULES_LINK_TEXT}
+                      </Link>
+                      .
+                    </>
+                  ) : (
+                    nameError.message
+                  )}
                 </p>
               ) : null}
             </div>

@@ -4,6 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
 import { boostByKey, rollBoostOffer } from "./boosts";
 import { mutatorByKey, mutatorCatalog, type MutatorDef } from "./mutators";
+import { maskDisplayName } from "./moderation";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 
@@ -249,30 +250,11 @@ function handleFromIdentity(identity: { nickname?: string; preferredUsername?: s
 }
 
 // Clerk validates username FORMAT but not content, so account handles still
-// need screening before they appear publicly. This is a compact first-pass
-// blocklist matched after leetspeak normalization; swap in a maintained
-// profanity library before a wide launch. Offensive names render as anonymous.
-const PROFANITY_ROOTS = [
-  "nigger", "nigga", "faggot", "retard", "cunt", "fuck", "shit", "bitch",
-  "rape", "nazi", "slut", "whore", "coon", "kike", "spic", "chink",
-];
-function normalizeForModeration(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[4@]/g, "a")
-    .replace(/3/g, "e")
-    .replace(/[1!|]/g, "i")
-    .replace(/0/g, "o")
-    .replace(/[$5]/g, "s")
-    .replace(/7/g, "t")
-    .replace(/[^a-z]/g, "");
-}
+// need screening before they appear publicly. The shared moderation module
+// (obscenity's English preset plus a hate-figure list) masks offensive names
+// as anonymous at display time.
 function safeLeaderboardName(name: string, idForMask: string): string {
-  const normalized = normalizeForModeration(name);
-  if (PROFANITY_ROOTS.some((root) => normalized.includes(root))) {
-    return `Player ${idForMask.slice(-4)}`;
-  }
-  return name;
+  return maskDisplayName(name, idForMask, "Player");
 }
 
 async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {

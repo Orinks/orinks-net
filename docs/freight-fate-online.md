@@ -26,6 +26,17 @@ The driver's display name and visibility (`public` / `unlisted` /
 `private`) are managed on the website only. The live drivers board lists
 only `public` drivers with a fresh heartbeat (3-minute TTL).
 
+Display names must follow the published naming rules
+(`/freight-fate/online/rules`). `provisionDriver` screens each name via
+`convex/moderation.ts` (the `obscenity` package plus a hate-figure list)
+and rejects violations with `ConvexError({ code: "name_rejected" })`;
+public read paths additionally mask any stored name that fails screening.
+Moderators can reset a name with the internal mutation
+`freightFateAdmin:forceRename` (run from the Convex dashboard or
+`npx convex run`), which flags the driver so the setup page demands a new
+name; pass `regenerateId: true` when the offending text is baked into the
+`driverId` slug itself.
+
 ## Presence Heartbeat
 
 `POST /api/freight-fate/presence` — Header: `Authorization: Bearer <driverToken>`

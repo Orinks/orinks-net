@@ -147,6 +147,9 @@ export default defineSchema({
     // by URL only; private: nothing shown anywhere.
     visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
     driverTokenHash: v.string(),
+    // Set by the moderation force-rename; the setup page demands a fresh name
+    // and provisionDriver clears it once one passes screening.
+    needsRename: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
