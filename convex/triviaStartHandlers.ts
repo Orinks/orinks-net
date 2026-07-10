@@ -216,11 +216,13 @@ export async function startRunHandler(
     selection.questions,
     1,
     questionsPerRoundOf(run),
+    selection.rulesVersion,
   );
   const question = pickQuestion(
     { ...run, roundCategory },
     selection.questions,
     selection.usePlannedOrder,
+    selection.rulesVersion,
   );
   if (!question) throw new Error("The question bank is empty.");
   await ctx.db.patch(runId, {

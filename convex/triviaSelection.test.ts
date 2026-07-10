@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { BankQuestion } from "./questionBank";
 import { runRoll } from "./triviaDeterminism";
 import { pickQuestion } from "./triviaSelection";
+import { DAILY_EPISODE_RULES_VERSION } from "./triviaVersions";
 
 function candidate(
   id: string,
@@ -44,10 +45,17 @@ function run(overrides: Record<string, unknown> = {}) {
 describe("question selection", () => {
   test("uses the frozen candidate order for planned daily episodes", () => {
     const questions = [candidate("first", 2, 0), candidate("second", 2, 1)];
-    expect(pickQuestion(run(), questions, true)?.id).toBe("first");
-    expect(pickQuestion(run({ askedQuestionKeys: ["first"] }), questions, true)?.id).toBe(
-      "second",
+    expect(pickQuestion(run(), questions, true, DAILY_EPISODE_RULES_VERSION)?.id).toBe(
+      "first",
     );
+    expect(
+      pickQuestion(
+        run({ askedQuestionKeys: ["first"] }),
+        questions,
+        true,
+        DAILY_EPISODE_RULES_VERSION,
+      )?.id,
+    ).toBe("second");
   });
 
   test("balances planned answer positions by selecting a different question, not reordering choices", () => {
@@ -60,6 +68,7 @@ describe("question selection", () => {
       run({ askedQuestionKeys: ["already-asked"] }),
       questions,
       true,
+      DAILY_EPISODE_RULES_VERSION,
     );
 
     expect(selected?.id).toBe("balanced-pick");
@@ -74,7 +83,12 @@ describe("question selection", () => {
     ];
 
     expect(
-      pickQuestion(run({ askedQuestionKeys: ["asked-award"] }), questions, true)?.id,
+      pickQuestion(
+        run({ askedQuestionKeys: ["asked-award"] }),
+        questions,
+        true,
+        DAILY_EPISODE_RULES_VERSION,
+      )?.id,
     ).toBe("next-world");
     expect(
       pickQuestion(run({ askedQuestionKeys: ["asked-award"] }), questions, false)?.id,
@@ -104,6 +118,7 @@ describe("question selection", () => {
       }),
       questions,
       true,
+      DAILY_EPISODE_RULES_VERSION,
     );
 
     expect(selected?.id).toBe("award-two");
@@ -119,6 +134,13 @@ describe("question selection", () => {
     );
     expect(pickQuestion(run(), questions, false)?.id).toBe(
       pickQuestion(run(), questions, false)?.id,
+    );
+  });
+
+  test("refuses to reinterpret a frozen episode with unknown selector rules", () => {
+    const questions = [candidate("first", 2, 0), candidate("second", 2, 1)];
+    expect(() => pickQuestion(run(), questions, true, "future-rules-v99")).toThrow(
+      /Unsupported frozen daily selection rules/,
     );
   });
 });

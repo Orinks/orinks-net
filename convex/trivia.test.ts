@@ -298,6 +298,10 @@ describe("daily runs", () => {
     });
     const before = await t.run(async (ctx) => ctx.db.query("dailyEpisodes").first());
     const originalOrder = [...questionBank];
+    const servedQuestion = questionByKey.get(first.question!.key)!;
+    const servedIndex = questionBank.findIndex(
+      (question) => question.id === servedQuestion.id,
+    );
     const lateCandidate: BankQuestion = {
       ...questionBank[0],
       id: "late-daily-candidate",
@@ -309,6 +313,13 @@ describe("daily runs", () => {
     };
 
     try {
+      questionByKey.delete(servedQuestion.id);
+      questionBank.splice(servedIndex, 1, {
+        ...servedQuestion,
+        prompt: "This edit must not alter an episode that already aired.",
+        choices: ["Edited A", "Edited B", "Edited C", "Edited D"],
+        answer: 3,
+      });
       questionBank.reverse();
       questionBank.unshift(lateCandidate);
       questionByKey.set(lateCandidate.id, lateCandidate);
@@ -325,8 +336,10 @@ describe("daily runs", () => {
         false,
       );
       expect(second.question!.key).toBe(first.question!.key);
+      expect(second.question).toEqual(first.question);
     } finally {
       questionBank.splice(0, questionBank.length, ...originalOrder);
+      questionByKey.set(servedQuestion.id, servedQuestion);
       questionByKey.delete(lateCandidate.id);
     }
   });

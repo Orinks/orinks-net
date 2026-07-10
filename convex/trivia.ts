@@ -189,14 +189,12 @@ export const submitAnswer = mutation({
       lives = 1;
       events.push({ type: "deadAirSurvived" });
     }
-
     let nextQuestion: BankQuestion | null = null;
     const dead = lives <= 0;
     // Dead Air entry: the last life just went and the chance is unspent —
     // one seeded, hardest-available question decides whether the run ends.
-    const deadAirQuestion =
-      dead && !(run.deadAirUsed ?? false)
-        ? pickDeadAirQuestion(run, selection.questions, selection.usePlannedOrder)
+    const deadAirQuestion = dead && !(run.deadAirUsed ?? false)
+        ? pickDeadAirQuestion(run, selection.questions, selection.usePlannedOrder, selection.rulesVersion)
         : null;
 
     if (dead && deadAirQuestion) {
@@ -333,6 +331,7 @@ export const submitAnswer = mutation({
                 selection.questions,
                 completedRoundNumber,
                 selection.usePlannedOrder,
+                selection.rulesVersion,
               )
             : null;
         if (bossQuestion) {
@@ -364,6 +363,7 @@ export const submitAnswer = mutation({
           { ...run, round, roundCategory },
           selection.questions,
           selection.usePlannedOrder,
+          selection.rulesVersion,
         );
         if (!nextQuestion) {
           // Ran the entire bank dry — end the run as a victory lap.
@@ -489,11 +489,13 @@ export const chooseBoost = mutation({
       selection.questions,
       run.round,
       questionsPerRoundOf(draftedRun),
+      selection.rulesVersion,
     );
     const question = pickQuestion(
       { ...draftedRun, roundCategory },
       selection.questions,
       selection.usePlannedOrder,
+      selection.rulesVersion,
     );
     if (!question) {
       // Bank ran dry during the draft — victory lap, same as submitAnswer.

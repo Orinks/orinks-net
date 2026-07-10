@@ -1,5 +1,6 @@
 import type { BankQuestion } from "./questionBank";
 import { difficultyRange, runRoll, seededRandom, type SeededRun } from "./triviaDeterminism";
+import { DAILY_EPISODE_RULES_VERSION } from "./triviaVersions";
 
 export interface QuestionSelectionRun extends SeededRun {
   round: number;
@@ -60,12 +61,20 @@ function chooseCandidate(
   return segmentCandidates[Math.floor(runRoll(run, questionSalt) * segmentCandidates.length)];
 }
 
+function assertPlannedRulesVersion(rulesVersion: string | undefined) {
+  if (rulesVersion !== DAILY_EPISODE_RULES_VERSION) {
+    throw new Error(`Unsupported frozen daily selection rules: ${rulesVersion ?? "missing"}.`);
+  }
+}
+
 export function pickRoundCategory(
   run: QuestionSelectionRun,
   questions: readonly BankQuestion[],
   forRound: number,
   questionsPerRound: number,
+  plannedRulesVersion?: string,
 ): string | undefined {
+  if (plannedRulesVersion !== undefined) assertPlannedRulesVersion(plannedRulesVersion);
   const asked = new Set(run.askedQuestionKeys);
   const counts = new Map<string, number>();
   for (const question of questions) {
@@ -90,7 +99,9 @@ export function pickQuestion(
   run: QuestionSelectionRun,
   questions: readonly BankQuestion[],
   usePlannedOrder = false,
+  plannedRulesVersion?: string,
 ): BankQuestion | null {
+  if (usePlannedOrder) assertPlannedRulesVersion(plannedRulesVersion);
   const asked = new Set(run.askedQuestionKeys);
   let [minimum, maximum] = difficultyRange(run.round);
   if (run.activeRoundBoost?.key === "deep-cuts" && run.activeRoundBoost.round === run.round) {
@@ -131,7 +142,9 @@ function pickHardQuestion(
   questions: readonly BankQuestion[],
   salt: string,
   usePlannedOrder: boolean,
+  plannedRulesVersion?: string,
 ): BankQuestion | null {
+  if (usePlannedOrder) assertPlannedRulesVersion(plannedRulesVersion);
   const asked = new Set(run.askedQuestionKeys);
   for (const minimum of [5, 4, 1]) {
     const candidates = questions.filter(
@@ -148,12 +161,14 @@ export function pickDeadAirQuestion(
   run: QuestionSelectionRun,
   questions: readonly BankQuestion[],
   usePlannedOrder = false,
+  plannedRulesVersion?: string,
 ): BankQuestion | null {
   return pickHardQuestion(
     run,
     questions,
     `dead-air:${run.askedQuestionKeys.length}`,
     usePlannedOrder,
+    plannedRulesVersion,
   );
 }
 
@@ -162,6 +177,13 @@ export function pickBossQuestion(
   questions: readonly BankQuestion[],
   forRound: number,
   usePlannedOrder = false,
+  plannedRulesVersion?: string,
 ): BankQuestion | null {
-  return pickHardQuestion(run, questions, `boss-question:${forRound}`, usePlannedOrder);
+  return pickHardQuestion(
+    run,
+    questions,
+    `boss-question:${forRound}`,
+    usePlannedOrder,
+    plannedRulesVersion,
+  );
 }

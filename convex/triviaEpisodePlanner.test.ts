@@ -114,6 +114,28 @@ describe("daily episode planner", () => {
       clipId: "ms-clip-7f3a91c2",
       choiceOrder: [0, 1, 2, 3],
     });
+    expect(byId.get("media")?.snapshot.clip?.providerAssetId).toBe("provider-id");
+  });
+
+  test("deeply snapshots private question content for an immutable aired episode", () => {
+    const authored = question("frozen", 2, {
+      choices: ["Tiësto", "frozen B", "frozen C", "frozen D"],
+      pronunciation: { Tiësto: "tee-ES-toh" },
+    });
+    const plan = planDailyEpisode({ ...versions, questions: [authored] });
+    const frozen = plan.candidates[0].snapshot;
+
+    authored.prompt = "Edited after the episode aired.";
+    authored.choices[0] = "Edited choice";
+    authored.source.title = "Edited source";
+    authored.pronunciation!.Tiësto = "edited";
+
+    expect(frozen.prompt).toBe("Question frozen?");
+    expect(frozen.choices[0]).toBe("Tiësto");
+    expect(frozen.source.title).toBe("Official source for frozen");
+    expect(frozen.pronunciations).toEqual([
+      { written: "Tiësto", spoken: "tee-ES-toh" },
+    ]);
   });
 
   test("rejects candidates that cannot preserve the four-choice contract", () => {

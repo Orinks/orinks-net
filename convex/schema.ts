@@ -1,6 +1,73 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const triviaQuestionFormat = v.union(
+  v.literal("award-desk"),
+  v.literal("chart-wire"),
+  v.literal("world-signal"),
+  v.literal("instrument-detective"),
+  v.literal("studio-lab"),
+  v.literal("night-timeline"),
+  v.literal("archive-clue"),
+  v.literal("odd-one-out"),
+  v.literal("needle-drop"),
+  v.literal("sound-lab"),
+);
+
+const triviaClipAttribution = v.object({
+  creator: v.string(),
+  copyrightNotice: v.string(),
+  licenseTitle: v.string(),
+  licenseUrl: v.string(),
+  sourceTitle: v.string(),
+  sourceUrl: v.string(),
+});
+
+const triviaQuestionSnapshot = v.object({
+  id: v.string(),
+  category: v.string(),
+  difficulty: v.number(),
+  format: triviaQuestionFormat,
+  prompt: v.string(),
+  choices: v.array(v.string()),
+  answer: v.number(),
+  explanation: v.string(),
+  source: v.object({
+    publisher: v.string(),
+    title: v.string(),
+    url: v.string(),
+    accessedAt: v.string(),
+    evidenceSummary: v.string(),
+  }),
+  aliases: v.optional(v.array(v.string())),
+  // Convex object field names must be ASCII. Written pronunciation forms may
+  // contain accents, so persist them as entries instead of record keys.
+  pronunciations: v.optional(
+    v.array(
+      v.object({
+        written: v.string(),
+        spoken: v.string(),
+      }),
+    ),
+  ),
+  clip: v.optional(
+    v.object({
+      id: v.string(),
+      provider: v.union(
+        v.literal("audius"),
+        v.literal("feed-clips"),
+        v.literal("remote-open"),
+      ),
+      providerAssetId: v.string(),
+      startSeconds: v.number(),
+      durationSeconds: v.number(),
+      textClue: v.string(),
+      attribution: triviaClipAttribution,
+    }),
+  ),
+  voice: v.optional(v.union(v.string(), v.literal(false))),
+});
+
 export default defineSchema({
   buildNotificationSubscriptions: defineTable({
     endpoint: v.string(),
@@ -40,20 +107,11 @@ export default defineSchema({
     candidates: v.array(
       v.object({
         questionId: v.string(),
-        format: v.union(
-          v.literal("award-desk"),
-          v.literal("chart-wire"),
-          v.literal("world-signal"),
-          v.literal("instrument-detective"),
-          v.literal("studio-lab"),
-          v.literal("night-timeline"),
-          v.literal("archive-clue"),
-          v.literal("odd-one-out"),
-          v.literal("needle-drop"),
-          v.literal("sound-lab"),
-        ),
+        format: triviaQuestionFormat,
         clipId: v.optional(v.string()),
         choiceOrder: v.array(v.number()),
+        // Full private content makes an aired lineup immutable across deploys.
+        snapshot: v.optional(triviaQuestionSnapshot),
       }),
     ),
     createdAt: v.number(),

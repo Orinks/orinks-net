@@ -4,11 +4,16 @@ import { seededRandom } from "./triviaDeterminism";
 
 export type AuthoredChoiceOrder = [0, 1, 2, 3];
 
+export interface FrozenQuestionSnapshot extends Omit<BankQuestion, "pronunciation"> {
+  pronunciations?: Array<{ written: string; spoken: string }>;
+}
+
 export interface PlannedQuestionCandidate {
   questionId: string;
   format: QuestionFormat;
   clipId?: string;
   choiceOrder: AuthoredChoiceOrder;
+  snapshot: FrozenQuestionSnapshot;
 }
 
 export interface DailyEpisodePlan {
@@ -75,6 +80,38 @@ function orderedCandidates(questions: readonly BankQuestion[], seed: string): Ba
   return ordered;
 }
 
+function snapshotQuestion(question: BankQuestion): FrozenQuestionSnapshot {
+  return {
+    id: question.id,
+    category: question.category,
+    difficulty: question.difficulty,
+    format: question.format,
+    prompt: question.prompt,
+    choices: [...question.choices] as BankQuestion["choices"],
+    answer: question.answer,
+    explanation: question.explanation,
+    source: { ...question.source },
+    ...(question.aliases ? { aliases: [...question.aliases] } : {}),
+    ...(question.pronunciation
+      ? {
+          pronunciations: Object.entries(question.pronunciation).map(([written, spoken]) => ({
+            written,
+            spoken,
+          })),
+        }
+      : {}),
+    ...(question.clip
+      ? {
+          clip: {
+            ...question.clip,
+            attribution: { ...question.clip.attribution },
+          },
+        }
+      : {}),
+    ...(question.voice !== undefined ? { voice: question.voice } : {}),
+  };
+}
+
 export function planDailyEpisode(input: PlanDailyEpisodeInput): DailyEpisodePlan {
   if (input.questions.length === 0) throw new Error("Cannot plan a daily episode without questions.");
   if (input.mutatorKeys.length === 0) throw new Error("Cannot plan a daily episode without mutators.");
@@ -90,6 +127,7 @@ export function planDailyEpisode(input: PlanDailyEpisodeInput): DailyEpisodePlan
     // Authored order is an invariant. Balance comes from which question is
     // selected, never from shuffling answer text at serve time.
     choiceOrder: [0, 1, 2, 3] as AuthoredChoiceOrder,
+    snapshot: snapshotQuestion(question),
   }));
 
   return {
