@@ -7,6 +7,7 @@ import genreAwards from "../data/trivia/questions/official-genre-awards-1.json";
 import globalChartsAwards from "../data/trivia/questions/official-global-charts-awards.json";
 import institutionalMusic from "../data/trivia/questions/official-institutional-music.json";
 import modernAwards from "../data/trivia/questions/official-modern-awards.json";
+import rootsDanceGospel from "../data/trivia/questions/official-roots-dance-gospel.json";
 import {
   sanitizePrivateQuestion,
   validateQuestionCorpus,
@@ -25,12 +26,13 @@ const activeBanks: QuestionBankInput[] = [
   { file: "official-genre-awards-1.json", data: genreAwards },
   { file: "official-global-charts-awards.json", data: globalChartsAwards },
   { file: "official-institutional-music.json", data: institutionalMusic },
+  { file: "official-roots-dance-gospel.json", data: rootsDanceGospel },
 ];
 
 const validated = validateQuestionCorpus(
   activeBanks,
   officialSources as OfficialSourcePolicy,
-  { minimumQuestions: 380 },
+  { minimumQuestions: 455 },
 );
 
 if (validated.errors.length > 0) {
