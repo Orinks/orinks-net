@@ -11,15 +11,19 @@ export function buildQuestionNarration(question) {
 }
 
 function pronunciationEntries(pronunciation) {
-  if (pronunciation === undefined || pronunciation === null) return [];
-  if (typeof pronunciation !== "object" || Array.isArray(pronunciation)) {
+  if (pronunciation === undefined) return [];
+  if (
+    pronunciation === null ||
+    typeof pronunciation !== "object" ||
+    Array.isArray(pronunciation)
+  ) {
     throw new Error("Pronunciation guidance must be an object of literal text and aliases.");
   }
   const entries = Object.entries(pronunciation);
   for (const [visibleText, alias] of entries) {
     if (
       typeof visibleText !== "string" ||
-      visibleText.length === 0 ||
+      visibleText.trim().length === 0 ||
       typeof alias !== "string" ||
       alias.trim().length === 0
     ) {
@@ -73,12 +77,6 @@ export function audioHash(item, modelId) {
     JSON.stringify(item.voice.settings ?? {}),
     item.text,
   ];
-  const canonicalPronunciation = pronunciationEntries(item.pronunciation).toSorted(
-    ([left], [right]) => (left < right ? -1 : left > right ? 1 : 0),
-  );
-  if (canonicalPronunciation.length > 0) {
-    input.push(JSON.stringify(canonicalPronunciation));
-  }
   return createHash("sha256").update(input.join("|")).digest("hex").slice(0, 16);
 }
 

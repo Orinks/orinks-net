@@ -618,7 +618,12 @@ function validateAliases(value: unknown, path: string, errors: ValidationIssue[]
   });
 }
 
-function validatePronunciation(value: unknown, path: string, errors: ValidationIssue[]) {
+function validatePronunciation(
+  value: unknown,
+  path: string,
+  narrationText: string,
+  errors: ValidationIssue[],
+) {
   if (!isRecord(value)) {
     addIssue(
       errors,
@@ -633,6 +638,14 @@ function validatePronunciation(value: unknown, path: string, errors: ValidationI
       addIssue(errors, "question.pronunciation.term", path, "Pronunciation terms cannot be empty.");
     } else {
       validateNfc(term, path, errors);
+      if (!narrationText.includes(term)) {
+        addIssue(
+          errors,
+          "question.pronunciation.unused",
+          `${path}.${term}`,
+          "Pronunciation terms must appear in the narrated prompt or choices.",
+        );
+      }
     }
     if (
       nonEmptyString(
@@ -765,9 +778,15 @@ export function validateQuestion(
   }
   validateQuestionSource(value.source, policy, `${path}.source`, errors);
 
+  const visibleText = [
+    typeof value.prompt === "string" ? value.prompt : "",
+    ...(Array.isArray(value.choices)
+      ? value.choices.filter((choice): choice is string => typeof choice === "string")
+      : []),
+  ].join(" ");
   if (value.aliases !== undefined) validateAliases(value.aliases, `${path}.aliases`, errors);
   if (value.pronunciation !== undefined) {
-    validatePronunciation(value.pronunciation, `${path}.pronunciation`, errors);
+    validatePronunciation(value.pronunciation, `${path}.pronunciation`, visibleText, errors);
   }
   if (value.clip !== undefined) validateMysteryClip(value.clip, value.format, `${path}.clip`, errors);
   if (
@@ -783,12 +802,6 @@ export function validateQuestion(
     );
   }
 
-  const visibleText = [
-    typeof value.prompt === "string" ? value.prompt : "",
-    ...(Array.isArray(value.choices)
-      ? value.choices.filter((choice): choice is string => typeof choice === "string")
-      : []),
-  ].join(" ");
   if (/[^\x00-\x7F]/.test(visibleText) && value.pronunciation === undefined) {
     addIssue(
       warnings,

@@ -285,6 +285,25 @@ describe("canonical question validation", () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings.map((issue) => issue.code)).toContain("question.prompt.long");
   });
+
+  test("requires pronunciation terms to appear in the narrated prompt or choices", () => {
+    expect(
+      errorCodes(
+        validQuestion({
+          explanation: "The source credits Eladio Carrión.",
+          pronunciation: { "Eladio Carrión": "eh-LAH-dee-oh kah-ree-ON" },
+        }),
+      ),
+    ).toContain("question.pronunciation.unused");
+    expect(
+      errorCodes(
+        validQuestion({
+          choices: ["Kora", "Tiësto", "Bandoneon", "Shakuhachi"],
+          pronunciation: { Tiësto: "tee-ES-toh" },
+        }),
+      ),
+    ).not.toContain("question.pronunciation.unused");
+  });
 });
 
 describe("private-to-public projections", () => {

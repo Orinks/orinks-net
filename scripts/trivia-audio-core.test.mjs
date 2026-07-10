@@ -53,12 +53,26 @@ describe("trivia audio planning", () => {
     ).toBe("A Tribe Called Quest and tryb");
   });
 
+  test("treats regular-expression metacharacters as literal title text", () => {
+    expect(
+      applyPronunciationAliases("Was A+B (Live)? the title?", {
+        "A+B (Live)?": "A plus B live",
+      }),
+    ).toBe("Was A plus B live the title?");
+  });
+
   test("rejects invalid or stale pronunciation guidance", () => {
     expect(() => applyPronunciationAliases("Visible text", { Missing: "MIS-ing" })).toThrow(
       /does not appear in the narration/,
     );
     expect(() => applyPronunciationAliases("Visible text", { Visible: "" })).toThrow(
       /non-empty string aliases/,
+    );
+    expect(() => applyPronunciationAliases("Visible text", { "   ": "space" })).toThrow(
+      /non-empty string aliases/,
+    );
+    expect(() => applyPronunciationAliases("Visible text", null)).toThrow(
+      /must be an object/,
     );
   });
 
@@ -69,6 +83,7 @@ describe("trivia audio planning", () => {
       voice,
     };
     const hash = audioHash(base, "eleven_flash_v2_5");
+    expect(hash).toBe("c78a87a52ad9be8d");
     const variants = [
       [{ ...base, text: `${base.text} Changed.` }, "eleven_flash_v2_5"],
       [{ ...base, voice: { ...voice, voiceId: "voice-2" } }, "eleven_flash_v2_5"],
@@ -83,20 +98,30 @@ describe("trivia audio planning", () => {
     }
   });
 
-  test("changes the content hash when authored pronunciation guidance changes", () => {
-    const base = {
-      id: "question-1",
-      text: "Which artist? Your choices are... 1: tee-ES-toh. 2: B. 3: C. 4: D.",
-      pronunciation: { Tiësto: "tee-ES-toh" },
-      voice,
+  test("hashes audible synthesis text without duplicating identity aliases", () => {
+    const question = {
+      prompt: "Which artist features Tiësto?",
+      choices: ["First", "Second", "Third", "Fourth"],
     };
+    const firstPlan = buildQuestionAudioPlan({
+      ...question,
+      pronunciation: { Tiësto: "tee-ES-toh" },
+    });
+    const secondPlan = buildQuestionAudioPlan({
+      ...question,
+      pronunciation: { Tiësto: "tee-EHS-toh" },
+    });
+    expect(audioHash({ ...firstPlan, voice }, "eleven_flash_v2_5")).not.toBe(
+      audioHash({ ...secondPlan, voice }, "eleven_flash_v2_5"),
+    );
 
-    expect(
-      audioHash(
-        { ...base, pronunciation: { Tiësto: "tee-EHS-toh" } },
-        "eleven_flash_v2_5",
-      ),
-    ).not.toBe(audioHash(base, "eleven_flash_v2_5"));
+    const identityPlan = buildQuestionAudioPlan({
+      ...question,
+      pronunciation: { Tiësto: "Tiësto" },
+    });
+    expect(audioHash({ ...identityPlan, voice }, "eleven_flash_v2_5")).toBe(
+      audioHash({ text: identityPlan.text, voice }, "eleven_flash_v2_5"),
+    );
   });
 
   test("forbids an unlimited live run but permits a complete dry-run plan", () => {
