@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "trivia:validate": "node scripts/trivia/validate-question-bank.mjs",
     "tts": "node scripts/generate-tts.mjs"
   },
   "dependencies": {

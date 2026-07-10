@@ -44,6 +44,31 @@ MP3s, so players can never spend ElevenLabs credits.
   knows which audio exists; anything without audio yet falls back to
   on-screen text and Web Speech.
 
+## Validating official question files
+
+The strict authored-question contract and the exact official publisher/host
+policy live in `convex/questionTypes.ts` and `official-sources.json`. Run:
+
+```
+npm run trivia:validate
+```
+
+During the migration this audits strict files and reports the three existing
+legacy banks separately without loading them into the strict set. To exercise
+the release gate, including the 460-question and ten-format floors, run:
+
+```
+npm run trivia:validate -- --final-gate
+```
+
+The final gate intentionally fails until the officially sourced corpus is
+ready and the segment engine can preserve existing run IDs. A specific staged
+bank can be checked strictly by passing its path after the command.
+
+This validator requires Node.js 24. It directly imports the canonical
+TypeScript contract using Node 24's built-in type stripping so the CLI and the
+server-side model cannot drift into separate schemas.
+
 ## Importing questions from Open Trivia Database
 
 ```

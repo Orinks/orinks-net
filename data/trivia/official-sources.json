@@ -1,0 +1,79 @@
+{
+  "publishers": [
+    {
+      "publisher": "Library of Congress",
+      "hosts": ["loc.gov", "www.loc.gov"]
+    },
+    {
+      "publisher": "Smithsonian Institution",
+      "hosts": ["si.edu", "www.si.edu"]
+    },
+    {
+      "publisher": "Smithsonian Folkways Recordings",
+      "hosts": ["folkways.si.edu"]
+    },
+    {
+      "publisher": "The Metropolitan Museum of Art",
+      "hosts": ["metmuseum.org", "www.metmuseum.org"]
+    },
+    {
+      "publisher": "UNESCO Intangible Cultural Heritage",
+      "hosts": ["ich.unesco.org"]
+    },
+    {
+      "publisher": "UNESCO",
+      "hosts": ["unesco.org", "www.unesco.org"]
+    },
+    {
+      "publisher": "Recording Academy",
+      "hosts": ["grammy.com", "www.grammy.com"]
+    },
+    {
+      "publisher": "Latin Recording Academy",
+      "hosts": ["latingrammy.com", "www.latingrammy.com"]
+    },
+    {
+      "publisher": "European Broadcasting Union",
+      "hosts": ["ebu.ch", "www.ebu.ch"]
+    },
+    {
+      "publisher": "Eurovision Song Contest",
+      "hosts": [
+        "eurovision.com",
+        "www.eurovision.com",
+        "eurovision.tv",
+        "www.eurovision.tv"
+      ]
+    },
+    {
+      "publisher": "IFPI",
+      "hosts": ["ifpi.org", "www.ifpi.org"]
+    },
+    {
+      "publisher": "Rock & Roll Hall of Fame",
+      "hosts": ["rockhall.com", "www.rockhall.com"]
+    },
+    {
+      "publisher": "Recording Industry Association of Japan",
+      "hosts": ["riaj.or.jp", "www.riaj.or.jp", "adm.riaj.or.jp"]
+    },
+    {
+      "publisher": "Japan Gold Disc Award",
+      "hosts": ["golddisc.jp", "www.golddisc.jp"]
+    },
+    {
+      "publisher": "Philharmonia Orchestra",
+      "hosts": ["philharmonia.co.uk", "www.philharmonia.co.uk"]
+    },
+    {
+      "publisher": "Audius",
+      "hosts": [
+        "audius.co",
+        "www.audius.co",
+        "audius.org",
+        "www.audius.org",
+        "api.audius.co"
+      ]
+    }
+  ]
+}
