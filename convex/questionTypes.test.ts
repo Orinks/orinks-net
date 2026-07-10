@@ -157,6 +157,32 @@ describe("canonical question validation", () => {
     ).toContain("question.source.publisher");
   });
 
+  test("accepts canonical Met numeric item routes without allowing search-result bypasses", () => {
+    const metQuestion = validQuestion({
+      source: {
+        ...validQuestion().source,
+        publisher: "The Metropolitan Museum of Art",
+        title: "Piano",
+        url: "https://www.metmuseum.org/art/collection/search/503325",
+      },
+    });
+
+    expect(
+      validateQuestion(metQuestion, officialSources as OfficialSourcePolicy).errors,
+    ).toEqual([]);
+    for (const url of [
+      "https://www.metmuseum.org/art/collection/search/?q=piano",
+      "https://www.metmuseum.org/art/collection/%73earch/503325",
+    ]) {
+      expect(
+        validateQuestion(
+          { ...metQuestion, source: { ...metQuestion.source, url } },
+          officialSources as OfficialSourcePolicy,
+        ).errors.map((issue) => issue.code),
+      ).toContain("question.source.url.search");
+    }
+  });
+
   test("rejects non-NFC visible text", () => {
     expect(errorCodes({ ...validQuestion(), prompt: "Cafe\u0301 music question?" })).toContain(
       "question.text.nfc",

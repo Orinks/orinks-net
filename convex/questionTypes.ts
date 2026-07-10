@@ -457,9 +457,19 @@ function validateQuestionSource(
         "Source URL must point beyond a generic homepage.",
       );
     }
-    const isSearchPath = /\/(?:search|find)(?:\/|$)/i.test(url.pathname);
+    let decodedPath = url.pathname;
+    try {
+      decodedPath = decodeURIComponent(url.pathname);
+    } catch {
+      // Leave malformed escapes to URL and host validation; they cannot match
+      // the one exact item-route exception below.
+    }
+    const isMetNumericItem =
+      publisherPolicy?.publisher === "The Metropolitan Museum of Art" &&
+      /^\/art\/collection\/search\/\d+\/?$/.test(url.pathname);
+    const isSearchPath = /\/(?:search|find)(?:\/|$)/i.test(decodedPath);
     const isSearchQuery = ["q", "query", "search"].some((key) => url.searchParams.has(key));
-    if (isSearchPath || isSearchQuery) {
+    if ((isSearchPath && !isMetNumericItem) || isSearchQuery) {
       addIssue(
         errors,
         "question.source.url.search",
