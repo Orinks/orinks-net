@@ -2,6 +2,7 @@
 // runtime. Answers, provenance, pronunciation guidance, and clip rights stay
 // server-side; the browser receives the exact safe projection below.
 import officialSources from "../data/trivia/official-sources.json";
+import classicalSoundtrack from "../data/trivia/questions/official-classical-soundtrack.json";
 import genreAwards from "../data/trivia/questions/official-genre-awards-1.json";
 import globalChartsAwards from "../data/trivia/questions/official-global-charts-awards.json";
 import institutionalMusic from "../data/trivia/questions/official-institutional-music.json";
@@ -19,6 +20,7 @@ export type BankQuestion = PrivateQuestion;
 export type { PublicQuestion };
 
 const activeBanks: QuestionBankInput[] = [
+  { file: "official-classical-soundtrack.json", data: classicalSoundtrack },
   { file: "official-modern-awards.json", data: modernAwards },
   { file: "official-genre-awards-1.json", data: genreAwards },
   { file: "official-global-charts-awards.json", data: globalChartsAwards },
@@ -28,7 +30,7 @@ const activeBanks: QuestionBankInput[] = [
 const validated = validateQuestionCorpus(
   activeBanks,
   officialSources as OfficialSourcePolicy,
-  { minimumQuestions: 300 },
+  { minimumQuestions: 380 },
 );
 
 if (validated.errors.length > 0) {
