@@ -65,6 +65,22 @@ The final gate intentionally fails until the officially sourced corpus is
 ready and the segment engine can preserve existing run IDs. A specific staged
 bank can be checked strictly by passing its path after the command.
 
+## Daily episode freezing during the corpus migration
+
+The first daily start for a UTC date writes one immutable `dailyEpisodes` row.
+It records the content/rules versions, seeded candidate order, question IDs,
+format, opaque clip ID when present, and authored choice order `[0, 1, 2, 3]`.
+Later starts reuse that row, so adding or reordering candidates during the day
+cannot reroll the broadcast. Answer positions are balanced by choosing a
+different question; choice text is never shuffled at runtime.
+
+The three current legacy banks do not have strict `format` metadata. Until the
+official corpus cutover, persisted plans label those questions `archive-clue`.
+This is planning metadata only and does not change their existing prompts,
+choices, scoring, or resume behavior. The stable version constants live in
+`convex/triviaVersions.ts` and must be advanced deliberately when corpus or
+planning rules change.
+
 This validator requires Node.js 24. It directly imports the canonical
 TypeScript contract using Node 24's built-in type stripping so the CLI and the
 server-side model cannot drift into separate schemas.

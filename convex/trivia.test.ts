@@ -3,7 +3,11 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
-import { questionByKey } from "./questionBank";
+import { questionBank, questionByKey, type BankQuestion } from "./questionBank";
+import {
+  DAILY_EPISODE_CONTENT_VERSION,
+  DAILY_EPISODE_RULES_VERSION,
+} from "./triviaVersions";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -226,6 +230,105 @@ describe("run lifecycle", () => {
 });
 
 describe("daily runs", () => {
+  test("atomically reuses one versioned frozen episode and links every new run", async () => {
+    const t = setup();
+    await newPlayer(t, "daily-plan-00001", "First");
+    await newPlayer(t, "daily-plan-00002", "Second");
+
+    const [first, second] = await Promise.all([
+      t.mutation(api.trivia.startRun, { playerKey: "daily-plan-00001", daily: true }),
+      t.mutation(api.trivia.startRun, { playerKey: "daily-plan-00002", daily: true }),
+    ]);
+    const stored = await t.run(async (ctx) => ({
+      episodes: await ctx.db.query("dailyEpisodes").collect(),
+      runs: await ctx.db.query("triviaRuns").collect(),
+    }));
+
+    expect(stored.episodes).toHaveLength(1);
+    const episode = stored.episodes[0];
+    expect(episode.dateKey).toBe("2023-11-14");
+    expect(episode.contentVersion).toBe(DAILY_EPISODE_CONTENT_VERSION);
+    expect(episode.rulesVersion).toBe(DAILY_EPISODE_RULES_VERSION);
+    expect(episode.candidates).toHaveLength(questionBank.length);
+    expect(episode.candidates.every((candidate) =>
+      candidate.choiceOrder.join(",") === "0,1,2,3",
+    )).toBe(true);
+
+    const dailyRuns = stored.runs.filter((run) => run.isDaily);
+    expect(dailyRuns).toHaveLength(2);
+    for (const run of dailyRuns) {
+      expect(run.dailyEpisodeId).toBe(episode._id);
+      expect(run.contentVersion).toBe(episode.contentVersion);
+      expect(run.rulesVersion).toBe(episode.rulesVersion);
+      expect(run.seed).toBe(episode.seed);
+      expect(run.mutatorKey).toBe(episode.mutatorKey);
+    }
+    expect(first.question!.key).toBe(second.question!.key);
+    expect(first.question!.choices).toEqual(questionByKey.get(first.question!.key)!.choices);
+  });
+
+  test("reuses the persisted candidate order after candidates are added or reordered", async () => {
+    const t = setup();
+    await newPlayer(t, "daily-freeze-0001", "Before");
+    await newPlayer(t, "daily-freeze-0002", "After");
+    const first = await t.mutation(api.trivia.startRun, {
+      playerKey: "daily-freeze-0001",
+      daily: true,
+    });
+    const before = await t.run(async (ctx) => ctx.db.query("dailyEpisodes").first());
+    const originalOrder = [...questionBank];
+    const lateCandidate: BankQuestion = {
+      id: "late-daily-candidate",
+      category: "Music",
+      difficulty: 1,
+      prompt: "This candidate arrived after the episode froze.",
+      choices: ["A", "B", "C", "D"],
+      answer: 0,
+    };
+
+    try {
+      questionBank.reverse();
+      questionBank.unshift(lateCandidate);
+      questionByKey.set(lateCandidate.id, lateCandidate);
+      const second = await t.mutation(api.trivia.startRun, {
+        playerKey: "daily-freeze-0002",
+        daily: true,
+      });
+      const after = await t.run(async (ctx) => ctx.db.query("dailyEpisodes").collect());
+
+      expect(after).toHaveLength(1);
+      expect(after[0]._id).toBe(before!._id);
+      expect(after[0].candidates).toEqual(before!.candidates);
+      expect(after[0].candidates.some((candidate) => candidate.questionId === lateCandidate.id)).toBe(
+        false,
+      );
+      expect(second.question!.key).toBe(first.question!.key);
+    } finally {
+      questionBank.splice(0, questionBank.length, ...originalOrder);
+      questionByKey.delete(lateCandidate.id);
+    }
+  });
+
+  test("resumes a legacy daily run that has no episode or version fields", async () => {
+    const t = setup();
+    await newPlayer(t);
+    const first = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    await answer(t, PLAYER, first.run.runId, first.question!.key, true);
+    await t.run(async (ctx) => {
+      await ctx.db.patch(first.run.runId, {
+        dailyEpisodeId: undefined,
+        contentVersion: undefined,
+        rulesVersion: undefined,
+        seed: "daily-2023-11-14",
+      });
+    });
+
+    const resumed = await t.mutation(api.trivia.startRun, { playerKey: PLAYER, daily: true });
+    expect(resumed.resumed).toBe(true);
+    expect(resumed.run.runId).toBe(first.run.runId);
+    expect(resumed.run.questionNumber).toBe(2);
+  });
+
   test("daily runs serve identical question sequences to different players", async () => {
     const t = setup();
     await newPlayer(t, "daily-player-0001", "Early Bird");

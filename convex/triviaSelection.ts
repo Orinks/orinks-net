@@ -12,11 +12,23 @@ export interface QuestionSelectionRun extends SeededRun {
 function chooseCandidate(
   run: QuestionSelectionRun,
   candidates: readonly BankQuestion[],
+  allQuestions: readonly BankQuestion[],
   salt: string,
   usePlannedOrder: boolean,
 ): BankQuestion | null {
   if (candidates.length === 0) return null;
-  if (usePlannedOrder) return candidates[0];
+  if (usePlannedOrder) {
+    const byId = new Map(allQuestions.map((question) => [question.id, question]));
+    const answerCounts = [0, 0, 0, 0];
+    for (const questionId of run.askedQuestionKeys) {
+      const answer = byId.get(questionId)?.answer;
+      if (answer !== undefined && answer >= 0 && answer <= 3) answerCounts[answer] += 1;
+    }
+    const availableAnswers = [...new Set(candidates.map((question) => question.answer))];
+    const leastUsed = Math.min(...availableAnswers.map((answer) => answerCounts[answer]));
+    // Candidate order breaks ties. Choice text always stays in authored order.
+    return candidates.find((question) => answerCounts[question.answer] === leastUsed) ?? candidates[0];
+  }
   return candidates[Math.floor(runRoll(run, salt) * candidates.length)];
 }
 
@@ -77,7 +89,13 @@ export function pickQuestion(
     );
   }
   if (candidates.length === 0) candidates = unasked;
-  return chooseCandidate(run, candidates, String(run.askedQuestionKeys.length), usePlannedOrder);
+  return chooseCandidate(
+    run,
+    candidates,
+    questions,
+    String(run.askedQuestionKeys.length),
+    usePlannedOrder,
+  );
 }
 
 function pickHardQuestion(
@@ -92,7 +110,7 @@ function pickHardQuestion(
       (question) => !asked.has(question.id) && question.difficulty >= minimum,
     );
     if (candidates.length > 0) {
-      return chooseCandidate(run, candidates, salt, usePlannedOrder);
+      return chooseCandidate(run, candidates, questions, salt, usePlannedOrder);
     }
   }
   return null;

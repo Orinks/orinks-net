@@ -36,6 +36,22 @@ describe("question selection", () => {
     );
   });
 
+  test("balances planned answer positions by selecting a different question, not reordering choices", () => {
+    const questions = [
+      candidate("already-asked", 2, 0),
+      candidate("earlier-in-plan", 2, 0),
+      candidate("balanced-pick", 2, 1),
+    ];
+    const selected = pickQuestion(
+      run({ askedQuestionKeys: ["already-asked"] }),
+      questions,
+      true,
+    );
+
+    expect(selected?.id).toBe("balanced-pick");
+    expect(selected?.choices).toEqual(["A", "B", "C", "D"]);
+  });
+
   test("keeps seeded legacy selection behavior when no plan is linked", () => {
     const questions = [candidate("first", 2, 0), candidate("second", 2, 1)];
     const legacyRun = run();

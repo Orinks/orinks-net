@@ -28,6 +28,37 @@ export default defineSchema({
   // from data/trivia/questions/ directly into the server bundle, so answers
   // never leave the server and question edits ship with a normal deploy.
 
+  // One immutable lineup per UTC date. The first daily start creates it in the
+  // same transaction as the run; later starts reuse the indexed row, so a
+  // deploy that adds or reorders candidates cannot change an aired episode.
+  dailyEpisodes: defineTable({
+    dateKey: v.string(),
+    contentVersion: v.string(),
+    rulesVersion: v.string(),
+    seed: v.string(),
+    mutatorKey: v.string(),
+    candidates: v.array(
+      v.object({
+        questionId: v.string(),
+        format: v.union(
+          v.literal("award-desk"),
+          v.literal("chart-wire"),
+          v.literal("world-signal"),
+          v.literal("instrument-detective"),
+          v.literal("studio-lab"),
+          v.literal("night-timeline"),
+          v.literal("archive-clue"),
+          v.literal("odd-one-out"),
+          v.literal("needle-drop"),
+          v.literal("sound-lab"),
+        ),
+        clipId: v.optional(v.string()),
+        choiceOrder: v.array(v.number()),
+      }),
+    ),
+    createdAt: v.number(),
+  }).index("by_date", ["dateKey"]),
+
   // playerKey is the anonymous client-generated key (guest play). When a player
   // signs in with Clerk, their Clerk subject is stored in authSubject on the
   // same row (claiming the guest's progress), and displayName is seeded from
@@ -63,6 +94,10 @@ export default defineSchema({
   triviaRuns: defineTable({
     playerId: v.id("triviaPlayers"),
     seed: v.string(),
+    // Optional for rows created before persisted daily episodes shipped.
+    dailyEpisodeId: v.optional(v.id("dailyEpisodes")),
+    contentVersion: v.optional(v.string()),
+    rulesVersion: v.optional(v.string()),
     status: v.union(v.literal("active"), v.literal("dead"), v.literal("abandoned")),
     isDaily: v.boolean(),
     // Daily broadcast condition (mutator), seeded from the date — identical

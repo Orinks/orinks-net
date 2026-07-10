@@ -1,17 +1,18 @@
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import { questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
 import { boostByKey, rollBoostOffer } from "./boosts";
-import { mutatorByKey, mutatorCatalog, type MutatorDef } from "./mutators";
+import { mutatorByKey, type MutatorDef } from "./mutators";
 import { maskDisplayName } from "./moderation";
-import { dateKeyOf, runRoll, seededRandom, weekKeyOf } from "./triviaDeterminism";
+import { dateKeyOf, runRoll, weekKeyOf } from "./triviaDeterminism";
 import {
   pickBossQuestion,
   pickDeadAirQuestion,
   pickQuestion,
   pickRoundCategory,
 } from "./triviaSelection";
+import { getOrCreateDailyEpisode, selectionPoolForRun } from "./triviaDailyEpisodes";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 
@@ -369,14 +370,21 @@ export const startRun = mutation({
       throw new Error("You're starting broadcasts very fast. Take a short break and try again.");
     }
 
-    // Tonight's broadcast condition: seeded from the date, same for everyone.
-    const mutatorKey = isDaily
-      ? mutatorCatalog[Math.floor(seededRandom(`mutator:${dateKey}`)() * mutatorCatalog.length)].key
-      : undefined;
+    // The first player freezes tonight's versioned plan; every later player
+    // reuses that same row and candidate order, even across a mid-day deploy.
+    const dailyEpisode = isDaily ? await getOrCreateDailyEpisode(ctx, dateKey, now) : null;
+    const mutatorKey = dailyEpisode?.mutatorKey;
 
     const runId = await ctx.db.insert("triviaRuns", {
       playerId: player._id,
-      seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
+      seed: dailyEpisode?.seed ?? `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
+      ...(dailyEpisode
+        ? {
+            dailyEpisodeId: dailyEpisode._id,
+            contentVersion: dailyEpisode.contentVersion,
+            rulesVersion: dailyEpisode.rulesVersion,
+          }
+        : {}),
       status: "active",
       isDaily,
       mutatorKey,
@@ -398,8 +406,18 @@ export const startRun = mutation({
     });
 
     const run = (await ctx.db.get(runId))!;
-    const roundCategory = pickRoundCategory(run, questionBank, 1, questionsPerRoundOf(run));
-    const question = pickQuestion({ ...run, roundCategory }, questionBank);
+    const selection = await selectionPoolForRun(ctx, run);
+    const roundCategory = pickRoundCategory(
+      run,
+      selection.questions,
+      1,
+      questionsPerRoundOf(run),
+    );
+    const question = pickQuestion(
+      { ...run, roundCategory },
+      selection.questions,
+      selection.usePlannedOrder,
+    );
     if (!question) throw new Error("The question bank is empty.");
     await ctx.db.patch(runId, {
       roundCategory,
@@ -439,6 +457,7 @@ export const submitAnswer = mutation({
     if (run.eliminatedChoices?.includes(args.choiceIndex)) {
       throw new Error("That choice was eliminated");
     }
+    const selection = await selectionPoolForRun(ctx, run);
 
     // Anti-cheat: think time measured from the server's serve timestamp (the
     // client can't fake it). Superhuman-fast answers accumulate; enough of them
@@ -549,7 +568,9 @@ export const submitAnswer = mutation({
     // Dead Air entry: the last life just went and the chance is unspent —
     // one seeded, hardest-available question decides whether the run ends.
     const deadAirQuestion =
-      dead && !(run.deadAirUsed ?? false) ? pickDeadAirQuestion(run, questionBank) : null;
+      dead && !(run.deadAirUsed ?? false)
+        ? pickDeadAirQuestion(run, selection.questions, selection.usePlannedOrder)
+        : null;
 
     if (dead && deadAirQuestion) {
       events.push({ type: "deadAir" });
@@ -680,7 +701,12 @@ export const submitAnswer = mutation({
         const completedRoundNumber = round - 1;
         const bossQuestion =
           completedRoundNumber % BOSS_CALL_EVERY_ROUNDS === 0
-            ? pickBossQuestion(run, questionBank, completedRoundNumber)
+            ? pickBossQuestion(
+                run,
+                selection.questions,
+                completedRoundNumber,
+                selection.usePlannedOrder,
+              )
             : null;
         if (bossQuestion) {
           // Every 3rd round: a caller rings the show with one bonus question
@@ -707,7 +733,11 @@ export const submitAnswer = mutation({
           await ctx.db.patch(args.runId, { ...betweenRounds, pendingBoostOffer: offer });
         }
       } else {
-        nextQuestion = pickQuestion({ ...run, round, roundCategory }, questionBank);
+        nextQuestion = pickQuestion(
+          { ...run, round, roundCategory },
+          selection.questions,
+          selection.usePlannedOrder,
+        );
         if (!nextQuestion) {
           // Ran the entire bank dry — end the run as a victory lap.
           events.push({ type: "bankExhausted" });
@@ -787,6 +817,7 @@ export const chooseBoost = mutation({
     if (!def) throw new Error("Unknown boost");
     const now = Date.now();
     const events: GameEvent[] = [];
+    const selection = await selectionPoolForRun(ctx, run);
 
     let lives = run.lives;
     let score = run.score;
@@ -827,11 +858,15 @@ export const chooseBoost = mutation({
     const draftedRun = { ...run, ...patch } as Doc<"triviaRuns">;
     const roundCategory = pickRoundCategory(
       draftedRun,
-      questionBank,
+      selection.questions,
       run.round,
       questionsPerRoundOf(draftedRun),
     );
-    const question = pickQuestion({ ...draftedRun, roundCategory }, questionBank);
+    const question = pickQuestion(
+      { ...draftedRun, roundCategory },
+      selection.questions,
+      selection.usePlannedOrder,
+    );
     if (!question) {
       // Bank ran dry during the draft — victory lap, same as submitAnswer.
       const flagged = run.flagged ?? false;
