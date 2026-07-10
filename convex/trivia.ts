@@ -5,6 +5,13 @@ import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from
 import { boostByKey, rollBoostOffer } from "./boosts";
 import { mutatorByKey, mutatorCatalog, type MutatorDef } from "./mutators";
 import { maskDisplayName } from "./moderation";
+import { dateKeyOf, runRoll, seededRandom, weekKeyOf } from "./triviaDeterminism";
+import {
+  pickBossQuestion,
+  pickDeadAirQuestion,
+  pickQuestion,
+  pickRoundCategory,
+} from "./triviaSelection";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 
@@ -60,139 +67,6 @@ const MAX_RUNS_PER_HOUR = 40; // per-player rate limit on starting runs
 
 const TAPES = [...story.tapes].sort((a, b) => a.order - b.order);
 const FINALE_UNLOCK = story.finale.unlock;
-
-// --- Helpers ---
-
-function dateKeyOf(now: number) {
-  return new Date(now).toISOString().slice(0, 10);
-}
-
-/** ISO 8601 week, e.g. "2026-W27". Weeks start Monday. */
-function weekKeyOf(now: number) {
-  const date = new Date(now);
-  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const dayNumber = (target.getUTCDay() + 6) % 7; // Monday = 0
-  target.setUTCDate(target.getUTCDate() - dayNumber + 3); // nearest Thursday decides the week's year
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
-  const firstDayNumber = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNumber + 3);
-  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
-  return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-}
-
-/** Deterministic PRNG so daily runs serve every player the same questions. */
-function seededRandom(seedText: string) {
-  let h = 2166136261;
-  for (let i = 0; i < seedText.length; i++) {
-    h ^= seedText.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  let state = h >>> 0;
-  return () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function difficultyRange(round: number): [number, number] {
-  if (round <= 2) return [1, 2];
-  if (round <= 4) return [1, 3];
-  if (round <= 7) return [2, 4];
-  return [3, 5];
-}
-
-function runRoll(run: Doc<"triviaRuns">, salt: string): number {
-  // Dailies must be deterministic so every player gets the same episode.
-  return run.isDaily ? seededRandom(`${run.seed}:${salt}`)() : Math.random();
-}
-
-/**
- * Picks a theme for a round: a category with enough unasked questions to
- * carry the whole round. Returns undefined when the bank is too depleted to
- * theme (the round falls back to a mixed grab bag).
- */
-function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | undefined {
-  const asked = new Set(run.askedQuestionKeys);
-  const counts = new Map<string, number>();
-  for (const q of questionBank) {
-    if (!asked.has(q.id)) counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
-  }
-  const perRound = questionsPerRoundOf(run);
-  // Single Signal night: the whole broadcast rides one seeded theme for as
-  // long as it has enough unasked questions to carry a round.
-  if (run.mutatorKey === "single-signal") {
-    const all = [...new Set(questionBank.map((q) => q.category))].sort();
-    const theme = all[Math.floor(seededRandom(`${run.seed}:single-signal`)() * all.length)];
-    if ((counts.get(theme) ?? 0) >= perRound) return theme;
-  }
-  const viable = [...counts.entries()]
-    .filter(([category, count]) => count >= perRound && category !== run.roundCategory)
-    .map(([category]) => category)
-    .sort(); // stable order so daily seeding is deterministic
-  if (viable.length === 0) return undefined;
-  const roll = runRoll(run, `category:${forRound}`);
-  return viable[Math.floor(roll * viable.length)];
-}
-
-function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  let [min, max] = difficultyRange(run.round);
-  // Deep Cuts: this round draws from one difficulty tier higher.
-  if (run.activeRoundBoost?.key === "deep-cuts" && run.activeRoundBoost.round === run.round) {
-    min = Math.min(min + 1, 5);
-    max = Math.min(max + 1, 5);
-  }
-  // Heavy Rotation night: everything is one tier harder (stacks with Deep Cuts).
-  if (run.mutatorKey === "heavy-rotation") {
-    min = Math.min(min + 1, 5);
-    max = Math.min(max + 1, 5);
-  }
-  const unasked = questionBank.filter((q) => !asked.has(q.id));
-  // Prefer: on-theme + in difficulty range → on-theme any difficulty →
-  // in-range any theme → anything left.
-  let candidates = unasked.filter(
-    (q) => q.category === run.roundCategory && q.difficulty >= min && q.difficulty <= max,
-  );
-  if (candidates.length === 0 && run.roundCategory) {
-    candidates = unasked.filter((q) => q.category === run.roundCategory);
-  }
-  if (candidates.length === 0) {
-    candidates = unasked.filter((q) => q.difficulty >= min && q.difficulty <= max);
-  }
-  if (candidates.length === 0) candidates = unasked;
-  if (candidates.length === 0) return null;
-  const roll = runRoll(run, String(run.askedQuestionKeys.length));
-  return candidates[Math.floor(roll * candidates.length)];
-}
-
-/** Dead Air redemption: the hardest unasked question available, seeded. */
-function pickDeadAirQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  for (const minDifficulty of [5, 4, 1]) {
-    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
-    if (candidates.length > 0) {
-      const roll = runRoll(run, `dead-air:${run.askedQuestionKeys.length}`);
-      return candidates[Math.floor(roll * candidates.length)];
-    }
-  }
-  return null;
-}
-
-/** Boss Call question: the hardest unasked question available, seeded. */
-function pickBossQuestion(run: Doc<"triviaRuns">, forRound: number): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  for (const minDifficulty of [5, 4, 1]) {
-    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
-    if (candidates.length > 0) {
-      const roll = runRoll(run, `boss-question:${forRound}`);
-      return candidates[Math.floor(roll * candidates.length)];
-    }
-  }
-  return null;
-}
 
 /** Client-safe boss call state (the question only while it's answerable). */
 function bossPublicState(run: Doc<"triviaRuns">) {
@@ -524,8 +398,8 @@ export const startRun = mutation({
     });
 
     const run = (await ctx.db.get(runId))!;
-    const roundCategory = pickRoundCategory(run, 1);
-    const question = pickQuestion({ ...run, roundCategory });
+    const roundCategory = pickRoundCategory(run, questionBank, 1, questionsPerRoundOf(run));
+    const question = pickQuestion({ ...run, roundCategory }, questionBank);
     if (!question) throw new Error("The question bank is empty.");
     await ctx.db.patch(runId, {
       roundCategory,
@@ -674,7 +548,8 @@ export const submitAnswer = mutation({
     const dead = lives <= 0;
     // Dead Air entry: the last life just went and the chance is unspent —
     // one seeded, hardest-available question decides whether the run ends.
-    const deadAirQuestion = dead && !(run.deadAirUsed ?? false) ? pickDeadAirQuestion(run) : null;
+    const deadAirQuestion =
+      dead && !(run.deadAirUsed ?? false) ? pickDeadAirQuestion(run, questionBank) : null;
 
     if (dead && deadAirQuestion) {
       events.push({ type: "deadAir" });
@@ -805,7 +680,7 @@ export const submitAnswer = mutation({
         const completedRoundNumber = round - 1;
         const bossQuestion =
           completedRoundNumber % BOSS_CALL_EVERY_ROUNDS === 0
-            ? pickBossQuestion(run, completedRoundNumber)
+            ? pickBossQuestion(run, questionBank, completedRoundNumber)
             : null;
         if (bossQuestion) {
           // Every 3rd round: a caller rings the show with one bonus question
@@ -832,7 +707,7 @@ export const submitAnswer = mutation({
           await ctx.db.patch(args.runId, { ...betweenRounds, pendingBoostOffer: offer });
         }
       } else {
-        nextQuestion = pickQuestion({ ...run, round, roundCategory });
+        nextQuestion = pickQuestion({ ...run, round, roundCategory }, questionBank);
         if (!nextQuestion) {
           // Ran the entire bank dry — end the run as a victory lap.
           events.push({ type: "bankExhausted" });
@@ -950,8 +825,13 @@ export const chooseBoost = mutation({
     // Open the round: pick the theme and serve the first question. The
     // anti-cheat clock starts here, so draft time never counts as think time.
     const draftedRun = { ...run, ...patch } as Doc<"triviaRuns">;
-    const roundCategory = pickRoundCategory(draftedRun, run.round);
-    const question = pickQuestion({ ...draftedRun, roundCategory });
+    const roundCategory = pickRoundCategory(
+      draftedRun,
+      questionBank,
+      run.round,
+      questionsPerRoundOf(draftedRun),
+    );
+    const question = pickQuestion({ ...draftedRun, roundCategory }, questionBank);
     if (!question) {
       // Bank ran dry during the draft — victory lap, same as submitAnswer.
       const flagged = run.flagged ?? false;

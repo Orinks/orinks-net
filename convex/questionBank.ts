@@ -5,6 +5,7 @@
 import generalTrivia from "../data/trivia/questions/general-trivia.json";
 import musicbrainzGenerated from "../data/trivia/questions/musicbrainz-generated.json";
 import opentdbMusic from "../data/trivia/questions/opentdb-music.json";
+import type { QuestionFormat } from "./questionTypes";
 
 export interface BankQuestion {
   id: string;
@@ -14,6 +15,10 @@ export interface BankQuestion {
   choices: string[];
   answer: number;
   explanation?: string;
+  // Legacy banks do not carry the strict contract fields yet. The segment
+  // planner supplies a documented format fallback until the corpus cutover.
+  format?: QuestionFormat;
+  clip?: { id: string };
 }
 
 export interface PublicQuestion {
