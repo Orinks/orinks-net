@@ -1,0 +1,149 @@
+{
+  "clips": [
+    {
+      "id": "ms-clip-7f3a91c2",
+      "provider": "audius",
+      "providerAssetId": "X6zzGva",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Jazcardan's verified July 2026 deep-house release on Audius.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Jazcardan",
+        "uploaderVerified": true,
+        "title": "Jazcardan - Funky Road",
+        "permalink": "https://audius.co/Jazcardan/jazcardan-funky-road",
+        "genre": "Deep House",
+        "releasedAt": "2026-07-03T21:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Jazcardan",
+        "copyrightNotice": "Copyright © 2026 Jazcardan.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Jazcardan - Funky Road",
+        "sourceUrl": "https://audius.co/Jazcardan/jazcardan-funky-road"
+      }
+    },
+    {
+      "id": "ms-clip-b4e82d16",
+      "provider": "audius",
+      "providerAssetId": "zK7XlRp",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Fattybass's verified June 2026 tech-house release on Audius.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Fattybass",
+        "uploaderVerified": true,
+        "title": "Fattybass - Flow Natural",
+        "permalink": "https://audius.co/fattybass/fattybass-flow-natural",
+        "genre": "Tech House",
+        "releasedAt": "2026-06-16T05:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Fattybass",
+        "copyrightNotice": "Copyright © 2026 Fattybass.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Fattybass - Flow Natural",
+        "sourceUrl": "https://audius.co/fattybass/fattybass-flow-natural"
+      }
+    },
+    {
+      "id": "ms-clip-29c7fd40",
+      "provider": "audius",
+      "providerAssetId": "zyy3mQZ",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "DISKADE's verified June 2026 dubstep release on Audius.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "DISKADE",
+        "uploaderVerified": true,
+        "title": "Woah",
+        "permalink": "https://audius.co/diskadebass/woah",
+        "genre": "Dubstep",
+        "releasedAt": "2026-06-26T23:37:24.26571Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "DISKADE",
+        "copyrightNotice": "Copyright © 2026 DISKADE.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Woah",
+        "sourceUrl": "https://audius.co/diskadebass/woah"
+      }
+    },
+    {
+      "id": "ms-clip-e163ab75",
+      "provider": "audius",
+      "providerAssetId": "7G9NN5y",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "NEWER's verified June 2026 electronic release on Audius.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "NEWER",
+        "uploaderVerified": true,
+        "title": "NEWER - IDGAF",
+        "permalink": "https://audius.co/newerall/newer-idgaf",
+        "genre": "Electronic",
+        "releasedAt": "2026-06-11T20:47:10.607618Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "NEWER",
+        "copyrightNotice": "Copyright © 2026 NEWER.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "NEWER - IDGAF",
+        "sourceUrl": "https://audius.co/newerall/newer-idgaf"
+      }
+    },
+    {
+      "id": "ms-clip-5d90c4fe",
+      "provider": "audius",
+      "providerAssetId": "rKB7Y7Z",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Mizter Bonezz's verified June 2026 Latin release on Audius.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Mizter Bonezz",
+        "uploaderVerified": true,
+        "title": "Los De La Maña",
+        "permalink": "https://audius.co/mizterbonezzmusic/los-de-la-maña",
+        "genre": "Latin",
+        "releasedAt": "2026-06-20T04:31:44.744051Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Mizter Bonezz",
+        "copyrightNotice": "Copyright © 2026 Mizter Bonezz.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Los De La Maña",
+        "sourceUrl": "https://audius.co/mizterbonezzmusic/los-de-la-maña"
+      }
+    }
+  ]
+}
