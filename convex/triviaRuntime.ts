@@ -5,7 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { boostByKey } from "./boosts";
 import { maskDisplayName } from "./moderation";
 import { mutatorByKey, type MutatorDef } from "./mutators";
-import { questionByKey, sanitizeQuestion } from "./questionBank";
+import { questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
 
 export const START_LIVES = 3;
 export const MAX_LIVES = 3;
@@ -72,12 +72,12 @@ export function questionsPerRoundOf(
     : QUESTIONS_PER_ROUND;
 }
 
-function bossPublicState(run: Doc<"triviaRuns">) {
+function bossPublicState(run: Doc<"triviaRuns">, frozenQuestion?: BankQuestion | null) {
   if (!run.bossCall) return null;
   const caller = BOSS_CALLERS.find((candidate) => candidate.key === run.bossCall!.caller);
   const question =
     run.bossCall.phase === "question"
-      ? questionByKey.get(run.bossCall.questionKey)
+      ? (frozenQuestion ?? questionByKey.get(run.bossCall.questionKey))
       : undefined;
   return {
     caller: run.bossCall.caller,
@@ -169,7 +169,7 @@ export async function unlockAchievement(
   });
 }
 
-export function publicRunState(run: Doc<"triviaRuns">) {
+export function publicRunState(run: Doc<"triviaRuns">, frozenBossQuestion?: BankQuestion | null) {
   const mutator = mutatorOf(run);
   return {
     runId: run._id,
@@ -185,7 +185,7 @@ export function publicRunState(run: Doc<"triviaRuns">) {
     roundCategory: run.roundCategory ?? null,
     drafting: run.pendingBoostOffer !== undefined,
     deadAir: run.deadAirPending === true,
-    bossCall: bossPublicState(run),
+    bossCall: bossPublicState(run, frozenBossQuestion),
     signalStrength: run.signalStrength ?? 0,
     mutator: mutator
       ? {

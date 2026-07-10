@@ -1,7 +1,7 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import { sanitizeQuestion, type BankQuestion } from "./questionBank";
 import { createAnswerDisclosure } from "./questionTypes";
 import { boostByKey, rollBoostOffer } from "./boosts";
 import { mutatorByKey } from "./mutators";
@@ -17,6 +17,8 @@ import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
 import { ensurePlayerHandler, startRunHandler } from "./triviaStartHandlers";
 import { getStoryHandler } from "./triviaStoryHandler";
+import { getActiveRunHandler } from "./triviaActiveRun";
+import { questionForRun, RUN_LIBRARY_RESET_REASON } from "./triviaRunRecovery";
 import {
   AMPLIFIER_STREAK_BONUS,
   BASE_POINTS,
@@ -76,16 +78,16 @@ export const submitAnswer = mutation({
     const run = await ctx.db.get(args.runId);
     if (!run || run.playerId !== player._id) throw new Error("Run not found");
     if (run.status !== "active" || !run.currentQuestionKey) throw new Error("Run is not active");
-    const question = questionByKey.get(run.currentQuestionKey);
-    if (!question) throw new Error("Current question missing from bank (was it removed?)");
+    const selection = await selectionPoolForRun(ctx, run).catch(() => null);
+    if (!selection) throw new Error(RUN_LIBRARY_RESET_REASON);
+    const question = selection.questions.find((candidate) => candidate.id === run.currentQuestionKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
     if (run.eliminatedChoices?.includes(args.choiceIndex)) {
       throw new Error("That choice was eliminated");
     }
-    const selection = await selectionPoolForRun(ctx, run);
-
     // Anti-cheat: think time measured from the server's serve timestamp (the
     // client can't fake it). Superhuman-fast answers accumulate; enough of them
     // flag the run out of the public leaderboard. Never blocks the answer.
@@ -417,6 +419,9 @@ export const submitAnswer = mutation({
 
     await ctx.db.patch(player._id, playerPatch);
     const updatedRun = (await ctx.db.get(args.runId))!;
+    const frozenBossQuestion = updatedRun.bossCall?.phase === "question"
+      ? (selection.questions.find((candidate) => candidate.id === updatedRun.bossCall!.questionKey) ?? null)
+      : null;
 
     return {
       correct,
@@ -425,7 +430,7 @@ export const submitAnswer = mutation({
       disclosure: createAnswerDisclosure(question),
       scoreDelta,
       events,
-      run: publicRunState(updatedRun),
+      run: publicRunState(updatedRun, frozenBossQuestion),
       boosts: boostPublicState(updatedRun),
       nextQuestion: nextQuestion ? sanitizeQuestion(nextQuestion) : null,
     };
@@ -445,7 +450,8 @@ export const chooseBoost = mutation({
     if (!def) throw new Error("Unknown boost");
     const now = Date.now();
     const events: GameEvent[] = [];
-    const selection = await selectionPoolForRun(ctx, run);
+    const selection = await selectionPoolForRun(ctx, run).catch(() => null);
+    if (!selection) throw new Error(RUN_LIBRARY_RESET_REASON);
 
     let lives = run.lives;
     let score = run.score;
@@ -555,8 +561,8 @@ export const useSignal = mutation({
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
       throw new Error("An elimination is already applied to this question");
     }
-    const question = questionByKey.get(targetKey);
-    if (!question) throw new Error("Current question missing from bank");
+    const question = await questionForRun(ctx, run, targetKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
     const roll = runRoll(run, `whisper:${targetKey}`);
     const eliminated = wrongs[Math.floor(roll * wrongs.length)];
@@ -586,8 +592,8 @@ export const useBoost = mutation({
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
       throw new Error("An elimination is already applied to this question");
     }
-    const question = questionByKey.get(filterTargetKey);
-    if (!question) throw new Error("Current question missing from bank");
+    const question = await questionForRun(ctx, run, filterTargetKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
     // Seeded picks: daily players who filter the same question see the same
     // eliminations.
@@ -616,8 +622,8 @@ export const answerBossCall = mutation({
     if (run.status !== "active" || run.bossCall?.phase !== "question") {
       throw new Error("No caller on the line");
     }
-    const question = questionByKey.get(run.bossCall.questionKey);
-    if (!question) throw new Error("Caller question missing from bank");
+    const question = await questionForRun(ctx, run, run.bossCall.questionKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
@@ -771,31 +777,7 @@ export const completeFinale = mutation({
 
 export const getActiveRun = query({
   args: { playerKey: v.string() },
-  handler: async (ctx, args) => {
-    const player = await getPlayer(ctx, args.playerKey);
-    if (!player) return null;
-    const run = await getActiveRunDoc(ctx, player._id);
-    if (!run) return null;
-    if (run.pendingBoostOffer || run.bossCall) {
-      // Mid-draft or mid-boss-call: the client re-enters the same screen
-      // (the offer and the call both persist on the run).
-      return {
-        run: publicRunState(run),
-        boosts: boostPublicState(run),
-        question: null,
-        epilogueActive: player.finaleCompletedAt !== undefined,
-      };
-    }
-    if (!run.currentQuestionKey) return null;
-    const question = questionByKey.get(run.currentQuestionKey);
-    if (!question) return null;
-    return {
-      run: publicRunState(run),
-      boosts: boostPublicState(run),
-      question: sanitizeQuestion(question),
-      epilogueActive: player.finaleCompletedAt !== undefined,
-    };
-  },
+  handler: getActiveRunHandler,
 });
 
 export const getProfile = query({

@@ -1,6 +1,6 @@
 import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { questionByKey, sanitizeQuestion } from "./questionBank";
+import { sanitizeQuestion } from "./questionBank";
 import { getOrCreateDailyEpisode, selectionPoolForRun } from "./triviaDailyEpisodes";
 import { dateKeyOf, weekKeyOf } from "./triviaDeterminism";
 import {
@@ -16,6 +16,10 @@ import {
   THIN_ICE_START_LIVES,
 } from "./triviaRuntime";
 import { pickQuestion, pickRoundCategory } from "./triviaSelection";
+import {
+  inspectActiveRunContent,
+  RUN_LIBRARY_RESET_REASON,
+} from "./triviaRunRecovery";
 
 function cleanDisplayName(raw: string) {
   const cleaned = raw.replace(/[\p{C}]/gu, "").trim().slice(0, 24);
@@ -124,6 +128,7 @@ export async function startRunHandler(
   const now = Date.now();
   const dateKey = dateKeyOf(now);
   const isDaily = args.daily ?? false;
+  let resetReason: string | null = null;
 
   if (isDaily) {
     const todaysRuns = await ctx.db
@@ -136,20 +141,21 @@ export async function startRunHandler(
       (run) => run.isDaily && run.status === "active",
     );
     if (activeDaily) {
-      const question = activeDaily.currentQuestionKey
-        ? questionByKey.get(activeDaily.currentQuestionKey)
-        : undefined;
-      if (activeDaily.pendingBoostOffer || activeDaily.bossCall || question) {
+      const content = await inspectActiveRunContent(ctx, activeDaily);
+      if (content.resumable) {
         await ctx.db.patch(player._id, { lastSeenAt: now });
         return {
-          run: publicRunState(activeDaily),
+          run: publicRunState(activeDaily, content.bossQuestion),
           boosts: boostPublicState(activeDaily),
-          question: question ? sanitizeQuestion(question) : null,
+          question: content.currentQuestion ? sanitizeQuestion(content.currentQuestion) : null,
           runNumber: player.totalRuns + 1,
           epilogueActive: player.finaleCompletedAt !== undefined,
           resumed: true,
+          resetReason: null,
         };
       }
+      await ctx.db.patch(activeDaily._id, { status: "abandoned", endedAt: now });
+      resetReason = RUN_LIBRARY_RESET_REASON;
     }
     if (todaysRuns.some((run) => run.isDaily && run.status !== "active")) {
       throw new Error("Tonight's broadcast has already aired for you. Come back tomorrow!");
@@ -158,6 +164,8 @@ export async function startRunHandler(
 
   const existing = await getActiveRunDoc(ctx, player._id);
   if (existing) {
+    const content = await inspectActiveRunContent(ctx, existing);
+    if (!content.resumable) resetReason = RUN_LIBRARY_RESET_REASON;
     await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
   }
 
@@ -243,5 +251,6 @@ export async function startRunHandler(
     runNumber: player.totalRuns + 1,
     epilogueActive: player.finaleCompletedAt !== undefined,
     resumed: false,
+    resetReason,
   };
 }

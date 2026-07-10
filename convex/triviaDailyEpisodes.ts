@@ -1,4 +1,4 @@
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import officialSources from "../data/trivia/official-sources.json";
 import { mutatorCatalog } from "./mutators";
@@ -45,7 +45,7 @@ export async function getOrCreateDailyEpisode(
 }
 
 export async function selectionPoolForRun(
-  ctx: MutationCtx,
+  ctx: MutationCtx | QueryCtx,
   run: Doc<"triviaRuns">,
 ): Promise<QuestionSelectionPool> {
   // Compatibility path: pre-migration runs have no plan/version fields and
