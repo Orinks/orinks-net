@@ -2,6 +2,16 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-10-pause-off-duty-drivers-board",
+      "date": "2026-07-10",
+      "project": "Freight Fate",
+      "title": "Pausing now counts as off duty on the drivers board",
+      "body": [
+        "The live drivers board now lists only drivers who are actively hauling. Opening the pause menu takes you off the board just as if you went off duty, and you reappear shortly after you resume driving. A quick pause and resume will not drop you from the list, and Discord presence still shows friends that your game is paused. The change arrives with the next Freight Fate update."
+      ],
+      "link": { "href": "/freight-fate", "label": "See the live drivers board" }
+    },
+    {
       "id": "2026-07-09-driver-naming-rules",
       "date": "2026-07-09",
       "project": "Freight Fate",
