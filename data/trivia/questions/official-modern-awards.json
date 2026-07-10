@@ -154,7 +154,8 @@
         "url": "https://www.grammy.com/awards/categories/best-rap-performance-2/",
         "accessedAt": "2026-07-10",
         "evidenceSummary": "The 2022 row pairs Baby Keem and Kendrick Lamar with “Family Ties.”"
-      }
+      },
+      "pronunciation": { "Beyoncé": "bee-YON-say" }
     },
     {
       "id": "oma-0032",
@@ -222,7 +223,8 @@
         "url": "https://www.grammy.com/awards/categories/best-pop-duo-group-performance/",
         "accessedAt": "2026-07-10",
         "evidenceSummary": "The 2024 row pairs SZA and Phoebe Bridgers with “Ghost In The Machine.”"
-      }
+      },
+      "pronunciation": { "SZA": "Sizza" }
     },
     {
       "id": "oma-0005",
@@ -256,6 +258,10 @@
         "url": "https://www.grammy.com/awards/categories/best-rb-album/",
         "accessedAt": "2026-07-10",
         "evidenceSummary": "The 2024 archive row pairs Victoria Monét with “JAGUAR II.”"
+      },
+      "pronunciation": {
+        "Anderson .Paak": "Anderson Pack",
+        "Victoria Monét": "Victoria moh-NAY"
       }
     },
     {
@@ -358,7 +364,8 @@
         "url": "https://www.grammy.com/awards/categories/best-rb-performance/",
         "accessedAt": "2026-07-10",
         "evidenceSummary": "The 2024 archive row pairs Coco Jones with “ICU.”"
-      }
+      },
+      "pronunciation": { "Beyoncé": "bee-YON-say" }
     },
     {
       "id": "oma-0030",
@@ -613,7 +620,8 @@
         "url": "https://www.grammy.com/awards/categories/best-rb-album/",
         "accessedAt": "2026-07-10",
         "evidenceSummary": "The 2025 winner row pairs Chris Brown with “11:11 (Deluxe).”"
-      }
+      },
+      "pronunciation": { "Victoria Monét": "Victoria moh-NAY" }
     },
     {
       "id": "oma-0015",
