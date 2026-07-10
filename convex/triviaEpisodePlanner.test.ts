@@ -155,6 +155,6 @@ describe("daily episode planner", () => {
     });
 
     expect(Buffer.byteLength(JSON.stringify(plan), "utf8")).toBeLessThan(750_000);
-    expect(plan.candidates.filter((candidate) => candidate.clipId).length).toBe(5);
+    expect(plan.candidates.filter((candidate) => candidate.clipId).length).toBe(6);
   });
 });

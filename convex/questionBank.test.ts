@@ -65,8 +65,8 @@ describe("question bank public projection", () => {
   });
 
   test("selects only validated official-source records at runtime", () => {
-    expect(questionBank).toHaveLength(465);
-    expect(new Set(questionBank.map((question) => question.id)).size).toBe(465);
+    expect(questionBank).toHaveLength(466);
+    expect(new Set(questionBank.map((question) => question.id)).size).toBe(466);
     expect(
       questionBank.some((question) => /^(?:gt-|mb-|otdb-)/u.test(question.id)),
     ).toBe(false);
