@@ -106,14 +106,19 @@ disclosure before it can enter the strict bank.
 ```powershell
 npm run tts -- --dry-run        # preview what would be generated, free
 npm run tts                     # generate up to 5000 characters
-npm run tts -- --budget 20000   # bigger batch (0 = unlimited)
+npm run tts -- --budget 20000   # larger explicit live ceiling
+npm run tts -- --dry-run --budget 0 # complete plan; unlimited is dry-run only
 npm run tts -- --only barks     # barks first — they carry the personality
+npm run tts:verify              # verify hashes, files, size, and manifest coverage
 ```
 
 Files are named by a hash of voice + model + settings + text, so re-running
 is safe and cheap: existing audio is skipped, and editing a line's text
 automatically queues a regeneration. When monthly credits refresh, just run
-it again — it reports what's still pending and your remaining credits.
+it again — it reports what's still pending and your remaining credits. A live
+run checks the subscription first, reserves 500 included credits by default,
+and refuses an unlimited or over-quota request. It never enables paid extension
+automatically.
 
 ## Streaming mystery clips
 

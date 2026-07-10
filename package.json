@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "trivia:validate": "node scripts/trivia/validate-question-bank.mjs",
-    "tts": "node scripts/generate-tts.mjs"
+    "tts": "node scripts/generate-tts.mjs",
+    "tts:verify": "node scripts/verify-trivia-audio.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.13",

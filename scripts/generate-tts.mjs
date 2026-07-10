@@ -3,7 +3,7 @@
  * Pre-generates host audio for the music trivia roguelite via the ElevenLabs API.
  *
  * Reads data/trivia/barks.json and data/trivia/questions/*.json, generates one MP3
- * per line into public/audio/trivia/, and writes data/trivia/audio-manifest.json
+ * per line into public/audio/trivia/, and writes public/audio/trivia/manifest.json
  * mapping line/question IDs to web paths.
  *
  * Idempotent: files are named by a hash of voice + model + settings + text, so
@@ -13,32 +13,56 @@
  * Usage:
  *   node scripts/generate-tts.mjs --dry-run          # show what would be generated, no API calls
  *   node scripts/generate-tts.mjs                    # generate up to the default 5000-char budget
- *   node scripts/generate-tts.mjs --budget 20000     # custom character budget (0 = unlimited)
+ *   node scripts/generate-tts.mjs --budget 20000     # explicit live character ceiling
+ *   node scripts/generate-tts.mjs --dry-run --budget 0 # complete plan; unlimited is dry-run only
+ *   node scripts/generate-tts.mjs --reserve-credits 500 # retain an included-credit safety margin
  *   node scripts/generate-tts.mjs --only barks       # barks | questions | story
  *   node scripts/generate-tts.mjs --filter gt-00     # only items whose id contains this string
  *
  * Requires ELEVENLABS_API_KEY in the environment or .env.local (never commit it).
  */
 
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  assertSafeGenerationBudget,
+  audioHash,
+  buildQuestionNarration,
+  validateGenerationBudget,
+} from "./trivia-audio-core.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_BUDGET = 5000;
 
 function parseArgs(argv) {
-  const args = { dryRun: false, budget: DEFAULT_BUDGET, only: null, filter: null };
+  const args = {
+    dryRun: false,
+    budget: DEFAULT_BUDGET,
+    only: null,
+    filter: null,
+    reserveCredits: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--budget") args.budget = Number(argv[++i]);
     else if (arg === "--only") args.only = argv[++i];
     else if (arg === "--filter") args.filter = argv[++i];
+    else if (arg === "--reserve-credits") args.reserveCredits = Number(argv[++i]);
     else fail(`Unknown argument: ${arg}`);
   }
-  if (!Number.isFinite(args.budget) || args.budget < 0) fail("--budget must be a non-negative number");
+  try {
+    validateGenerationBudget(args);
+  } catch (error) {
+    fail(error.message);
+  }
+  if (
+    args.reserveCredits !== null &&
+    (!Number.isFinite(args.reserveCredits) || args.reserveCredits < 0)
+  ) {
+    fail("--reserve-credits must be a non-negative number");
+  }
   if (args.only && !["barks", "questions", "story"].includes(args.only)) {
     fail("--only must be 'barks', 'questions', or 'story'");
   }
@@ -73,7 +97,7 @@ function loadEnvLocal() {
 }
 
 /** Collect every line that needs audio, validating as we go. */
-function collectItems(config) {
+export function collectItems(config) {
   const items = [];
   const seenIds = new Set();
 
@@ -130,21 +154,12 @@ function collectItems(config) {
         fail(`${relPath}: question "${q.id}" has out-of-range answer index`);
       }
       if (q.voice === false) continue; // authored as text/screen-reader only
-      // The clip reads the numbered choices too (numbers match the 1-4 keys).
-      const choiceText = q.choices
-        .map((choice, index) => `${index + 1}: ${choice}`)
-        .join(". ");
-      const questionText = `${q.prompt} Your choices are... ${choiceText}.`;
+      const questionText = buildQuestionNarration(q);
       addItem("questions", q.id, questionText, typeof q.voice === "string" ? q.voice : bankVoice, relPath);
     }
   }
 
   return items;
-}
-
-function audioHash(item, modelId) {
-  const input = [item.voice.voiceId, modelId, JSON.stringify(item.voice.settings ?? {}), item.text].join("|");
-  return createHash("sha256").update(input).digest("hex").slice(0, 16);
 }
 
 async function generateAudio(config, item, apiKey) {
@@ -159,23 +174,33 @@ async function generateAudio(config, item, apiKey) {
     }),
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`ElevenLabs API ${res.status} for "${item.id}": ${body.slice(0, 500)}`);
+    throw new Error(`ElevenLabs generation returned HTTP ${res.status} for "${item.id}".`);
   }
   return Buffer.from(await res.arrayBuffer());
 }
 
-async function printCreditStatus(config, apiKey) {
-  try {
-    const res = await fetch(`${config.apiBase}/user/subscription`, { headers: { "xi-api-key": apiKey } });
-    if (!res.ok) return;
-    const sub = await res.json();
-    if (typeof sub.character_count === "number" && typeof sub.character_limit === "number") {
-      console.log(`ElevenLabs credits: ${sub.character_count}/${sub.character_limit} characters used this cycle.`);
-    }
-  } catch {
-    // credit status is informational only
+async function loadCreditStatus(config, apiKey) {
+  const res = await fetch(`${config.apiBase}/user/subscription`, {
+    cache: "no-store",
+    headers: { "xi-api-key": apiKey },
+  });
+  if (!res.ok) {
+    throw new Error(`ElevenLabs subscription check returned HTTP ${res.status}.`);
   }
+  const sub = await res.json();
+  if (
+    typeof sub.character_count !== "number" ||
+    typeof sub.character_limit !== "number" ||
+    sub.character_count < 0 ||
+    sub.character_limit < sub.character_count
+  ) {
+    throw new Error("ElevenLabs subscription response did not contain a safe credit balance.");
+  }
+  return {
+    usedCredits: sub.character_count,
+    limitCredits: sub.character_limit,
+    remainingCredits: sub.character_limit - sub.character_count,
+  };
 }
 
 async function main() {
@@ -191,7 +216,27 @@ async function main() {
   if (!args.dryRun && !apiKey) {
     fail("ELEVENLABS_API_KEY is not set (add it to .env.local or the environment), or use --dry-run.");
   }
-  if (!args.dryRun) await printCreditStatus(config, apiKey);
+  if (!args.dryRun) {
+    const creditMultiplier = config.creditMultiplier;
+    const reserveCredits = args.reserveCredits ?? config.reserveCredits ?? 500;
+    if (!Number.isFinite(creditMultiplier) || creditMultiplier <= 0) {
+      fail("tts.config.json must define a positive creditMultiplier for live generation.");
+    }
+    const credits = await loadCreditStatus(config, apiKey);
+    const safe = assertSafeGenerationBudget({
+      requestedCharacters: args.budget,
+      creditMultiplier,
+      remainingCredits: credits.remainingCredits,
+      reserveCredits,
+    });
+    console.log(
+      `ElevenLabs included credits: ${credits.usedCredits}/${credits.limitCredits} used; ` +
+        `${safe.usableCredits} safely usable after reserve.`,
+    );
+    console.log(
+      `Generation ceiling: ${args.budget} characters, at most ${safe.requestedCredits} credits.`,
+    );
+  }
 
   const manifest = { generatedAt: new Date().toISOString(), barks: {}, questions: {}, story: {} };
   const stats = { existing: 0, generated: 0, generatedChars: 0, pending: 0, pendingChars: 0, skipped: 0 };
@@ -266,4 +311,7 @@ async function main() {
   }
 }
 
-main().catch((err) => fail(err.message));
+const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  main().catch((err) => fail(err.message));
+}
