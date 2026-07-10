@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { BankQuestion } from "./questionBank";
+import { questionBank, type BankQuestion } from "./questionBank";
 import { planDailyEpisode, type PlannedQuestionCandidate } from "./triviaEpisodePlanner";
 
 function question(
@@ -146,5 +146,15 @@ describe("daily episode planner", () => {
     expect(() => planDailyEpisode({ ...versions, questions: [invalid] })).toThrow(
       /exactly four authored choices/,
     );
+  });
+
+  test("keeps the complete official episode snapshot within a conservative document budget", () => {
+    const plan = planDailyEpisode({
+      ...versions,
+      questions: questionBank,
+    });
+
+    expect(Buffer.byteLength(JSON.stringify(plan), "utf8")).toBeLessThan(750_000);
+    expect(plan.candidates.filter((candidate) => candidate.clipId).length).toBe(5);
   });
 });
