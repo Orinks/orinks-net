@@ -2,8 +2,6 @@ import type { BankQuestion } from "./questionBank";
 import type { QuestionFormat } from "./questionTypes";
 import { seededRandom } from "./triviaDeterminism";
 
-export const LEGACY_QUESTION_FORMAT: QuestionFormat = "archive-clue";
-
 export type AuthoredChoiceOrder = [0, 1, 2, 3];
 
 export interface PlannedQuestionCandidate {
@@ -87,7 +85,7 @@ export function planDailyEpisode(input: PlanDailyEpisodeInput): DailyEpisodePlan
     mutatorKeys[Math.floor(seededRandom(`${seed}:mutator`)() * mutatorKeys.length)];
   const candidates = orderedCandidates(input.questions, seed).map((question) => ({
     questionId: question.id,
-    format: question.format ?? LEGACY_QUESTION_FORMAT,
+    format: question.format,
     ...(question.clip ? { clipId: question.clip.id } : {}),
     // Authored order is an invariant. Balance comes from which question is
     // selected, never from shuffling answer text at serve time.

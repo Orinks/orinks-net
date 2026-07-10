@@ -278,6 +278,7 @@ describe("daily runs", () => {
     const before = await t.run(async (ctx) => ctx.db.query("dailyEpisodes").first());
     const originalOrder = [...questionBank];
     const lateCandidate: BankQuestion = {
+      ...questionBank[0],
       id: "late-daily-candidate",
       category: "Music",
       difficulty: 1,

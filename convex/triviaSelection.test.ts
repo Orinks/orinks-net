@@ -3,14 +3,27 @@ import type { BankQuestion } from "./questionBank";
 import { runRoll } from "./triviaDeterminism";
 import { pickQuestion } from "./triviaSelection";
 
-function candidate(id: string, difficulty: number, answer: number): BankQuestion {
+function candidate(
+  id: string,
+  difficulty: BankQuestion["difficulty"],
+  answer: BankQuestion["answer"],
+): BankQuestion {
   return {
     id,
     category: "Music",
     difficulty,
+    format: "award-desk",
     prompt: id,
     choices: ["A", "B", "C", "D"],
     answer,
+    explanation: `Official explanation for ${id}.`,
+    source: {
+      publisher: "Library of Congress",
+      title: `Official source for ${id}`,
+      url: `https://www.loc.gov/item/${id}/`,
+      accessedAt: "2026-07-10",
+      evidenceSummary: `The official record supports ${id}.`,
+    },
   };
 }
 
