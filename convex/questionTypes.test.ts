@@ -215,6 +215,29 @@ describe("canonical question validation", () => {
     expect(errorCodes({ ...clipQuestion, clip: { ...clip, textClue: "" } })).toContain(
       "question.clip.text_clue",
     );
+    expect(
+      errorCodes({
+        ...clipQuestion,
+        clip: { ...clip, textClue: "The featured title is Kóra." },
+      }),
+    ).toContain("question.clip.text_clue.answer_leak");
+    expect(
+      errorCodes({
+        ...clipQuestion,
+        aliases: ["West African Harp"],
+        clip: { ...clip, textClue: "This excerpt features a West-African harp." },
+      }),
+    ).toContain("question.clip.text_clue.answer_leak");
+    expect(
+      validateQuestion(
+        {
+          ...clipQuestion,
+          choices: ["Midnight Runner", "Second", "Third", "Fourth"],
+          clip: { ...clip, textClue: "A midnight drive powers the arrangement." },
+        },
+        sourcePolicy,
+      ).warnings.map((issue) => issue.code),
+    ).toContain("question.clip.text_clue.answer_overlap");
     expect(errorCodes({ ...clipQuestion, clip: { ...clip, durationSeconds: 0 } })).toContain(
       "question.clip.duration",
     );

@@ -1,3 +1,5 @@
+import { validateMysteryClip } from "./questionClipValidation.ts";
+
 export const QUESTION_FORMATS = [
   "award-desk",
   "chart-wire",
@@ -152,15 +154,6 @@ const QUESTION_KEYS = new Set([
   "voice",
 ]);
 const SOURCE_KEYS = new Set(["publisher", "title", "url", "accessedAt", "evidenceSummary"]);
-const CLIP_KEYS = new Set([
-  "id",
-  "provider",
-  "providerAssetId",
-  "startSeconds",
-  "durationSeconds",
-  "textClue",
-  "attribution",
-]);
 const ATTRIBUTION_KEYS = new Set([
   "creator",
   "copyrightNotice",
@@ -169,10 +162,7 @@ const ATTRIBUTION_KEYS = new Set([
   "sourceTitle",
   "sourceUrl",
 ]);
-const MEDIA_FORMATS = new Set<QuestionFormat>(["needle-drop", "sound-lab"]);
-const PROVIDERS = new Set(["audius", "feed-clips", "remote-open"]);
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const CLIP_ID_PATTERN = /^ms-clip-[a-f0-9]{8}$/;
 const CATCH_ALL_CHOICE = /^(?:all|none) of (?:the )?(?:above|these)$/i;
 const EXACT_HOST_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
@@ -521,85 +511,6 @@ function validateAttribution(
   return true;
 }
 
-function validateMysteryClip(
-  value: unknown,
-  format: unknown,
-  path: string,
-  errors: ValidationIssue[],
-): value is MysteryClip {
-  if (!isRecord(value)) {
-    addIssue(errors, "question.clip.object", path, "Clip metadata must be a complete object.");
-    return false;
-  }
-  validateKnownKeys(value, CLIP_KEYS, path, errors);
-
-  if (!MEDIA_FORMATS.has(format as QuestionFormat)) {
-    addIssue(
-      errors,
-      "question.clip.format",
-      path,
-      "Mystery clips are only valid for needle-drop and sound-lab questions.",
-    );
-  }
-  if (
-    !nonEmptyString(value.id, "question.clip.id", `${path}.id`, errors) ||
-    !CLIP_ID_PATTERN.test(value.id)
-  ) {
-    if (
-      typeof value.id === "string" &&
-      value.id.trim().length > 0 &&
-      !CLIP_ID_PATTERN.test(value.id)
-    ) {
-      addIssue(
-        errors,
-        "question.clip.id.opaque",
-        `${path}.id`,
-        "Clip ID must use a nonsemantic ms-clip plus eight-hex token.",
-      );
-    }
-  }
-  if (typeof value.provider !== "string" || !PROVIDERS.has(value.provider)) {
-    addIssue(
-      errors,
-      "question.clip.provider",
-      `${path}.provider`,
-      "Clip provider is not supported.",
-    );
-  }
-  nonEmptyString(
-    value.providerAssetId,
-    "question.clip.provider_asset_id",
-    `${path}.providerAssetId`,
-    errors,
-  );
-  if (typeof value.startSeconds !== "number" || !Number.isFinite(value.startSeconds) || value.startSeconds < 0) {
-    addIssue(
-      errors,
-      "question.clip.start",
-      `${path}.startSeconds`,
-      "Clip start must be a finite non-negative number.",
-    );
-  }
-  if (
-    typeof value.durationSeconds !== "number" ||
-    !Number.isFinite(value.durationSeconds) ||
-    value.durationSeconds < 10 ||
-    value.durationSeconds > 15
-  ) {
-    addIssue(
-      errors,
-      "question.clip.duration",
-      `${path}.durationSeconds`,
-      "Clip duration must be between 10 and 15 seconds.",
-    );
-  }
-  if (nonEmptyString(value.textClue, "question.clip.text_clue", `${path}.textClue`, errors)) {
-    validateNfc(value.textClue, `${path}.textClue`, errors);
-  }
-  validateAttribution(value.attribution, `${path}.attribution`, errors);
-  return true;
-}
-
 function validateAliases(value: unknown, path: string, errors: ValidationIssue[]) {
   if (!Array.isArray(value)) {
     addIssue(errors, "question.aliases.array", path, "Aliases must be an array of strings.");
@@ -794,7 +705,16 @@ export function validateQuestion(
   if (value.pronunciation !== undefined) {
     validatePronunciation(value.pronunciation, `${path}.pronunciation`, visibleText, errors);
   }
-  if (value.clip !== undefined) validateMysteryClip(value.clip, value.format, `${path}.clip`, errors);
+  if (value.clip !== undefined) {
+    validateMysteryClip(
+      value.clip,
+      { format: value.format, choices: value.choices, answer: value.answer, aliases: value.aliases },
+      `${path}.clip`,
+      errors,
+      warnings,
+      validateAttribution,
+    );
+  }
   if (
     value.voice !== undefined &&
     value.voice !== false &&
