@@ -1,0 +1,13 @@
+{
+  "item": {
+    "id": "http://www.loc.gov/item/jukebox-1001/",
+    "title": "La cafe\u0301tera",
+    "created_published": ["Camden, N.J. : Victor, 1912"],
+    "genre": ["Ethnic music"],
+    "language": ["Spanish"],
+    "notes": ["Tenor vocal solo, with orchestra"],
+    "rights_advisory": "This recording is included in the Library of Congress National Jukebox; consult the item page for current rights information.",
+    "call_number": ["Victor 12345"]
+  },
+  "resources": []
+}

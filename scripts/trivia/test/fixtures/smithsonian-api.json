@@ -1,0 +1,25 @@
+{
+  "response": {
+    "rowCount": 1,
+    "rows": [
+      {
+        "id": "edanmdm-nmaahc_2020.1",
+        "unitCode": "NMAAHC",
+        "title": "Jazz festival poster",
+        "url": "https://nmaahc.si.edu/object/nmaahc_2020.1",
+        "content": {
+          "descriptiveNonRepeating": {
+            "record_ID": "nmaahc_2020.1",
+            "record_link": "https://nmaahc.si.edu/object/nmaahc_2020.1",
+            "metadata_usage": { "access": "CC0" },
+            "data_source": "National Museum of African American History and Culture"
+          },
+          "indexedStructured": {
+            "object_type": ["Posters"],
+            "topic": ["Jazz", "Music"]
+          }
+        }
+      }
+    ]
+  }
+}

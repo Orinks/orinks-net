@@ -1,0 +1,32 @@
+{
+  "meta": { "language": "en", "generated": "2026-02-23 16:10:50" },
+  "nodes": {
+    "element_101": {
+      "type": "element",
+      "label": "Cafe\u0301 marimba tradition",
+      "meta": {
+        "description": "A community tradition of <strong>music</strong>, dance, and instrument making.",
+        "list": "RL",
+        "year": 2015,
+        "multinational": true,
+        "link": "http://ich.unesco.org/en/RL/cafe-marimba-tradition-00101"
+      }
+    },
+    "element_102": {
+      "type": "element",
+      "label": "Dry-stone walling",
+      "meta": {
+        "description": "Knowledge and techniques of building walls.",
+        "list": "RL",
+        "year": 2018,
+        "link": "https://ich.unesco.org/en/RL/dry-stone-walling-00102"
+      }
+    },
+    "vocabulary_ich_17": { "type": "concept", "label": "Musical instruments", "group": "main" },
+    "country_9": { "type": "country", "label": "Exampleland" }
+  },
+  "edges": [
+    { "subject": "element_101", "predicate": "related", "object": "vocabulary_ich_17", "weight": 3 },
+    { "subject": "element_101", "predicate": "related", "object": "country_9", "weight": 1 }
+  ]
+}
