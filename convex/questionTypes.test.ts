@@ -133,6 +133,23 @@ describe("canonical question validation", () => {
     ).not.toContain("question.prompt.source_record_framing");
   });
 
+  test("requires award prompts to stand alone", () => {
+    expect(
+      errorCodes({
+        ...validQuestion(),
+        format: "award-desk",
+        prompt: "Which title won Best Rock Album?",
+      }),
+    ).toContain("question.prompt.award_context");
+    expect(
+      errorCodes({
+        ...validQuestion(),
+        format: "award-desk",
+        prompt: "Which title won Best Rock Album at the 2023 Latin GRAMMY Awards?",
+      }),
+    ).not.toContain("question.prompt.award_context");
+  });
+
   test("requires complete official HTTPS provenance with a real access date", () => {
     expect(errorCodes({ ...validQuestion(), source: "loc" })).toContain("question.source.object");
     expect(

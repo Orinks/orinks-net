@@ -46,7 +46,8 @@ describe("retired question-library recovery", () => {
     const replacement = await t.mutation(api.trivia.startRun, { playerKey: PLAYER });
     expect(replacement.run.runId).not.toBe(first.run.runId);
     expect(replacement.resetReason).toBe(RUN_LIBRARY_RESET_REASON);
-    expect(replacement.question?.key).not.toMatch(/^(?:gt-|mb-|otdb-)/u);
+    expect(replacement.question).not.toBeNull();
+    expect(questionByKey.has(replacement.question!.key)).toBe(true);
     const retired = await t.run((ctx) => ctx.db.get(first.run.runId));
     expect(retired?.status).toBe("abandoned");
   });

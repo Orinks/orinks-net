@@ -659,6 +659,20 @@ export function validateQuestion(
         "Ask the music-trivia question directly; provenance should support the prompt, not become its subject.",
       );
     }
+    const awardPromptNeedsContext =
+      value.format === "award-desk" &&
+      /\b(?:won|winner)\b/i.test(value.prompt) &&
+      !/\b(?:19|20)\d{2}\b|\b\d+(?:st|nd|rd|th)\b|\b(?:for|before|after|followed|precedes?)\s+[A-Z0-9“"'(]/.test(
+        value.prompt,
+      );
+    if (awardPromptNeedsContext) {
+      addIssue(
+        errors,
+        "question.prompt.award_context",
+        `${path}.prompt`,
+        "Award questions must name the year, ceremony, or referenced work so the prompt stands alone.",
+      );
+    }
   }
 
   if (!Array.isArray(value.choices) || value.choices.length !== 4) {
