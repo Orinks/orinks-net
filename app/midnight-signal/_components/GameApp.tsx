@@ -27,6 +27,7 @@ import {
 import { pickBark, producerLine, type Bark } from "../_lib/barks";
 import { fetchManifest, HostAudioPlayer, initSpeech, speakProducer, stopProducer, type AudioManifest } from "../_lib/audio";
 import { MusicEngine, MUSIC_TRACKS, STINGS } from "../_lib/music";
+import { SingleFlightLatch } from "../_lib/singleFlightLatch";
 import { applyMotionPreference, getPlayerKey, getStoredName, loadSettings, saveSettings, storeName, type GameSettings } from "../_lib/settings";
 
 export function GameApp() {
@@ -68,6 +69,7 @@ export function GameApp() {
   const manifestRef = useRef<AudioManifest>({ barks: {}, questions: {}, story: {} });
   const playerRef = useRef<HostAudioPlayer | null>(null);
   const musicRef = useRef<MusicEngine | null>(null);
+  const advancingRef = useRef(new SingleFlightLatch());
   const stopMysteryClipRef = useRef<(() => void) | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const captionSeq = useRef(0);
@@ -268,8 +270,6 @@ export function GameApp() {
       phase.kind === "draft" ||
       phase.kind === "bossReward"
     ) {
-      // The draft and the caller's reward screen keep the question bed
-      // running deliberately — still mid-episode (explicit, not fallthrough).
       void music.playLoop(MUSIC_TRACKS.bed);
     } else if (phase.kind === "finale") {
       void music.playOnce(MUSIC_TRACKS.finale);
@@ -309,10 +309,8 @@ export function GameApp() {
         setChosenIndex(null);
         setBoosts(started.boosts as BoostState);
         setDraftChosen(null);
-        // Both resume paths re-anchor the night's condition (a11y consult).
         const conditions = started.run.mutator ? ` Conditions: ${started.run.mutator.name}.` : "";
         if (started.resumed && !started.question && started.run.bossCall) {
-          // The daily was left mid-boss-call: same caller, same question.
           const boss = started.run.bossCall;
           if (boss.phase === "question" && boss.question) {
             setQuestion(boss.question);
@@ -329,16 +327,11 @@ export function GameApp() {
             );
           }
         } else if (started.resumed && !started.question) {
-          // The daily was left mid-draft: re-enter the draft with the same
-          // persisted offer (the server never re-rolls it).
           setPhase({ kind: "draft" });
           announce(
             `Resuming tonight's broadcast.${conditions} Round ${started.run.round - 1} complete. Choose your Signal Boost. ${started.boosts.offer?.length ?? 3} options.`,
           );
         } else if (started.resumed && started.question) {
-          // Tonight's daily was already in progress: the server hands the
-          // attempt back mid-episode. No show-open — its "first theme" and
-          // "first question" copy would be false. Mirror resumeRun instead.
           setPhase({ kind: "question" });
           serveQuestionAudio(started.question.key);
           announce(
@@ -348,14 +341,9 @@ export function GameApp() {
               : `Resuming tonight's broadcast.${conditions} Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
           );
         } else {
-          // The show opens before the first question: title theme under Clyde's
-          // greeting, then the player advances at their own pace (no timers).
           setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
           const bundle: string[] = [];
           if (daily) {
-            // The greeting and the mutator line must play in SEQUENCE — the
-            // audio player stops the current clip when a new one starts, so
-            // firing both in the same tick silences the greeting (a11y delta).
             const greet = pickBark("daily-intro", epilogueBarks);
             const greetDone = greet
               ? speakHostLine(greet.text, manifestRef.current.barks[greet.id], bundle)
@@ -368,8 +356,6 @@ export function GameApp() {
               } else {
                 void speakHostLine(mutator.intro, undefined, bundle);
               }
-              // The canonical system line: the rules always live here, never
-              // only in Clyde's flavor line (a11y consult).
               bundle.push(`Tonight's broadcast conditions: ${mutator.name}. ${mutator.rules}`);
             }
           } else {
@@ -620,7 +606,14 @@ export function GameApp() {
 
   const advanceAfterFeedback = useCallback(
     async (result: AnswerResult, pending: GameEvent[]) => {
-      const [next, ...rest] = pending;
+      if (!advancingRef.current.tryStart()) return;
+      setBusy(true);
+      setErrorText(null);
+      stopMysteryClip();
+      playerRef.current?.stop();
+      stopProducer();
+      const advance = async (events: GameEvent[]): Promise<void> => {
+      const [next, ...rest] = events;
       if (next?.type === "tapeUnlocked") {
         const tape = story?.tapes.find((t) => t.id === next.id);
         if (tape) {
@@ -629,35 +622,30 @@ export function GameApp() {
           setPhase({ kind: "tape", tape, pending: rest, result });
           return;
         }
-        await advanceAfterFeedback(result, rest);
+        await advance(rest);
         return;
       }
       if (next?.type === "finaleReady") {
-        try {
-          const finale = await completeFinaleMutation({ playerKey });
-          setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
-          const first = finale.lines[0];
-          const audioPath = manifestRef.current.story[first.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
-          return;
-        } catch {
-          // Not eligible after all; fall through to the next event.
-          await advanceAfterFeedback(result, rest);
+        const finale = await completeFinaleMutation({ playerKey });
+        if (finale.lines.length === 0) {
+          await advance(rest);
           return;
         }
+        setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
+        const first = finale.lines[0];
+        const audioPath = first ? manifestRef.current.story[first.id] : undefined;
+        if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
+        return;
       }
       if (next?.type === "gameOver" || next?.type === "bankExhausted") {
         setPhase({ kind: "gameover", result });
         return;
       }
       if (next) {
-        await advanceAfterFeedback(result, rest);
+        await advance(rest);
         return;
       }
       if (result.nextQuestion) {
-        // Occasional flavor between questions: an archive fact or a lead-in.
-        // Kept infrequent so it stays charming at question three hundred —
-        // and never before the Dead Air redemption (wrong moment for trivia).
         const roll = Math.random();
         const flavor = result.run.deadAir
           ? null
@@ -676,9 +664,6 @@ export function GameApp() {
         setPhase({ kind: "question" });
         void flavorDone.then(() => serveQuestionAudio(nextKey));
       } else if (result.run.bossCall?.phase === "question" && result.run.bossCall.question) {
-        // Taking the call: the caller question rides the normal question
-        // panel; the caller was named in the feedback bundle, and their
-        // voiced intro plays before Clyde relays the question clip.
         const boss = result.run.bossCall;
         const bossQuestion = boss.question!;
         setQuestion(bossQuestion);
@@ -705,8 +690,20 @@ export function GameApp() {
       } else {
         setPhase({ kind: "gameover", result });
       }
+      };
+      try {
+        await advance(pending);
+      } catch (error) {
+        console.error("[Midnight Signal] Broadcast transition failed.", error);
+        const message = "The broadcast transition stalled. Try the transition button again.";
+        setErrorText(message);
+        announce(message, "alert");
+      } finally {
+        advancingRef.current.release();
+        setBusy(false);
+      }
     },
-    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, story?.tapes],
+    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, stopMysteryClip, story?.tapes],
   );
 
   const pickReward = useCallback(
@@ -976,6 +973,8 @@ export function GameApp() {
       draftChosen={draftChosen}
       hostPaused={hostPaused}
       hostAudioStatus={hostAudioStatus}
+      transitionError={errorText}
+      availableTapeIds={story?.tapes.map((tape) => tape.id) ?? []}
       musicMuted={musicMuted}
       panelHeadingRef={panelHeadingRef}
       pickBoost={pickBoost}

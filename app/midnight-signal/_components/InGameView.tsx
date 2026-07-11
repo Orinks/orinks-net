@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { RefObject } from "react";
 import type { GameSettings } from "../_lib/settings";
 import { presentAnswerDisclosure } from "../_lib/answerDisclosure";
+import { orderedTransitionLabel } from "../_lib/transitionLabels";
 import { MysteryClipPlayer } from "./MysteryClipPlayer";
 import { StoryBeatPanel } from "./StoryBeatPanel";
 import {
@@ -59,6 +60,8 @@ interface InGameViewProps {
   toggleHostPaused: () => void;
   hostPaused: boolean;
   hostAudioStatus: string | null;
+  transitionError: string | null;
+  availableTapeIds: string[];
   toggleMusicMuted: () => void;
   musicMuted: boolean;
   quitRun: () => Promise<void>;
@@ -99,6 +102,8 @@ export function InGameView({
   toggleHostPaused,
   hostPaused,
   hostAudioStatus,
+  transitionError,
+  availableTapeIds,
   toggleMusicMuted,
   musicMuted,
   quitRun,
@@ -413,32 +418,25 @@ export function InGameView({
               })()
             : null}
           <button
+            aria-disabled={busy}
             className={`${primaryButton} mt-4`}
             onClick={() =>
               void advanceAfterFeedback(phase.result, phase.result.events)
             }
             type="button"
           >
-            {phase.result.events.some(
-              (e) => e.type === "gameOver" || e.type === "bankExhausted",
-            )
-              ? "Continue"
-              : phase.result.run.deadAir
-                ? "Face the final question"
-                : phase.result.events.some(
-                      (e) =>
-                        e.type === "tapeUnlocked" || e.type === "finaleReady",
-                    )
-                  ? // A tape/finale screen serves first; promising the call or
-                    // draft here would name the wrong destination.
-                    "Continue"
+            {busy
+              ? "Tuning next segment…"
+              : orderedTransitionLabel(phase.result.events, availableTapeIds) ??
+                (phase.result.run.deadAir
+                  ? "Face the final question"
                   : phase.result.run.bossCall?.phase === "question"
                     ? "Take the call"
                     : phase.result.run.bossCall?.phase === "reward"
                       ? "Choose your reward"
                       : phase.result.run.drafting
                         ? "Choose your Signal Boost"
-                        : "Next question"}
+                        : "Next question")}
           </button>
         </section>
       ) : null}
@@ -455,13 +453,14 @@ export function InGameView({
           </h2>
           <p className="mt-3 leading-7">{phase.tape.text}</p>
           <button
+            aria-disabled={busy}
             className={`${primaryButton} mt-4`}
             onClick={() =>
               void advanceAfterFeedback(phase.result, phase.pending)
             }
             type="button"
           >
-            Continue
+            {busy ? "Tuning next segment…" : orderedTransitionLabel(phase.pending, availableTapeIds) ?? "Continue broadcast"}
           </button>
         </section>
       ) : null}
@@ -485,13 +484,14 @@ export function InGameView({
             </div>
           ))}
           <button
+            aria-disabled={busy}
             className={`${primaryButton} mt-6`}
             onClick={() =>
               void advanceAfterFeedback(phase.result, phase.pending)
             }
             type="button"
           >
-            Continue
+            {busy ? "Tuning next segment…" : orderedTransitionLabel(phase.pending, availableTapeIds) ?? "Continue broadcast"}
           </button>
         </section>
       ) : null}
@@ -566,6 +566,7 @@ export function InGameView({
         </section>
       ) : null}
 
+      {transitionError ? <p className="mt-4 text-sm text-red-200">{transitionError}</p> : null}
       <div className="mt-8 flex flex-wrap gap-3 border-t border-amber-700 pt-4">
         <button
           className={secondaryButton}
