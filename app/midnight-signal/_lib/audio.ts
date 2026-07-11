@@ -41,7 +41,8 @@ export class HostAudioPlayer {
     if (typeof Audio === "undefined") return;
     const audio = this.reusableAudio ?? new Audio();
     this.reusableAudio = audio;
-    audio.muted = true;
+    audio.muted = false;
+    audio.volume = 0;
     audio.src =
       "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
     void audio
@@ -51,10 +52,11 @@ export class HostAudioPlayer {
         audio.pause();
         audio.removeAttribute("src");
         audio.load();
-        audio.muted = false;
+        audio.volume = this._volume;
       })
-      .catch(() => {
-        audio.muted = false;
+      .catch((error: unknown) => {
+        audio.volume = this._volume;
+        console.error("[Midnight Signal] Audio unlock failed.", error);
       });
   }
 
@@ -88,7 +90,10 @@ export class HostAudioPlayer {
       this.finishCurrent = finish;
       audio.onended = () => finish("played");
       audio.onerror = () => finish("failed");
-      audio.play().catch(() => finish("failed"));
+      audio.play().catch((error: unknown) => {
+        console.error("[Midnight Signal] Host audio playback failed.", error);
+        finish("failed");
+      });
     });
   }
 

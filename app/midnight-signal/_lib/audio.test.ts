@@ -65,6 +65,11 @@ describe("audio cancellation", () => {
   test("gesture unlock reuses the activated media element for later narration", async () => {
     const player = new HostAudioPlayer(0.8);
     player.unlock();
+    const [unlockedAudio] = (globalThis as unknown as {
+      __audioInstances: Array<{ muted: boolean; volume: number }>;
+    }).__audioInstances;
+    expect(unlockedAudio.muted).toBe(false);
+    expect(unlockedAudio.volume).toBe(0);
     await Promise.resolve();
     const playback = player.play("/audio/trivia/example.mp3");
     player.stop();
@@ -73,6 +78,40 @@ describe("audio cancellation", () => {
       (globalThis as unknown as { __audioInstances: unknown[] })
         .__audioInstances,
     ).toHaveLength(1);
+  });
+
+  test("a pending unlock cannot mute or clear real playback", async () => {
+    let finishUnlock: (() => void) | undefined;
+    class DeferredAudio {
+      volume = 1;
+      muted = false;
+      src = "";
+      paused = false;
+      ended = false;
+      onended: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      play = vi
+        .fn()
+        .mockImplementationOnce(
+          () => new Promise<void>((resolve) => { finishUnlock = resolve; }),
+        )
+        .mockResolvedValue(undefined);
+      pause = vi.fn();
+      removeAttribute = vi.fn();
+      load = vi.fn();
+    }
+    vi.stubGlobal("Audio", DeferredAudio);
+    const player = new HostAudioPlayer(0.8);
+    player.unlock();
+    const playback = player.play("/audio/trivia/example.mp3");
+    finishUnlock?.();
+    await Promise.resolve();
+    const active = (player as unknown as { reusableAudio: DeferredAudio }).reusableAudio;
+    expect(active.volume).toBe(0.8);
+    expect(active.src).toBe("/audio/trivia/example.mp3");
+    expect(active.pause).not.toHaveBeenCalled();
+    player.stop();
+    await playback;
   });
 
   test("stopping the Producer synchronously settles the active speech promise", async () => {
