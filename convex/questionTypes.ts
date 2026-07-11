@@ -641,6 +641,24 @@ export function validateQuestion(
         "Negative or trick wording requires editorial review.",
       );
     }
+    const sourceRecordFraming =
+      /\b(?:archive|catalog(?:ue)?|database|item|page|record|source|contributor list|official (?:site|listing))\b/i.test(
+        value.prompt,
+      ) &&
+      /\b(?:according to|appears?|credits?|describes?|gives?|identified|lists?|marks?|names?|pairs?|recorded on)\b/i.test(
+        value.prompt,
+      );
+    const genuineArchiveClue =
+      value.format === "archive-clue" &&
+      /^(?:Archive Clue:\s*)?Which (?:archive|collection|company|playlist)\b/i.test(value.prompt);
+    if (sourceRecordFraming && !genuineArchiveClue) {
+      addIssue(
+        errors,
+        "question.prompt.source_record_framing",
+        `${path}.prompt`,
+        "Ask the music-trivia question directly; provenance should support the prompt, not become its subject.",
+      );
+    }
   }
 
   if (!Array.isArray(value.choices) || value.choices.length !== 4) {

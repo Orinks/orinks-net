@@ -146,7 +146,7 @@
       "category": "music-history-archive",
       "difficulty": 3,
       "format": "odd-one-out",
-      "prompt": "Which entry is the outlier in the Library of Congress National Jukebox Popular Music subgenre list?",
+      "prompt": "Which entry is not a Popular Music subgenre in the National Jukebox?",
       "choices": [
         "Blues",
         "Whistling",

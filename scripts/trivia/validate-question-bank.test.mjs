@@ -33,7 +33,7 @@ function validQuestion(overrides = {}) {
     category: "world-music",
     difficulty: 2,
     format: "world-signal",
-    prompt: "Which instrument is identified in this official collection record?",
+    prompt: "Which West African instrument has twenty-one strings and a calabash body?",
     choices: ["Kora", "Sitar", "Bandoneon", "Shakuhachi"],
     answer: 0,
     explanation: "The official collection record identifies a kora.",
@@ -139,5 +139,23 @@ describe("question-bank validator CLI", () => {
     expect(finalOutput.stderr).toContain("corpus.count.minimum");
     expect(finalOutput.stderr).not.toContain("legacy.active_bank");
     expect(finalOutput.stdout).toContain("legacy.json");
+  });
+
+  test("rejects source-record framing in strict banks", () => {
+    const directory = fixtureDirectory();
+    const bank = path.join(directory, "official.json");
+    const sources = path.join(directory, "sources.json");
+    writeJson(bank, {
+      questions: [
+        validQuestion({
+          prompt: "Which composer appears in the Library of Congress contributor list for Swanee?",
+        }),
+      ],
+    });
+    writeJson(sources, policy());
+
+    const output = runValidator(["--sources", sources, bank]);
+    expect(output.exitCode).toBe(1);
+    expect(output.stderr).toContain("question.prompt.source_record_framing");
   });
 });

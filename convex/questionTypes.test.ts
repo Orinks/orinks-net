@@ -27,7 +27,7 @@ function validQuestion(overrides: Partial<PrivateQuestion> = {}): PrivateQuestio
     category: "world-music",
     difficulty: 2,
     format: "world-signal",
-    prompt: "Which instrument is documented on this Library of Congress collection page?",
+    prompt: "Which West African instrument has twenty-one strings and a calabash body?",
     choices: ["Kora", "Sitar", "Bandoneon", "Shakuhachi"],
     answer: 0,
     explanation: "The collection page identifies the pictured instrument as a kora.",
@@ -115,6 +115,22 @@ describe("canonical question validation", () => {
     expect(
       errorCodes({ ...validQuestion(), choices: ["Kora", "Sitar", "None of the above", "Flute"] }),
     ).toContain("question.choices.catch_all");
+  });
+
+  test("rejects source-record framing while allowing genuine archive clues", () => {
+    expect(
+      errorCodes({
+        ...validQuestion(),
+        prompt: "Which composer appears in the Library of Congress contributor list for Swanee?",
+      }),
+    ).toContain("question.prompt.source_record_framing");
+    expect(
+      errorCodes({
+        ...validQuestion(),
+        format: "archive-clue",
+        prompt: "Archive Clue: Which collection preserves these early jazz recordings?",
+      }),
+    ).not.toContain("question.prompt.source_record_framing");
   });
 
   test("requires complete official HTTPS provenance with a real access date", () => {

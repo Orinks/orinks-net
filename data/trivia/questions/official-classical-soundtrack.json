@@ -27,7 +27,7 @@
     },
     {
       "id": "cst-0004", "category": "classical-opera-composition", "difficulty": 1, "format": "night-timeline",
-      "prompt": "Which 2025 Pulitzer Music winner follows 2024's Adagio (For Wadada Leo Smith) in the archive?",
+      "prompt": "Which 2025 Pulitzer Music winner followed 2024's Adagio (For Wadada Leo Smith)?",
       "choices": ["Sky Islands", "The Comet", "Voiceless Mass", "Omar"], "answer": 0,
       "explanation": "Sky Islands is the 2025 winner following the 2024 winner Adagio (For Wadada Leo Smith).",
       "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Adagio (For Wadada Leo Smith) for 2024 and Sky Islands by Susie Ibarra for 2025."}
@@ -135,7 +135,7 @@
     },
     {
       "id": "cst-0019", "category": "classical-opera-composition", "difficulty": 4, "format": "night-timeline",
-      "prompt": "Which Pulitzer Music winner immediately precedes Stride in the archive's yearly sequence?",
+      "prompt": "Which Pulitzer Music winner came immediately before Stride?",
       "choices": ["Adagio (For Wadada Leo Smith)", "The Central Park Five", "In for a Penny, In for a Pound", "Partita for 8 Voices"], "answer": 1,
       "explanation": "The Central Park Five is the 2020 winner immediately before 2021 winner Stride.",
       "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists The Central Park Five by Anthony Davis for 2020 immediately before Stride for 2021."}
@@ -245,7 +245,7 @@
     },
     {
       "id": "cst-0034", "category": "classical-opera-composition", "difficulty": 2, "format": "night-timeline",
-      "prompt": "Which 2015 Pulitzer Music winner follows Become Ocean in the archive's yearly sequence?",
+      "prompt": "Which 2015 Pulitzer Music winner followed Become Ocean?",
       "choices": ["The Aristos", "Xiaoxiang", "Partita for 8 Voices", "Anthracite Fields"], "answer": 3,
       "explanation": "Anthracite Fields is the 2015 winner following 2014 winner Become Ocean.",
       "source": {"publisher": "The Pulitzer Prizes", "title": "Music | The Pulitzer Prizes", "url": "https://www.pulitzer.org/prize-winners-by-category/225", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Become Ocean for 2014 and Anthracite Fields by Julia Wolfe for 2015."}
@@ -409,7 +409,7 @@
     },
     {
       "id": "cst-0057", "category": "game-stage-and-soundtrack", "difficulty": 3, "format": "night-timeline",
-      "prompt": "Which Tony Original Musical Score winner immediately followed Hamilton in the archive?",
+      "prompt": "Which Tony Original Musical Score winner immediately followed Hamilton?",
       "choices": ["The Bridges of Madison County", "The Band's Visit", "Dear Evan Hansen", "A Christmas Carol (2019)"], "answer": 2,
       "explanation": "Dear Evan Hansen won in 2017, immediately after Hamilton's 2016 win.",
       "source": {"publisher": "Tony Awards", "title": "Winners | The American Theatre Wing's Tony Awards®", "url": "https://www.tonyawards.com/winners/year/any/category/score/show/any/", "accessedAt": "2026-07-10", "evidenceSummary": "The archive lists Hamilton as the 2016 Original Musical Score winner and Dear Evan Hansen as the 2017 winner."}
@@ -501,7 +501,7 @@
     },
     {
       "id": "cst-0070", "category": "classical-opera-composition", "difficulty": 2, "format": "award-desk",
-      "prompt": "Which conductor is listed first for 2023 Best Opera Recording winner Blanchard: Fire Shut Up In My Bones?",
+      "prompt": "Who conducted 2023 Best Opera Recording winner Blanchard: Fire Shut Up In My Bones?",
       "choices": ["Yannick Nézet-Séguin", "Karen Kamensek", "Michael Tilson Thomas", "Esa-Pekka Salonen"], "answer": 0,
       "explanation": "Yannick Nézet-Séguin is the first-listed winner and conductor for the recording.",
       "pronunciation": {"Yannick Nézet-Séguin": "yah-NEEK nay-ZAY say-GAN"},
