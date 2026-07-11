@@ -54,6 +54,42 @@ describe("mystery clip streaming lifecycle", () => {
     expect(announcements.at(-1)).toBe("Mystery clip playing.");
   });
 
+  test("calls browser timer functions without an illegal receiver", () => {
+    function receiverSensitiveSchedule(this: unknown, callback: () => void) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      return callback as unknown as ReturnType<typeof setTimeout>;
+    }
+    const playback = new MysteryClipPlayback({
+      announce: () => {},
+      beforePlay: () => {},
+      suppressMusic: () => () => {},
+      onState: () => {},
+      createAudio: () => harness().audio,
+      schedule: receiverSensitiveSchedule,
+      cancelSchedule: () => {},
+    });
+
+    expect(() => playback.play("ms-clip-c9458e2a")).not.toThrow();
+  });
+
+  test("turns a stalled load into a retryable failure and cleans up media", () => {
+    const { announcements, audio, events, playback, release, timers } = harness();
+    playback.play("ms-clip-c9458e2a");
+    const latePlaying = audio.onplaying;
+    timers[1]();
+
+    expect(events.at(-1)).toEqual({ type: "failed", attempt: 1 });
+    expect(announcements.at(-1)).toContain("took too long to load");
+    expect(playback.active).toBe(false);
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(audio.removeAttribute).toHaveBeenCalledWith("src");
+    expect(audio.load).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    latePlaying?.();
+    expect(events.at(-1)).toEqual({ type: "failed", attempt: 1 });
+    expect(announcements).toHaveLength(1);
+  });
+
   test("pauses, resumes, and replays without replacing the active media element", async () => {
     const { announcements, audio, events, playback, release } = harness();
     playback.play("ms-clip-7f3a91c2");
@@ -115,7 +151,7 @@ describe("mystery clip streaming lifecycle", () => {
     playback.play("ms-clip-7f3a91c2", 4, 12);
     audio.currentTime = 4;
     audio.onplaying?.();
-    timers[1]();
+    timers[2]();
     expect(audio.pause).toHaveBeenCalledOnce();
     expect(audio.currentTime).toBe(16);
     expect(announcements.at(-1)).toBe("Mystery clip finished.");

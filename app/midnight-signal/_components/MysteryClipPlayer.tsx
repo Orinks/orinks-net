@@ -75,7 +75,7 @@ export function MysteryClipPlayer({
 
   return (
     <div className="mt-4 rounded-md border border-amber-700 p-4">
-      <p className="font-semibold text-amber-100">Equivalent text clue</p>
+      <h3 className="font-semibold text-amber-100">Equivalent text clue</h3>
       <p className="mt-1 leading-7">{clip.textClue}</p>
       {!answered ? (
         <button

@@ -26,9 +26,11 @@ interface MysteryClipPlaybackOptions {
     delay: number,
   ) => ReturnType<typeof setTimeout>;
   cancelSchedule?: (timer: ReturnType<typeof setTimeout>) => void;
+  loadingTimeoutMs?: number;
 }
 
 const LOADING_ANNOUNCEMENT_MS = 2000;
+const CLIP_START_TIMEOUT_MS = 15_000;
 
 /** Owns one streamed mystery clip and guarantees synchronous, idempotent cleanup. */
 export class MysteryClipPlayback {
@@ -36,6 +38,7 @@ export class MysteryClipPlayback {
   private audio: ClipAudio | null = null;
   private releaseSuppression: (() => void) | null = null;
   private loadingTimer: ReturnType<typeof setTimeout> | null = null;
+  private startupTimer: ReturnType<typeof setTimeout> | null = null;
   private endingTimer: ReturnType<typeof setTimeout> | null = null;
   private attempt = 0;
   private startSeconds = 0;
@@ -43,12 +46,15 @@ export class MysteryClipPlayback {
   private completed = false;
 
   constructor(options: MysteryClipPlaybackOptions) {
+    const schedule = options.schedule ?? setTimeout;
+    const cancelSchedule = options.cancelSchedule ?? clearTimeout;
     this.options = {
       ...options,
       createAudio: options.createAudio ?? (() => new Audio()),
       volume: options.volume ?? 0.8,
-      schedule: options.schedule ?? setTimeout,
-      cancelSchedule: options.cancelSchedule ?? clearTimeout,
+      schedule: (callback, delay) => schedule(callback, delay),
+      cancelSchedule: (timer) => cancelSchedule(timer),
+      loadingTimeoutMs: options.loadingTimeoutMs ?? CLIP_START_TIMEOUT_MS,
     };
   }
 
@@ -77,8 +83,17 @@ export class MysteryClipPlayback {
       if (!current() || this.completed) return;
       this.completed = true;
       this.clearLoadingTimer();
+      this.clearStartupTimer();
       this.clearEndingTimer();
-      if (type === "failed") this.audio = null;
+      if (type === "failed") {
+        this.audio = null;
+        audio.onplaying = null;
+        audio.onended = null;
+        audio.onerror = null;
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      }
       this.releaseMusic();
       this.options.onState({ type, attempt });
       this.options.announce(message);
@@ -87,6 +102,7 @@ export class MysteryClipPlayback {
     audio.onplaying = () => {
       if (!current()) return;
       this.clearLoadingTimer();
+      this.clearStartupTimer();
       if (audio.currentTime < this.startSeconds)
         audio.currentTime = this.startSeconds;
       this.scheduleEnding(audio, finish);
@@ -104,6 +120,12 @@ export class MysteryClipPlayback {
       this.options.onState({ type: "loading-announced", attempt });
       this.options.announce("Loading mystery clip.");
     }, LOADING_ANNOUNCEMENT_MS);
+    this.startupTimer = this.options.schedule(() => {
+      finish(
+        "failed",
+        "Mystery clip took too long to load. Use the text clue, or try again.",
+      );
+    }, this.options.loadingTimeoutMs);
     void audio.play().catch(() => {
       finish(
         "failed",
@@ -116,6 +138,7 @@ export class MysteryClipPlayback {
     const audio = this.audio;
     if (!audio) return;
     this.clearLoadingTimer();
+    this.clearStartupTimer();
     this.clearEndingTimer();
     audio.pause();
     this.releaseMusic();
@@ -153,6 +176,7 @@ export class MysteryClipPlayback {
   stop(shouldAnnounce = true) {
     const wasActive = this.audio !== null;
     this.clearLoadingTimer();
+    this.clearStartupTimer();
     this.clearEndingTimer();
     const audio = this.audio;
     this.audio = null;
@@ -191,6 +215,12 @@ export class MysteryClipPlayback {
     if (this.endingTimer !== null)
       this.options.cancelSchedule(this.endingTimer);
     this.endingTimer = null;
+  }
+
+  private clearStartupTimer() {
+    if (this.startupTimer !== null)
+      this.options.cancelSchedule(this.startupTimer);
+    this.startupTimer = null;
   }
 
   private scheduleEnding(
