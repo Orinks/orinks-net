@@ -125,24 +125,23 @@ export async function runQuestionBankValidator(argv, io = console, cwd = process
     return 1;
   }
 
-  if (!options.finalGate) {
-    for (const file of legacyFiles) io.log(`Legacy bank skipped: ${path.basename(file)}`);
+  for (const file of legacyFiles) {
+    io.log(`Legacy bank preserved outside strict provenance validation: ${path.basename(file)}`);
   }
 
   const report = validateQuestionCorpus(banks, policy, {
-    minimumQuestions: options.finalGate ? 460 : undefined,
+    minimumQuestions: options.finalGate ? 490 : undefined,
     requireAllFormats: options.finalGate,
+    minimumByFormat: options.finalGate
+      ? {
+          "needle-drop": 8,
+          "sound-lab": 8,
+          "archive-clue": 12,
+          "studio-lab": 12,
+          "odd-one-out": 12,
+        }
+      : undefined,
   });
-  if (options.finalGate) {
-    for (const file of legacyFiles) {
-      report.errors.unshift({
-        code: "legacy.active_bank",
-        path: file,
-        message: "Legacy root bank lacks strict format and official provenance and must be retired before final gate.",
-      });
-    }
-  }
-
   printIssues("Warnings", report.warnings, (message) => io.log(message));
   if (report.errors.length > 0) {
     printIssues("Errors", report.errors, (message) => io.error(message));

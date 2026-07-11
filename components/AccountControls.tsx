@@ -49,12 +49,12 @@ export function AccountControls({
     <div className="flex flex-wrap items-center gap-2">
       <Show when="signed-out">
         <SignInButton mode="modal">
-          <button className={signInClassName ?? defaultSignIn} type="button">
+          <button aria-haspopup="dialog" className={signInClassName ?? defaultSignIn} type="button">
             Sign in
           </button>
         </SignInButton>
         <SignUpButton mode="modal">
-          <button className={signUpClassName ?? defaultSignUp} type="button">
+          <button aria-haspopup="dialog" className={signUpClassName ?? defaultSignUp} type="button">
             Create account
           </button>
         </SignUpButton>

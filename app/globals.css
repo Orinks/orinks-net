@@ -11,6 +11,31 @@ html {
   scroll-behavior: smooth;
 }
 
+html.motion-reduce {
+  scroll-behavior: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-full) {
+    scroll-behavior: auto;
+  }
+
+  html:not(.motion-full) *,
+  html:not(.motion-full) *::before,
+  html:not(.motion-full) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+
 body {
   background: #fbfcfe;
   color: #111827;

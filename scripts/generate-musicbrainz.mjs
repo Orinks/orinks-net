@@ -23,7 +23,7 @@
  * Usage:
  *   node scripts/generate-musicbrainz.mjs                # target ~200 questions
  *   node scripts/generate-musicbrainz.mjs --amount 50    # smaller batch
- *   node scripts/generate-musicbrainz.mjs --out data/trivia/questions/retired/musicbrainz-generated.json
+ *   node scripts/generate-musicbrainz.mjs --out data/trivia/questions/musicbrainz-generated.json
  */
 
 import { createHash } from "node:crypto";
@@ -70,7 +70,7 @@ function fail(message) {
 function parseArgs(argv) {
   const args = {
     amount: 200,
-    out: "data/trivia/questions/retired/musicbrainz-generated.json",
+    out: "data/trivia/questions/musicbrainz-generated.json",
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];

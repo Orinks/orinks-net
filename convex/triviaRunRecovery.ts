@@ -4,7 +4,7 @@ import type { BankQuestion } from "./questionBank";
 import { selectionPoolForRun } from "./triviaDailyEpisodes";
 
 export const RUN_LIBRARY_RESET_REASON =
-  "The question library was upgraded, so this unfinished broadcast was retired. A new official-source broadcast is ready.";
+  "The question library changed, so this unfinished broadcast could not be resumed. A new broadcast is ready.";
 
 export interface ActiveRunContent {
   currentQuestion: BankQuestion | null;

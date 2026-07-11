@@ -27,9 +27,10 @@ as game assets.
   difficulty, segment format, prompt, exactly four choices, answer,
   explanation, and exact official provenance. `voice: false` skips TTS and
   `voice: "<name>"` selects another configured voice.
-- `questions/retired/*.json` — preserved legacy banks that are excluded from
-  runtime selection and the final official-corpus gate because they do not
-  carry exact official provenance.
+- `questions/general-trivia.json`, `questions/musicbrainz-generated.json`, and
+  `questions/opentdb-music.json` — the pre-existing active banks. Their original
+  schema and source/license metadata are preserved and validated through the
+  legacy compatibility loader rather than the strict official-source gate.
 - `clips.json` — the server-only mystery-clip rights ledger. It stores opaque
   game IDs, provider asset IDs, clip timing, equivalent text clues, access
   dates, immutable artist-published metadata snapshots, copyright notices,
@@ -69,10 +70,9 @@ the 460-question and ten-format floors, run:
 npm run trivia:validate -- --final-gate
 ```
 
-The retired legacy banks remain available under `questions/retired` for
-historical reference but are never part of these active-bank checks. A
-specific staged bank can be checked strictly by passing its path after the
-command.
+The validator reports legacy banks separately and applies the release floor and
+ten-format coverage only to new strict official banks. A specific staged bank
+can be checked strictly by passing its path after the command.
 
 ## Daily episode freezing during the corpus migration
 
@@ -83,25 +83,26 @@ Later starts reuse that row, so adding or reordering candidates during the day
 cannot reroll the broadcast. Answer positions are balanced by choosing a
 different question; choice text is never shuffled at runtime.
 
-The retired legacy banks do not have strict `format` metadata and are not
-selectable. Existing unfinished legacy runs are retired through the run
-recovery path before an official-source broadcast begins. The stable version
-constants live in `convex/triviaVersions.ts` and must be advanced deliberately
-when corpus or planning rules change.
+Legacy records receive an internal `legacy-trivia` runtime segment marker but
+their authored files, source strings, questions, answers, and explanations are
+not rewritten. They remain selectable in free play and are frozen into daily
+episodes alongside strict official questions. The stable version constants
+live in `convex/triviaVersions.ts` and must be advanced deliberately when
+corpus or planning rules change.
 
 This validator requires Node.js 24. It directly imports the canonical
 TypeScript contract using Node 24's built-in type stripping so the CLI and the
 server-side model cannot drift into separate schemas.
 
-## Official-source-only policy
+## Strict official-bank policy
 
-Do not import community trivia banks or generate release facts from
-community-edited databases. OpenTDB and MusicBrainz are not approved question
-sources for this game. Each playable question must instead cite an exact
-official publisher page or an approved open-data record from the institution
-that owns the collection. Automated collectors only stage evidence; an editor
-must write and verify the question, answer, distractors, explanation, and
-disclosure before it can enter the strict bank.
+Do not add new community-database records to the strict official banks. Every
+new strict question must cite an exact official publisher page or approved
+institutional open-data record. The pre-existing OpenTDB, MusicBrainz, and
+general-trivia banks remain active under their original licenses and metadata;
+that compatibility exception does not weaken the provenance requirements for
+new content. Automated collectors only stage evidence, and an editor must
+verify every new strict record before it enters that corpus.
 
 ## Generating audio
 
@@ -111,7 +112,7 @@ npm run tts                     # generate up to 5000 characters
 npm run tts -- --budget 20000   # larger explicit live ceiling
 npm run tts -- --dry-run --budget 0 # complete plan; unlimited is dry-run only
 npm run tts -- --only barks     # barks first — they carry the personality
-npm run tts:sync                # rebuild manifest and prune retired/orphaned MP3s, no API calls
+npm run tts:sync                # rebuild manifest and prune inactive/orphaned MP3s, no API calls
 npm run tts:verify              # verify hashes, files, size, and manifest coverage
 ```
 

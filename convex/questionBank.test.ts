@@ -1,7 +1,13 @@
 import { describe, expect, test } from "vitest";
-import { questionBank, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import {
+  legacyQuestionBank,
+  officialQuestionBank,
+  questionBank,
+  sanitizeQuestion,
+} from "./questionBank";
+import type { PrivateQuestion } from "./questionTypes";
 
-function strictQuestion(overrides: Partial<BankQuestion> = {}): BankQuestion {
+function strictQuestion(overrides: Partial<PrivateQuestion> = {}): PrivateQuestion {
   return {
     id: "official-test-0001",
     category: "electronic",
@@ -54,6 +60,8 @@ describe("question bank public projection", () => {
       choices: question.choices,
       clip: {
         id: "ms-clip-7f3a91c2",
+        startSeconds: 0,
+        durationSeconds: 12,
         textClue: "A verified deep-house release from July 2026.",
       },
     });
@@ -64,19 +72,28 @@ describe("question bank public projection", () => {
     expect(serialized).not.toContain('"answer"');
   });
 
-  test("selects only validated official-source records at runtime", () => {
-    expect(questionBank).toHaveLength(466);
-    expect(new Set(questionBank.map((question) => question.id)).size).toBe(466);
+  test("loads strict official banks alongside every pre-existing legacy record", () => {
+    expect(officialQuestionBank).toHaveLength(491);
+    expect(legacyQuestionBank).toHaveLength(564);
+    expect(questionBank).toHaveLength(1055);
+    expect(new Set(questionBank.map((question) => question.id)).size).toBe(1055);
+    const formatCounts = Object.groupBy(officialQuestionBank, (question) => question.format);
+    expect(formatCounts["needle-drop"]).toHaveLength(13);
+    expect(formatCounts["sound-lab"]).toHaveLength(9);
+    expect(formatCounts["archive-clue"]).toHaveLength(16);
+    expect(formatCounts["studio-lab"]).toHaveLength(16);
+    expect(formatCounts["odd-one-out"]).toHaveLength(18);
     expect(
       questionBank.some((question) => /^(?:gt-|mb-|otdb-)/u.test(question.id)),
-    ).toBe(false);
+    ).toBe(true);
     expect(
-      questionBank.every(
+      officialQuestionBank.every(
         (question) =>
           question.format.length > 0 &&
           question.explanation.length > 0 &&
           question.source.url.startsWith("https://"),
       ),
     ).toBe(true);
+    expect(legacyQuestionBank.every((question) => question.format === "legacy-trivia")).toBe(true);
   });
 });

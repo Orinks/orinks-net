@@ -90,6 +90,10 @@
       "hosts": ["philharmonia.co.uk", "www.philharmonia.co.uk"]
     },
     {
+      "publisher": "Shure",
+      "hosts": ["shure.com", "www.shure.com"]
+    },
+    {
       "publisher": "Audius",
       "hosts": [
         "audius.co",

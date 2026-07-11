@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-const triviaQuestionFormat = v.union(
+const strictTriviaQuestionFormat = v.union(
   v.literal("award-desk"),
   v.literal("chart-wire"),
   v.literal("world-signal"),
@@ -14,6 +14,11 @@ const triviaQuestionFormat = v.union(
   v.literal("sound-lab"),
 );
 
+const triviaQuestionFormat = v.union(
+  strictTriviaQuestionFormat,
+  v.literal("legacy-trivia"),
+);
+
 const triviaClipAttribution = v.object({
   creator: v.string(),
   copyrightNotice: v.string(),
@@ -23,11 +28,11 @@ const triviaClipAttribution = v.object({
   sourceUrl: v.string(),
 });
 
-const triviaQuestionSnapshot = v.object({
+const strictTriviaQuestionSnapshot = v.object({
   id: v.string(),
   category: v.string(),
   difficulty: v.number(),
-  format: triviaQuestionFormat,
+  format: strictTriviaQuestionFormat,
   prompt: v.string(),
   choices: v.array(v.string()),
   answer: v.number(),
@@ -67,6 +72,23 @@ const triviaQuestionSnapshot = v.object({
   ),
   voice: v.optional(v.union(v.string(), v.literal(false))),
 });
+
+const legacyTriviaQuestionSnapshot = v.object({
+  id: v.string(),
+  category: v.string(),
+  difficulty: v.number(),
+  format: v.literal("legacy-trivia"),
+  prompt: v.string(),
+  choices: v.array(v.string()),
+  answer: v.number(),
+  explanation: v.optional(v.string()),
+  source: v.optional(v.string()),
+});
+
+const triviaQuestionSnapshot = v.union(
+  strictTriviaQuestionSnapshot,
+  legacyTriviaQuestionSnapshot,
+);
 
 export default defineSchema({
   buildNotificationSubscriptions: defineTable({

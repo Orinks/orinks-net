@@ -356,6 +356,21 @@ describe("canonical question validation", () => {
   });
 });
 
+describe("corpus format floors", () => {
+  test("rejects a token format count below its configured floor", () => {
+    const result = validateQuestionCorpus(
+      [{ file: "one.json", data: { questions: [validQuestion()] } }],
+      sourcePolicy,
+      { minimumByFormat: { "award-desk": 2 } },
+    );
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "corpus.format.minimum", path: "corpus.formats.award-desk" }),
+      ]),
+    );
+  });
+});
+
 describe("private-to-public projections", () => {
   const clipQuestion = validQuestion({
     format: "needle-drop",
@@ -391,6 +406,8 @@ describe("private-to-public projections", () => {
       choices: clipQuestion.choices,
       clip: {
         id: "ms-clip-29c7fd40",
+        startSeconds: 8,
+        durationSeconds: 12,
         textClue: "A West African harp-lute is the featured instrument.",
       },
     });

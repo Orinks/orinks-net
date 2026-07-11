@@ -1,0 +1,644 @@
+{
+  "minigame": "official-audius-expanded",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "official-audius-expanded-001",
+      "category": "recording-and-production",
+      "difficulty": 1,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Which instrumental pairing does College Music’s description identify for “Cable Car”?",
+      "choices": [
+        "Accordion and piano",
+        "Banjo and fiddle",
+        "Harp and flute",
+        "Sitar and tabla"
+      ],
+      "answer": 0,
+      "explanation": "The artist-published description identifies Anatole Muster as an accordionist and Çağrı Sertel as a pianist.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Anatole Muster, Andris Mattson & Çağrı Sertel - Cable Car",
+        "url": "https://audius.co/collegemusic/anatole-muster-andris-mattson-çağrı-sertel-cable-car",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified Audius record identifies the credited artists, Jazz tag, release date, and describes Anatole Muster as an accordionist and Çağrı Sertel as a piano virtuoso."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-cabeddd5",
+        "provider": "audius",
+        "providerAssetId": "O5a1m0V",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "This London-published jazz collaboration credits one portable bellows instrument and one keyed concert instrument.",
+        "attribution": {
+          "creator": "College Music",
+          "copyrightNotice": "Copyright © 2022 College Music.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Anatole Muster, Andris Mattson & Çağrı Sertel - Cable Car",
+          "sourceUrl": "https://audius.co/collegemusic/anatole-muster-andris-mattson-çağrı-sertel-cable-car"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-002",
+      "category": "recording-and-production",
+      "difficulty": 2,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Who does Sammy Arriaga credit as the production team for “COUNTRY SIDE”?",
+      "choices": [
+        "Cooper Alan and Tim Riehm",
+        "Sam Martinez and Sammy Arriaga",
+        "Sam Martinez and Cooper Alan",
+        "Tim Riehm and Sammy Arriaga"
+      ],
+      "answer": 1,
+      "explanation": "The uploader credits Sam Martinez and Sammy Arriaga as producers.",
+      "source": {
+        "publisher": "Audius",
+        "title": "COUNTRY SIDE feat. Cooper Alan",
+        "url": "https://audius.co/SammyArriaga/country-side-feat-cooper-alan",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius description names Sam Martinez and Sammy Arriaga as producers and lists the songwriting credits."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-982bcccc",
+        "provider": "audius",
+        "providerAssetId": "9dMmG",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The Nashville-published Country track names a two-person production team, one of whom is its uploader.",
+        "attribution": {
+          "creator": "Sammy Arriaga",
+          "copyrightNotice": "Copyright © 2022 Sammy Arriaga.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "COUNTRY SIDE feat. Cooper Alan",
+          "sourceUrl": "https://audius.co/SammyArriaga/country-side-feat-cooper-alan"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-003",
+      "category": "recording-and-production",
+      "difficulty": 3,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: What tempo does Miquela publish for “Hard Feelings”?",
+      "choices": [
+        "88 BPM",
+        "108 BPM",
+        "98 BPM",
+        "118 BPM"
+      ],
+      "answer": 2,
+      "explanation": "Miquela’s contest notes state that the BPM is 98.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Hard Feelings",
+        "url": "https://audius.co/miquela/hard-feelings-79604",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist’s Audius description directly states “BPM is 98” and credits Lido as producer."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-6a126dd0",
+        "provider": "audius",
+        "providerAssetId": "LKWVl",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The artist’s contest notes publish an exact two-digit tempo just below 100.",
+        "attribution": {
+          "creator": "Miquela",
+          "copyrightNotice": "Copyright © 2020 Miquela.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Hard Feelings",
+          "sourceUrl": "https://audius.co/miquela/hard-feelings-79604"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-004",
+      "category": "recording-and-production",
+      "difficulty": 4,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Where does RAC place “Antecipaçāo” in Ambient Works Series A?",
+      "choices": [
+        "First release",
+        "Third release",
+        "Fourth release",
+        "Second release"
+      ],
+      "answer": 3,
+      "explanation": "RAC describes the track as the second release in Ambient Works Series A.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Antecipaçāo",
+        "url": "https://audius.co/RAC/antecipaçāo",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius description explicitly calls this track the second release of Ambient Works Series A."
+      },
+      "voice": false,
+      "pronunciation": {
+        "Antecipaçāo": "an-teh-see-pah-SOWN"
+      },
+      "clip": {
+        "id": "ms-clip-06f4471a",
+        "provider": "audius",
+        "providerAssetId": "bQQp4PW",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "RAC describes this peaceful Ambient piece as an early numbered entry in an ongoing Series A.",
+        "attribution": {
+          "creator": "RAC",
+          "copyrightNotice": "Copyright © 2023 RAC.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Antecipaçāo",
+          "sourceUrl": "https://audius.co/RAC/antecipaçāo"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-005",
+      "category": "recording-and-production",
+      "difficulty": 5,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: How does Just A Gent describe “Aliens” in the rollout for Planet Oasis?",
+      "choices": [
+        "Second single",
+        "First single",
+        "Third single",
+        "Album closer"
+      ],
+      "answer": 0,
+      "explanation": "The uploader calls it the second single from the debut album Planet Oasis.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Aliens",
+        "url": "https://audius.co/JustAGent/aliens-448139",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified Audius description identifies Aliens as the second single from Just A Gent’s debut album Planet Oasis."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-627bb1a3",
+        "provider": "audius",
+        "providerAssetId": "oWa1J",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The uploader places this track early in the rollout for a debut album named after a planetary refuge.",
+        "attribution": {
+          "creator": "Just A Gent",
+          "copyrightNotice": "Copyright © 2021 Just A Gent.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Aliens",
+          "sourceUrl": "https://audius.co/JustAGent/aliens-448139"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-006",
+      "category": "recording-and-production",
+      "difficulty": 1,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Which companion release does Alina Baraz announce for remix makers?",
+      "choices": [
+        "Instrumental",
+        "Acapella",
+        "Drum stems",
+        "Live video"
+      ],
+      "answer": 1,
+      "explanation": "The artist’s upload notes announce that the acapella is available.",
+      "source": {
+        "publisher": "Audius",
+        "title": "More Than Enough",
+        "url": "https://audius.co/alinabaraz/more-than-enough-97935",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius description directly announces an acapella and invites remixes."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-31f8b1de",
+        "provider": "audius",
+        "providerAssetId": "y8NWZ",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The artist’s upload notes announce a voice-only companion release for remix makers.",
+        "attribution": {
+          "creator": "Alina Baraz",
+          "copyrightNotice": "Copyright © 2020 Alina Baraz.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "More Than Enough",
+          "sourceUrl": "https://audius.co/alinabaraz/more-than-enough-97935"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-007",
+      "category": "recording-and-production",
+      "difficulty": 2,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Who does LOLO ZOUAÏ credit with both production and mixing on “Brooklyn Love”?",
+      "choices": [
+        "Joe LaPorta",
+        "Lido",
+        "Stelios",
+        "Andris Mattson"
+      ],
+      "answer": 2,
+      "explanation": "The uploader credits Stelios for production and mixing; Joe LaPorta handled mastering.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Brooklyn Love",
+        "url": "https://audius.co/LoloZouai/brooklyn-love",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius description lists Stelios as producer and mixer and Joe LaPorta as mastering engineer."
+      },
+      "voice": false,
+      "pronunciation": {
+        "ZOUAÏ": "zoo-EYE"
+      },
+      "clip": {
+        "id": "ms-clip-f5bbc258",
+        "provider": "audius",
+        "providerAssetId": "WY76o",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The uploader credits one person for two studio roles, while a different engineer handled mastering.",
+        "attribution": {
+          "creator": "LOLO ZOUAÏ",
+          "copyrightNotice": "Copyright © 2018 LOLO ZOUAÏ.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Brooklyn Love",
+          "sourceUrl": "https://audius.co/LoloZouai/brooklyn-love"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-008",
+      "category": "recording-and-production",
+      "difficulty": 3,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Which release format does Boys Noize specify for this version of “Mvinline Svn”?",
+      "choices": [
+        "Cassette only",
+        "Streaming single",
+        "Compact disc bonus",
+        "Vinyl only"
+      ],
+      "answer": 3,
+      "explanation": "Boys Noize describes it as an unreleased vinyl-only version of “Mvinline.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "\"Mvinline Svn\" (vinyl only)",
+        "url": "https://audius.co/boysnoize/\"mvinline-svn\"-vinyl-only-91283",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist’s Audius description directly identifies the upload as an unreleased vinyl-only version of the artist’s own Mvinline."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-6f6fc609",
+        "provider": "audius",
+        "providerAssetId": "oEg42",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The Berlin artist describes this Disco variant as restricted to an analog grooved-disc format.",
+        "attribution": {
+          "creator": "Boys Noize",
+          "copyrightNotice": "Copyright © 2020 Boys Noize.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "\"Mvinline Svn\" (vinyl only)",
+          "sourceUrl": "https://audius.co/boysnoize/\"mvinline-svn\"-vinyl-only-91283"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-009",
+      "category": "global-recordings",
+      "difficulty": 4,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which genre tag accompanies Stick Figure’s “Paradise” excerpt?",
+      "choices": [
+        "Reggae",
+        "Metal",
+        "Country",
+        "Ambient"
+      ],
+      "answer": 0,
+      "explanation": "The artist-published Audius record tags “Paradise” as Reggae.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Paradise",
+        "url": "https://audius.co/StickFigureDub/paradise-433083",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified Audius record identifies Paradise by Stick Figure, tagged Reggae, released in 2021, and streamable."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-70959d9e",
+        "provider": "audius",
+        "providerAssetId": "oWgp5",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Stick Figure published this 2021 track under a Caribbean-rooted genre tag.",
+        "attribution": {
+          "creator": "Stick Figure",
+          "copyrightNotice": "Copyright © 2021 Stick Figure.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Paradise",
+          "sourceUrl": "https://audius.co/StickFigureDub/paradise-433083"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-010",
+      "category": "global-recordings",
+      "difficulty": 5,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which title matches this Unlike Pluto Metal excerpt?",
+      "choices": [
+        "Chrome Order",
+        "Color Chaos",
+        "Neon Conflict",
+        "Painted Noise"
+      ],
+      "answer": 1,
+      "explanation": "Unlike Pluto’s artist-published Audius record identifies the title as “Color Chaos.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Color Chaos",
+        "url": "https://audius.co/unlikepluto/color-chaos",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified Audius record identifies Color Chaos by Unlike Pluto, tagged Metal, released in 2023, and streamable."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-6d41e4a4",
+        "provider": "audius",
+        "providerAssetId": "Y5qYqjr",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Unlike Pluto’s two-word title pairs a visual property with total disorder.",
+        "attribution": {
+          "creator": "Unlike Pluto",
+          "copyrightNotice": "Copyright © 2023 Unlike Pluto.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Color Chaos",
+          "sourceUrl": "https://audius.co/unlikepluto/color-chaos"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-011",
+      "category": "global-recordings",
+      "difficulty": 1,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which collaborator is credited on Cheat Codes’ “Ghost Story”?",
+      "choices": [
+        "Unlike Pluto",
+        "Just A Gent",
+        "All Time Low",
+        "Stick Figure"
+      ],
+      "answer": 2,
+      "explanation": "The canonical title is “Ghost Story (with All Time Low).”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Ghost Story (with All Time Low)",
+        "url": "https://audius.co/CheatCodesMusic/ghost-story-with-all-time-low",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist-published Audius record’s exact title credits All Time Low and tags the track Rock."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-c70a8726",
+        "provider": "audius",
+        "providerAssetId": "wyE3r",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Cheat Codes’ Rock upload places a long-running pop-punk band in parentheses after the title.",
+        "attribution": {
+          "creator": "Cheat Codes",
+          "copyrightNotice": "Copyright © 2021 Cheat Codes.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Ghost Story (with All Time Low)",
+          "sourceUrl": "https://audius.co/CheatCodesMusic/ghost-story-with-all-time-low"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-012",
+      "category": "global-recordings",
+      "difficulty": 2,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which Spanish title completes the four-artist Sak Noel credit?",
+      "choices": [
+        "La Primera Luz",
+        "La Nueva Voz",
+        "La Misma Noche",
+        "La Última Vez"
+      ],
+      "answer": 3,
+      "explanation": "The canonical Audius title ends with “La Última Vez.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Sak Noel x Franklin Dam x Keid Sing x Tony War - La Última Vez",
+        "url": "https://audius.co/saknoel/sak-noel-x-franklin-dam-x-keid-sing-x-tony-war-la-última-vez",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist-published Audius record names Sak Noel, Franklin Dam, Keid Sing, and Tony War and gives the exact title La Última Vez."
+      },
+      "voice": false,
+      "pronunciation": {
+        "Última": "OOL-tee-mah"
+      },
+      "clip": {
+        "id": "ms-clip-e24e9d0d",
+        "provider": "audius",
+        "providerAssetId": "Xl5y9mb",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Four credited performers share a Spanish title beginning with an article and ending in a three-letter word.",
+        "attribution": {
+          "creator": "🍑 Sak Noel 🍑",
+          "copyrightNotice": "Copyright © 2023 🍑 Sak Noel 🍑.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Sak Noel x Franklin Dam x Keid Sing x Tony War - La Última Vez",
+          "sourceUrl": "https://audius.co/saknoel/sak-noel-x-franklin-dam-x-keid-sing-x-tony-war-la-última-vez"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-013",
+      "category": "global-recordings",
+      "difficulty": 3,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which artist uploaded the Hip-Hop/Rap track “Freed Up”?",
+      "choices": [
+        "RUSS",
+        "Masego",
+        "Skrillex",
+        "RAC"
+      ],
+      "answer": 0,
+      "explanation": "The verified Audius uploader for “Freed Up” is RUSS.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Freed Up",
+        "url": "https://audius.co/russdiemon/freed-up-107829",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The canonical Audius record identifies RUSS as uploader, Freed Up as title, Hip-Hop/Rap as genre, and includes a 2020 Russ My Way Inc. phonographic credit."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-cf98d0a7",
+        "provider": "audius",
+        "providerAssetId": "qEJgB",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The Atlanta uploader’s description carries a 2020 phonographic credit to an independently named company.",
+        "attribution": {
+          "creator": "RUSS",
+          "copyrightNotice": "Copyright © 2020 RUSS.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Freed Up",
+          "sourceUrl": "https://audius.co/russdiemon/freed-up-107829"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-014",
+      "category": "global-recordings",
+      "difficulty": 4,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which title matches this Skrillex Electronic excerpt?",
+      "choices": [
+        "Uptown Meridian",
+        "Kliptown Empyrean",
+        "Downtown Elysium",
+        "Kliptown Horizon"
+      ],
+      "answer": 1,
+      "explanation": "Skrillex’s artist-published Audius record identifies the title as “Kliptown Empyrean.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Kliptown Empyrean",
+        "url": "https://audius.co/Skrillex/kliptown-empyrean-98562",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified Audius record identifies Kliptown Empyrean by Skrillex, tagged Electronic, released in 2020, and streamable."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-c8a7c8d4",
+        "provider": "audius",
+        "providerAssetId": "G0wyE",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Skrillex’s two-word title joins an invented-looking place name to a word meaning celestial or heavenly.",
+        "attribution": {
+          "creator": "Skrillex",
+          "copyrightNotice": "Copyright © 2020 Skrillex.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Kliptown Empyrean",
+          "sourceUrl": "https://audius.co/Skrillex/kliptown-empyrean-98562"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-015",
+      "category": "global-recordings",
+      "difficulty": 5,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which verified artist uploaded the R&B/Soul track “Navajo”?",
+      "choices": [
+        "RUSS",
+        "RAC",
+        "Masego",
+        "Miquela"
+      ],
+      "answer": 2,
+      "explanation": "The verified Audius artist for “Navajo” is Masego.",
+      "source": {
+        "publisher": "Audius",
+        "title": "Navajo",
+        "url": "https://audius.co/masego/navajo-52166",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The canonical Audius record and uploader profile identify Masego, Navajo, the R&B/Soul genre tag, and its 2020 release date."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-55644e3a",
+        "provider": "audius",
+        "providerAssetId": "n0404",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "This 2020 R&B/Soul upload comes from the verified artist whose profile location reads “Sego City.”",
+        "attribution": {
+          "creator": "Masego",
+          "copyrightNotice": "Copyright © 2020 Masego.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Navajo",
+          "sourceUrl": "https://audius.co/masego/navajo-52166"
+        }
+      }
+    },
+    {
+      "id": "official-audius-expanded-016",
+      "category": "global-recordings",
+      "difficulty": 1,
+      "format": "needle-drop",
+      "prompt": "Needle Drop: Which featured performer appears in harris cole’s “day late” title?",
+      "choices": [
+        "Andris Mattson",
+        "Cooper Alan",
+        "Çağrı Sertel",
+        "Rob Araujo"
+      ],
+      "answer": 3,
+      "explanation": "The canonical title credits Rob Araujo as the featured performer.",
+      "source": {
+        "publisher": "Audius",
+        "title": "day late (feat. rob araujo) [\"always less\" ep out now]",
+        "url": "https://audius.co/harriscole/day-late-feat-rob-araujo-always-less-ep-out-now",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist-published Audius record’s exact title names Rob Araujo and promotes the always less EP."
+      },
+      "voice": false,
+      "pronunciation": {
+        "Araujo": "ah-RAU-zhoh",
+        "Çağrı Sertel": "CHA-ruh ser-TELL"
+      },
+      "clip": {
+        "id": "ms-clip-0f287f25",
+        "provider": "audius",
+        "providerAssetId": "RQYEQ",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "The lowercase Jazz title credits one featured performer and promotes the “always less” EP.",
+        "attribution": {
+          "creator": "harris cole",
+          "copyrightNotice": "Copyright © 2022 harris cole.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "day late (feat. rob araujo) [\"always less\" ep out now]",
+          "sourceUrl": "https://audius.co/harriscole/day-late-feat-rob-araujo-always-less-ep-out-now"
+        }
+      }
+    }
+  ]
+}

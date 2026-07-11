@@ -1,8 +1,11 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { sanitizeQuestion, type BankQuestion } from "./questionBank";
-import { createAnswerDisclosure } from "./questionTypes";
+import {
+  answerDisclosureForQuestion,
+  sanitizeQuestion,
+  type BankQuestion,
+} from "./questionBank";
 import { boostByKey, rollBoostOffer } from "./boosts";
 import { mutatorByKey } from "./mutators";
 import { dateKeyOf, runRoll, weekKeyOf } from "./triviaDeterminism";
@@ -427,7 +430,7 @@ export const submitAnswer = mutation({
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
-      disclosure: createAnswerDisclosure(question),
+      disclosure: answerDisclosureForQuestion(question),
       scoreDelta,
       events,
       run: publicRunState(updatedRun, frozenBossQuestion),
@@ -671,7 +674,7 @@ export const answerBossCall = mutation({
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
-      disclosure: createAnswerDisclosure(question),
+      disclosure: answerDisclosureForQuestion(question),
       scoreDelta: 0,
       events,
       run: publicRunState(updated),

@@ -173,6 +173,470 @@
         "sourceTitle": "A Stroll (Audius Exclusive)",
         "sourceUrl": "https://audius.co/mrbencura/a-stroll-audius-exclusive"
       }
+    },
+    {
+      "id": "ms-clip-cabeddd5",
+      "provider": "audius",
+      "providerAssetId": "O5a1m0V",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "This London-published jazz collaboration credits one portable bellows instrument and one keyed concert instrument.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "College Music",
+        "uploaderVerified": true,
+        "title": "Anatole Muster, Andris Mattson & Çağrı Sertel - Cable Car",
+        "permalink": "https://audius.co/collegemusic/anatole-muster-andris-mattson-çağrı-sertel-cable-car",
+        "genre": "Jazz",
+        "releasedAt": "2022-12-02T12:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "College Music",
+        "copyrightNotice": "Copyright © 2022 College Music.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Anatole Muster, Andris Mattson & Çağrı Sertel - Cable Car",
+        "sourceUrl": "https://audius.co/collegemusic/anatole-muster-andris-mattson-çağrı-sertel-cable-car"
+      }
+    },
+    {
+      "id": "ms-clip-982bcccc",
+      "provider": "audius",
+      "providerAssetId": "9dMmG",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The Nashville-published Country track names a two-person production team, one of whom is its uploader.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Sammy Arriaga",
+        "uploaderVerified": true,
+        "title": "COUNTRY SIDE feat. Cooper Alan",
+        "permalink": "https://audius.co/SammyArriaga/country-side-feat-cooper-alan",
+        "genre": "Country",
+        "releasedAt": "2022-01-11T09:05:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Sammy Arriaga",
+        "copyrightNotice": "Copyright © 2022 Sammy Arriaga.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "COUNTRY SIDE feat. Cooper Alan",
+        "sourceUrl": "https://audius.co/SammyArriaga/country-side-feat-cooper-alan"
+      }
+    },
+    {
+      "id": "ms-clip-6a126dd0",
+      "provider": "audius",
+      "providerAssetId": "LKWVl",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The artist’s contest notes publish an exact two-digit tempo just below 100.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Miquela",
+        "uploaderVerified": true,
+        "title": "Hard Feelings",
+        "permalink": "https://audius.co/miquela/hard-feelings-79604",
+        "genre": "Pop",
+        "releasedAt": "2020-07-16T13:05:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Miquela",
+        "copyrightNotice": "Copyright © 2020 Miquela.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Hard Feelings",
+        "sourceUrl": "https://audius.co/miquela/hard-feelings-79604"
+      }
+    },
+    {
+      "id": "ms-clip-06f4471a",
+      "provider": "audius",
+      "providerAssetId": "bQQp4PW",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "RAC describes this peaceful Ambient piece as an early numbered entry in an ongoing Series A.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "RAC",
+        "uploaderVerified": true,
+        "title": "Antecipaçāo",
+        "permalink": "https://audius.co/RAC/antecipaçāo",
+        "genre": "Ambient",
+        "releasedAt": "2023-04-18T14:05:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "RAC",
+        "copyrightNotice": "Copyright © 2023 RAC.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Antecipaçāo",
+        "sourceUrl": "https://audius.co/RAC/antecipaçāo"
+      }
+    },
+    {
+      "id": "ms-clip-627bb1a3",
+      "provider": "audius",
+      "providerAssetId": "oWa1J",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The uploader places this track early in the rollout for a debut album named after a planetary refuge.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Just A Gent",
+        "uploaderVerified": true,
+        "title": "Aliens",
+        "permalink": "https://audius.co/JustAGent/aliens-448139",
+        "genre": "Drum & Bass",
+        "releasedAt": "2021-06-30T23:54:30Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Just A Gent",
+        "copyrightNotice": "Copyright © 2021 Just A Gent.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Aliens",
+        "sourceUrl": "https://audius.co/JustAGent/aliens-448139"
+      }
+    },
+    {
+      "id": "ms-clip-31f8b1de",
+      "provider": "audius",
+      "providerAssetId": "y8NWZ",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The artist’s upload notes announce a voice-only companion release for remix makers.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Alina Baraz",
+        "uploaderVerified": true,
+        "title": "More Than Enough",
+        "permalink": "https://audius.co/alinabaraz/more-than-enough-97935",
+        "genre": "R&B/Soul",
+        "releasedAt": "2020-10-20T18:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Alina Baraz",
+        "copyrightNotice": "Copyright © 2020 Alina Baraz.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "More Than Enough",
+        "sourceUrl": "https://audius.co/alinabaraz/more-than-enough-97935"
+      }
+    },
+    {
+      "id": "ms-clip-f5bbc258",
+      "provider": "audius",
+      "providerAssetId": "WY76o",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The uploader credits one person for two studio roles, while a different engineer handled mastering.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "LOLO ZOUAÏ",
+        "uploaderVerified": true,
+        "title": "Brooklyn Love",
+        "permalink": "https://audius.co/LoloZouai/brooklyn-love",
+        "genre": "Pop",
+        "releasedAt": "2018-04-05T12:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "LOLO ZOUAÏ",
+        "copyrightNotice": "Copyright © 2018 LOLO ZOUAÏ.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Brooklyn Love",
+        "sourceUrl": "https://audius.co/LoloZouai/brooklyn-love"
+      }
+    },
+    {
+      "id": "ms-clip-6f6fc609",
+      "provider": "audius",
+      "providerAssetId": "oEg42",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The Berlin artist describes this Disco variant as restricted to an analog grooved-disc format.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Boys Noize",
+        "uploaderVerified": true,
+        "title": "\"Mvinline Svn\" (vinyl only)",
+        "permalink": "https://audius.co/boysnoize/\"mvinline-svn\"-vinyl-only-91283",
+        "genre": "Disco",
+        "releasedAt": "2020-09-24T00:05:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Boys Noize",
+        "copyrightNotice": "Copyright © 2020 Boys Noize.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "\"Mvinline Svn\" (vinyl only)",
+        "sourceUrl": "https://audius.co/boysnoize/\"mvinline-svn\"-vinyl-only-91283"
+      }
+    },
+    {
+      "id": "ms-clip-70959d9e",
+      "provider": "audius",
+      "providerAssetId": "oWgp5",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Stick Figure published this 2021 track under a Caribbean-rooted genre tag.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Stick Figure",
+        "uploaderVerified": true,
+        "title": "Paradise",
+        "permalink": "https://audius.co/StickFigureDub/paradise-433083",
+        "genre": "Reggae",
+        "releasedAt": "2021-06-10T21:04:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Stick Figure",
+        "copyrightNotice": "Copyright © 2021 Stick Figure.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Paradise",
+        "sourceUrl": "https://audius.co/StickFigureDub/paradise-433083"
+      }
+    },
+    {
+      "id": "ms-clip-6d41e4a4",
+      "provider": "audius",
+      "providerAssetId": "Y5qYqjr",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Unlike Pluto’s two-word title pairs a visual property with total disorder.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Unlike Pluto",
+        "uploaderVerified": true,
+        "title": "Color Chaos",
+        "permalink": "https://audius.co/unlikepluto/color-chaos",
+        "genre": "Metal",
+        "releasedAt": "2023-04-14T10:02:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Unlike Pluto",
+        "copyrightNotice": "Copyright © 2023 Unlike Pluto.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Color Chaos",
+        "sourceUrl": "https://audius.co/unlikepluto/color-chaos"
+      }
+    },
+    {
+      "id": "ms-clip-c70a8726",
+      "provider": "audius",
+      "providerAssetId": "wyE3r",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Cheat Codes’ Rock upload places a long-running pop-punk band in parentheses after the title.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Cheat Codes",
+        "uploaderVerified": true,
+        "title": "Ghost Story (with All Time Low)",
+        "permalink": "https://audius.co/CheatCodesMusic/ghost-story-with-all-time-low",
+        "genre": "Rock",
+        "releasedAt": "2021-09-23T16:01:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Cheat Codes",
+        "copyrightNotice": "Copyright © 2021 Cheat Codes.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Ghost Story (with All Time Low)",
+        "sourceUrl": "https://audius.co/CheatCodesMusic/ghost-story-with-all-time-low"
+      }
+    },
+    {
+      "id": "ms-clip-e24e9d0d",
+      "provider": "audius",
+      "providerAssetId": "Xl5y9mb",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Four credited performers share a Spanish title beginning with an article and ending in a three-letter word.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "🍑 Sak Noel 🍑",
+        "uploaderVerified": true,
+        "title": "Sak Noel x Franklin Dam x Keid Sing x Tony War - La Última Vez",
+        "permalink": "https://audius.co/saknoel/sak-noel-x-franklin-dam-x-keid-sing-x-tony-war-la-última-vez",
+        "genre": "Latin",
+        "releasedAt": "2023-05-03T10:03:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "🍑 Sak Noel 🍑",
+        "copyrightNotice": "Copyright © 2023 🍑 Sak Noel 🍑.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Sak Noel x Franklin Dam x Keid Sing x Tony War - La Última Vez",
+        "sourceUrl": "https://audius.co/saknoel/sak-noel-x-franklin-dam-x-keid-sing-x-tony-war-la-última-vez"
+      }
+    },
+    {
+      "id": "ms-clip-cf98d0a7",
+      "provider": "audius",
+      "providerAssetId": "qEJgB",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The Atlanta uploader’s description carries a 2020 phonographic credit to an independently named company.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "RUSS",
+        "uploaderVerified": true,
+        "title": "Freed Up",
+        "permalink": "https://audius.co/russdiemon/freed-up-107829",
+        "genre": "Hip-Hop/Rap",
+        "releasedAt": "2020-10-23T12:00:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "RUSS",
+        "copyrightNotice": "Copyright © 2020 RUSS.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Freed Up",
+        "sourceUrl": "https://audius.co/russdiemon/freed-up-107829"
+      }
+    },
+    {
+      "id": "ms-clip-c8a7c8d4",
+      "provider": "audius",
+      "providerAssetId": "G0wyE",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "Skrillex’s two-word title joins an invented-looking place name to a word meaning celestial or heavenly.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Skrillex",
+        "uploaderVerified": true,
+        "title": "Kliptown Empyrean",
+        "permalink": "https://audius.co/Skrillex/kliptown-empyrean-98562",
+        "genre": "Electronic",
+        "releasedAt": "2020-10-23T01:04:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Skrillex",
+        "copyrightNotice": "Copyright © 2020 Skrillex.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Kliptown Empyrean",
+        "sourceUrl": "https://audius.co/Skrillex/kliptown-empyrean-98562"
+      }
+    },
+    {
+      "id": "ms-clip-55644e3a",
+      "provider": "audius",
+      "providerAssetId": "n0404",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "This 2020 R&B/Soul upload comes from the verified artist whose profile location reads “Sego City.”",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "Masego",
+        "uploaderVerified": true,
+        "title": "Navajo",
+        "permalink": "https://audius.co/masego/navajo-52166",
+        "genre": "R&B/Soul",
+        "releasedAt": "2020-02-26T14:03:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "Masego",
+        "copyrightNotice": "Copyright © 2020 Masego.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "Navajo",
+        "sourceUrl": "https://audius.co/masego/navajo-52166"
+      }
+    },
+    {
+      "id": "ms-clip-0f287f25",
+      "provider": "audius",
+      "providerAssetId": "RQYEQ",
+      "startSeconds": 0,
+      "durationSeconds": 12,
+      "textClue": "The lowercase Jazz title credits one featured performer and promotes the “always less” EP.",
+      "accessedAt": "2026-07-10",
+      "artistPublished": {
+        "uploader": "harris cole",
+        "uploaderVerified": true,
+        "title": "day late (feat. rob araujo) [\"always less\" ep out now]",
+        "permalink": "https://audius.co/harriscole/day-late-feat-rob-araujo-always-less-ep-out-now",
+        "genre": "Jazz",
+        "releasedAt": "2022-10-09T15:04:00Z",
+        "streamable": true,
+        "explicit": false,
+        "cover": false,
+        "remix": false
+      },
+      "attribution": {
+        "creator": "harris cole",
+        "copyrightNotice": "Copyright © 2022 harris cole.",
+        "licenseTitle": "Audius Open Music License",
+        "licenseUrl": "https://audius.org/open-music-license.pdf",
+        "sourceTitle": "day late (feat. rob araujo) [\"always less\" ep out now]",
+        "sourceUrl": "https://audius.co/harriscole/day-late-feat-rob-araujo-always-less-ep-out-now"
+      }
     }
   ]
 }

@@ -5,7 +5,12 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { boostByKey } from "./boosts";
 import { maskDisplayName } from "./moderation";
 import { mutatorByKey, type MutatorDef } from "./mutators";
-import { questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import {
+  questionByKey,
+  sanitizeQuestion,
+  type BankQuestion,
+} from "./questionBank";
+import { storyBeatForRound } from "./triviaStoryBeats";
 
 export const START_LIVES = 3;
 export const MAX_LIVES = 3;
@@ -35,7 +40,9 @@ export const THIN_ICE_START_LIVES = 2;
 export const MIN_ANSWER_MS = 900;
 export const FAST_ANSWER_FLAG = 3;
 export const MAX_RUNS_PER_HOUR = 40;
-export const TAPES = [...story.tapes].sort((left, right) => left.order - right.order);
+export const TAPES = [...story.tapes].sort(
+  (left, right) => left.order - right.order,
+);
 export const FINALE_UNLOCK = story.finale.unlock;
 
 const QUESTIONS_PER_ROUND = 5;
@@ -53,7 +60,13 @@ export type GameEvent =
   | { type: "bossRewardChosen"; reward: string; detail: string }
   | { type: "signalGained"; strength: number }
   | { type: "lifeGained"; lives: number }
-  | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
+  | {
+      type: "tapeUnlocked";
+      id: string;
+      title: string;
+      order: number;
+      total: number;
+    }
   | { type: "finaleReady" }
   | { type: "gameOver"; score: number; round: number; isPersonalBest: boolean }
   | { type: "bankExhausted" };
@@ -72,9 +85,14 @@ export function questionsPerRoundOf(
     : QUESTIONS_PER_ROUND;
 }
 
-function bossPublicState(run: Doc<"triviaRuns">, frozenQuestion?: BankQuestion | null) {
+function bossPublicState(
+  run: Doc<"triviaRuns">,
+  frozenQuestion?: BankQuestion | null,
+) {
   if (!run.bossCall) return null;
-  const caller = BOSS_CALLERS.find((candidate) => candidate.key === run.bossCall!.caller);
+  const caller = BOSS_CALLERS.find(
+    (candidate) => candidate.key === run.bossCall!.caller,
+  );
   const question =
     run.bossCall.phase === "question"
       ? (frozenQuestion ?? questionByKey.get(run.bossCall.questionKey))
@@ -107,7 +125,10 @@ export async function getPlayerBySubject(
     .unique();
 }
 
-export async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
+export async function getPlayer(
+  ctx: QueryCtx | MutationCtx,
+  playerKey: string,
+) {
   const identity = await ctx.auth.getUserIdentity();
   if (identity) {
     const account = await getPlayerBySubject(ctx, identity.subject);
@@ -169,7 +190,10 @@ export async function unlockAchievement(
   });
 }
 
-export function publicRunState(run: Doc<"triviaRuns">, frozenBossQuestion?: BankQuestion | null) {
+export function publicRunState(
+  run: Doc<"triviaRuns">,
+  frozenBossQuestion?: BankQuestion | null,
+) {
   const mutator = mutatorOf(run);
   return {
     runId: run._id,
@@ -196,6 +220,13 @@ export function publicRunState(run: Doc<"triviaRuns">, frozenBossQuestion?: Bank
         }
       : null,
     dateKey: run.dateKey,
+    storyBeat: storyBeatForRound({
+      seed: run.isDaily ? `daily:${run.dateKey}` : run.seed,
+      round: run.round,
+      isDaily: run.isDaily,
+      format: run.roundCategory,
+      contentVersion: run.contentVersion,
+    }),
   };
 }
 

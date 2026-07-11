@@ -1,16 +1,18 @@
-import type { BankQuestion } from "./questionBank";
-import type { QuestionFormat } from "./questionTypes";
+import { isOfficialQuestion, type BankQuestion, type LegacyBankQuestion } from "./questionBank";
+import type { PrivateQuestion } from "./questionTypes";
 import { seededRandom } from "./triviaDeterminism";
 
 export type AuthoredChoiceOrder = [0, 1, 2, 3];
 
-export interface FrozenQuestionSnapshot extends Omit<BankQuestion, "pronunciation"> {
-  pronunciations?: Array<{ written: string; spoken: string }>;
-}
+export type FrozenQuestionSnapshot =
+  | (Omit<PrivateQuestion, "pronunciation"> & {
+      pronunciations?: Array<{ written: string; spoken: string }>;
+    })
+  | LegacyBankQuestion;
 
 export interface PlannedQuestionCandidate {
   questionId: string;
-  format: QuestionFormat;
+  format: BankQuestion["format"];
   clipId?: string;
   choiceOrder: AuthoredChoiceOrder;
   snapshot: FrozenQuestionSnapshot;
@@ -81,13 +83,19 @@ function orderedCandidates(questions: readonly BankQuestion[], seed: string): Ba
 }
 
 function snapshotQuestion(question: BankQuestion): FrozenQuestionSnapshot {
+  if (question.format === "legacy-trivia") {
+    return {
+      ...question,
+      choices: [...question.choices],
+    };
+  }
   return {
     id: question.id,
     category: question.category,
     difficulty: question.difficulty,
     format: question.format,
     prompt: question.prompt,
-    choices: [...question.choices] as BankQuestion["choices"],
+    choices: [...question.choices] as PrivateQuestion["choices"],
     answer: question.answer,
     explanation: question.explanation,
     source: { ...question.source },
@@ -123,7 +131,7 @@ export function planDailyEpisode(input: PlanDailyEpisodeInput): DailyEpisodePlan
   const candidates = orderedCandidates(input.questions, seed).map((question) => ({
     questionId: question.id,
     format: question.format,
-    ...(question.clip ? { clipId: question.clip.id } : {}),
+    ...(isOfficialQuestion(question) && question.clip ? { clipId: question.clip.id } : {}),
     // Authored order is an invariant. Balance comes from which question is
     // selected, never from shuffling answer text at serve time.
     choiceOrder: [0, 1, 2, 3] as AuthoredChoiceOrder,

@@ -12,7 +12,10 @@ The release will add a large officially verified music bank, distinct four-choic
 - Cover at least 15 genre or subject categories and several regions and languages.
 - Require an exact official source for every active question and answer.
 - Use data APIs to discover and structure candidates, but do not treat community-edited APIs as final authority.
-- Remove the current unsourced OpenTDB and MusicBrainz banks from ranked and daily selection until individually verified.
+- Preserve the pre-existing general-trivia, OpenTDB, and MusicBrainz banks in
+  ranked and daily selection under their original schema and license metadata.
+  Keep them outside the strict official-source gate, which applies to the new
+  expansion banks.
 - Keep the familiar four-choice answering model while presenting questions through distinct broadcast segments.
 - Stream licensed mystery-song clips online when the provider permits trivia use. Do not download or commit commercial song masters.
 - Give every scored audio question an answer-safe, difficulty-matched text clue with identical scoring and progression.

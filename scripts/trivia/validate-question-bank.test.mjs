@@ -98,7 +98,7 @@ describe("question-bank validator CLI", () => {
     expect(warningOutput.stdout).toContain("Warnings (1)");
   });
 
-  test("audits legacy banks incrementally but final-gate mode fails them clearly", async () => {
+  test("preserves legacy banks outside the strict official-source gate", async () => {
     const directory = fixtureDirectory();
     const sources = path.join(directory, "sources.json");
     writeJson(sources, policy());
@@ -124,7 +124,9 @@ describe("question-bank validator CLI", () => {
       directory,
     ]);
     expect(auditOutput.exitCode).toBe(0);
-    expect(auditOutput.stdout).toContain("Legacy bank skipped: legacy.json");
+    expect(auditOutput.stdout).toContain(
+      "Legacy bank preserved outside strict provenance validation: legacy.json",
+    );
 
     const finalOutput = runValidator([
       "--final-gate",
@@ -134,7 +136,8 @@ describe("question-bank validator CLI", () => {
       directory,
     ]);
     expect(finalOutput.exitCode).toBe(1);
-    expect(finalOutput.stderr).toContain("legacy.active_bank");
-    expect(finalOutput.stderr).toContain("legacy.json");
+    expect(finalOutput.stderr).toContain("corpus.count.minimum");
+    expect(finalOutput.stderr).not.toContain("legacy.active_bank");
+    expect(finalOutput.stdout).toContain("legacy.json");
   });
 });

@@ -1,0 +1,214 @@
+{
+  "minigame": "official-format-expansion",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "official-archive-expanded-001",
+      "category": "music-history-archive",
+      "difficulty": 3,
+      "format": "archive-clue",
+      "prompt": "Archive Clue: Which Library of Congress playlist contains fourteen 1901–1912 recordings spanning jubilee singing, spoken word, vaudeville, ragtime, art song, and opera?",
+      "choices": [
+        "National Jukebox Sampler",
+        "Eclectic Acoustic",
+        "Gems from the Jukebox",
+        "Pack Up Your Troubles"
+      ],
+      "answer": 0,
+      "explanation": "The National Jukebox Sampler contains fourteen selections recorded from 1901 through 1912 across those forms.",
+      "source": {
+        "publisher": "Library of Congress",
+        "title": "Playlist of Recordings | National Jukebox",
+        "url": "https://www.loc.gov/collections/national-jukebox/about-this-collection/playlists/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official playlist page describes National Jukebox Sampler as fourteen recordings from 1901 through 1912 covering jubilee singing, political and comic spoken word, vaudeville, ragtime, art song, and grand opera."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-archive-expanded-002",
+      "category": "music-history-archive",
+      "difficulty": 4,
+      "format": "archive-clue",
+      "prompt": "Archive Clue: Which playlist gathers twelve early works linked to Will Marion Cook, Paul Laurence Dunbar, James Reese Europe, Noble Sissle, and Eubie Blake?",
+      "choices": [
+        "Songs by George M. Cohan",
+        "Civil War Music",
+        "Black Broadway and Tin Pan Alley",
+        "Songs by Irving Berlin"
+      ],
+      "answer": 2,
+      "explanation": "Black Broadway and Tin Pan Alley highlights early African American songwriters and performers.",
+      "source": {
+        "publisher": "Library of Congress",
+        "title": "Playlist of Recordings | National Jukebox",
+        "url": "https://www.loc.gov/collections/national-jukebox/about-this-collection/playlists/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page describes Black Broadway and Tin Pan Alley as twelve recordings of compositions by early African American composers and lyricists, naming Cook, Dunbar, Johnson, Europe, Sissle, and Blake."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-archive-expanded-003",
+      "category": "music-history-archive",
+      "difficulty": 3,
+      "format": "archive-clue",
+      "prompt": "Archive Clue: Which playlist mixes ragtime, opera, Hawaiian music, a New York-dialect specialty, the Dinwiddie Colored Quartet, and Bert Williams?",
+      "choices": [
+        "Eclectic Acoustic",
+        "Gems from the Jukebox",
+        "Ragtime",
+        "The Fox Trot"
+      ],
+      "answer": 1,
+      "explanation": "Gems from the Jukebox is the twelve-selection Victor playlist described by those clues.",
+      "source": {
+        "publisher": "Library of Congress",
+        "title": "Playlist of Recordings | National Jukebox",
+        "url": "https://www.loc.gov/collections/national-jukebox/about-this-collection/playlists/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official page describes Gems from the Jukebox as twelve Victor selections featuring ragtime, opera, Hawaiian music, a New York-dialect specialty, the Dinwiddie Colored Quartet, and Bert Williams."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-studio-expanded-001",
+      "category": "recording-technology",
+      "difficulty": 3,
+      "format": "studio-lab",
+      "prompt": "Inside a Shure SM58, which moving part generates the electrical signal as it travels through a magnetic field?",
+      "choices": [
+        "Shock mount",
+        "Voice coil",
+        "Steel grille",
+        "Pop filter"
+      ],
+      "answer": 1,
+      "explanation": "The diaphragm moves the attached voice coil through the magnet’s field, generating the signal.",
+      "source": {
+        "publisher": "Shure",
+        "title": "How They Did It: Inside the SM58",
+        "url": "https://www.shure.com/en-EU/insights/how-they-did-it-inside-the-sm58",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Shure explains that the SM58 uses a diaphragm, voice coil, and magnet; motion of the voice coil in the magnetic field generates the electrical signal."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-studio-expanded-002",
+      "category": "recording-technology",
+      "difficulty": 4,
+      "format": "studio-lab",
+      "prompt": "Which material did Shure say began replacing heat- and humidity-sensitive Rochelle salt in microphone transducers during the 1950s?",
+      "choices": [
+        "Mylar film",
+        "Iron oxide",
+        "Carbon granules",
+        "Barium titanate"
+      ],
+      "answer": 3,
+      "explanation": "Barium titanate ceramic retained its piezoelectric properties better under heat and humidity.",
+      "source": {
+        "publisher": "Shure",
+        "title": "The History of Crystal Microphones and Artifacts from the Shure Archives",
+        "url": "https://www.shure.com/en-US/insights/the-history-of-crystal-microphones-and-artifacts-from-the-shure-archives",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Shure states that ferroelectric ceramic barium titanate began replacing Rochelle salt in the 1950s because it did not lose piezoelectric characteristics in heat or humidity."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-studio-expanded-003",
+      "category": "recording-technology",
+      "difficulty": 2,
+      "format": "studio-lab",
+      "prompt": "In Shure’s account of the SM58’s broadcast origins, what does “SM” stand for?",
+      "choices": [
+        "Stage Monitor",
+        "Sound Matrix",
+        "Studio Microphone",
+        "Signal Modulator"
+      ],
+      "answer": 2,
+      "explanation": "Shure says SM means Studio Microphone; the series was intended for broadcast studio use.",
+      "source": {
+        "publisher": "Shure",
+        "title": "10 Things You Might Not Know About the SM58",
+        "url": "https://www.shure.com/en-IN/insights/10-things-might-not-know-sm58",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Shure explicitly says SM stands for Studio Microphone and explains that the SM series was developed for broadcast studio use in the early 1960s."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-odd-expanded-001",
+      "category": "music-history-archive",
+      "difficulty": 3,
+      "format": "odd-one-out",
+      "prompt": "Which entry is the outlier in the Library of Congress National Jukebox Popular Music subgenre list?",
+      "choices": [
+        "Blues",
+        "Whistling",
+        "Opera",
+        "Yodeling"
+      ],
+      "answer": 2,
+      "explanation": "Opera is under Classical Music; Blues, Whistling, and Yodeling are under Popular Music.",
+      "source": {
+        "publisher": "Library of Congress",
+        "title": "Genres | National Jukebox",
+        "url": "https://www.loc.gov/collections/national-jukebox/about-this-collection/genres/",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The official genre guide places Opera beneath Classical Music and lists Blues, Whistling, and Yodeling beneath Popular Music."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-odd-expanded-002",
+      "category": "recording-technology",
+      "difficulty": 5,
+      "format": "odd-one-out",
+      "prompt": "Which Shure model is the ceramic-microphone outlier rather than one of the crystal-microphone models named in the company history?",
+      "choices": [
+        "Model 215",
+        "Model 70",
+        "Model 71",
+        "Model 708A"
+      ],
+      "answer": 0,
+      "explanation": "Model 215 was Shure’s first ceramic microphone; the other named models used crystal transducers.",
+      "source": {
+        "publisher": "Shure",
+        "title": "The History of Crystal Microphones and Artifacts from the Shure Archives",
+        "url": "https://www.shure.com/en-US/insights/the-history-of-crystal-microphones-and-artifacts-from-the-shure-archives",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Shure identifies Models 70 and 71 as its first crystal microphones, describes Model 708A as a crystal microphone, and calls Model 215 its first ceramic microphone."
+      },
+      "voice": false
+    },
+    {
+      "id": "official-odd-expanded-003",
+      "category": "recording-technology",
+      "difficulty": 4,
+      "format": "odd-one-out",
+      "prompt": "Which item is the outlier among the three engineering elements Shure singles out as central to the SM58’s design?",
+      "choices": [
+        "Diaphragm",
+        "Transducer",
+        "Shock mount",
+        "Tape transport"
+      ],
+      "answer": 3,
+      "explanation": "Shure names the diaphragm, transducer, and shock mount; a tape transport is not part of the microphone.",
+      "source": {
+        "publisher": "Shure",
+        "title": "How They Did It: Inside the SM58",
+        "url": "https://www.shure.com/en-EU/insights/how-they-did-it-inside-the-sm58",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "Shure says the SM58’s design can largely be attributed to three engineering elements: the diaphragm, transducer, and shock mount."
+      },
+      "voice": false
+    }
+  ]
+}

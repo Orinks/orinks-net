@@ -2,7 +2,13 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import officialSources from "../data/trivia/official-sources.json";
 import { mutatorCatalog } from "./mutators";
-import { questionBank, questionByKey, type BankQuestion } from "./questionBank";
+import {
+  isValidLegacyQuestion,
+  isOfficialQuestion,
+  questionBank,
+  questionByKey,
+  type BankQuestion,
+} from "./questionBank";
 import { validateQuestion, type OfficialSourcePolicy } from "./questionTypes";
 import { planDailyEpisode } from "./triviaEpisodePlanner";
 import {
@@ -61,6 +67,17 @@ export async function selectionPoolForRun(
       throw new Error(`Daily candidate ${candidate.questionId} has an invalid frozen choice order.`);
     }
     if (candidate.snapshot) {
+      if (candidate.snapshot.format === "legacy-trivia") {
+        if (
+          !isValidLegacyQuestion(candidate.snapshot) ||
+          candidate.snapshot.id !== candidate.questionId ||
+          candidate.format !== "legacy-trivia" ||
+          candidate.clipId !== undefined
+        ) {
+          throw new Error(`Daily candidate ${candidate.questionId} has an invalid frozen legacy snapshot.`);
+        }
+        return candidate.snapshot;
+      }
       const { pronunciations, ...frozen } = candidate.snapshot;
       const snapshot = {
         ...frozen,
@@ -95,7 +112,7 @@ export async function selectionPoolForRun(
     }
     if (
       question.format !== candidate.format ||
-      (question.clip?.id ?? undefined) !== candidate.clipId
+      (isOfficialQuestion(question) ? question.clip?.id : undefined) !== candidate.clipId
     ) {
       throw new Error(`Daily candidate ${candidate.questionId} no longer matches its frozen metadata.`);
     }

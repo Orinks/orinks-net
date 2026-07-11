@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import clipsCatalog from "../data/trivia/clips.json";
 import officialSources from "../data/trivia/official-sources.json";
 import needleDropBank from "../data/trivia/questions/official-audius-needle-drops.json";
+import expandedBank from "../data/trivia/questions/official-audius-expanded.json";
 import {
   validateQuestionCorpus,
   type OfficialSourcePolicy,
@@ -26,7 +27,10 @@ describe("official Audius needle-drop questions", () => {
 
   test("uses every licensed clip once and exactly matches the private clip ledger", () => {
     const ledger = new Map(clipsCatalog.clips.map((clip) => [clip.id, clip]));
-    const questions = needleDropBank.questions as PrivateQuestion[];
+    const questions = [
+      ...needleDropBank.questions,
+      ...expandedBank.questions,
+    ] as PrivateQuestion[];
     const used = new Set<string>();
 
     for (const question of questions) {
@@ -48,7 +52,7 @@ describe("official Audius needle-drop questions", () => {
       expect(question.source.title).toBe(record.artistPublished.title);
     }
 
-    expect(used.size).toBe(6);
+    expect(used.size).toBe(22);
     expect(used).toEqual(new Set(ledger.keys()));
   });
 });

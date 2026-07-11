@@ -14,6 +14,7 @@ export const QUESTION_FORMATS = [
 ] as const;
 
 export type QuestionFormat = (typeof QUESTION_FORMATS)[number];
+export type PublicQuestionFormat = QuestionFormat | "legacy-trivia";
 export type QuestionDifficulty = 1 | 2 | 3 | 4 | 5;
 export type QuestionAnswerIndex = 0 | 1 | 2 | 3;
 export type QuestionChoices = [string, string, string, string];
@@ -67,6 +68,8 @@ export type AuthoredQuestion = PrivateQuestion;
 
 export interface PublicQuestionClip {
   id: string;
+  startSeconds: number;
+  durationSeconds: number;
   textClue: string;
 }
 
@@ -75,7 +78,7 @@ export interface PublicQuestion {
   key: string;
   category: string;
   difficulty: QuestionDifficulty;
-  format: QuestionFormat;
+  format: PublicQuestionFormat;
   prompt: string;
   choices: QuestionChoices;
   clip: PublicQuestionClip | null;
@@ -128,6 +131,7 @@ export interface QuestionCorpusStats {
 export interface CorpusValidationOptions {
   minimumQuestions?: number;
   requireAllFormats?: boolean;
+  minimumByFormat?: Partial<Record<QuestionFormat, number>>;
 }
 
 export interface CorpusValidationResult {
@@ -855,6 +859,20 @@ export function validateQuestionCorpus(
       }
     }
   }
+  if (options.minimumByFormat) {
+    for (const [format, minimum] of Object.entries(options.minimumByFormat)) {
+      if (minimum === undefined) continue;
+      const count = questions.filter((question) => question.format === format).length;
+      if (count < minimum) {
+        addIssue(
+          errors,
+          "corpus.format.minimum",
+          `corpus.formats.${format}`,
+          `Found ${count} ${format} questions; at least ${minimum} are required.`,
+        );
+      }
+    }
+  }
 
   const stats = emptyStats();
   stats.total = questions.length;
@@ -893,6 +911,8 @@ export function sanitizePrivateQuestion(question: PrivateQuestion): PublicQuesti
     clip: question.clip
       ? {
           id: question.clip.id,
+          startSeconds: question.clip.startSeconds,
+          durationSeconds: question.clip.durationSeconds,
           textClue: question.clip.textClue,
         }
       : null,

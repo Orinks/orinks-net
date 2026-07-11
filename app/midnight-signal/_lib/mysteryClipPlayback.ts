@@ -31,7 +31,11 @@ export class MysteryClipPlayback {
   private audio: ClipAudio | null = null;
   private releaseSuppression: (() => void) | null = null;
   private loadingTimer: ReturnType<typeof setTimeout> | null = null;
+  private endingTimer: ReturnType<typeof setTimeout> | null = null;
   private attempt = 0;
+  private startSeconds = 0;
+  private durationSeconds = 0;
+  private completed = false;
 
   constructor(options: MysteryClipPlaybackOptions) {
     this.options = {
@@ -46,10 +50,13 @@ export class MysteryClipPlayback {
     return this.audio !== null;
   }
 
-  play(clipId: string) {
+  play(clipId: string, startSeconds = 0, durationSeconds = 12) {
     this.stop(false);
     this.options.beforePlay();
     const attempt = ++this.attempt;
+    this.startSeconds = startSeconds;
+    this.durationSeconds = durationSeconds;
+    this.completed = false;
     this.options.onState({ type: "activate" });
     this.releaseSuppression = this.options.suppressMusic();
 
@@ -60,8 +67,10 @@ export class MysteryClipPlayback {
 
     const current = () => this.audio === audio && this.attempt === attempt;
     const finish = (type: "ended" | "failed", message: string) => {
-      if (!current()) return;
+      if (!current() || this.completed) return;
+      this.completed = true;
       this.clearLoadingTimer();
+      this.clearEndingTimer();
       if (type === "failed") this.audio = null;
       this.releaseMusic();
       this.options.onState({ type, attempt });
@@ -71,6 +80,8 @@ export class MysteryClipPlayback {
     audio.onplaying = () => {
       if (!current()) return;
       this.clearLoadingTimer();
+      if (audio.currentTime < this.startSeconds) audio.currentTime = this.startSeconds;
+      this.scheduleEnding(audio, finish);
       this.options.onState({ type: "playing", attempt });
       this.options.announce("Mystery clip playing.");
     };
@@ -91,6 +102,7 @@ export class MysteryClipPlayback {
     const audio = this.audio;
     if (!audio) return;
     this.clearLoadingTimer();
+    this.clearEndingTimer();
     audio.pause();
     this.releaseMusic();
     this.options.onState({ type: "paused", attempt: this.attempt });
@@ -117,13 +129,15 @@ export class MysteryClipPlayback {
   replay() {
     const audio = this.audio;
     if (!audio) return;
-    audio.currentTime = 0;
+    this.completed = false;
+    audio.currentTime = this.startSeconds;
     this.resume();
   }
 
   stop(shouldAnnounce = true) {
     const wasActive = this.audio !== null;
     this.clearLoadingTimer();
+    this.clearEndingTimer();
     const audio = this.audio;
     this.audio = null;
     if (!wasActive) {
@@ -154,6 +168,27 @@ export class MysteryClipPlayback {
   private clearLoadingTimer() {
     if (this.loadingTimer !== null) this.options.cancelSchedule(this.loadingTimer);
     this.loadingTimer = null;
+  }
+
+  private clearEndingTimer() {
+    if (this.endingTimer !== null) this.options.cancelSchedule(this.endingTimer);
+    this.endingTimer = null;
+  }
+
+  private scheduleEnding(
+    audio: ClipAudio,
+    finish: (type: "ended" | "failed", message: string) => void,
+  ) {
+    this.clearEndingTimer();
+    const endAt = this.startSeconds + this.durationSeconds;
+    const remainingMs = Math.max(0, (endAt - audio.currentTime) * 1000);
+    this.endingTimer = this.options.schedule(() => {
+      this.endingTimer = null;
+      if (this.audio !== audio) return;
+      audio.pause();
+      audio.currentTime = endAt;
+      finish("ended", "Mystery clip finished.");
+    }, remainingMs);
   }
 
   private releaseMusic() {

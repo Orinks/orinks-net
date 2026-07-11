@@ -108,6 +108,17 @@ describe("mystery clip streaming lifecycle", () => {
     expect(failed.release).toHaveBeenCalledOnce();
   });
 
+  test("stops the stream at the curated excerpt boundary", () => {
+    const { announcements, audio, playback, timers } = harness();
+    playback.play("ms-clip-7f3a91c2", 4, 12);
+    audio.currentTime = 4;
+    audio.onplaying?.();
+    timers[1]();
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(audio.currentTime).toBe(16);
+    expect(announcements.at(-1)).toBe("Mystery clip finished.");
+  });
+
   test("disposes silently during question or route cleanup", () => {
     const { announcements, playback, release } = harness();
     playback.play("ms-clip-5d90c4fe");

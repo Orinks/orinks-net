@@ -1,15 +1,16 @@
 import { describe, expect, test } from "vitest";
-import type { BankQuestion } from "./questionBank";
+import { legacyQuestionBank, officialQuestionBank, type BankQuestion } from "./questionBank";
+import type { PrivateQuestion, QuestionAnswerIndex, QuestionDifficulty, QuestionFormat } from "./questionTypes";
 import { runRoll } from "./triviaDeterminism";
 import { pickQuestion } from "./triviaSelection";
 import { DAILY_EPISODE_RULES_VERSION } from "./triviaVersions";
 
 function candidate(
   id: string,
-  difficulty: BankQuestion["difficulty"],
-  answer: BankQuestion["answer"],
-  format: BankQuestion["format"] = "award-desk",
-): BankQuestion {
+  difficulty: QuestionDifficulty,
+  answer: QuestionAnswerIndex,
+  format: QuestionFormat = "award-desk",
+): PrivateQuestion {
   return {
     id,
     category: "Music",
@@ -43,6 +44,12 @@ function run(overrides: Record<string, unknown> = {}) {
 }
 
 describe("question selection", () => {
+  test("keeps both legacy and official questions selectable in regular free play", () => {
+    const legacy = legacyQuestionBank[0];
+    const official = officialQuestionBank[0];
+    expect(pickQuestion(run({ roundCategory: legacy.category }), [legacy])?.id).toBe(legacy.id);
+    expect(pickQuestion(run({ roundCategory: official.category }), [official])?.id).toBe(official.id);
+  });
   test("uses the frozen candidate order for planned daily episodes", () => {
     const questions = [candidate("first", 2, 0), candidate("second", 2, 1)];
     expect(pickQuestion(run(), questions, true, DAILY_EPISODE_RULES_VERSION)?.id).toBe(

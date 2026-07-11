@@ -1,12 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { questionBank, type BankQuestion } from "./questionBank";
 import { planDailyEpisode, type PlannedQuestionCandidate } from "./triviaEpisodePlanner";
+import type { PrivateQuestion, QuestionAnswerIndex } from "./questionTypes";
 
 function question(
   id: string,
-  answer: BankQuestion["answer"],
-  extra: Partial<BankQuestion> = {},
-): BankQuestion {
+  answer: QuestionAnswerIndex,
+  extra: Partial<PrivateQuestion> = {},
+): PrivateQuestion {
   return {
     id,
     category: "Music",
@@ -34,11 +35,19 @@ const versions = {
   mutatorKeys: ["flat-rates", "thin-ice", "long-haul"],
 };
 
-function answerAt(index: number): BankQuestion["answer"] {
-  return (index % 4) as BankQuestion["answer"];
+function answerAt(index: number): QuestionAnswerIndex {
+  return (index % 4) as QuestionAnswerIndex;
 }
 
 describe("daily episode planner", () => {
+  test("freezes both legacy and official banks deterministically", () => {
+    const first = planDailyEpisode({ ...versions, questions: questionBank });
+    const second = planDailyEpisode({ ...versions, questions: [...questionBank].reverse() });
+    expect(second).toEqual(first);
+    expect(first.candidates).toHaveLength(1055);
+    expect(first.candidates.some((candidate) => candidate.format === "legacy-trivia")).toBe(true);
+    expect(first.candidates.some((candidate) => candidate.format !== "legacy-trivia")).toBe(true);
+  });
   test("is deterministic and independent of candidate input order", () => {
     const questions = Array.from({ length: 16 }, (_, index) =>
       question(`q-${String(index).padStart(2, "0")}`, answerAt(index)),
@@ -114,7 +123,10 @@ describe("daily episode planner", () => {
       clipId: "ms-clip-7f3a91c2",
       choiceOrder: [0, 1, 2, 3],
     });
-    expect(byId.get("media")?.snapshot.clip?.providerAssetId).toBe("provider-id");
+    const mediaSnapshot = byId.get("media")?.snapshot;
+    expect(mediaSnapshot && "clip" in mediaSnapshot ? mediaSnapshot.clip?.providerAssetId : null).toBe(
+      "provider-id",
+    );
   });
 
   test("deeply snapshots private question content for an immutable aired episode", () => {
@@ -124,6 +136,9 @@ describe("daily episode planner", () => {
     });
     const plan = planDailyEpisode({ ...versions, questions: [authored] });
     const frozen = plan.candidates[0].snapshot;
+    if (frozen.format === "legacy-trivia" || typeof frozen.source === "string") {
+      throw new Error("Expected a strict official snapshot.");
+    }
 
     authored.prompt = "Edited after the episode aired.";
     authored.choices[0] = "Edited choice";
@@ -155,6 +170,6 @@ describe("daily episode planner", () => {
     });
 
     expect(Buffer.byteLength(JSON.stringify(plan), "utf8")).toBeLessThan(750_000);
-    expect(plan.candidates.filter((candidate) => candidate.clipId).length).toBe(6);
+    expect(plan.candidates.filter((candidate) => candidate.clipId).length).toBe(22);
   });
 });

@@ -83,7 +83,18 @@ export function pickRoundCategory(
     }
   }
   if (run.mutatorKey === "single-signal") {
-    const categories = [...new Set(questions.map((question) => question.category))].sort();
+    const totals = new Map<string, number>();
+    for (const question of questions) {
+      totals.set(question.category, (totals.get(question.category) ?? 0) + 1);
+    }
+    // Pick only a deep enough theme to sustain several rounds. The active
+    // legacy archives contain some small categories that are valid in normal
+    // rotation but would make Single Signal silently change theme after one
+    // round.
+    const categories = [...totals.entries()]
+      .filter(([, count]) => count >= questionsPerRound * 4)
+      .map(([category]) => category)
+      .sort();
     const theme = categories[Math.floor(seededRandom(`${run.seed}:single-signal`)() * categories.length)];
     if ((counts.get(theme) ?? 0) >= questionsPerRound) return theme;
   }

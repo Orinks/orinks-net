@@ -1,0 +1,329 @@
+{
+  "version": "1",
+  "beats": [
+    {
+      "id": "archive-01",
+      "family": "archive-fragment",
+      "modes": ["regular", "daily"],
+      "formats": ["legacy-trivia", "archive-clue"],
+      "title": "The blue card drawer",
+      "speaker": "Clyde",
+      "text": "The blue card drawer has started humming along with the theme tune. These older questions arrived before my catalog clock did, so the Producer has stamped them: inherited, useful, and very much on tonight's broadcast."
+    },
+    {
+      "id": "archive-02",
+      "family": "archive-fragment",
+      "modes": ["regular"],
+      "formats": ["legacy-trivia", "archive-clue"],
+      "title": "A careful pencil mark",
+      "speaker": "Clyde",
+      "text": "Someone penciled a tiny star beside this part of the archive. No answer, no hint—just the mark of a researcher who hoped the card would be read again."
+    },
+    {
+      "id": "archive-03",
+      "family": "archive-fragment",
+      "modes": ["regular"],
+      "formats": ["legacy-trivia", "archive-clue"],
+      "title": "Syndication reel",
+      "speaker": "The Producer",
+      "text": "Older archive reel aligned. Provenance retained. Broadcast value: current."
+    },
+    {
+      "id": "producer-01",
+      "family": "producer-note",
+      "modes": ["regular", "daily"],
+      "formats": [],
+      "title": "Routing note",
+      "speaker": "The Producer",
+      "text": "New material routed through old equipment. Signal stable. Continue."
+    },
+    {
+      "id": "producer-02",
+      "family": "producer-note",
+      "modes": ["regular"],
+      "formats": [],
+      "title": "Margin report",
+      "speaker": "The Producer",
+      "text": "Three annotations detected in the margin. None are answers. Clyde has been instructed to stop guessing what they mean."
+    },
+    {
+      "id": "producer-03",
+      "family": "producer-note",
+      "modes": ["regular"],
+      "formats": [],
+      "title": "Desk inventory",
+      "speaker": "The Producer",
+      "text": "Cards counted. Reels counted. Contestant present. Broadcast conditions satisfactory."
+    },
+    {
+      "id": "listener-01",
+      "family": "listener-transmission",
+      "modes": ["regular", "daily"],
+      "formats": [],
+      "title": "Kitchen radio",
+      "speaker": "Listener transmission",
+      "text": "A listener says the Signal reaches their kitchen radio one second before the television. They use the extra second to put the kettle on."
+    },
+    {
+      "id": "listener-02",
+      "family": "listener-transmission",
+      "modes": ["regular"],
+      "formats": [],
+      "title": "Night-shift request",
+      "speaker": "Listener transmission",
+      "text": "A night-shift listener asks us to keep the questions coming until the bakery lights switch on. Clyde has placed the request beneath the warmest lamp."
+    },
+    {
+      "id": "listener-03",
+      "family": "listener-transmission",
+      "modes": ["regular"],
+      "formats": [],
+      "title": "A postcard without a stamp",
+      "speaker": "Clyde",
+      "text": "Tonight's listener postcard has no stamp and no return address, but it does have a neat little drawing of our broadcast mast. I have filed it under: encouraging."
+    },
+    {
+      "id": "chart-01",
+      "family": "chart-wire",
+      "modes": ["regular", "daily"],
+      "formats": ["chart-climber", "odd-one-out"],
+      "title": "The wire wakes",
+      "speaker": "Chart-wire bulletin",
+      "text": "The chart wire has clicked awake. Its paper is fresh, its dates are exact, and one corner insists it has already seen tomorrow."
+    },
+    {
+      "id": "chart-02",
+      "family": "chart-wire",
+      "modes": ["regular"],
+      "formats": ["chart-climber", "odd-one-out"],
+      "title": "Regional exchange",
+      "speaker": "Clyde",
+      "text": "Reports are arriving from several chart desks at once. Different cities, different measures, same wonderful problem: deciding what the whole world has been humming."
+    },
+    {
+      "id": "chart-03",
+      "family": "chart-wire",
+      "modes": ["regular"],
+      "formats": ["chart-climber", "odd-one-out"],
+      "title": "Balanced columns",
+      "speaker": "The Producer",
+      "text": "Chart columns reconciled. Ties preserved. Dramatic interpretation declined."
+    },
+    {
+      "id": "awards-01",
+      "family": "award-desk",
+      "modes": ["regular", "daily"],
+      "formats": ["award-desk"],
+      "title": "Envelope cabinet",
+      "speaker": "Clyde",
+      "text": "The award-desk envelopes are stored in a cabinet that only opens for properly sourced facts. The Producer calls that security. I call it good editorial taste."
+    },
+    {
+      "id": "awards-02",
+      "family": "award-desk",
+      "modes": ["regular"],
+      "formats": ["award-desk"],
+      "title": "Acceptance time",
+      "speaker": "Award-desk report",
+      "text": "The desk clock has allowed exactly forty-five seconds for an acceptance speech. Fortunately, tonight we only need the record."
+    },
+    {
+      "id": "awards-03",
+      "family": "award-desk",
+      "modes": ["regular"],
+      "formats": ["award-desk"],
+      "title": "Polished brass",
+      "speaker": "The Producer",
+      "text": "Award shelf polished. Official record checked. Applause mechanism remains unavailable."
+    },
+    {
+      "id": "studio-01",
+      "family": "studio-investigation",
+      "modes": ["regular", "daily"],
+      "formats": ["studio-lab", "sound-lab"],
+      "title": "Patch-bay inquiry",
+      "speaker": "Clyde",
+      "text": "A cable in the studio patch bay has labeled itself percussion, although it clearly leads to the weather lamp. We will investigate the sound, not the handwriting."
+    },
+    {
+      "id": "studio-02",
+      "family": "studio-investigation",
+      "modes": ["regular"],
+      "formats": ["studio-lab", "sound-lab"],
+      "title": "Instrument bench",
+      "speaker": "Studio investigation",
+      "text": "The instrument bench is ready: names, materials, techniques, and the little choices that give a recording its shape."
+    },
+    {
+      "id": "studio-03",
+      "family": "studio-investigation",
+      "modes": ["regular"],
+      "formats": ["studio-lab", "sound-lab"],
+      "title": "Room tone",
+      "speaker": "The Producer",
+      "text": "Room tone measured. Equipment grounded. Clyde's tapping classified as nonessential percussion."
+    },
+    {
+      "id": "world-01",
+      "family": "world-signal",
+      "modes": ["regular", "daily"],
+      "formats": ["world-signal"],
+      "title": "Correspondent check-in",
+      "speaker": "World-signal correspondent",
+      "text": "A correspondent checks in across a long, clear carrier. The music has traveled farther than our mast should reach, which is exactly why the desk is listening."
+    },
+    {
+      "id": "world-02",
+      "family": "world-signal",
+      "modes": ["regular"],
+      "formats": ["world-signal"],
+      "title": "Local names",
+      "speaker": "Clyde",
+      "text": "The world-signal desk has reminded me that every tradition deserves its own name pronounced with care. Producer, underline that twice."
+    },
+    {
+      "id": "world-03",
+      "family": "world-signal",
+      "modes": ["regular"],
+      "formats": ["world-signal"],
+      "title": "Distant carrier",
+      "speaker": "The Producer",
+      "text": "Distant carrier acquired. Region confirmed. Static is not evidence."
+    },
+    {
+      "id": "audius-01",
+      "family": "audius-discovery",
+      "modes": ["regular", "daily"],
+      "formats": ["needle-drop", "sound-lab"],
+      "title": "A new signal on an old board",
+      "speaker": "Clyde",
+      "text": "A contemporary artist-published signal has reached our oldest mixing board. The recording stays with its broadcaster; we borrow only the stream and listen on your command."
+    },
+    {
+      "id": "audius-02",
+      "family": "audius-discovery",
+      "modes": ["regular"],
+      "formats": ["needle-drop", "sound-lab"],
+      "title": "Needle-drop ledger",
+      "speaker": "The Producer",
+      "text": "Stream route verified. Attribution attached. Local recording prohibited and unnecessary."
+    },
+    {
+      "id": "audius-03",
+      "family": "audius-discovery",
+      "modes": ["regular"],
+      "formats": ["needle-drop", "sound-lab"],
+      "title": "Sound-lab arrival",
+      "speaker": "Clyde",
+      "text": "The Sound Lab has a fresh transmission: rhythm, texture, production, and a visible clue for anyone who would rather keep the speakers quiet."
+    },
+    {
+      "id": "night-01",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: the first annotation",
+      "speaker": "The Producer",
+      "text": "Night wire entry one. A catalog card carries tomorrow's date. It has been filed without interpretation."
+    },
+    {
+      "id": "night-02",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: a second hand",
+      "speaker": "Clyde",
+      "text": "Tonight's card has the same careful handwriting, now beside a song from another decade. Whoever made these notes listened widely."
+    },
+    {
+      "id": "night-03",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: routing marks",
+      "speaker": "The Producer",
+      "text": "The annotations match an obsolete routing code. Origin remains unknown. Questions remain usable."
+    },
+    {
+      "id": "night-04",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: listener copy",
+      "speaker": "Listener transmission",
+      "text": "A listener reports the same tiny star appearing on their handwritten scorecard. They sound delighted, so Clyde has stopped worrying."
+    },
+    {
+      "id": "night-05",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: the carbon sheet",
+      "speaker": "Clyde",
+      "text": "A carbon copy has surfaced beneath the chart desk. It connects the annotations to old requests sent in by listeners who wanted their songs remembered."
+    },
+    {
+      "id": "night-06",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Night wire: open file",
+      "speaker": "The Producer",
+      "text": "Conclusion deferred. File remains open for future broadcasts. No contestant action required."
+    },
+    {
+      "id": "night-07",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Correspondent arc: carrier one",
+      "speaker": "World-signal correspondent",
+      "text": "A faint correspondent carrier arrives with a list of instruments and no return frequency. The names are precise; the route is not."
+    },
+    {
+      "id": "night-08",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Correspondent arc: carrier two",
+      "speaker": "Clyde",
+      "text": "The signal is clearer tonight. Our correspondent says every instrument on the list was heard through an open window after midnight."
+    },
+    {
+      "id": "night-09",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Correspondent arc: exchange",
+      "speaker": "The Producer",
+      "text": "Return transmission sent: three chart dates, one studio diagram, and thanks. Carrier acknowledged."
+    },
+    {
+      "id": "night-10",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Sound desk arc: unfamiliar light",
+      "speaker": "Clyde",
+      "text": "A new green light has appeared on the Sound Lab desk. It illuminates only when an artist-published stream is ready and a contestant chooses play."
+    },
+    {
+      "id": "night-11",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Sound desk arc: clean handoff",
+      "speaker": "The Producer",
+      "text": "Remote stream handed off without local copy. Attribution circuit functioning as designed."
+    },
+    {
+      "id": "night-12",
+      "family": "nightly-arc",
+      "modes": ["daily"],
+      "formats": [],
+      "title": "Sound desk arc: old and new",
+      "speaker": "Clyde",
+      "text": "The new light now sits comfortably beside the old valves. The studio seems happiest when no era has to leave the room for another to enter."
+    }
+  ]
+}

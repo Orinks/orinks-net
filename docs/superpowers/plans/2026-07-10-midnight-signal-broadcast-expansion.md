@@ -21,7 +21,7 @@ Nothing in this plan merges to `dev`, deploys a preview, enables Feed Clips with
 
 ### `codex/midnight-official-question-bank`
 
-Owns the typed authored-question contract, source policy, validators, official-source collectors, accepted 460-question corpus, retired unsourced banks, and narration inputs.
+Owns the typed authored-question contract, source policy, validators, official-source collectors, accepted 460-question corpus, active legacy compatibility banks, and narration inputs.
 
 ### `codex/midnight-segment-engine`
 
@@ -67,7 +67,9 @@ Add failing tests that prove:
 - clip questions require a non-empty equivalent text clue and complete attribution while non-clip questions cannot carry partial clip data;
 - a public pre-answer question never contains `answer`, `explanation`, `source`, `evidenceSummary`, `providerAssetId`, attribution, creator, title, or copyright fields;
 - a post-answer result can expose the exact descriptive source title and URL only after answer resolution;
-- deprecated OpenTDB and MusicBrainz files are not loaded by the active bank;
+- pre-existing general-trivia, OpenTDB, and MusicBrainz files remain active
+  through the legacy compatibility loader while new official banks pass the
+  strict provenance gate;
 - hard errors fail the command and editorial warnings are listed separately.
 
 Run the focused tests and preserve the failing output:
@@ -172,9 +174,9 @@ feat(midnight-signal): collect official music facts
 - `data/trivia/questions/official-charts-contests.json`
 - `data/trivia/questions/official-studio-history.json`
 - `data/trivia/questions/official-asian-music.json`
-- `data/trivia/questions/retired/general-trivia.json`
-- `data/trivia/questions/retired/musicbrainz-generated.json`
-- `data/trivia/questions/retired/opentdb-music.json`
+- `data/trivia/questions/general-trivia.json`
+- `data/trivia/questions/musicbrainz-generated.json`
+- `data/trivia/questions/opentdb-music.json`
 - `convex/questionBank.ts`
 - `data/trivia/README.md`
 

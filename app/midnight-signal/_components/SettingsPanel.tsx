@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAnnounce } from "./Announcer";
 import { stopProducer } from "../_lib/audio";
-import { defaultSettings, loadSettings, saveSettings, type GameSettings } from "../_lib/settings";
+import { applyMotionPreference, defaultSettings, loadSettings, saveSettings, type GameSettings } from "../_lib/settings";
 
 const focusRing =
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
@@ -16,7 +16,9 @@ export function SettingsPanel() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setSettings(loadSettings());
+    const loaded = loadSettings();
+    setSettings(loaded);
+    applyMotionPreference(loaded.reducedMotion);
     setLoaded(true);
   }, []);
 
@@ -24,6 +26,7 @@ export function SettingsPanel() {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
       saveSettings(next);
+      if (patch.reducedMotion) applyMotionPreference(next.reducedMotion);
       return next;
     });
     announce(confirmation);
@@ -70,6 +73,7 @@ export function SettingsPanel() {
             Music volume
           </label>
           <input
+            aria-describedby="music-volume-help"
             aria-valuetext={`${musicPercent} percent`}
             className={`mt-2 w-full max-w-xs ${focusRing}`}
             id="music-volume"
@@ -87,7 +91,7 @@ export function SettingsPanel() {
             type="range"
             value={musicPercent}
           />
-          <p className="mt-1 text-sm leading-6 text-zinc-400">
+          <p className="mt-1 text-sm leading-6 text-zinc-400" id="music-volume-help">
             Takes effect when you return to the broadcast. During play, the Mute music button
             next to the host audio controls silences it instantly.
           </p>
