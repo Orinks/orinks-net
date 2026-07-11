@@ -25,24 +25,9 @@ import {
   type StoryLine,
 } from "./gameTypes";
 import { pickBark, producerLine, type Bark } from "../_lib/barks";
-import {
-  fetchManifest,
-  HostAudioPlayer,
-  initSpeech,
-  speakProducer,
-  stopProducer,
-  type AudioManifest,
-} from "../_lib/audio";
+import { fetchManifest, HostAudioPlayer, initSpeech, speakProducer, stopProducer, type AudioManifest } from "../_lib/audio";
 import { MusicEngine, MUSIC_TRACKS, STINGS } from "../_lib/music";
-import {
-  applyMotionPreference,
-  getPlayerKey,
-  getStoredName,
-  loadSettings,
-  saveSettings,
-  storeName,
-  type GameSettings,
-} from "../_lib/settings";
+import { applyMotionPreference, getPlayerKey, getStoredName, loadSettings, saveSettings, storeName, type GameSettings } from "../_lib/settings";
 
 export function GameApp() {
   const announce = useAnnounce();
@@ -79,26 +64,18 @@ export function GameApp() {
   const [hostPaused, setHostPaused] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const manifestRef = useRef<AudioManifest>({
-    barks: {},
-    questions: {},
-    story: {},
-  });
+  const manifestRef = useRef<AudioManifest>({ barks: {}, questions: {}, story: {} });
   const playerRef = useRef<HostAudioPlayer | null>(null);
   const musicRef = useRef<MusicEngine | null>(null);
   const stopMysteryClipRef = useRef<(() => void) | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const captionSeq = useRef(0);
-
   const registerMysteryClipStop = useCallback((stop: (() => void) | null) => {
     stopMysteryClipRef.current = stop;
   }, []);
-
   const stopMysteryClip = useCallback(() => {
     stopMysteryClipRef.current?.();
   }, []);
-
   const prepareMysteryClip = useCallback(() => {
     playerRef.current?.stop();
     stopProducer();
@@ -109,16 +86,9 @@ export function GameApp() {
     [],
   );
 
-  const story = useQuery(
-    api.trivia.getStory,
-    playerKey ? { playerKey } : "skip",
-  );
-  const resumable = useQuery(
-    api.trivia.getActiveRun,
-    playerKey ? { playerKey } : "skip",
-  );
-  const epilogueBarks: Bark[] | null =
-    story?.epilogueActive && story.epilogueLines ? story.epilogueLines : null;
+  const story = useQuery(api.trivia.getStory, playerKey ? { playerKey } : "skip");
+  const resumable = useQuery(api.trivia.getActiveRun, playerKey ? { playerKey } : "skip");
+  const epilogueBarks: Bark[] | null = story?.epilogueActive && story.epilogueLines ? story.epilogueLines : null;
 
   // Announce the identity change when the user signs in — the guest name field
   // is replaced by "Playing as X" elsewhere on screen, so a screen reader user
@@ -127,9 +97,7 @@ export function GameApp() {
   const wasSignedIn = useRef(isSignedIn);
   useEffect(() => {
     if (isSignedIn === true && wasSignedIn.current === false) {
-      announce(
-        `Signed in. Playing as ${accountHandle}. This is your leaderboard name.`,
-      );
+      announce(`Signed in. Playing as ${accountHandle}. This is your leaderboard name.`);
     }
     wasSignedIn.current = isSignedIn;
   }, [isSignedIn, accountHandle, announce]);
@@ -157,27 +125,21 @@ export function GameApp() {
     };
   }, []);
 
-  const addCaption = useCallback(
-    (speaker: CaptionLine["speaker"], text: string) => {
-      captionSeq.current += 1;
-      const seq = captionSeq.current;
-      setCaptions((prev) => [...prev.slice(-9), { seq, speaker, text }]);
-    },
-    [],
-  );
+  const addCaption = useCallback((speaker: CaptionLine["speaker"], text: string) => {
+    captionSeq.current += 1;
+    const seq = captionSeq.current;
+    setCaptions((prev) => [...prev.slice(-9), { seq, speaker, text }]);
+  }, []);
 
-  const playHostClip = useCallback(
-    async (audioPath: string) => {
-      stopMysteryClip();
-      const release = musicRef.current?.duck() ?? (() => {});
-      try {
-        await playerRef.current?.play(audioPath);
-      } finally {
-        release();
-      }
-    },
-    [stopMysteryClip],
-  );
+  const playHostClip = useCallback(async (audioPath: string) => {
+    stopMysteryClip();
+    const release = musicRef.current?.duck() ?? (() => {});
+    try {
+      await playerRef.current?.play(audioPath);
+    } finally {
+      release();
+    }
+  }, [stopMysteryClip]);
 
   const replayHostClip = useCallback(async () => {
     const release = musicRef.current?.duck() ?? (() => {});
@@ -220,48 +182,25 @@ export function GameApp() {
     (trigger: string, bundle: string[] | null) => {
       const bark = pickBark(trigger, epilogueBarks);
       if (!bark) return;
-      speakHostLine(
-        bark.text,
-        manifestRef.current.barks[bark.id] ??
-          manifestRef.current.story[bark.id],
-        bundle,
-      );
+      speakHostLine(bark.text, manifestRef.current.barks[bark.id] ?? manifestRef.current.story[bark.id], bundle);
     },
     [epilogueBarks, speakHostLine],
   );
 
   /** A caller's voiced line (their own ElevenLabs voice), speaker-attributed. */
   const speakCallerLine = useCallback(
-    (
-      callerKey: string,
-      callerName: string,
-      moment: string,
-      bundle: string[] | null,
-    ): Promise<void> => {
+    (callerKey: string, callerName: string, moment: string, bundle: string[] | null): Promise<void> => {
       const bark = pickBark(`boss-${callerKey}-${moment}`, null);
       if (!bark) return Promise.resolve();
-      return speakHostLine(
-        bark.text,
-        manifestRef.current.barks[bark.id],
-        bundle,
-        callerName,
-      );
+      return speakHostLine(bark.text, manifestRef.current.barks[bark.id], bundle, callerName);
     },
     [speakHostLine],
   );
 
   /** Producer output: device voice when enabled, otherwise the polite live region. */
   const producerSay = useCallback(
-    (
-      trigger: string,
-      values: Record<string, string | number>,
-      bundle: string[] | null,
-    ) => {
-      const text = producerLine(
-        trigger,
-        values,
-        story?.epilogueActive ?? false,
-      );
+    (trigger: string, values: Record<string, string | number>, bundle: string[] | null) => {
+      const text = producerLine(trigger, values, story?.epilogueActive ?? false);
       if (!text) return;
       addCaption("Producer", text);
       if (settings?.producerVoice) {
@@ -358,10 +297,7 @@ export function GameApp() {
         playerRef.current?.unlock(); // unlock HTML media before async mutations
         musicRef.current?.ensureStarted(); // same gesture unlocks the AudioContext
         const trimmed = name.trim();
-        await ensurePlayer({
-          playerKey,
-          displayName: trimmed.length > 0 ? trimmed : undefined,
-        });
+        await ensurePlayer({ playerKey, displayName: trimmed.length > 0 ? trimmed : undefined });
         if (trimmed.length > 0) storeName(trimmed);
         const started = await startRunMutation({ playerKey, daily });
         setRun(started.run as RunState);
@@ -371,9 +307,7 @@ export function GameApp() {
         setBoosts(started.boosts as BoostState);
         setDraftChosen(null);
         // Both resume paths re-anchor the night's condition (a11y consult).
-        const conditions = started.run.mutator
-          ? ` Conditions: ${started.run.mutator.name}.`
-          : "";
+        const conditions = started.run.mutator ? ` Conditions: ${started.run.mutator.name}.` : "";
         if (started.resumed && !started.question && started.run.bossCall) {
           // The daily was left mid-boss-call: same caller, same question.
           const boss = started.run.bossCall;
@@ -413,11 +347,7 @@ export function GameApp() {
         } else {
           // The show opens before the first question: title theme under Clyde's
           // greeting, then the player advances at their own pace (no timers).
-          setPhase({
-            kind: "intro",
-            runNumber: started.runNumber,
-            isDaily: daily,
-          });
+          setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
           const bundle: string[] = [];
           if (daily) {
             // The greeting and the mutator line must play in SEQUENCE — the
@@ -425,48 +355,29 @@ export function GameApp() {
             // firing both in the same tick silences the greeting (a11y delta).
             const greet = pickBark("daily-intro", epilogueBarks);
             const greetDone = greet
-              ? speakHostLine(
-                  greet.text,
-                  manifestRef.current.barks[greet.id],
-                  bundle,
-                )
+              ? speakHostLine(greet.text, manifestRef.current.barks[greet.id], bundle)
               : Promise.resolve();
             if (started.run.mutator) {
               const mutator = started.run.mutator;
-              const clip =
-                manifestRef.current.barks[`mutator-intro-${mutator.key}`];
+              const clip = manifestRef.current.barks[`mutator-intro-${mutator.key}`];
               if (clip && playerRef.current && !playerRef.current.paused) {
-                void greetDone.then(() =>
-                  speakHostLine(mutator.intro, clip, null),
-                );
+                void greetDone.then(() => speakHostLine(mutator.intro, clip, null));
               } else {
                 void speakHostLine(mutator.intro, undefined, bundle);
               }
               // The canonical system line: the rules always live here, never
               // only in Clyde's flavor line (a11y consult).
-              bundle.push(
-                `Tonight's broadcast conditions: ${mutator.name}. ${mutator.rules}`,
-              );
+              bundle.push(`Tonight's broadcast conditions: ${mutator.name}. ${mutator.rules}`);
             }
           } else {
-            playBark(
-              started.runNumber > 1 ? "run-intro-returning" : "run-intro",
-              bundle,
-            );
+            playBark(started.runNumber > 1 ? "run-intro-returning" : "run-intro", bundle);
           }
-          producerSay(
-            "run-intro",
-            { name: trimmed || "friend", runNumber: started.runNumber },
-            bundle,
-          );
-          bundle.push(
-            `Tonight's first theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
-          );
+          producerSay("run-intro", { name: trimmed || "friend", runNumber: started.runNumber }, bundle);
+          bundle.push(`Tonight's first theme: ${categoryLabel(started.run.roundCategory as string | null)}.`);
           bundle.forEach((line) => announce(line));
         }
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Something went wrong.";
+        const message = error instanceof Error ? error.message : "Something went wrong.";
         const friendly = message.includes("already aired")
           ? "Tonight's broadcast has already aired for you. Come back tomorrow!"
           : "The signal dropped. Please try again.";
@@ -476,20 +387,7 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [
-      announce,
-      busy,
-      ensurePlayer,
-      epilogueBarks,
-      name,
-      playBark,
-      playerKey,
-      producerSay,
-      resetCopyFallback,
-      serveQuestionAudio,
-      speakHostLine,
-      startRunMutation,
-    ],
+    [announce, busy, ensurePlayer, epilogueBarks, name, playBark, playerKey, producerSay, resetCopyFallback, serveQuestionAudio, speakHostLine, startRunMutation],
   );
 
   const resumeRun = useCallback(() => {
@@ -504,9 +402,7 @@ export function GameApp() {
     setBoosts(resumable.boosts as BoostState);
     setDraftChosen(null);
     // No show-open on resume: the player is mid-episode, get them back fast.
-    const conditions = resumable.run.mutator
-      ? ` Conditions: ${resumable.run.mutator.name}.`
-      : "";
+    const conditions = resumable.run.mutator ? ` Conditions: ${resumable.run.mutator.name}.` : "";
     if (!resumable.question && resumable.run.bossCall) {
       const boss = resumable.run.bossCall;
       if (boss.phase === "question" && boss.question) {
@@ -572,23 +468,14 @@ export function GameApp() {
         setRun(result.run);
         setBoosts(result.boosts);
         const bundle: string[] = [];
-        musicRef.current?.playEffect(
-          result.correct ? STINGS.correct : STINGS.wrong,
-        );
+        musicRef.current?.playEffect(result.correct ? STINGS.correct : STINGS.wrong);
         // The caller reacts in their own voice — no Clyde bark, and never the
         // last-life audio: no lives are at stake here (a11y consult).
-        void speakCallerLine(
-          caller,
-          callerName,
-          result.correct ? "pleased" : "disappointed",
-          bundle,
-        );
+        void speakCallerLine(caller, callerName, result.correct ? "pleased" : "disappointed", bundle);
         if (result.correct) {
           bundle.push(`Correct! ${callerName} is pleased.`);
         } else {
-          bundle.push(
-            `Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`,
-          );
+          bundle.push(`Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`);
           bundle.push("No harm done — no lives at stake on caller questions.");
         }
         if (result.explanation) bundle.push(result.explanation);
@@ -602,26 +489,12 @@ export function GameApp() {
         });
       } catch {
         setChosenIndex(null);
-        announce(
-          "The signal dropped. Your answer didn't go through — try again.",
-          "alert",
-        );
+        announce("The signal dropped. Your answer didn't go through — try again.", "alert");
       } finally {
         setBusy(false);
       }
     },
-    [
-      announce,
-      answerBossCallMutation,
-      boosts?.eliminatedChoices,
-      busy,
-      chosenIndex,
-      playerKey,
-      question,
-      run,
-      speakCallerLine,
-      stopMysteryClip,
-    ],
+    [announce, answerBossCallMutation, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, question, run, speakCallerLine, stopMysteryClip],
   );
 
   const chooseAnswer = useCallback(
@@ -656,29 +529,20 @@ export function GameApp() {
         // never replace announcements (a11y review: reinforcement only).
         const music = musicRef.current;
         music?.playEffect(result.correct ? STINGS.correct : STINGS.wrong);
-        if (
-          result.run.lives === 1 &&
-          !result.correct &&
-          result.run.status === "active"
-        ) {
+        if (result.run.lives === 1 && !result.correct && result.run.status === "active") {
           music?.playEffect(STINGS.lastLife);
         }
         for (const event of result.events) {
           if (event.type === "roundComplete") music?.playEffect(STINGS.round);
-          else if (event.type === "lifeGained")
-            music?.playEffect(STINGS.lifeGained);
-          else if (event.type === "tapeUnlocked")
-            music?.playEffect(STINGS.tapeFound);
-          else if (event.type === "gameOver" && event.isPersonalBest)
-            music?.playEffect(STINGS.highScore);
+          else if (event.type === "lifeGained") music?.playEffect(STINGS.lifeGained);
+          else if (event.type === "tapeUnlocked") music?.playEffect(STINGS.tapeFound);
+          else if (event.type === "gameOver" && event.isPersonalBest) music?.playEffect(STINGS.highScore);
         }
         playBark(result.correct ? "correct" : "wrong", bundle);
         if (result.correct) {
           bundle.push(`Correct! Plus ${result.scoreDelta} points.`);
         } else {
-          bundle.push(
-            `Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`,
-          );
+          bundle.push(`Wrong. The correct answer was: ${question.choices[result.correctIndex]}.`);
         }
         if (result.explanation) bundle.push(result.explanation);
         if (result.events.some((e) => e.type === "deadAirSurvived")) {
@@ -695,20 +559,12 @@ export function GameApp() {
           `Score ${result.run.score}. ${result.run.lives} ${result.run.lives === 1 ? "life" : "lives"}.` +
             (result.run.streak >= 2 ? ` Streak ${result.run.streak}.` : ""),
         );
-        if (
-          result.run.lives === 1 &&
-          !result.correct &&
-          result.run.status === "active"
-        ) {
+        if (result.run.lives === 1 && !result.correct && result.run.status === "active") {
           playBark("last-life", bundle);
         }
         // Flat Rates night: streaks pay nothing, so celebrating one is
         // confusing audio — the streak bark stays quiet (a11y consult).
-        if (
-          result.run.streak > 0 &&
-          result.run.streak % 5 === 0 &&
-          result.run.mutator?.key !== "flat-rates"
-        ) {
+        if (result.run.streak > 0 && result.run.streak % 5 === 0 && result.run.mutator?.key !== "flat-rates") {
           playBark("streak", bundle);
         }
         for (const event of result.events) {
@@ -729,65 +585,36 @@ export function GameApp() {
             // Name the voice before it ever speaks: system line here, the
             // caller's own voiced intro after "Take the call" (a11y consult).
             playBark("boss-call", bundle);
-            bundle.push(
-              `Caller on the line: ${event.name}. One question. No lives at stake.`,
-            );
+            bundle.push(`Caller on the line: ${event.name}. One question. No lives at stake.`);
           } else if (event.type === "deadAir") {
             // After the status line, so "0 lives" is heard before the
             // reprieve (a11y consult: state first, twist second).
             music?.playEffect(STINGS.lastLife);
             playBark("dead-air", bundle);
-            bundle.push(
-              "Dead air. One final question — get it right and you stay on the air.",
-            );
+            bundle.push("Dead air. One final question — get it right and you stay on the air.");
           } else if (event.type === "lifeGained") {
             bundle.push(`Life regained. ${event.lives} lives.`);
           } else if (event.type === "achievement") {
             producerSay("achievement", { achievementName: event.name }, bundle);
           } else if (event.type === "tapeUnlocked") {
             playBark("tape-found", bundle);
-            producerSay(
-              "tape-found",
-              { tapeNumber: event.order, tapeTotal: event.total },
-              bundle,
-            );
+            producerSay("tape-found", { tapeNumber: event.order, tapeTotal: event.total }, bundle);
           } else if (event.type === "gameOver") {
             playBark(event.isPersonalBest ? "high-score" : "game-over", bundle);
-            if (result.run.mutator)
-              bundle.push(`Conditions were ${result.run.mutator.name}.`);
-            producerSay(
-              "game-over",
-              { score: event.score, round: event.round },
-              bundle,
-            );
+            if (result.run.mutator) bundle.push(`Conditions were ${result.run.mutator.name}.`);
+            producerSay("game-over", { score: event.score, round: event.round }, bundle);
           }
         }
         bundle.forEach((line) => announce(line));
         setPhase({ kind: "feedback", result });
       } catch {
         setChosenIndex(null);
-        announce(
-          "The signal dropped. Your answer didn't go through — try again.",
-          "alert",
-        );
+        announce("The signal dropped. Your answer didn't go through — try again.", "alert");
       } finally {
         setBusy(false);
       }
     },
-    [
-      announce,
-      answerCaller,
-      boosts?.eliminatedChoices,
-      busy,
-      chosenIndex,
-      playBark,
-      playerKey,
-      producerSay,
-      question,
-      run,
-      stopMysteryClip,
-      submitAnswerMutation,
-    ],
+    [announce, answerCaller, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, stopMysteryClip, submitAnswerMutation],
   );
 
   const advanceAfterFeedback = useCallback(
@@ -797,8 +624,7 @@ export function GameApp() {
         const tape = story?.tapes.find((t) => t.id === next.id);
         if (tape) {
           const audioPath = manifestRef.current.story[tape.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused)
-            void playHostClip(audioPath);
+          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
           setPhase({ kind: "tape", tape, pending: rest, result });
           return;
         }
@@ -808,16 +634,10 @@ export function GameApp() {
       if (next?.type === "finaleReady") {
         try {
           const finale = await completeFinaleMutation({ playerKey });
-          setPhase({
-            kind: "finale",
-            lines: finale.lines,
-            pending: rest,
-            result,
-          });
+          setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
           const first = finale.lines[0];
           const audioPath = manifestRef.current.story[first.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused)
-            void playHostClip(audioPath);
+          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
           return;
         } catch {
           // Not eligible after all; fall through to the next event.
@@ -846,11 +666,7 @@ export function GameApp() {
               ? pickBark("question-lead-in", epilogueBarks)
               : null;
         const flavorDone = flavor
-          ? speakHostLine(
-              flavor.text,
-              manifestRef.current.barks[flavor.id],
-              null,
-            )
+          ? speakHostLine(flavor.text, manifestRef.current.barks[flavor.id], null)
           : Promise.resolve();
         const nextKey = result.nextQuestion.key;
         setQuestion(result.nextQuestion);
@@ -858,10 +674,7 @@ export function GameApp() {
         setChosenIndex(null);
         setPhase({ kind: "question" });
         void flavorDone.then(() => serveQuestionAudio(nextKey));
-      } else if (
-        result.run.bossCall?.phase === "question" &&
-        result.run.bossCall.question
-      ) {
+      } else if (result.run.bossCall?.phase === "question" && result.run.bossCall.question) {
         // Taking the call: the caller question rides the normal question
         // panel; the caller was named in the feedback bundle, and their
         // voiced intro plays before Clyde relays the question clip.
@@ -871,11 +684,9 @@ export function GameApp() {
         setQuestionNumber(result.run.questionNumber);
         setChosenIndex(null);
         setPhase({ kind: "question" });
-        announce(
-          `Caller on the line: ${boss.callerName}. One question. No lives at stake.`,
-        );
-        void speakCallerLine(boss.caller, boss.callerName, "intro", null).then(
-          () => serveQuestionAudio(bossQuestion.key),
+        announce(`Caller on the line: ${boss.callerName}. One question. No lives at stake.`);
+        void speakCallerLine(boss.caller, boss.callerName, "intro", null).then(() =>
+          serveQuestionAudio(bossQuestion.key),
         );
       } else if (result.run.bossCall?.phase === "reward") {
         setRewardChosen(null);
@@ -894,18 +705,7 @@ export function GameApp() {
         setPhase({ kind: "gameover", result });
       }
     },
-    [
-      announce,
-      completeFinaleMutation,
-      epilogueBarks,
-      playBark,
-      playerKey,
-      playHostClip,
-      serveQuestionAudio,
-      speakCallerLine,
-      speakHostLine,
-      story?.tapes,
-    ],
+    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, story?.tapes],
   );
 
   /** Resolves the won Boss Call, then rolls straight into the boost draft. */
@@ -915,11 +715,7 @@ export function GameApp() {
       setBusy(true);
       setRewardChosen(reward);
       try {
-        const res = await chooseBossRewardMutation({
-          playerKey,
-          runId: run.runId,
-          reward,
-        });
+        const res = await chooseBossRewardMutation({ playerKey, runId: run.runId, reward });
         const nextRun = res.run as RunState;
         const nextBoosts = res.boosts as BoostState;
         setRun(nextRun);
@@ -948,23 +744,12 @@ export function GameApp() {
         bundle.forEach((line) => announce(line));
       } catch {
         setRewardChosen(null);
-        announce(
-          "The signal dropped. Your pick didn't go through — try again.",
-          "alert",
-        );
+        announce("The signal dropped. Your pick didn't go through — try again.", "alert");
       } finally {
         setBusy(false);
       }
     },
-    [
-      announce,
-      busy,
-      chooseBossRewardMutation,
-      playBark,
-      playerKey,
-      rewardChosen,
-      run,
-    ],
+    [announce, busy, chooseBossRewardMutation, playBark, playerKey, rewardChosen, run],
   );
 
   /** Takes the drafted boost; the server applies it and opens the next round. */
@@ -975,22 +760,14 @@ export function GameApp() {
       setDraftChosen(boostKey);
       try {
         const offerEntry = boosts?.offer?.find((b) => b.key === boostKey);
-        const drafted = await chooseBoostMutation({
-          playerKey,
-          runId: run.runId,
-          boostKey,
-        });
+        const drafted = await chooseBoostMutation({ playerKey, runId: run.runId, boostKey });
         setRun(drafted.run as RunState);
         setBoosts(drafted.boosts as BoostState);
         const bundle: string[] = [];
         // Clyde reads the chosen boost's tagline (voiced clip when it exists),
         // then a short confirmation bark.
         if (offerEntry) {
-          void speakHostLine(
-            offerEntry.tagline,
-            manifestRef.current.barks[`boost-tagline-${boostKey}`],
-            bundle,
-          );
+          void speakHostLine(offerEntry.tagline, manifestRef.current.barks[`boost-tagline-${boostKey}`], bundle);
         }
         playBark("boost-chosen", bundle);
         for (const event of drafted.events as GameEvent[]) {
@@ -1004,22 +781,15 @@ export function GameApp() {
           } else if (event.type === "gameOver") {
             // Bank exhausted during the draft: same sign-off as chooseAnswer.
             playBark(event.isPersonalBest ? "high-score" : "game-over", bundle);
-            if (drafted.run.mutator)
-              bundle.push(`Conditions were ${drafted.run.mutator.name}.`);
-            producerSay(
-              "game-over",
-              { score: event.score, round: event.round },
-              bundle,
-            );
+            if (drafted.run.mutator) bundle.push(`Conditions were ${drafted.run.mutator.name}.`);
+            producerSay("game-over", { score: event.score, round: event.round }, bundle);
           }
         }
         if (drafted.question) {
           // The theme is announced here, at draft exit — the moment it's true.
           // Announce BEFORE the phase change so confirmation → theme lands
           // ahead of the question heading focus (parity with chooseAnswer).
-          bundle.push(
-            `Round ${drafted.run.round}. Theme: ${categoryLabel(drafted.run.roundCategory as string | null)}.`,
-          );
+          bundle.push(`Round ${drafted.run.round}. Theme: ${categoryLabel(drafted.run.roundCategory as string | null)}.`);
           bundle.forEach((line) => announce(line));
           const nextKey = drafted.question.key;
           setQuestion(drafted.question);
@@ -1047,27 +817,12 @@ export function GameApp() {
         }
       } catch {
         setDraftChosen(null);
-        announce(
-          "The signal dropped. Your pick didn't go through — try again.",
-          "alert",
-        );
+        announce("The signal dropped. Your pick didn't go through — try again.", "alert");
       } finally {
         setBusy(false);
       }
     },
-    [
-      announce,
-      boosts?.offer,
-      busy,
-      chooseBoostMutation,
-      draftChosen,
-      playBark,
-      playerKey,
-      producerSay,
-      run,
-      serveQuestionAudio,
-      speakHostLine,
-    ],
+    [announce, boosts?.offer, busy, chooseBoostMutation, draftChosen, playBark, playerKey, producerSay, run, serveQuestionAudio, speakHostLine],
   );
 
   /** Static Filter: burn a charge to strike two wrong choices off the board. */
@@ -1077,25 +832,18 @@ export function GameApp() {
       announce("An elimination is already applied to this question."); // never a silent no-op
       return;
     }
-    const chargesLeft =
-      boosts?.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0;
+    const chargesLeft = boosts?.owned.find((b) => b.key === "static-filter")?.chargesLeft ?? 0;
     if (chargesLeft <= 0) return;
     setBusy(true);
     try {
-      const used = await activateBoostMutation({
-        playerKey,
-        runId: run.runId,
-        boostKey: "static-filter",
-      });
+      const used = await activateBoostMutation({ playerKey, runId: run.runId, boostKey: "static-filter" });
       setBoosts((prev) =>
         prev
           ? {
               ...prev,
               eliminatedChoices: used.eliminated,
               owned: prev.owned.map((b) =>
-                b.key === "static-filter"
-                  ? { ...b, chargesLeft: used.chargesLeft }
-                  : b,
+                b.key === "static-filter" ? { ...b, chargesLeft: used.chargesLeft } : b,
               ),
             }
           : prev,
@@ -1104,23 +852,11 @@ export function GameApp() {
         `Static Filter applied. Choices ${used.eliminated.map((i: number) => i + 1).join(" and ")} eliminated. ${used.chargesLeft} ${used.chargesLeft === 1 ? "use" : "uses"} left.`,
       );
     } catch {
-      announce(
-        "The signal dropped. Static Filter didn't go through — try again.",
-        "alert",
-      );
+      announce("The signal dropped. Static Filter didn't go through — try again.", "alert");
     } finally {
       setBusy(false);
     }
-  }, [
-    activateBoostMutation,
-    announce,
-    boosts,
-    busy,
-    chosenIndex,
-    playerKey,
-    question,
-    run,
-  ]);
+  }, [activateBoostMutation, announce, boosts, busy, chosenIndex, playerKey, question, run]);
 
   /** Producer's Whisper: spend 1 signal, the Producer strikes one wrong choice. */
   const activateWhisper = useCallback(async () => {
@@ -1133,17 +869,9 @@ export function GameApp() {
     setBusy(true);
     try {
       const used = await whisperMutation({ playerKey, runId: run.runId });
-      setRun((prev) =>
-        prev ? { ...prev, signalStrength: used.signalLeft } : prev,
-      );
+      setRun((prev) => (prev ? { ...prev, signalStrength: used.signalLeft } : prev));
       setBoosts((prev) =>
-        prev
-          ? {
-              ...prev,
-              eliminatedChoices: [used.eliminated],
-              eliminatedBy: "whisper",
-            }
-          : prev,
+        prev ? { ...prev, eliminatedChoices: [used.eliminated], eliminatedBy: "whisper" } : prev,
       );
       // Split utterance (a11y consult): diegetic flavor through the Producer
       // path (device voice or live region), mechanical confirmation always
@@ -1153,24 +881,11 @@ export function GameApp() {
         `Choice ${used.eliminated + 1} eliminated. Signal strength: ${used.signalLeft} of 3.`,
       );
     } catch {
-      announce(
-        "The signal dropped. The whisper didn't go through — try again.",
-        "alert",
-      );
+      announce("The signal dropped. The whisper didn't go through — try again.", "alert");
     } finally {
       setBusy(false);
     }
-  }, [
-    announce,
-    boosts?.eliminatedChoices,
-    busy,
-    chosenIndex,
-    playerKey,
-    producerSay,
-    question,
-    run,
-    whisperMutation,
-  ]);
+  }, [announce, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, producerSay, question, run, whisperMutation]);
 
   const backToTitle = useCallback(() => {
     playerRef.current?.stop();
@@ -1218,10 +933,7 @@ export function GameApp() {
     });
   }, []);
 
-  const statusItems = useMemo(
-    () => buildStatusItems(run, boosts),
-    [boosts, run],
-  );
+  const statusItems = useMemo(() => buildStatusItems(run, boosts), [boosts, run]);
 
   if (!settings) {
     return <p className="py-8 text-center">Tuning the signal…</p>;
