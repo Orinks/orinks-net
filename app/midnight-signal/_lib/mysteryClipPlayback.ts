@@ -4,6 +4,7 @@ interface ClipAudio {
   src: string;
   preload: string;
   currentTime: number;
+  volume: number;
   onplaying: ((event: Event) => unknown) | null;
   onended: ((event: Event) => unknown) | null;
   onerror: ((event: Event) => unknown) | null;
@@ -18,8 +19,12 @@ interface MysteryClipPlaybackOptions {
   beforePlay: () => void;
   suppressMusic: () => () => void;
   onState: (event: MysteryClipEvent) => void;
+  volume?: number;
   createAudio?: () => ClipAudio;
-  schedule?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
+  schedule?: (
+    callback: () => void,
+    delay: number,
+  ) => ReturnType<typeof setTimeout>;
   cancelSchedule?: (timer: ReturnType<typeof setTimeout>) => void;
 }
 
@@ -41,6 +46,7 @@ export class MysteryClipPlayback {
     this.options = {
       ...options,
       createAudio: options.createAudio ?? (() => new Audio()),
+      volume: options.volume ?? 0.8,
       schedule: options.schedule ?? setTimeout,
       cancelSchedule: options.cancelSchedule ?? clearTimeout,
     };
@@ -62,6 +68,7 @@ export class MysteryClipPlayback {
 
     const audio = this.options.createAudio();
     audio.preload = "none";
+    audio.volume = this.options.volume;
     audio.src = `/api/midnight-signal/clips/${encodeURIComponent(clipId)}`;
     this.audio = audio;
 
@@ -80,21 +87,28 @@ export class MysteryClipPlayback {
     audio.onplaying = () => {
       if (!current()) return;
       this.clearLoadingTimer();
-      if (audio.currentTime < this.startSeconds) audio.currentTime = this.startSeconds;
+      if (audio.currentTime < this.startSeconds)
+        audio.currentTime = this.startSeconds;
       this.scheduleEnding(audio, finish);
       this.options.onState({ type: "playing", attempt });
       this.options.announce("Mystery clip playing.");
     };
     audio.onended = () => finish("ended", "Mystery clip finished.");
     audio.onerror = () =>
-      finish("failed", "Mystery clip unavailable. Use the text clue, or try again.");
+      finish(
+        "failed",
+        "Mystery clip unavailable. Use the text clue, or try again.",
+      );
     this.loadingTimer = this.options.schedule(() => {
       if (!current()) return;
       this.options.onState({ type: "loading-announced", attempt });
       this.options.announce("Loading mystery clip.");
     }, LOADING_ANNOUNCEMENT_MS);
     void audio.play().catch(() => {
-      finish("failed", "Mystery clip unavailable. Use the text clue, or try again.");
+      finish(
+        "failed",
+        "Mystery clip unavailable. Use the text clue, or try again.",
+      );
     });
   }
 
@@ -122,7 +136,9 @@ export class MysteryClipPlayback {
       audio.onerror = null;
       this.releaseMusic();
       this.options.onState({ type: "failed", attempt: this.attempt });
-      this.options.announce("Mystery clip unavailable. Use the text clue, or try again.");
+      this.options.announce(
+        "Mystery clip unavailable. Use the text clue, or try again.",
+      );
     });
   }
 
@@ -166,12 +182,14 @@ export class MysteryClipPlayback {
   }
 
   private clearLoadingTimer() {
-    if (this.loadingTimer !== null) this.options.cancelSchedule(this.loadingTimer);
+    if (this.loadingTimer !== null)
+      this.options.cancelSchedule(this.loadingTimer);
     this.loadingTimer = null;
   }
 
   private clearEndingTimer() {
-    if (this.endingTimer !== null) this.options.cancelSchedule(this.endingTimer);
+    if (this.endingTimer !== null)
+      this.options.cancelSchedule(this.endingTimer);
     this.endingTimer = null;
   }
 

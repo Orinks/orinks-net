@@ -12,6 +12,7 @@ function harness() {
     src: "",
     preload: "",
     currentTime: 9,
+    volume: 1,
     onplaying: null as (() => void) | null,
     onended: null as (() => void) | null,
     onerror: null as (() => void) | null,
@@ -43,6 +44,7 @@ describe("mystery clip streaming lifecycle", () => {
 
     expect(beforePlay).toHaveBeenCalledOnce();
     expect(audio.preload).toBe("none");
+    expect(audio.volume).toBe(0.8);
     expect(audio.src).toBe("/api/midnight-signal/clips/ms-clip-7f3a91c2");
     expect(events[0]).toEqual({ type: "activate" });
     expect(announcements).toEqual([]);

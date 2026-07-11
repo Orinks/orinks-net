@@ -52,7 +52,11 @@ export class MusicEngine {
   private muted: boolean;
   effectsEnabled: boolean;
 
-  constructor(options: { volume: number; muted: boolean; effectsEnabled: boolean }) {
+  constructor(options: {
+    volume: number;
+    muted: boolean;
+    effectsEnabled: boolean;
+  }) {
     this.volume = options.volume;
     this.muted = options.muted;
     this.effectsEnabled = options.effectsEnabled;
@@ -83,13 +87,18 @@ export class MusicEngine {
     this.duckGain.connect(this.musicGain);
     this.musicGain.connect(this.ctx.destination);
     this.effectsGain.connect(this.ctx.destination);
+    void this.ctx.resume().catch(() => undefined);
   }
 
   private buffer(url: string): Promise<AudioBuffer | null> {
     let cached = this.buffers.get(url);
     if (!cached) {
       cached = fetch(url)
-        .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+        .then((res) =>
+          res.ok
+            ? res.arrayBuffer()
+            : Promise.reject(new Error(String(res.status))),
+        )
         .then((bytes) => this.ctx!.decodeAudioData(bytes))
         .catch(() => null);
       this.buffers.set(url, cached);
@@ -104,7 +113,8 @@ export class MusicEngine {
     this.currentTrack = url;
     const buf = await this.buffer(url);
     // A newer request may have superseded this one while decoding.
-    if (!buf || this.currentTrack !== url || !this.ctx || !this.duckGain) return;
+    if (!buf || this.currentTrack !== url || !this.ctx || !this.duckGain)
+      return;
     const source = this.ctx.createBufferSource();
     source.buffer = buf;
     source.loop = loop;
@@ -197,7 +207,10 @@ export class MusicEngine {
     if (!this.ctx || !this.duckGain) return () => {};
     this.duckCount++;
     this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.duckGain.gain.linearRampToValueAtTime(DUCK_LEVEL, this.ctx.currentTime + DUCK_RAMP_S);
+    this.duckGain.gain.linearRampToValueAtTime(
+      DUCK_LEVEL,
+      this.ctx.currentTime + DUCK_RAMP_S,
+    );
     let released = false;
     const release = () => {
       if (released) return;
@@ -206,7 +219,10 @@ export class MusicEngine {
       this.duckCount = Math.max(0, this.duckCount - 1);
       if (this.duckCount === 0 && this.ctx && this.duckGain) {
         this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
-        this.duckGain.gain.linearRampToValueAtTime(1, this.ctx.currentTime + DUCK_RAMP_S * 2);
+        this.duckGain.gain.linearRampToValueAtTime(
+          1,
+          this.ctx.currentTime + DUCK_RAMP_S * 2,
+        );
       }
     };
     const safety = setTimeout(release, DUCK_SAFETY_MS);

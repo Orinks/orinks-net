@@ -3,19 +3,30 @@ import { HostAudioPlayer, speakProducer, stopProducer } from "./audio";
 
 describe("audio cancellation", () => {
   beforeEach(() => {
+    const audioInstances: unknown[] = [];
     class FakeAudio {
       volume = 1;
+      muted = false;
+      src = "";
       paused = false;
       ended = false;
       onended: (() => void) | null = null;
       onerror: (() => void) | null = null;
-      constructor(readonly src: string) {}
+      constructor(src = "") {
+        this.src = src;
+        audioInstances.push(this);
+      }
       play = vi.fn(async () => undefined);
       pause = vi.fn(() => {
         this.paused = true;
       });
+      removeAttribute = vi.fn(() => {
+        this.src = "";
+      });
+      load = vi.fn();
     }
     vi.stubGlobal("Audio", FakeAudio);
+    vi.stubGlobal("__audioInstances", audioInstances);
   });
 
   afterEach(() => {
@@ -33,6 +44,19 @@ describe("audio cancellation", () => {
     player.stop();
     await playback;
     expect(settled).toBe(true);
+  });
+
+  test("gesture unlock reuses the activated media element for later narration", async () => {
+    const player = new HostAudioPlayer(0.8);
+    player.unlock();
+    await Promise.resolve();
+    const playback = player.play("/audio/trivia/example.mp3");
+    player.stop();
+    await playback;
+    expect(
+      (globalThis as unknown as { __audioInstances: unknown[] })
+        .__audioInstances,
+    ).toHaveLength(1);
   });
 
   test("stopping the Producer synchronously settles the active speech promise", async () => {

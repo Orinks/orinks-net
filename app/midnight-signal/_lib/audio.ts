@@ -14,7 +14,9 @@ let manifestPromise: Promise<AudioManifest> | null = null;
 
 export function fetchManifest(): Promise<AudioManifest> {
   manifestPromise ??= fetch("/audio/trivia/manifest.json")
-    .then((res) => (res.ok ? res.json() : { barks: {}, questions: {}, story: {} }))
+    .then((res) =>
+      res.ok ? res.json() : { barks: {}, questions: {}, story: {} },
+    )
     .catch(() => ({ barks: {}, questions: {}, story: {} }));
   return manifestPromise;
 }
@@ -22,6 +24,7 @@ export function fetchManifest(): Promise<AudioManifest> {
 /** Plays one host clip at a time with pause/resume/replay and independent volume (WCAG 1.4.2). */
 export class HostAudioPlayer {
   private audio: HTMLAudioElement | null = null;
+  private reusableAudio: HTMLAudioElement | null = null;
   private finishCurrent: (() => void) | null = null;
   private lastUrl: string | null = null;
   private _volume: number;
@@ -29,6 +32,28 @@ export class HostAudioPlayer {
 
   constructor(volume: number) {
     this._volume = volume;
+  }
+
+  /** Unlocks reusable media while the activating button gesture is live. */
+  unlock() {
+    if (typeof Audio === "undefined") return;
+    const audio = this.reusableAudio ?? new Audio();
+    this.reusableAudio = audio;
+    audio.muted = true;
+    audio.src =
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+    void audio
+      .play()
+      .then(() => {
+        if (this.audio === audio) return;
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        audio.muted = false;
+      })
+      .catch(() => {
+        audio.muted = false;
+      });
   }
 
   set volume(value: number) {
@@ -41,7 +66,10 @@ export class HostAudioPlayer {
     this.stop();
     this.lastUrl = url;
     if (this.paused) return Promise.resolve();
-    const audio = new Audio(url);
+    const audio = this.reusableAudio ?? new Audio();
+    this.reusableAudio = audio;
+    audio.muted = false;
+    audio.src = url;
     audio.volume = this._volume;
     this.audio = audio;
     return new Promise((resolve) => {
@@ -105,7 +133,12 @@ let speechReady = false;
 
 /** Must be called from a user gesture (Start Broadcast) before first speak. */
 export function initSpeech() {
-  if (speechReady || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  if (
+    speechReady ||
+    typeof window === "undefined" ||
+    !("speechSynthesis" in window)
+  )
+    return;
   // A silent utterance from a gesture unlocks speech in gesture-gated browsers.
   const warmup = new SpeechSynthesisUtterance("");
   warmup.volume = 0;

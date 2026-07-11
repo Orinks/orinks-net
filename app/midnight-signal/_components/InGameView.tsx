@@ -258,6 +258,7 @@ export function InGameView({
               key={question.key}
               registerStop={registerMysteryClipStop}
               suppressMusic={suppressMusicForClip}
+              volume={settings.hostVolume}
             />
           ) : null}
           <div

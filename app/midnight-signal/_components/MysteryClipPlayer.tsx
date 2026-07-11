@@ -24,6 +24,7 @@ interface MysteryClipPlayerProps {
   suppressMusic: () => () => void;
   registerStop: (stop: (() => void) | null) => void;
   buttonClassName: string;
+  volume: number;
 }
 
 export function MysteryClipPlayer({
@@ -34,6 +35,7 @@ export function MysteryClipPlayer({
   suppressMusic,
   registerStop,
   buttonClassName,
+  volume,
 }: MysteryClipPlayerProps) {
   const [state, setState] = useState(initialMysteryClipState);
   const playback = useRef<MysteryClipPlayback | null>(null);
@@ -43,7 +45,9 @@ export function MysteryClipPlayer({
       announce,
       beforePlay,
       suppressMusic,
-      onState: (event) => setState((current) => reduceMysteryClipState(current, event)),
+      onState: (event) =>
+        setState((current) => reduceMysteryClipState(current, event)),
+      volume,
     });
   }
 
@@ -61,6 +65,7 @@ export function MysteryClipPlayer({
   }, [answered]);
 
   const activate = () => {
+    if (state.phase === "loading") return;
     const controller = playback.current!;
     if (state.phase === "playing") controller.pause();
     else if (state.phase === "paused") controller.resume();
@@ -74,8 +79,8 @@ export function MysteryClipPlayer({
       <p className="mt-1 leading-7">{clip.textClue}</p>
       {!answered ? (
         <button
+          aria-disabled={state.phase === "loading"}
           className={`${buttonClassName} mt-3`}
-          disabled={state.phase === "loading"}
           onClick={activate}
           type="button"
         >
@@ -83,7 +88,9 @@ export function MysteryClipPlayer({
         </button>
       ) : null}
       <p className="mt-2 text-sm leading-6 text-zinc-400">
-        {answered ? "Mystery clip stopped for answer review." : mysteryClipStatusText(state)}
+        {answered
+          ? "Mystery clip stopped for answer review."
+          : mysteryClipStatusText(state)}
       </p>
     </div>
   );
