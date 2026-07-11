@@ -16,6 +16,22 @@ function harness() {
 }
 
 describe("serialized announcement queue", () => {
+  test("calls browser-like timer functions without an illegal receiver", () => {
+    const timers: Array<() => void> = [];
+    function receiverSensitiveScheduler(this: unknown, callback: () => void) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      timers.push(callback);
+      return timers.length as unknown as ReturnType<typeof setTimeout>;
+    }
+    const queue = new SerializedAnnouncementQueue({
+      emit: () => {},
+      schedule: receiverSensitiveScheduler,
+      cancel: () => {},
+    });
+
+    expect(() => queue.enqueue("Starting the broadcast.", "status")).not.toThrow();
+  });
+
   test("bundles a mixed batch into the assertive channel only", () => {
     const { emitted, queue, timers } = harness();
     queue.enqueue("Routine update.", "status");

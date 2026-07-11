@@ -46,6 +46,22 @@ describe("audio cancellation", () => {
     expect(settled).toBe(true);
   });
 
+  test("reports failed playback so the caller can announce a text fallback", async () => {
+    const player = new HostAudioPlayer(0.8);
+    const playback = player.play("/audio/trivia/missing.mp3");
+    const [audio] = (globalThis as unknown as {
+      __audioInstances: Array<{ onerror: (() => void) | null }>;
+    }).__audioInstances;
+    audio.onerror?.();
+
+    await expect(playback).resolves.toBe("failed");
+  });
+
+  test("reports unavailable replay when there is no previous clip", async () => {
+    const player = new HostAudioPlayer(0.8);
+    await expect(player.replayLast()).resolves.toBe("unavailable");
+  });
+
   test("gesture unlock reuses the activated media element for later narration", async () => {
     const player = new HostAudioPlayer(0.8);
     player.unlock();

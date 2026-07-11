@@ -10,6 +10,8 @@ export interface AudioManifest {
   story: Record<string, string>;
 }
 
+export type HostPlaybackOutcome = "played" | "failed" | "stopped" | "unavailable";
+
 let manifestPromise: Promise<AudioManifest> | null = null;
 
 export function fetchManifest(): Promise<AudioManifest> {
@@ -25,7 +27,7 @@ export function fetchManifest(): Promise<AudioManifest> {
 export class HostAudioPlayer {
   private audio: HTMLAudioElement | null = null;
   private reusableAudio: HTMLAudioElement | null = null;
-  private finishCurrent: (() => void) | null = null;
+  private finishCurrent: ((outcome: HostPlaybackOutcome) => void) | null = null;
   private lastUrl: string | null = null;
   private _volume: number;
   paused = false;
@@ -62,10 +64,10 @@ export class HostAudioPlayer {
   }
 
   /** Starts a clip, stopping any current one. Resolves when playback ends or fails. */
-  play(url: string): Promise<void> {
+  play(url: string): Promise<HostPlaybackOutcome> {
     this.stop();
     this.lastUrl = url;
-    if (this.paused) return Promise.resolve();
+    if (this.paused) return Promise.resolve("unavailable");
     const audio = this.reusableAudio ?? new Audio();
     this.reusableAudio = audio;
     audio.muted = false;
@@ -74,24 +76,24 @@ export class HostAudioPlayer {
     this.audio = audio;
     return new Promise((resolve) => {
       let settled = false;
-      const finish = () => {
+      const finish = (outcome: HostPlaybackOutcome) => {
         if (settled) return;
         settled = true;
         audio.onended = null;
         audio.onerror = null;
         if (this.audio === audio) this.audio = null;
         if (this.finishCurrent === finish) this.finishCurrent = null;
-        resolve();
+        resolve(outcome);
       };
       this.finishCurrent = finish;
-      audio.onended = finish;
-      audio.onerror = finish;
-      audio.play().catch(finish);
+      audio.onended = () => finish("played");
+      audio.onerror = () => finish("failed");
+      audio.play().catch(() => finish("failed"));
     });
   }
 
-  replayLast(): Promise<void> {
-    if (!this.lastUrl) return Promise.resolve();
+  replayLast(): Promise<HostPlaybackOutcome> {
+    if (!this.lastUrl) return Promise.resolve("unavailable");
     this.paused = false;
     return this.play(this.lastUrl);
   }
@@ -121,7 +123,7 @@ export class HostAudioPlayer {
       audio.onerror = null;
       audio.pause();
     }
-    finish?.();
+    finish?.("stopped");
   }
 }
 

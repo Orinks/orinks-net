@@ -58,6 +58,7 @@ interface InGameViewProps {
   replayHostClip: () => Promise<void>;
   toggleHostPaused: () => void;
   hostPaused: boolean;
+  hostAudioStatus: string | null;
   toggleMusicMuted: () => void;
   musicMuted: boolean;
   quitRun: () => Promise<void>;
@@ -97,6 +98,7 @@ export function InGameView({
   replayHostClip,
   toggleHostPaused,
   hostPaused,
+  hostAudioStatus,
   toggleMusicMuted,
   musicMuted,
   quitRun,
@@ -600,6 +602,7 @@ export function InGameView({
           </button>
         ) : null}
       </div>
+      {hostAudioStatus ? <p className="mt-2 text-sm text-amber-100">{hostAudioStatus}</p> : null}
 
       {settings.captions && captions.length > 0 ? (
         <section aria-labelledby="captions-heading" className="mt-6">

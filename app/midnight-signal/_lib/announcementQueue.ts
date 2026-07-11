@@ -32,8 +32,12 @@ export class SerializedAnnouncementQueue {
 
   constructor(options: QueueOptions) {
     this.emit = options.emit;
-    this.schedule = options.schedule ?? setTimeout;
-    this.cancel = options.cancel ?? clearTimeout;
+    const schedule = options.schedule ?? setTimeout;
+    const cancel = options.cancel ?? clearTimeout;
+    // Browser timer functions require their native receiver. Calling a stored
+    // window.setTimeout as this.schedule throws "Illegal invocation".
+    this.schedule = (callback, delay) => schedule(callback, delay);
+    this.cancel = (timer) => cancel(timer);
   }
 
   enqueue(text: string, channel: AnnouncementChannel) {

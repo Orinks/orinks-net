@@ -55,13 +55,14 @@ export function GameApp() {
   const [boosts, setBoosts] = useState<BoostState | null>(null);
   const [draftChosen, setDraftChosen] = useState<string | null>(null); // double-activation guard, mirrors chosenIndex
   const [rewardChosen, setRewardChosen] = useState<string | null>(null); // same guard for the boss reward screen
-  // Two choice screens can stack (reward → draft); a brief hold keeps a
-  // number key pressed for one from landing on the other (a11y consult).
+  // Prevent a held number key from activating stacked choice screens.
   const shortcutHoldUntil = useRef(0);
   const { copyDailyResult, copyFallback, copyFallbackRef, resetCopyFallback } =
     useDailyResultCopy(announce);
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [hostPaused, setHostPaused] = useState(false);
+  const [hostAudioStatus, setHostAudioStatus] = useState<string | null>(null);
+  const lastHostLine = useRef<Pick<CaptionLine, "speaker" | "text"> | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const manifestRef = useRef<AudioManifest>({ barks: {}, questions: {}, story: {} });
@@ -90,10 +91,7 @@ export function GameApp() {
   const resumable = useQuery(api.trivia.getActiveRun, playerKey ? { playerKey } : "skip");
   const epilogueBarks: Bark[] | null = story?.epilogueActive && story.epilogueLines ? story.epilogueLines : null;
 
-  // Announce the identity change when the user signs in — the guest name field
-  // is replaced by "Playing as X" elsewhere on screen, so a screen reader user
-  // gets no confirmation of their new leaderboard name otherwise (a11y review).
-  // Fires only on the sign-out → sign-in transition, never on initial load.
+  // Confirm sign-in identity changes without announcing on initial load.
   const wasSignedIn = useRef(isSignedIn);
   useEffect(() => {
     if (isSignedIn === true && wasSignedIn.current === false) {
@@ -102,7 +100,6 @@ export function GameApp() {
     wasSignedIn.current = isSignedIn;
   }, [isSignedIn, accountHandle, announce]);
 
-  // Client-only initialization.
   useEffect(() => {
     setPlayerKey(getPlayerKey());
     setName(getStoredName());
@@ -135,7 +132,7 @@ export function GameApp() {
     stopMysteryClip();
     const release = musicRef.current?.duck() ?? (() => {});
     try {
-      await playerRef.current?.play(audioPath);
+      return (await playerRef.current?.play(audioPath)) ?? "unavailable";
     } finally {
       release();
     }
@@ -143,21 +140,23 @@ export function GameApp() {
 
   const replayHostClip = useCallback(async () => {
     stopMysteryClip();
+    setHostAudioStatus(null);
     const release = musicRef.current?.duck() ?? (() => {});
     try {
-      await playerRef.current?.replayLast();
+      const outcome = (await playerRef.current?.replayLast()) ?? "unavailable";
+      if (outcome === "failed" || outcome === "unavailable") {
+        const line = lastHostLine.current;
+        const fallback = line
+          ? `Recorded audio unavailable. ${line.speaker}: ${line.text}`
+          : "Recorded audio is unavailable, and there is no previous line to replay.";
+        setHostAudioStatus(fallback);
+        announce(fallback, "alert");
+      }
     } finally {
       release();
     }
-  }, [stopMysteryClip]);
+  }, [announce, stopMysteryClip]);
 
-  /**
-   * One voice per line (accessibility requirement): if a clip exists, play it
-   * and keep the caption silent; if not, the caption text is announced so
-   * screen reader users miss nothing. Every line carries its speaker's name
-   * in both text channels — captions and announcements — so callers are
-   * never misattributed to Clyde (a11y consult, Boss Calls).
-   */
   const speakHostLine = useCallback(
     (
       text: string,
@@ -166,8 +165,16 @@ export function GameApp() {
       speaker = "Clyde",
     ): Promise<void> => {
       addCaption(speaker, text);
+      lastHostLine.current = { speaker, text };
+      setHostAudioStatus(null);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
-        return playHostClip(audioPath);
+        return playHostClip(audioPath).then((outcome) => {
+          if (outcome === "failed" || outcome === "unavailable") {
+            const fallback = `Recorded audio unavailable. ${speaker}: ${text}`;
+            setHostAudioStatus(fallback);
+            announce(fallback, "alert");
+          }
+        });
       }
       if (bundle) {
         bundle.push(`${speaker}: ${text}`);
@@ -188,7 +195,6 @@ export function GameApp() {
     [epilogueBarks, speakHostLine],
   );
 
-  /** A caller's voiced line (their own ElevenLabs voice), speaker-attributed. */
   const speakCallerLine = useCallback(
     (callerKey: string, callerName: string, moment: string, bundle: string[] | null): Promise<void> => {
       const bark = pickBark(`boss-${callerKey}-${moment}`, null);
@@ -217,9 +223,7 @@ export function GameApp() {
     [addCaption, announce, settings?.producerVoice, story?.epilogueActive],
   );
 
-  // --- Focus management: focus the heading of whatever just rendered.
-  // Returning to title must also focus (never let focus die on unmount), but
-  // initial page load must NOT steal focus — hence the flag.
+  // Move focus on phase changes and return-to-title, but not initial load.
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const panelHeadingRef = useRef<HTMLHeadingElement>(null);
   const titleHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -251,9 +255,7 @@ export function GameApp() {
     [playHostClip, settings?.autoPlayQuestionAudio],
   );
 
-  // Phase → music mapping. Silent until ensureStarted() runs from a real
-  // button activation; changes are ambient and deliberately unannounced —
-  // music is never the sole carrier of game state (a11y review).
+  // Ambient phase music starts only after user activation and stays unannounced.
   useEffect(() => {
     const music = musicRef.current;
     if (!music?.started) return;
@@ -441,14 +443,12 @@ export function GameApp() {
     serveQuestionAudio(resumable.question.key);
   }, [announce, resumable, serveQuestionAudio]);
 
-  /** Leaves the on-air intro for the first question. */
   const beginQuestions = useCallback(() => {
     if (!question) return;
     setPhase({ kind: "question" });
     serveQuestionAudio(question.key);
   }, [question, serveQuestionAudio]);
 
-  /** Boss Call answers: no scoring, no life risk, caller-voiced reactions. */
   const answerCaller = useCallback(
     async (index: number) => {
       if (!run?.bossCall || !question || chosenIndex !== null || busy) return;
@@ -709,7 +709,6 @@ export function GameApp() {
     [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, story?.tapes],
   );
 
-  /** Resolves the won Boss Call, then rolls straight into the boost draft. */
   const pickReward = useCallback(
     async (reward: "life" | "points" | "filter") => {
       if (!run || rewardChosen !== null || busy) return;
@@ -976,6 +975,7 @@ export function GameApp() {
       copyFallbackRef={copyFallbackRef}
       draftChosen={draftChosen}
       hostPaused={hostPaused}
+      hostAudioStatus={hostAudioStatus}
       musicMuted={musicMuted}
       panelHeadingRef={panelHeadingRef}
       pickBoost={pickBoost}
