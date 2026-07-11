@@ -142,13 +142,14 @@ export function GameApp() {
   }, [stopMysteryClip]);
 
   const replayHostClip = useCallback(async () => {
+    stopMysteryClip();
     const release = musicRef.current?.duck() ?? (() => {});
     try {
       await playerRef.current?.replayLast();
     } finally {
       release();
     }
-  }, []);
+  }, [stopMysteryClip]);
 
   /**
    * One voice per line (accessibility requirement): if a clip exists, play it
