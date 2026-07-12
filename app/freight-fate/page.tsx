@@ -1,4 +1,5 @@
 import { FreightFateDriversBoard } from "@/components/FreightFateDriversBoard";
+import { FreightFateUpdates } from "@/components/FreightFateUpdates";
 import { ProjectLanding } from "@/components/ProjectLanding";
 import { getGame } from "@/lib/site";
 
@@ -15,6 +16,7 @@ export default function FreightFatePage() {
     <>
       <ProjectLanding project={getGame("/freight-fate")!} />
       <FreightFateDriversBoard />
+      <FreightFateUpdates compact limit={5} />
     </>
   );
 }

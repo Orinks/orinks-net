@@ -9,6 +9,7 @@ import {
   DRIVER_EVENT_WRITE_LIMIT,
   MAX_DRIVER_EVENTS,
   PRESENCE_WRITE_LIMIT,
+  SHARING_CONSENT_VERSION,
 } from "./freightFate";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -79,7 +80,8 @@ describe("provisionDriver / getMyDriver", () => {
     expect(mine).not.toBeNull();
     expect(mine!.driverId).toBe(result.driverId);
     expect(mine!.displayName).toBe("Rig Hauler"); // whitespace normalized
-    expect(mine!.visibility).toBe("public");
+    expect(mine!.visibility).toBe("private");
+    expect(mine!.sharingEnabled).toBe(false);
     expect(mine!.hasToken).toBe(true);
     expect(mine).not.toHaveProperty("token"); // the plaintext token never leaks
 
@@ -96,6 +98,7 @@ describe("provisionDriver / getMyDriver", () => {
     const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Rig Hauler",
       visibility: "public",
+      expandedSharingConsent: true,
       now,
     });
 
@@ -174,7 +177,8 @@ describe("provisionDriver / getMyDriver", () => {
     });
     expect(resave.rotated).toBe(false);
     const mine = await second.query(api.freightFate.getMyDriver, {});
-    expect(mine!.visibility).toBe("unlisted");
+    expect(mine!.visibility).toBe("private");
+    expect(mine!.sharingEnabled).toBe(false);
   });
 
   test("rate limits presence writes per driver", async () => {
@@ -254,6 +258,7 @@ describe("provisionDriver / getMyDriver", () => {
     const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Rig Hauler",
       visibility: "public",
+      expandedSharingConsent: true,
       now,
     });
     const driverTokenHash = await sha256Hex(token!);
@@ -313,6 +318,7 @@ describe("provisionDriver / getMyDriver", () => {
     const unlistedDriver = await other.mutation(api.freightFate.provisionDriver, {
       displayName: "Link Hauler",
       visibility: "unlisted",
+      expandedSharingConsent: true,
       now,
     });
     const posted = await t.mutation(api.freightFate.recordDriverEvent, {
@@ -436,6 +442,8 @@ describe("driver name moderation", () => {
         visibility: "public",
         authSubject: OTHER,
         driverTokenHash: "irrelevant",
+        sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now,
         createdAt: now,
         updatedAt: now,
       });
@@ -494,6 +502,7 @@ describe("driver name moderation", () => {
     const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Rig Hauler",
       visibility: "public",
+      expandedSharingConsent: true,
       now,
     });
     const driverTokenHash = await sha256Hex(token!);
@@ -540,5 +549,141 @@ describe("driver name moderation", () => {
       now: now + 1,
     });
     expect(stale).toMatchObject({ ok: false, reason: "driver_not_found" });
+  });
+});
+
+describe("expanded sharing", () => {
+  test("legacy consent cannot publish or expose expanded profile data", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Legacy Hauler", visibility: "public", now,
+    });
+    const result = await t.mutation(api.freightFate.publishProfileSnapshot, {
+      driverId, driverTokenHash: await sha256Hex(token!), now,
+      snapshot: { version: 1, level: 3, careerTitle: "Regional driver", lastSavedCity: "Chicago, Illinois", deliveries: 4, milesDriven: 500, reputation: 60, capturedAt: now },
+    });
+    expect(result).toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId })).toBeNull();
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toEqual([]);
+  });
+
+  test("renewed public sharing exposes allowlisted snapshot and feed while private does not", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Journal Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const auth = { driverId: provisioned.driverId, driverTokenHash: await sha256Hex(provisioned.token!) };
+    expect(await t.mutation(api.freightFate.publishProfileSnapshot, {
+      ...auth, now, snapshot: { version: 1, level: 7, careerTitle: "Long-haul driver", lastSavedCity: "Denver, Colorado", deliveries: 22, milesDriven: 8123.4, reputation: 91, truckName: "heavy hauler", capturedAt: now },
+    })).toMatchObject({ ok: true });
+    expect(await t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth, eventId: "delivery-22", occurredAt: now, now,
+      payload: { version: 1, cargo: "steel coils", weightPounds: 42000, origin: "Chicago, Illinois", destination: "Denver, Colorado", distanceMiles: 1002, onTime: true },
+    })).toMatchObject({ ok: true, duplicate: false });
+    expect(await t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth, eventId: "delivery-22", occurredAt: now, now: now + 1,
+      payload: { version: 1, cargo: "steel coils", weightPounds: 42000, origin: "Chicago, Illinois", destination: "Denver, Colorado", distanceMiles: 1002, onTime: true },
+    })).toMatchObject({ ok: true, duplicate: true });
+    expect(await t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth, eventId: "delivery-21", occurredAt: now - 1_000, now,
+      payload: { version: 1, cargo: "produce", weightPounds: 30000, origin: "Omaha, Nebraska", destination: "Chicago, Illinois", distanceMiles: 470, onTime: true },
+    })).toMatchObject({ ok: true, duplicate: false });
+    const profile = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId });
+    expect(profile?.snapshot).toMatchObject({ level: 7, lastSavedCity: "Denver, Colorado", deliveries: 22 });
+    expect(profile?.snapshot).not.toHaveProperty("future");
+    const firstPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1 });
+    expect(firstPage.updates.map((event) => event.eventId)).toEqual(["delivery-22"]);
+    expect(firstPage.nextBefore).toEqual({ occurredAt: now, eventId: "delivery-22" });
+    const secondPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1, before: firstPage.nextBefore! });
+    expect(secondPage.updates.map((event) => event.eventId)).toEqual(["delivery-21"]);
+    const profilePage = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId, limit: 1 });
+    expect(profilePage?.events.map((event) => event.eventId)).toEqual(["delivery-22"]);
+    expect(profilePage?.nextBefore).toEqual({ occurredAt: now, eventId: "delivery-22" });
+
+    await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Journal Hauler", visibility: "public", expandedSharingConsent: false, now: now + 2,
+    });
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId })).toBeNull();
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toEqual([]);
+  });
+
+  test("driver token turns canonical profile sharing off and clears presence", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Privacy Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const driverTokenHash = await sha256Hex(provisioned.token!);
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: provisioned.driverId, driverTokenHash,
+      activity: "Driving", detail: "Broad activity", now,
+    });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers).toHaveLength(1);
+    expect(await t.mutation(api.freightFate.setProfileSharing, {
+      driverId: provisioned.driverId, driverTokenHash, enabled: false, now: now + 1,
+    })).toEqual({ ok: true, enabled: false });
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId })).toBeNull();
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 1 })).drivers).toEqual([]);
+  });
+
+  test("cursor pagination has no gaps for equal timestamps", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "cursor-driver", displayName: "Cursor Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      for (const eventId of ["event-c", "event-b", "event-a"]) {
+        await ctx.db.insert("freightFateDriverEvents", {
+          driverId: "cursor-driver", eventId, eventType: "delivery_completed",
+          summary: eventId, occurredAt: now, createdAt: now,
+        });
+      }
+    });
+    const seen: string[] = [];
+    let before: { occurredAt: number; eventId: string } | undefined;
+    for (let page = 0; page < 3; page += 1) {
+      const result = await t.query(api.freightFate.getPublicUpdates, { limit: 1, ...(before ? { before } : {}) });
+      seen.push(...result.updates.map((event) => event.eventId));
+      before = result.nextBefore ?? undefined;
+    }
+    expect(seen).toEqual(["event-c", "event-b", "event-a"]);
+    expect(new Set(seen).size).toBe(3);
+  });
+
+  test("hidden rows cannot truncate an older public update", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "hidden-driver", displayName: "Hidden Driver", visibility: "private",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "public-driver", displayName: "Public Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      for (let index = 0; index < 201; index += 1) {
+        await ctx.db.insert("freightFateDriverEvents", {
+          driverId: "hidden-driver", eventId: `hidden-${index}`, eventType: "delivery_completed",
+          summary: "hidden", occurredAt: now - index, createdAt: now,
+        });
+      }
+      await ctx.db.insert("freightFateDriverEvents", {
+        driverId: "public-driver", eventId: "older-public", eventType: "delivery_completed",
+        summary: "public", occurredAt: now - 300, createdAt: now,
+      });
+    });
+    const result = await t.query(api.freightFate.getPublicUpdates, { limit: 10 });
+    expect(result.updates.map((event) => event.eventId)).toEqual(["older-public"]);
   });
 });

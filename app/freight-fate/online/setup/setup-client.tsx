@@ -9,7 +9,9 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 
-type Visibility = "public" | "private" | "unlisted";
+export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unknown | undefined) {
+  return !alreadyAnnounced && driver !== undefined;
+}
 
 // kind picks the inline rendering: "blocked" renders PREFIX + the rules link
 // instead of message; every other kind renders message verbatim.
@@ -73,30 +75,23 @@ function useAnnouncer() {
 
 export function FreightFateSetupClient() {
   const { isLoaded, isSignedIn } = useUser();
-
-  if (!isLoaded) {
-    return (
+  const accountStatus = !isLoaded ? "Loading your account…" : isSignedIn ? "" : "Sign in required.";
+  return <>
+    <div aria-atomic="true" className="sr-only" role="status">{accountStatus}</div>
+    {!isLoaded ? (
       <Section title="Your driver">
-        <p aria-live="polite" role="status">
-          Loading your account…
-        </p>
+        <p>Loading your account…</p>
       </Section>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
+    ) : !isSignedIn ? (
       <Section title="Sign in to continue">
         <p>
-          Freight Fate drivers are Orinks accounts. Sign in — or create an account — to set up your
-          driver identity and get a posting token for the game.
+          Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account — to
+          set up your driver identity and get a posting token for the game.
         </p>
         <AccountControls />
       </Section>
-    );
-  }
-
-  return <DriverSetup />;
+    ) : <DriverSetup />}
+  </>;
 }
 
 function DriverSetup() {
@@ -106,7 +101,7 @@ function DriverSetup() {
   const { politeStatus, errorStatus, announcePolite, announceError } = useAnnouncer();
 
   const [name, setName] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("private");
+  const [profileSharing, setProfileSharing] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
   const [pending, setPending] = useState(false);
   // Carries BOTH values from the provision result: the reactive getMyDriver
@@ -116,6 +111,14 @@ function DriverSetup() {
   const [issued, setIssued] = useState<{ token: string; driverId: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [initialized, setInitialized] = useState(false);
+  const driverReadyAnnounced = useRef(false);
+
+  useEffect(() => {
+    if (shouldAnnounceDriverReady(driverReadyAnnounced.current, myDriver)) {
+      driverReadyAnnounced.current = true;
+      announcePolite("Driver settings ready.");
+    }
+  }, [announcePolite, myDriver]);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const tokenHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -128,10 +131,10 @@ function DriverSetup() {
     }
     if (myDriver) {
       setName(myDriver.displayName);
-      setVisibility(myDriver.visibility);
+      setProfileSharing(myDriver.sharingEnabled === true);
     } else {
       setName(user?.username ?? user?.firstName ?? "");
-      setVisibility("private");
+      setProfileSharing(false);
     }
     setInitialized(true);
   }, [initialized, myDriver, user]);
@@ -150,10 +153,10 @@ function DriverSetup() {
         setCopyStatus(`${label} copied to clipboard.`);
         announcePolite(`${label} copied to clipboard.`);
       } catch {
-        announceError(`Copy failed. Select the ${label} field and press Control C to copy it.`);
+        announcePolite(`Copy failed. Select the ${label} field and press Control C to copy it.`);
       }
     },
-    [announcePolite, announceError],
+    [announcePolite],
   );
 
   async function handleSubmit(event: React.FormEvent) {
@@ -195,16 +198,21 @@ function DriverSetup() {
     try {
       const result = await provision({
         displayName: trimmed,
-        visibility,
+        visibility: profileSharing ? "public" : "private",
+        expandedSharingConsent: profileSharing,
         rotateToken: false,
         now: Date.now(),
       });
       if (result.token) {
         setCopyStatus("");
         setIssued({ token: result.token, driverId: result.driverId });
-        announcePolite("Driver ready. Copy your Driver ID and one-time token below.");
+        announcePolite(
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
+        );
       } else {
-        announcePolite("Changes saved.");
+        announcePolite(
+          `Changes saved. Profile sharing is ${profileSharing ? "on" : "off"}.`,
+        );
       }
     } catch (error) {
       // A name rejection (taken or moderated) is field feedback, not a save
@@ -214,7 +222,8 @@ function DriverSetup() {
       if (rejection) {
         showNameError(rejection);
       } else {
-        announceError("Save failed. Your changes were not applied. Please try again.");
+        setProfileSharing(myDriver?.sharingEnabled === true);
+        announcePolite("Save failed. Your changes were not applied. Please try again.");
       }
     } finally {
       setPending(false);
@@ -230,7 +239,8 @@ function DriverSetup() {
     try {
       const result = await provision({
         displayName: myDriver.displayName,
-        visibility: myDriver.visibility,
+        visibility: myDriver.sharingEnabled ? "public" : "private",
+        expandedSharingConsent: myDriver.sharingEnabled,
         rotateToken: true,
         now: Date.now(),
       });
@@ -240,7 +250,7 @@ function DriverSetup() {
         announcePolite("Token rotated. The new token is shown below — copy it now. The old token no longer works.");
       }
     } catch {
-      announceError("Token rotation failed. Please try again.");
+      announcePolite("Token rotation failed. Please try again.");
     } finally {
       setPending(false);
     }
@@ -360,7 +370,7 @@ function DriverSetup() {
           >
             <p className="text-slate-800">
               {myDriver
-                ? "Update your driver name or visibility. Your Driver ID and posting token stay the same unless you rotate the token."
+                ? "Update your driver name or profile sharing. Your Driver ID and posting token stay the same unless you rotate the token."
                 : "Create your driver identity. This makes a driver profile and issues a posting token you paste into Freight Fate on your PC."}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
@@ -402,33 +412,38 @@ function DriverSetup() {
                 <Link className={focusRing} href="/freight-fate/online/rules">
                   driver naming rules
                 </Link>
-                . Where this name appears depends on the Profile visibility setting.
+                . This name appears publicly only while Profile sharing is on.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <label className="block font-semibold text-ink" htmlFor="visibility">
-                Profile visibility
-              </label>
-              <select
-                className="w-full rounded border border-line-strong px-3 py-2 text-ink"
-                id="visibility"
-                name="visibility"
-                onChange={(event) => setVisibility(event.target.value as Visibility)}
-                value={visibility}
-              >
-                <option value="private">
-                  Private: accept posts, do not show trip details publicly
-                </option>
-                <option value="unlisted">
-                  Unlisted: show trip details to anyone with the profile link
-                </option>
-                <option value="public">
-                  Public: show trip details to anyone and list this driver on the live drivers board
-                  while on duty
-                </option>
-              </select>
-            </div>
+            <fieldset className="space-y-4 rounded border border-line-strong p-4">
+              <legend className="px-1 font-semibold text-ink">Profile sharing</legend>
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    aria-describedby="profile-sharing-help"
+                    checked={profileSharing}
+                    className="mt-1 h-5 w-5 shrink-0"
+                    id="profileSharing"
+                    name="profileSharing"
+                    onChange={(event) => setProfileSharing(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <label className="font-semibold text-ink" htmlFor="profileSharing">
+                    Profile sharing
+                  </label>
+                </div>
+                <p className="text-sm text-slate-700" id="profile-sharing-help">
+                  When on, eligible driver-profile details, official achievements you earn, fictional
+                  road-journal posts generated automatically from gameplay, public-feed updates, and
+                  on-duty board activity can appear publicly on Orinks. When off, all of this is hidden
+                  and future public updates stop. Orinks may retain records privately unless sharing is
+                  enabled again. Freight Fate never sends the full save, money, coordinates, active
+                  cargo details, or precise live location.
+                  {" "}<Link href="/freight-fate/online/privacy">Read the Freight Fate sharing and privacy details</Link>.
+                </p>
+              </div>
+            </fieldset>
 
             <button
               aria-disabled={pending || undefined}
@@ -451,11 +466,12 @@ function DriverSetup() {
                 <label className="block font-semibold text-ink" htmlFor="ff-driver-id">
                   Driver ID
                 </label>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600" id="ff-driver-id-hint">
                   Paste this into Freight Fate along with your token. It is not secret.
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
+                    aria-describedby="ff-driver-id-hint"
                     autoComplete="off"
                     className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
                     id="ff-driver-id"
@@ -476,14 +492,12 @@ function DriverSetup() {
                 {copyStatus ? <p className="text-sm text-slate-700">{copyStatus}</p> : null}
               </div>
 
-              {myDriver.visibility === "private" ? (
-                <p className="text-slate-700">Your profile is private, so it is not shown publicly.</p>
+              {!myDriver.sharingEnabled ? (
+                <p className="text-slate-700">Profile sharing is off. Your driver profile is private.</p>
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>
-                    {myDriver.visibility === "unlisted"
-                      ? "View your unlisted driver profile"
-                      : "View your public driver profile"}
+                    View your public driver profile
                   </Link>
                   .
                 </p>

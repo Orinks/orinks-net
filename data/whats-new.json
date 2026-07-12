@@ -2,6 +2,34 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-12-freight-fate-profile-sharing-in-game",
+      "date": "2026-07-12",
+      "project": "Freight Fate",
+      "title": "Profile sharing you can switch from inside the game",
+      "body": [
+        "Profile sharing now stays in sync between Freight Fate and orinks.net. Change the Profile sharing setting inside the game and the website follows right away: turning it off removes your profile and its updates from public discovery on the spot, and turning it back on restores them. The in-game setting arrives with the next Freight Fate update.",
+        "A new sharing and privacy page spells out exactly what sharing publishes — your driver identity, road-journal posts, official achievements, and an allowlisted career snapshot — and what is never sent, such as your money, your save file, or your precise location."
+      ],
+      "link": {
+        "href": "/freight-fate/online/privacy",
+        "label": "Read what Freight Fate profile sharing publishes"
+      }
+    },
+    {
+      "id": "2026-07-12-freight-fate-road-journals",
+      "date": "2026-07-12",
+      "project": "Freight Fate",
+      "title": "Freight Fate drivers can share factual road journals",
+      "body": [
+        "Freight Fate driver profiles now have separate Overview, Road journal, and Achievements pages. Drivers who renew consent can share completed-delivery facts, official achievements, and an allowlisted career snapshot with a clearly labeled last-saved city and snapshot time.",
+        "A public updates page collects automatic factual game updates from public drivers. Unlisted profiles remain visible only to people with their link, private and opted-out drivers reveal nothing, and legacy drivers are not enrolled automatically."
+      ],
+      "link": {
+        "href": "/freight-fate/updates",
+        "label": "Browse public Freight Fate updates"
+      }
+    },
+    {
       "id": "2026-07-10-midnight-signal-broadcast-expansion",
       "date": "2026-07-10",
       "project": "The Midnight Signal",

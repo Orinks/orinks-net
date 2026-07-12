@@ -12,7 +12,7 @@ export default function FreightFateOnlineSetupPage() {
     <div className="space-y-8">
       <PageHeader
         title="Freight Fate Online Setup"
-        intro="Sign in with your Orinks account to create a Freight Fate driver and get a posting token for the game."
+        intro="Sign in with your orinks.net account to create a Freight Fate driver and get a posting token for the game."
       />
 
       <FreightFateOnlineProviders>
@@ -21,13 +21,15 @@ export default function FreightFateOnlineSetupPage() {
 
       <Section title="What Orinks receives">
         <ul>
-          <li>A public driver ID and the driver name you choose.</li>
+          <li>A driver ID and the driver name you choose when connecting the game.</li>
           <li>A posting token, stored only as a hash on Orinks.</li>
-          <li>Short road journal events that Freight Fate chooses to publish after you opt in.</li>
+          <li>When Profile sharing is on: broad on-duty activity for the live drivers board.</li>
+          <li>When Profile sharing is on: automatic fictional road-journal posts and official earned achievements.</li>
+          <li>When Profile sharing is on: an allowlisted career snapshot with level, totals, current truck, last-saved city, and snapshot time.</li>
         </ul>
         <p>
-          Career save files, raw trip snapshots, and personal account details are not part of this
-          setup.
+          Orinks does not receive the full save, money, coordinates, active cargo details, or precise
+          live location. Profile sharing is one public-or-private choice covering all eligible information.
         </p>
       </Section>
     </div>

@@ -15,3 +15,6 @@ tsconfig.tsbuildinfo
 video-stack.en.vtt
 
 .vercel
+
+# clerk configuration (can include secrets)
+/.clerk/
