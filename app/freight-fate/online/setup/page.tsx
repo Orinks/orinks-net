@@ -24,7 +24,7 @@ export default function FreightFateOnlineSetupPage() {
           <li>A driver ID and the driver name you choose when connecting the game.</li>
           <li>A posting token, stored only as a hash on Orinks.</li>
           <li>When Profile sharing is on: broad on-duty activity for the live drivers board.</li>
-          <li>When Profile sharing is on: automatic fictional road-journal posts and official earned achievements.</li>
+          <li>When Profile sharing is on: automatic road-journal posts and official earned achievements.</li>
           <li>When Profile sharing is on: an allowlisted career snapshot with level, totals, current truck, last-saved city, and snapshot time.</li>
         </ul>
         <p>

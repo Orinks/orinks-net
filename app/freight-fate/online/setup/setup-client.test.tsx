@@ -23,7 +23,7 @@ test("drivers receive one unchecked, labelled profile-sharing control", () => {
   expect(html).toContain('aria-describedby="profile-sharing-help"');
   expect(html).toContain('<label class="font-semibold text-ink" for="profileSharing">Profile sharing</label>');
   expect(html).toContain("on-duty board activity");
-  expect(html).toContain("fictional road-journal posts");
+  expect(html).toContain("road-journal posts generated automatically");
   expect(html).toContain("official achievements");
   expect(html).not.toContain('id="visibility"');
   expect(html).not.toContain("Unlisted:");

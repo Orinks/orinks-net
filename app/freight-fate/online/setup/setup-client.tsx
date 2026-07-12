@@ -434,7 +434,7 @@ function DriverSetup() {
                   </label>
                 </div>
                 <p className="text-sm text-slate-700" id="profile-sharing-help">
-                  When on, eligible driver-profile details, official achievements you earn, fictional
+                  When on, eligible driver-profile details, official achievements you earn,
                   road-journal posts generated automatically from gameplay, public-feed updates, and
                   on-duty board activity can appear publicly on Orinks. When off, all of this is hidden
                   and future public updates stop. Orinks may retain records privately unless sharing is
