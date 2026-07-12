@@ -571,22 +571,25 @@ export const publishProfileSnapshot = mutation({
 });
 
 export const getPublicUpdates = query({
-  args: { limit: v.optional(v.number()), before: v.optional(v.number()) },
+  args: { limit: v.optional(v.number()), before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })) },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
     const rows = await ctx.db.query("freightFateDriverEvents")
-      .withIndex("by_occurred", (q) => args.before ? q.lt("occurredAt", args.before) : q)
-      .order("desc").take(limit + 1);
+      .withIndex("by_occurred", (q) => args.before ? q.lte("occurredAt", args.before.occurredAt) : q)
+      .order("desc").take(200);
     const updates = [];
     for (const row of rows) {
       const driver = await ctx.db.query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
       if (!driver || driver.visibility !== "public" ||
           driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) continue;
+      if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
-      if (updates.length > limit) break;
     }
-    return { updates: updates.slice(0, limit), nextBefore: updates.length > limit ? updates[limit - 1].occurredAt : null };
+    updates.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
+    const page = updates.slice(0, limit);
+    const last = page.at(-1);
+    return { updates: page, nextBefore: updates.length > limit && last ? { occurredAt: last.occurredAt, eventId: last.eventId } : null };
   },
 });
 
@@ -594,6 +597,7 @@ export const getDriverProfile = query({
   args: {
     driverId: v.string(),
     limit: v.optional(v.number()),
+    before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })),
   },
   handler: async (ctx, args) => {
     const driver = await ctx.db
@@ -614,11 +618,15 @@ export const getDriverProfile = query({
     }
 
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
-    const events = await ctx.db
+    const allEvents = await ctx.db
       .query("freightFateDriverEvents")
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
-      .order("desc")
-      .take(limit);
+      .collect();
+    const eligible = allEvents
+      .filter((event) => args.before === undefined || event.occurredAt < args.before.occurredAt ||
+        (event.occurredAt === args.before.occurredAt && event.eventId < args.before.eventId))
+      .sort((a, b) => b.occurredAt - a.occurredAt || b.createdAt - a.createdAt || b.eventId.localeCompare(a.eventId));
+    const events = eligible.slice(0, limit);
     const snapshot = await ctx.db.query("freightFateProfileSnapshots")
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
     const achievements = await ctx.db.query("freightFateAchievements")
@@ -634,6 +642,9 @@ export const getDriverProfile = query({
         updatedAt: driver.updatedAt,
       },
       events,
+      nextBefore: eligible.length > limit && events.at(-1) ? {
+        occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
+      } : null,
       snapshot: snapshot ? {
         version: snapshot.version, level: snapshot.level, careerTitle: snapshot.careerTitle,
         lastSavedCity: snapshot.lastSavedCity, deliveries: snapshot.deliveries,

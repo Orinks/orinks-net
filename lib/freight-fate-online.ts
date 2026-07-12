@@ -244,7 +244,7 @@ export async function postFreightFateProfileSnapshot(input: {
   });
 }
 
-export async function getFreightFatePublicUpdates(limit = 20, before?: number) {
+export async function getFreightFatePublicUpdates(limit = 20, before?: { occurredAt: number; eventId: string }) {
   const client = getConvexClient();
   if (!client) return null;
   return client.query(anyApi.freightFate.getPublicUpdates, { limit, ...(before ? { before } : {}) });
@@ -294,7 +294,7 @@ export async function getFreightFatePresenceBoard(): Promise<FreightFatePresence
   return client.query(anyApi.freightFate.getPresenceBoard, { now: Date.now() });
 }
 
-export async function getFreightFateDriverProfile(driverId: string, limit = 20) {
+export async function getFreightFateDriverProfile(driverId: string, limit = 20, before?: { occurredAt: number; eventId: string }) {
   const client = getConvexClient();
 
   if (!client) {
@@ -304,5 +304,6 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20) 
   return client.query(anyApi.freightFate.getDriverProfile, {
     driverId: normalizeFreightFateDriverId(driverId),
     limit,
+    ...(before ? { before } : {}),
   });
 }

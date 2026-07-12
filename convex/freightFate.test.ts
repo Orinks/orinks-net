@@ -586,10 +586,21 @@ describe("expanded sharing", () => {
       ...auth, eventId: "delivery-22", occurredAt: now, now: now + 1,
       payload: { version: 1, cargo: "steel coils", weightPounds: 42000, origin: "Chicago, Illinois", destination: "Denver, Colorado", distanceMiles: 1002, onTime: true },
     })).toMatchObject({ ok: true, duplicate: true });
+    expect(await t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth, eventId: "delivery-21", occurredAt: now - 1_000, now,
+      payload: { version: 1, cargo: "produce", weightPounds: 30000, origin: "Omaha, Nebraska", destination: "Chicago, Illinois", distanceMiles: 470, onTime: true },
+    })).toMatchObject({ ok: true, duplicate: false });
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId });
     expect(profile?.snapshot).toMatchObject({ level: 7, lastSavedCity: "Denver, Colorado", deliveries: 22 });
     expect(profile?.snapshot).not.toHaveProperty("future");
-    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
+    const firstPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1 });
+    expect(firstPage.updates.map((event) => event.eventId)).toEqual(["delivery-22"]);
+    expect(firstPage.nextBefore).toEqual({ occurredAt: now, eventId: "delivery-22" });
+    const secondPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1, before: firstPage.nextBefore! });
+    expect(secondPage.updates.map((event) => event.eventId)).toEqual(["delivery-21"]);
+    const profilePage = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId, limit: 1 });
+    expect(profilePage?.events.map((event) => event.eventId)).toEqual(["delivery-22"]);
+    expect(profilePage?.nextBefore).toEqual({ occurredAt: now, eventId: "delivery-22" });
 
     await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Journal Hauler", visibility: "private", expandedSharingConsent: true, now: now + 2,
