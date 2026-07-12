@@ -37,6 +37,14 @@ function sentence(text: string) {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
+function comparableSentence(text: string) {
+  return text
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/, "")
+    .toLocaleLowerCase("en-US");
+}
+
 /** The live "who's on duty" board, embedded on the Freight Fate page.
  *
  * Drivers opt in from the game (browser-confirmed identity, public
@@ -75,19 +83,21 @@ export async function FreightFateDriversBoard() {
               driver.displayName,
               "Freight Fate Driver",
             );
-            // Driver names are user-supplied and can collide; the activity cue
-            // keeps each link's accessible name distinct in a links list.
             const activity = driver.activity.trim();
-            const ariaLabel = activity
-              ? `${displayName} — ${activity}`
-              : `${displayName} — driver profile`;
+            const detail = driver.detail.trim();
+            const status = [
+              sentence(activity),
+              comparableSentence(detail) === comparableSentence(activity) ? "" : sentence(detail),
+              updatedPhrase(driver.updatedAt, board.asOf),
+            ]
+              .filter(Boolean)
+              .join(" ");
             return (
               <li key={driver.driverId}>
-                <Link aria-label={ariaLabel} href={`/freight-fate/drivers/${driver.driverId}`}>
+                <Link href={`/freight-fate/drivers/${driver.driverId}`}>
                   {displayName}
                 </Link>
-                . {sentence(driver.activity)} {sentence(driver.detail)}{" "}
-                {updatedPhrase(driver.updatedAt, board.asOf)}
+                {`: ${status}`}
               </li>
             );
           })}
