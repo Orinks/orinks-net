@@ -611,6 +611,26 @@ describe("expanded sharing", () => {
     expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toEqual([]);
   });
 
+  test("driver token turns canonical profile sharing off and clears presence", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Privacy Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const driverTokenHash = await sha256Hex(provisioned.token!);
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: provisioned.driverId, driverTokenHash,
+      activity: "Driving", detail: "Broad activity", now,
+    });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers).toHaveLength(1);
+    expect(await t.mutation(api.freightFate.setProfileSharing, {
+      driverId: provisioned.driverId, driverTokenHash, enabled: false, now: now + 1,
+    })).toEqual({ ok: true, enabled: false });
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId })).toBeNull();
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 1 })).drivers).toEqual([]);
+  });
+
   test("cursor pagination has no gaps for equal timestamps", async () => {
     const t = setup();
     const now = 1_800_000_000_000;

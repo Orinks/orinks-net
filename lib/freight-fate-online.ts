@@ -323,3 +323,18 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20, 
     now: Date.now(),
   });
 }
+
+export async function setFreightFateProfileSharing(input: {
+  driverId: string;
+  driverToken: string;
+  enabled: boolean;
+}) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.mutation(anyApi.freightFate.setProfileSharing, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    enabled: input.enabled,
+    now: Date.now(),
+  });
+}

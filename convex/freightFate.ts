@@ -468,6 +468,39 @@ export const getPresenceBoard = query({
   },
 });
 
+export const setProfileSharing = mutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    enabled: v.boolean(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const driver = await ctx.db.query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+    if (!driver) return { ok: false as const, reason: "driver_not_found" };
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "profile_sharing", driverId: args.driverId, now: args.now, limit: 12,
+    });
+    if (!allowed) return { ok: false as const, reason: "rate_limited" };
+    if (driver.driverTokenHash !== args.driverTokenHash) {
+      return { ok: false as const, reason: "unauthorized" };
+    }
+    await ctx.db.patch(driver._id, {
+      visibility: args.enabled ? "public" : "private",
+      sharingConsentVersion: args.enabled ? SHARING_CONSENT_VERSION : undefined,
+      sharingConsentedAt: args.enabled ? args.now : undefined,
+      updatedAt: args.now,
+    });
+    if (!args.enabled) {
+      const presence = await ctx.db.query("freightFatePresence")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+      if (presence) await ctx.db.delete(presence._id);
+    }
+    return { ok: true as const, enabled: args.enabled };
+  },
+});
+
 export const publishDeliveryCompleted = mutation({
   args: {
     driverId: v.string(), driverTokenHash: v.string(), eventId: v.string(),
