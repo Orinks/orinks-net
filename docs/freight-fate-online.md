@@ -22,9 +22,13 @@ endpoint no longer exists.
    the old one; the game reports `unauthorized` until the new token is
    pasted.
 
-The driver's display name and visibility (`public` / `unlisted` /
-`private`) are managed on the website only. The live drivers board lists
-only `public` drivers with a fresh heartbeat (3-minute TTL).
+The driver's display name is managed on the website. Sharing is a single
+Profile sharing toggle, settable on the website or from inside the game
+(`POST /api/freight-fate/profile-sharing`): on stores `public`, off stores
+`private`. The stored visibility field keeps a legacy `unlisted` value
+(profile reachable by link only) for drivers created before the single
+toggle. The live drivers board lists only `public` drivers with a fresh
+heartbeat (3-minute TTL).
 
 Display names must follow the published naming rules
 (`/freight-fate/online/rules`). `provisionDriver` screens each name via

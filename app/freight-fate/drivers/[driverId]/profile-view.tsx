@@ -84,7 +84,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
     <div className="space-y-8">
       <PageHeader title={driver.displayName} intro="A Freight Fate driver profile shared through Orinks." />
       {confirmed ? <p className="rounded border border-line-strong bg-soft-green p-4">Expanded sharing is confirmed.</p> : null}
-      <p>Public profiles may appear in discovery. Unlisted profiles are visible only to people with the link. Shared facts describe the game, never the player&apos;s real-world location.</p>
+      <p>Shared profiles may appear in discovery. Shared facts describe the game, never the player&apos;s real-world location.</p>
       <ProfileNav driverId={driver.driverId} section={section} />
 
       {section === "overview" ? (
