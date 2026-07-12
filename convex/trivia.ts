@@ -1,548 +1,72 @@
-import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { questionBank, questionByKey, sanitizeQuestion, type BankQuestion } from "./questionBank";
+import {
+  answerDisclosureForQuestion,
+  sanitizeQuestion,
+  type BankQuestion,
+} from "./questionBank";
 import { boostByKey, rollBoostOffer } from "./boosts";
-import { mutatorByKey, mutatorCatalog, type MutatorDef } from "./mutators";
-import { maskDisplayName } from "./moderation";
+import { mutatorByKey } from "./mutators";
+import { dateKeyOf, runRoll, weekKeyOf } from "./triviaDeterminism";
+import {
+  pickBossQuestion,
+  pickDeadAirQuestion,
+  pickQuestion,
+  pickRoundCategory,
+} from "./triviaSelection";
+import { selectionPoolForRun } from "./triviaDailyEpisodes";
 import story from "../data/trivia/story.json";
 import achievementDefs from "../data/trivia/achievements.json";
-
-// --- Game rules ---
-const QUESTIONS_PER_ROUND = 5;
-const START_LIVES = 3;
-const MAX_LIVES = 3;
-const LIFE_EVERY_ROUNDS = 3; // completing every 3rd round restores a life
-const BASE_POINTS = 100; // per question, multiplied by difficulty
-const STREAK_BONUS = 25; // per prior consecutive correct answer
-const STREAK_BONUS_CAP = 10;
-const LEADERBOARD_LIMIT_MAX = 100;
-
-// --- Signal Boost tuning (catalog lives in data/trivia/boosts.json) ---
-const AMPLIFIER_STREAK_BONUS = 40; // replaces STREAK_BONUS
-const NIGHT_OWL_MULTIPLIER = 1.5; // difficulty 4-5 questions
-const DOUBLE_BROADCAST_MULTIPLIER = 2; // and wrong answers cost 2 lives
-const DOUBLE_BROADCAST_LIFE_COST = 2;
-const DEEP_CUTS_MULTIPLIER = 1.75; // and the difficulty band shifts up a tier
-const SPARE_FUSE_POINTS = 250; // consolation when already at max lives
-const STATIC_FILTER_ELIMINATIONS = 2;
-
-// --- Signal Strength (lifeline economy) tuning ---
-const SIGNAL_CAP = 3;
-const SIGNAL_EVERY_STREAK = 3; // every 3rd consecutive correct answer
-
-// --- Boss Call tuning ---
-const BOSS_CALL_EVERY_ROUNDS = 3;
-const BOSS_REWARD_POINTS = 300;
-const BOSS_CALLERS = [
-  { key: "archivist", name: "The Archivist" },
-  { key: "night-owl", name: "The Night Owl" },
-] as const;
-
-// --- Daily mutator tuning (catalog lives in data/trivia/mutators.json) ---
-const FLAT_RATES_BASE_MULTIPLIER = 2; // and the streak bonus is 0 that night
-const HEAVY_ROTATION_MULTIPLIER = 1.5; // and the difficulty band shifts up
-const THIN_ICE_START_LIVES = 2;
-const LONG_HAUL_QUESTIONS_PER_ROUND = 7;
-
-function mutatorOf(run: Pick<Doc<"triviaRuns">, "mutatorKey">): MutatorDef | null {
-  return run.mutatorKey ? (mutatorByKey.get(run.mutatorKey) ?? null) : null;
-}
-
-function questionsPerRoundOf(run: Pick<Doc<"triviaRuns">, "mutatorKey">): number {
-  return run.mutatorKey === "long-haul" ? LONG_HAUL_QUESTIONS_PER_ROUND : QUESTIONS_PER_ROUND;
-}
-
-// --- Anti-cheat ---
-const MIN_ANSWER_MS = 900; // reading a question + 4 choices realistically takes longer
-const FAST_ANSWER_FLAG = 3; // this many superhuman-fast answers flags a run as automated
-const MAX_RUNS_PER_HOUR = 40; // per-player rate limit on starting runs
-
-const TAPES = [...story.tapes].sort((a, b) => a.order - b.order);
-const FINALE_UNLOCK = story.finale.unlock;
-
-// --- Helpers ---
-
-function dateKeyOf(now: number) {
-  return new Date(now).toISOString().slice(0, 10);
-}
-
-/** ISO 8601 week, e.g. "2026-W27". Weeks start Monday. */
-function weekKeyOf(now: number) {
-  const date = new Date(now);
-  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const dayNumber = (target.getUTCDay() + 6) % 7; // Monday = 0
-  target.setUTCDate(target.getUTCDate() - dayNumber + 3); // nearest Thursday decides the week's year
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
-  const firstDayNumber = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNumber + 3);
-  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
-  return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-}
-
-/** Deterministic PRNG so daily runs serve every player the same questions. */
-function seededRandom(seedText: string) {
-  let h = 2166136261;
-  for (let i = 0; i < seedText.length; i++) {
-    h ^= seedText.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  let state = h >>> 0;
-  return () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function difficultyRange(round: number): [number, number] {
-  if (round <= 2) return [1, 2];
-  if (round <= 4) return [1, 3];
-  if (round <= 7) return [2, 4];
-  return [3, 5];
-}
-
-function runRoll(run: Doc<"triviaRuns">, salt: string): number {
-  // Dailies must be deterministic so every player gets the same episode.
-  return run.isDaily ? seededRandom(`${run.seed}:${salt}`)() : Math.random();
-}
-
-/**
- * Picks a theme for a round: a category with enough unasked questions to
- * carry the whole round. Returns undefined when the bank is too depleted to
- * theme (the round falls back to a mixed grab bag).
- */
-function pickRoundCategory(run: Doc<"triviaRuns">, forRound: number): string | undefined {
-  const asked = new Set(run.askedQuestionKeys);
-  const counts = new Map<string, number>();
-  for (const q of questionBank) {
-    if (!asked.has(q.id)) counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
-  }
-  const perRound = questionsPerRoundOf(run);
-  // Single Signal night: the whole broadcast rides one seeded theme for as
-  // long as it has enough unasked questions to carry a round.
-  if (run.mutatorKey === "single-signal") {
-    const all = [...new Set(questionBank.map((q) => q.category))].sort();
-    const theme = all[Math.floor(seededRandom(`${run.seed}:single-signal`)() * all.length)];
-    if ((counts.get(theme) ?? 0) >= perRound) return theme;
-  }
-  const viable = [...counts.entries()]
-    .filter(([category, count]) => count >= perRound && category !== run.roundCategory)
-    .map(([category]) => category)
-    .sort(); // stable order so daily seeding is deterministic
-  if (viable.length === 0) return undefined;
-  const roll = runRoll(run, `category:${forRound}`);
-  return viable[Math.floor(roll * viable.length)];
-}
-
-function pickQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  let [min, max] = difficultyRange(run.round);
-  // Deep Cuts: this round draws from one difficulty tier higher.
-  if (run.activeRoundBoost?.key === "deep-cuts" && run.activeRoundBoost.round === run.round) {
-    min = Math.min(min + 1, 5);
-    max = Math.min(max + 1, 5);
-  }
-  // Heavy Rotation night: everything is one tier harder (stacks with Deep Cuts).
-  if (run.mutatorKey === "heavy-rotation") {
-    min = Math.min(min + 1, 5);
-    max = Math.min(max + 1, 5);
-  }
-  const unasked = questionBank.filter((q) => !asked.has(q.id));
-  // Prefer: on-theme + in difficulty range → on-theme any difficulty →
-  // in-range any theme → anything left.
-  let candidates = unasked.filter(
-    (q) => q.category === run.roundCategory && q.difficulty >= min && q.difficulty <= max,
-  );
-  if (candidates.length === 0 && run.roundCategory) {
-    candidates = unasked.filter((q) => q.category === run.roundCategory);
-  }
-  if (candidates.length === 0) {
-    candidates = unasked.filter((q) => q.difficulty >= min && q.difficulty <= max);
-  }
-  if (candidates.length === 0) candidates = unasked;
-  if (candidates.length === 0) return null;
-  const roll = runRoll(run, String(run.askedQuestionKeys.length));
-  return candidates[Math.floor(roll * candidates.length)];
-}
-
-/** Dead Air redemption: the hardest unasked question available, seeded. */
-function pickDeadAirQuestion(run: Doc<"triviaRuns">): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  for (const minDifficulty of [5, 4, 1]) {
-    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
-    if (candidates.length > 0) {
-      const roll = runRoll(run, `dead-air:${run.askedQuestionKeys.length}`);
-      return candidates[Math.floor(roll * candidates.length)];
-    }
-  }
-  return null;
-}
-
-/** Boss Call question: the hardest unasked question available, seeded. */
-function pickBossQuestion(run: Doc<"triviaRuns">, forRound: number): BankQuestion | null {
-  const asked = new Set(run.askedQuestionKeys);
-  for (const minDifficulty of [5, 4, 1]) {
-    const candidates = questionBank.filter((q) => !asked.has(q.id) && q.difficulty >= minDifficulty);
-    if (candidates.length > 0) {
-      const roll = runRoll(run, `boss-question:${forRound}`);
-      return candidates[Math.floor(roll * candidates.length)];
-    }
-  }
-  return null;
-}
-
-/** Client-safe boss call state (the question only while it's answerable). */
-function bossPublicState(run: Doc<"triviaRuns">) {
-  if (!run.bossCall) return null;
-  const caller = BOSS_CALLERS.find((c) => c.key === run.bossCall!.caller);
-  const question =
-    run.bossCall.phase === "question" ? questionByKey.get(run.bossCall.questionKey) : undefined;
-  return {
-    caller: run.bossCall.caller,
-    callerName: caller?.name ?? "A caller",
-    phase: run.bossCall.phase,
-    question: question ? sanitizeQuestion(question) : null,
-  };
-}
-
-async function getPlayerByKey(ctx: QueryCtx | MutationCtx, playerKey: string) {
-  return ctx.db
-    .query("triviaPlayers")
-    .withIndex("by_playerKey", (q) => q.eq("playerKey", playerKey))
-    .unique();
-}
-
-async function getPlayerBySubject(ctx: QueryCtx | MutationCtx, subject: string) {
-  return ctx.db
-    .query("triviaPlayers")
-    .withIndex("by_authSubject", (q) => q.eq("authSubject", subject))
-    .unique();
-}
-
-/**
- * Resolves the player for a request: the signed-in account takes precedence
- * over the anonymous guest key. ensurePlayer creates/links the account row, so
- * by the time gameplay functions run the account row already exists.
- */
-async function getPlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (identity) {
-    const account = await getPlayerBySubject(ctx, identity.subject);
-    if (account) return account;
-  }
-  return getPlayerByKey(ctx, playerKey);
-}
-
-async function requirePlayer(ctx: QueryCtx | MutationCtx, playerKey: string) {
-  const player = await getPlayer(ctx, playerKey);
-  if (!player) throw new Error("Unknown player. Call ensurePlayer first.");
-  return player;
-}
-
-/** A leaderboard handle from the Clerk identity claims (see the "convex" JWT template). */
-function handleFromIdentity(identity: { nickname?: string; preferredUsername?: string; name?: string; email?: string }) {
-  const raw =
-    identity.nickname || identity.preferredUsername || identity.name || identity.email?.split("@")[0] || "Contestant";
-  return cleanDisplayName(raw);
-}
-
-// Clerk validates username FORMAT but not content, so account handles still
-// need screening before they appear publicly. The shared moderation module
-// (obscenity's English preset plus a hate-figure list) masks offensive names
-// as anonymous at display time.
-function safeLeaderboardName(name: string, idForMask: string): string {
-  return maskDisplayName(name, idForMask, "Player");
-}
-
-async function getActiveRunDoc(ctx: QueryCtx | MutationCtx, playerId: Id<"triviaPlayers">) {
-  const runs = await ctx.db
-    .query("triviaRuns")
-    .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
-    .order("desc")
-    .take(5);
-  return runs.find((run) => run.status === "active") ?? null;
-}
-
-async function unlockAchievement(
-  ctx: MutationCtx,
-  playerId: Id<"triviaPlayers">,
-  achievementKey: string,
-  events: GameEvent[],
-) {
-  const existing = await ctx.db
-    .query("triviaAchievements")
-    .withIndex("by_player_achievement", (q) =>
-      q.eq("playerId", playerId).eq("achievementKey", achievementKey),
-    )
-    .unique();
-  if (existing) return;
-  await ctx.db.insert("triviaAchievements", {
-    playerId,
-    achievementKey,
-    unlockedAt: Date.now(),
-  });
-  const def = achievementDefs.achievements.find((a) => a.key === achievementKey);
-  events.push({ type: "achievement", key: achievementKey, name: def?.name ?? achievementKey });
-}
-
-type GameEvent =
-  | { type: "achievement"; key: string; name: string }
-  | { type: "roundComplete"; round: number; nextCategory: string | null }
-  | { type: "boostOffer" }
-  | { type: "boostChosen"; key: string; name: string }
-  | { type: "boostTriggered"; key: string; name: string; detail: string }
-  | { type: "deadAir" }
-  | { type: "deadAirSurvived" }
-  | { type: "bossCall"; caller: string; name: string }
-  | { type: "bossRewardChosen"; reward: string; detail: string }
-  | { type: "signalGained"; strength: number }
-  | { type: "lifeGained"; lives: number }
-  | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
-  | { type: "finaleReady" }
-  | { type: "gameOver"; score: number; round: number; isPersonalBest: boolean }
-  | { type: "bankExhausted" };
-
-function publicRunState(run: Doc<"triviaRuns">) {
-  const mutator = mutatorOf(run);
-  return {
-    runId: run._id,
-    status: run.status,
-    isDaily: run.isDaily,
-    score: run.score,
-    round: run.round,
-    lives: run.lives,
-    streak: run.streak,
-    answeredInRound: run.answeredInRound,
-    questionsPerRound: questionsPerRoundOf(run),
-    questionNumber: run.askedQuestionKeys.length,
-    roundCategory: run.roundCategory ?? null,
-    drafting: run.pendingBoostOffer !== undefined,
-    deadAir: run.deadAirPending === true,
-    bossCall: bossPublicState(run),
-    signalStrength: run.signalStrength ?? 0,
-    mutator: mutator
-      ? { key: mutator.key, name: mutator.name, rules: mutator.rules, intro: mutator.intro }
-      : null,
-    // The run's own night (share snippets must name it, not "today" — a run
-    // resumed after midnight still belongs to the night it started).
-    dateKey: run.dateKey,
-  };
-}
-
-/** Client-safe boost state: owned boosts, the pending offer, filter marks. */
-function boostPublicState(run: Doc<"triviaRuns">) {
-  const owned = run.modifiers.flatMap((key) => {
-    const def = boostByKey.get(key);
-    if (!def) return [];
-    return [{
-      key,
-      name: def.name,
-      kind: def.kind,
-      rules: def.rules,
-      chargesLeft: def.kind === "charges" ? run.boostCharges?.[key] ?? 0 : null,
-    }];
-  });
-  const offer =
-    run.pendingBoostOffer?.map((key) => {
-      const def = boostByKey.get(key)!;
-      return { key, name: def.name, tagline: def.tagline, rules: def.rules, kind: def.kind };
-    }) ?? null;
-  return {
-    owned,
-    offer,
-    activeRoundBoost: run.activeRoundBoost ?? null,
-    eliminatedChoices: run.eliminatedChoices ?? [],
-    eliminatedBy: run.eliminatedBy ?? null,
-  };
-}
-
-// --- Player lifecycle ---
+import { ensurePlayerHandler, startRunHandler } from "./triviaStartHandlers";
+import { getStoryHandler } from "./triviaStoryHandler";
+import { getActiveRunHandler } from "./triviaActiveRun";
+import { questionForRun, RUN_LIBRARY_RESET_REASON } from "./triviaRunRecovery";
+import {
+  AMPLIFIER_STREAK_BONUS,
+  BASE_POINTS,
+  BOSS_CALLERS,
+  BOSS_CALL_EVERY_ROUNDS,
+  BOSS_REWARD_POINTS,
+  boostPublicState,
+  DEEP_CUTS_MULTIPLIER,
+  DOUBLE_BROADCAST_LIFE_COST,
+  DOUBLE_BROADCAST_MULTIPLIER,
+  FAST_ANSWER_FLAG,
+  FINALE_UNLOCK,
+  FLAT_RATES_BASE_MULTIPLIER,
+  getActiveRunDoc,
+  getPlayer,
+  HEAVY_ROTATION_MULTIPLIER,
+  LEADERBOARD_LIMIT_MAX,
+  LIFE_EVERY_ROUNDS,
+  MAX_LIVES,
+  MIN_ANSWER_MS,
+  mutatorOf,
+  NIGHT_OWL_MULTIPLIER,
+  publicRunState,
+  questionsPerRoundOf,
+  requirePlayer,
+  safeLeaderboardName,
+  SIGNAL_CAP,
+  SIGNAL_EVERY_STREAK,
+  SPARE_FUSE_POINTS,
+  STATIC_FILTER_ELIMINATIONS,
+  STREAK_BONUS,
+  STREAK_BONUS_CAP,
+  TAPES,
+  unlockAchievement,
+  type GameEvent,
+} from "./triviaRuntime";
 
 export const ensurePlayer = mutation({
   args: { playerKey: v.string(), displayName: v.optional(v.string()) },
-  handler: async (ctx, args) => {
-    if (args.playerKey.length < 8 || args.playerKey.length > 64) {
-      throw new Error("playerKey must be 8-64 characters");
-    }
-    const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (identity) {
-      // Signed in: the account IS the identity. Its leaderboard name mirrors
-      // the Clerk handle (username, else name); a guest's typed name is ignored.
-      const handle = handleFromIdentity(identity);
-      const account = await getPlayerBySubject(ctx, identity.subject);
-      if (account) {
-        await ctx.db.patch(account._id, { displayName: handle, lastSeenAt: now });
-        return { created: false, signedIn: true, displayName: handle };
-      }
-      // First sign-in: claim this device's guest row (and its progress) if it
-      // isn't already tied to an account; otherwise start a fresh account row.
-      const guest = await getPlayerByKey(ctx, args.playerKey);
-      if (guest && guest.authSubject === undefined) {
-        await ctx.db.patch(guest._id, { authSubject: identity.subject, displayName: handle, lastSeenAt: now });
-        return { created: false, signedIn: true, migrated: true, displayName: handle };
-      }
-      await ctx.db.insert("triviaPlayers", {
-        playerKey: identity.subject,
-        authSubject: identity.subject,
-        displayName: handle,
-        createdAt: now,
-        lastSeenAt: now,
-        totalRuns: 0,
-        bestScore: 0,
-        deepestRound: 0,
-        totalCorrect: 0,
-        totalAnswered: 0,
-        tapesUnlocked: [],
-      });
-      return { created: true, signedIn: true, displayName: handle };
-    }
-
-    // Guest (signed out): anonymous row keyed by the client-generated playerKey.
-    const existing = await getPlayerByKey(ctx, args.playerKey);
-    if (existing) {
-      const patch: Partial<Doc<"triviaPlayers">> = { lastSeenAt: now };
-      if (args.displayName !== undefined) {
-        patch.displayName = cleanDisplayName(args.displayName);
-      }
-      await ctx.db.patch(existing._id, patch);
-      return { created: false, signedIn: false, displayName: patch.displayName ?? existing.displayName };
-    }
-    const displayName = cleanDisplayName(args.displayName ?? `Contestant ${args.playerKey.slice(0, 4)}`);
-    await ctx.db.insert("triviaPlayers", {
-      playerKey: args.playerKey,
-      displayName,
-      createdAt: now,
-      lastSeenAt: now,
-      totalRuns: 0,
-      bestScore: 0,
-      deepestRound: 0,
-      totalCorrect: 0,
-      totalAnswered: 0,
-      tapesUnlocked: [],
-    });
-    return { created: true, signedIn: false, displayName };
-  },
+  handler: ensurePlayerHandler,
 });
-
-function cleanDisplayName(raw: string) {
-  const cleaned = raw.replace(/[\p{C}]/gu, "").trim().slice(0, 24);
-  if (cleaned.length === 0) throw new Error("Display name cannot be empty");
-  return cleaned;
-}
-
-// --- Run lifecycle ---
 
 export const startRun = mutation({
   args: { playerKey: v.string(), daily: v.optional(v.boolean()) },
-  handler: async (ctx, args) => {
-    const player = await requirePlayer(ctx, args.playerKey);
-    const now = Date.now();
-    const dateKey = dateKeyOf(now);
-    const isDaily = args.daily ?? false;
-
-    if (isDaily) {
-      const todaysRuns = await ctx.db
-        .query("triviaRuns")
-        .withIndex("by_player_date", (q) => q.eq("playerId", player._id).eq("dateKey", dateKey))
-        .collect();
-      // The daily seed is deterministic, so reseeding an in-progress attempt
-      // would deal the same questions again — a free preview. Resume instead.
-      const activeDaily = todaysRuns.find((run) => run.isDaily && run.status === "active");
-      if (activeDaily) {
-        // Resume mid-draft (the persisted offer, never re-rolled) or
-        // mid-question — whichever state the attempt was left in.
-        const question = activeDaily.currentQuestionKey
-          ? questionByKey.get(activeDaily.currentQuestionKey)
-          : undefined;
-        if (activeDaily.pendingBoostOffer || activeDaily.bossCall || question) {
-          await ctx.db.patch(player._id, { lastSeenAt: now });
-          return {
-            run: publicRunState(activeDaily),
-            boosts: boostPublicState(activeDaily),
-            question: question ? sanitizeQuestion(question) : null,
-            runNumber: player.totalRuns + 1,
-            epilogueActive: player.finaleCompletedAt !== undefined,
-            resumed: true,
-          };
-        }
-      }
-      // One attempt per night: dead OR abandoned consumes it. Walking away
-      // from an attempt must not grant a fresh look at the same seed.
-      if (todaysRuns.some((run) => run.isDaily && run.status !== "active")) {
-        throw new Error("Tonight's broadcast has already aired for you. Come back tomorrow!");
-      }
-    }
-
-    const existing = await getActiveRunDoc(ctx, player._id);
-    if (existing) {
-      await ctx.db.patch(existing._id, { status: "abandoned", endedAt: now });
-    }
-
-    // Rate limit: cap how many runs a player can start per hour to blunt
-    // scripted farming of the leaderboard.
-    const recentRuns = await ctx.db
-      .query("triviaRuns")
-      .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
-      .order("desc")
-      .take(MAX_RUNS_PER_HOUR + 1);
-    const startedLastHour = recentRuns.filter((run) => now - run.startedAt < 3600_000).length;
-    if (startedLastHour >= MAX_RUNS_PER_HOUR) {
-      throw new Error("You're starting broadcasts very fast. Take a short break and try again.");
-    }
-
-    // Tonight's broadcast condition: seeded from the date, same for everyone.
-    const mutatorKey = isDaily
-      ? mutatorCatalog[Math.floor(seededRandom(`mutator:${dateKey}`)() * mutatorCatalog.length)].key
-      : undefined;
-
-    const runId = await ctx.db.insert("triviaRuns", {
-      playerId: player._id,
-      seed: isDaily ? `daily-${dateKey}` : `${now.toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`,
-      status: "active",
-      isDaily,
-      mutatorKey,
-      score: 0,
-      round: 1,
-      lives: mutatorKey === "thin-ice" ? THIN_ICE_START_LIVES : START_LIVES,
-      streak: 0,
-      answeredInRound: 0,
-      wrongInRound: 0,
-      tapeDropped: false,
-      fastAnswers: 0,
-      flagged: false,
-      currentQuestionServedAt: now,
-      modifiers: [],
-      askedQuestionKeys: [],
-      dateKey,
-      weekKey: weekKeyOf(now),
-      startedAt: now,
-    });
-
-    const run = (await ctx.db.get(runId))!;
-    const roundCategory = pickRoundCategory(run, 1);
-    const question = pickQuestion({ ...run, roundCategory });
-    if (!question) throw new Error("The question bank is empty.");
-    await ctx.db.patch(runId, {
-      roundCategory,
-      currentQuestionKey: question.id,
-      askedQuestionKeys: [question.id],
-    });
-
-    await ctx.db.patch(player._id, { lastSeenAt: now });
-    return {
-      run: { ...publicRunState(run), questionNumber: 1, roundCategory: roundCategory ?? null },
-      boosts: boostPublicState(run),
-      question: sanitizeQuestion(question),
-      runNumber: player.totalRuns + 1,
-      epilogueActive: player.finaleCompletedAt !== undefined,
-      resumed: false,
-    };
-  },
+  handler: startRunHandler,
 });
 
 export const submitAnswer = mutation({
@@ -557,15 +81,16 @@ export const submitAnswer = mutation({
     const run = await ctx.db.get(args.runId);
     if (!run || run.playerId !== player._id) throw new Error("Run not found");
     if (run.status !== "active" || !run.currentQuestionKey) throw new Error("Run is not active");
-    const question = questionByKey.get(run.currentQuestionKey);
-    if (!question) throw new Error("Current question missing from bank (was it removed?)");
+    const selection = await selectionPoolForRun(ctx, run).catch(() => null);
+    if (!selection) throw new Error(RUN_LIBRARY_RESET_REASON);
+    const question = selection.questions.find((candidate) => candidate.id === run.currentQuestionKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
     if (run.eliminatedChoices?.includes(args.choiceIndex)) {
       throw new Error("That choice was eliminated");
     }
-
     // Anti-cheat: think time measured from the server's serve timestamp (the
     // client can't fake it). Superhuman-fast answers accumulate; enough of them
     // flag the run out of the public leaderboard. Never blocks the answer.
@@ -669,12 +194,13 @@ export const submitAnswer = mutation({
       lives = 1;
       events.push({ type: "deadAirSurvived" });
     }
-
     let nextQuestion: BankQuestion | null = null;
     const dead = lives <= 0;
     // Dead Air entry: the last life just went and the chance is unspent —
     // one seeded, hardest-available question decides whether the run ends.
-    const deadAirQuestion = dead && !(run.deadAirUsed ?? false) ? pickDeadAirQuestion(run) : null;
+    const deadAirQuestion = dead && !(run.deadAirUsed ?? false)
+        ? pickDeadAirQuestion(run, selection.questions, selection.usePlannedOrder, selection.rulesVersion)
+        : null;
 
     if (dead && deadAirQuestion) {
       events.push({ type: "deadAir" });
@@ -805,7 +331,13 @@ export const submitAnswer = mutation({
         const completedRoundNumber = round - 1;
         const bossQuestion =
           completedRoundNumber % BOSS_CALL_EVERY_ROUNDS === 0
-            ? pickBossQuestion(run, completedRoundNumber)
+            ? pickBossQuestion(
+                run,
+                selection.questions,
+                completedRoundNumber,
+                selection.usePlannedOrder,
+                selection.rulesVersion,
+              )
             : null;
         if (bossQuestion) {
           // Every 3rd round: a caller rings the show with one bonus question
@@ -832,7 +364,12 @@ export const submitAnswer = mutation({
           await ctx.db.patch(args.runId, { ...betweenRounds, pendingBoostOffer: offer });
         }
       } else {
-        nextQuestion = pickQuestion({ ...run, round, roundCategory });
+        nextQuestion = pickQuestion(
+          { ...run, round, roundCategory },
+          selection.questions,
+          selection.usePlannedOrder,
+          selection.rulesVersion,
+        );
         if (!nextQuestion) {
           // Ran the entire bank dry — end the run as a victory lap.
           events.push({ type: "bankExhausted" });
@@ -885,14 +422,18 @@ export const submitAnswer = mutation({
 
     await ctx.db.patch(player._id, playerPatch);
     const updatedRun = (await ctx.db.get(args.runId))!;
+    const frozenBossQuestion = updatedRun.bossCall?.phase === "question"
+      ? (selection.questions.find((candidate) => candidate.id === updatedRun.bossCall!.questionKey) ?? null)
+      : null;
 
     return {
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
+      disclosure: answerDisclosureForQuestion(question),
       scoreDelta,
       events,
-      run: publicRunState(updatedRun),
+      run: publicRunState(updatedRun, frozenBossQuestion),
       boosts: boostPublicState(updatedRun),
       nextQuestion: nextQuestion ? sanitizeQuestion(nextQuestion) : null,
     };
@@ -912,6 +453,8 @@ export const chooseBoost = mutation({
     if (!def) throw new Error("Unknown boost");
     const now = Date.now();
     const events: GameEvent[] = [];
+    const selection = await selectionPoolForRun(ctx, run).catch(() => null);
+    if (!selection) throw new Error(RUN_LIBRARY_RESET_REASON);
 
     let lives = run.lives;
     let score = run.score;
@@ -950,8 +493,19 @@ export const chooseBoost = mutation({
     // Open the round: pick the theme and serve the first question. The
     // anti-cheat clock starts here, so draft time never counts as think time.
     const draftedRun = { ...run, ...patch } as Doc<"triviaRuns">;
-    const roundCategory = pickRoundCategory(draftedRun, run.round);
-    const question = pickQuestion({ ...draftedRun, roundCategory });
+    const roundCategory = pickRoundCategory(
+      draftedRun,
+      selection.questions,
+      run.round,
+      questionsPerRoundOf(draftedRun),
+      selection.rulesVersion,
+    );
+    const question = pickQuestion(
+      { ...draftedRun, roundCategory },
+      selection.questions,
+      selection.usePlannedOrder,
+      selection.rulesVersion,
+    );
     if (!question) {
       // Bank ran dry during the draft — victory lap, same as submitAnswer.
       const flagged = run.flagged ?? false;
@@ -1010,8 +564,8 @@ export const useSignal = mutation({
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
       throw new Error("An elimination is already applied to this question");
     }
-    const question = questionByKey.get(targetKey);
-    if (!question) throw new Error("Current question missing from bank");
+    const question = await questionForRun(ctx, run, targetKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
     const roll = runRoll(run, `whisper:${targetKey}`);
     const eliminated = wrongs[Math.floor(roll * wrongs.length)];
@@ -1041,8 +595,8 @@ export const useBoost = mutation({
     if (run.eliminatedChoices && run.eliminatedChoices.length > 0) {
       throw new Error("An elimination is already applied to this question");
     }
-    const question = questionByKey.get(filterTargetKey);
-    if (!question) throw new Error("Current question missing from bank");
+    const question = await questionForRun(ctx, run, filterTargetKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     const wrongs = question.choices.map((_, index) => index).filter((index) => index !== question.answer);
     // Seeded picks: daily players who filter the same question see the same
     // eliminations.
@@ -1071,8 +625,8 @@ export const answerBossCall = mutation({
     if (run.status !== "active" || run.bossCall?.phase !== "question") {
       throw new Error("No caller on the line");
     }
-    const question = questionByKey.get(run.bossCall.questionKey);
-    if (!question) throw new Error("Caller question missing from bank");
+    const question = await questionForRun(ctx, run, run.bossCall.questionKey);
+    if (!question) throw new Error(RUN_LIBRARY_RESET_REASON);
     if (!Number.isInteger(args.choiceIndex) || args.choiceIndex < 0 || args.choiceIndex >= question.choices.length) {
       throw new Error("choiceIndex out of range");
     }
@@ -1120,6 +674,7 @@ export const answerBossCall = mutation({
       correct,
       correctIndex: question.answer,
       explanation: question.explanation ?? null,
+      disclosure: answerDisclosureForQuestion(question),
       scoreDelta: 0,
       events,
       run: publicRunState(updated),
@@ -1225,31 +780,7 @@ export const completeFinale = mutation({
 
 export const getActiveRun = query({
   args: { playerKey: v.string() },
-  handler: async (ctx, args) => {
-    const player = await getPlayer(ctx, args.playerKey);
-    if (!player) return null;
-    const run = await getActiveRunDoc(ctx, player._id);
-    if (!run) return null;
-    if (run.pendingBoostOffer || run.bossCall) {
-      // Mid-draft or mid-boss-call: the client re-enters the same screen
-      // (the offer and the call both persist on the run).
-      return {
-        run: publicRunState(run),
-        boosts: boostPublicState(run),
-        question: null,
-        epilogueActive: player.finaleCompletedAt !== undefined,
-      };
-    }
-    if (!run.currentQuestionKey) return null;
-    const question = questionByKey.get(run.currentQuestionKey);
-    if (!question) return null;
-    return {
-      run: publicRunState(run),
-      boosts: boostPublicState(run),
-      question: sanitizeQuestion(question),
-      epilogueActive: player.finaleCompletedAt !== undefined,
-    };
-  },
+  handler: getActiveRunHandler,
 });
 
 export const getProfile = query({
@@ -1388,24 +919,7 @@ export const getLeaderboard = query({
 /** Unlocked story content only — tape text is never sent before it's earned. */
 export const getStory = query({
   args: { playerKey: v.string() },
-  handler: async (ctx, args) => {
-    const player = await getPlayer(ctx, args.playerKey);
-    const unlockedIds = new Set(player?.tapesUnlocked ?? []);
-    const epilogueActive = player?.finaleCompletedAt !== undefined;
-    return {
-      showTitle: story.show.title,
-      tapesTotal: TAPES.length,
-      tapes: TAPES.filter((tape) => unlockedIds.has(tape.id)).map((tape) => ({
-        id: tape.id,
-        order: tape.order,
-        title: tape.title,
-        text: tape.text,
-      })),
-      finaleLines: epilogueActive ? story.finale.lines : null,
-      epilogueLines: epilogueActive ? story.epilogueLines : null,
-      epilogueActive,
-    };
-  },
+  handler: getStoryHandler,
 });
 
 // --- Test utilities (admin-only; not callable from clients) ---

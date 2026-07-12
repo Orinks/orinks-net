@@ -2,6 +2,21 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-10-midnight-signal-broadcast-expansion",
+      "date": "2026-07-10",
+      "project": "The Midnight Signal",
+      "title": "More music, more ways to play the broadcast",
+      "body": [
+        "The Midnight Signal's active library now spans 491 officially verified music questions plus 564 questions from the show's established MusicBrainz, OpenTDB, and general-trivia archive. Award Desk, Chart Wire, World Signal, Instrument Detective, Studio Lab, Night Timeline, Archive Clue, Odd One Out, Needle Drop, and Sound Lab rounds give regular and nightly broadcasts a more varied rhythm.",
+        "Needle Drop and Sound Lab rounds use short, licensed Audius streams that play only when you choose Play. Every audio question includes an always-available equivalent text clue, and every answer keeps its verified source, recording credit, and license available until you continue.",
+        "Short station transmissions now connect the formats to Clyde's world: archive fragments, Producer notes, listener messages, chart and award reports, studio investigations, world-signal dispatches, and contemporary Audius discoveries. Their complete text is always visible, they never affect scoring or question order, and nightly callbacks are deterministic for everyone."
+      ],
+      "link": {
+        "href": "/midnight-signal",
+        "label": "Tune in to The Midnight Signal"
+      }
+    },
+    {
       "id": "2026-07-10-pause-off-duty-drivers-board",
       "date": "2026-07-10",
       "project": "Freight Fate",
@@ -19,7 +34,10 @@
       "body": [
         "Driver names now have published rules: no slurs or hate speech, no hate figures or hate symbols, no profanity, no impersonation, no harassment, and at least three letters. New and updated names are screened against the rules the moment you save them, and anything offensive that was stored earlier is hidden from public pages. Moderators can also reset a name outright, in which case the setup page asks you to choose a new one."
       ],
-      "link": { "href": "/freight-fate/online/rules", "label": "Read the driver naming rules" }
+      "link": {
+        "href": "/freight-fate/online/rules",
+        "label": "Read the driver naming rules"
+      }
     },
     {
       "id": "2026-07-08-midnight-signal-roguelite",
@@ -30,7 +48,10 @@
         "Five new systems landed in one night. After every round you now draft a Signal Boost — nine run-changing upgrades, from the Static Filter that removes two wrong choices to Double Broadcast's double-or-nothing round. Every third round a caller rings the studio: The Archivist or The Night Owl poses one hard bonus question, no lives at stake, with a reward of your choosing. Lose your last life and you hit Dead Air — one final question stands between you and sign-off. Streaks now store signal strength you can spend on the Producer's Whisper, and every night's daily broadcast plays under a shared condition, from Flat Rates to the Long Haul.",
         "The nightly broadcast is the headline competition: one attempt per night, identical questions and conditions for every contestant, and a plain-text shareable result when your run ends."
       ],
-      "link": { "href": "/midnight-signal", "label": "Play The Midnight Signal" }
+      "link": {
+        "href": "/midnight-signal",
+        "label": "Play The Midnight Signal"
+      }
     },
     {
       "id": "2026-07-08-midnight-signal-leaderboards",
@@ -40,7 +61,10 @@
       "body": [
         "Each contestant now appears once per board, ranked by their best run. The nightly board lists daily-challenge attempts only, walking away from a daily counts as that night's attempt, and automated-looking runs can no longer set records."
       ],
-      "link": { "href": "/midnight-signal/leaderboard", "label": "See the leaderboard" }
+      "link": {
+        "href": "/midnight-signal/leaderboard",
+        "label": "See the leaderboard"
+      }
     },
     {
       "id": "2026-07-08-freight-fate-accounts",

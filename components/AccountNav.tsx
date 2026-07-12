@@ -81,18 +81,18 @@ export function AccountNav() {
           <>
             <Show when="signed-out">
               <SignInButton mode="modal">
-                <button className={itemClass} type="button">
+                <button aria-haspopup="dialog" className={itemClass} type="button">
                   Sign in
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className={itemClass} type="button">
+                <button aria-haspopup="dialog" className={itemClass} type="button">
                   Create account
                 </button>
               </SignUpButton>
             </Show>
             <Show when="signed-in">
-              <button className={itemClass} onClick={() => clerk.openUserProfile()} type="button">
+              <button aria-haspopup="dialog" className={itemClass} onClick={() => clerk.openUserProfile()} type="button">
                 Manage account
               </button>
               <SignOutButton>

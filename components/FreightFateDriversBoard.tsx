@@ -61,10 +61,11 @@ export async function FreightFateDriversBoard() {
   return (
     <Section title="Drivers on duty">
       <p>
-        {board.drivers.length === 0
-          ? "No drivers are on duty right now."
-          : `${board.drivers.length} ${board.drivers.length === 1 ? "driver is" : "drivers are"} on duty.`}{" "}
-        {asOfPhrase(board.asOf)}
+        {`${
+          board.drivers.length === 0
+            ? "No drivers are on duty right now."
+            : `${board.drivers.length} ${board.drivers.length === 1 ? "driver is" : "drivers are"} on duty.`
+        } ${asOfPhrase(board.asOf)}`}
       </p>
 
       {board.drivers.length > 0 ? (

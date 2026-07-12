@@ -17,7 +17,20 @@ import type * as moderation from "../moderation.js";
 import type * as mutators from "../mutators.js";
 import type * as notifications from "../notifications.js";
 import type * as questionBank from "../questionBank.js";
+import type * as questionClipValidation from "../questionClipValidation.js";
+import type * as questionTypes from "../questionTypes.js";
 import type * as trivia from "../trivia.js";
+import type * as triviaActiveRun from "../triviaActiveRun.js";
+import type * as triviaDailyEpisodes from "../triviaDailyEpisodes.js";
+import type * as triviaDeterminism from "../triviaDeterminism.js";
+import type * as triviaEpisodePlanner from "../triviaEpisodePlanner.js";
+import type * as triviaRunRecovery from "../triviaRunRecovery.js";
+import type * as triviaRuntime from "../triviaRuntime.js";
+import type * as triviaSelection from "../triviaSelection.js";
+import type * as triviaStartHandlers from "../triviaStartHandlers.js";
+import type * as triviaStoryBeats from "../triviaStoryBeats.js";
+import type * as triviaStoryHandler from "../triviaStoryHandler.js";
+import type * as triviaVersions from "../triviaVersions.js";
 import type * as visits from "../visits.js";
 
 import type {
@@ -36,7 +49,20 @@ declare const fullApi: ApiFromModules<{
   mutators: typeof mutators;
   notifications: typeof notifications;
   questionBank: typeof questionBank;
+  questionClipValidation: typeof questionClipValidation;
+  questionTypes: typeof questionTypes;
   trivia: typeof trivia;
+  triviaActiveRun: typeof triviaActiveRun;
+  triviaDailyEpisodes: typeof triviaDailyEpisodes;
+  triviaDeterminism: typeof triviaDeterminism;
+  triviaEpisodePlanner: typeof triviaEpisodePlanner;
+  triviaRunRecovery: typeof triviaRunRecovery;
+  triviaRuntime: typeof triviaRuntime;
+  triviaSelection: typeof triviaSelection;
+  triviaStartHandlers: typeof triviaStartHandlers;
+  triviaStoryBeats: typeof triviaStoryBeats;
+  triviaStoryHandler: typeof triviaStoryHandler;
+  triviaVersions: typeof triviaVersions;
   visits: typeof visits;
 }>;
 

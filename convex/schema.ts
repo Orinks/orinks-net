@@ -1,6 +1,95 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const strictTriviaQuestionFormat = v.union(
+  v.literal("award-desk"),
+  v.literal("chart-wire"),
+  v.literal("world-signal"),
+  v.literal("instrument-detective"),
+  v.literal("studio-lab"),
+  v.literal("night-timeline"),
+  v.literal("archive-clue"),
+  v.literal("odd-one-out"),
+  v.literal("needle-drop"),
+  v.literal("sound-lab"),
+);
+
+const triviaQuestionFormat = v.union(
+  strictTriviaQuestionFormat,
+  v.literal("legacy-trivia"),
+);
+
+const triviaClipAttribution = v.object({
+  creator: v.string(),
+  copyrightNotice: v.string(),
+  licenseTitle: v.string(),
+  licenseUrl: v.string(),
+  sourceTitle: v.string(),
+  sourceUrl: v.string(),
+});
+
+const strictTriviaQuestionSnapshot = v.object({
+  id: v.string(),
+  category: v.string(),
+  difficulty: v.number(),
+  format: strictTriviaQuestionFormat,
+  prompt: v.string(),
+  choices: v.array(v.string()),
+  answer: v.number(),
+  explanation: v.string(),
+  source: v.object({
+    publisher: v.string(),
+    title: v.string(),
+    url: v.string(),
+    accessedAt: v.string(),
+    evidenceSummary: v.string(),
+  }),
+  aliases: v.optional(v.array(v.string())),
+  // Convex object field names must be ASCII. Written pronunciation forms may
+  // contain accents, so persist them as entries instead of record keys.
+  pronunciations: v.optional(
+    v.array(
+      v.object({
+        written: v.string(),
+        spoken: v.string(),
+      }),
+    ),
+  ),
+  clip: v.optional(
+    v.object({
+      id: v.string(),
+      provider: v.union(
+        v.literal("audius"),
+        v.literal("feed-clips"),
+        v.literal("remote-open"),
+      ),
+      providerAssetId: v.string(),
+      startSeconds: v.number(),
+      durationSeconds: v.number(),
+      textClue: v.string(),
+      attribution: triviaClipAttribution,
+    }),
+  ),
+  voice: v.optional(v.union(v.string(), v.literal(false))),
+});
+
+const legacyTriviaQuestionSnapshot = v.object({
+  id: v.string(),
+  category: v.string(),
+  difficulty: v.number(),
+  format: v.literal("legacy-trivia"),
+  prompt: v.string(),
+  choices: v.array(v.string()),
+  answer: v.number(),
+  explanation: v.optional(v.string()),
+  source: v.optional(v.string()),
+});
+
+const triviaQuestionSnapshot = v.union(
+  strictTriviaQuestionSnapshot,
+  legacyTriviaQuestionSnapshot,
+);
+
 export default defineSchema({
   buildNotificationSubscriptions: defineTable({
     endpoint: v.string(),
@@ -27,6 +116,28 @@ export default defineSchema({
   // The question bank is NOT a table: convex/questionBank.ts imports the JSON
   // from data/trivia/questions/ directly into the server bundle, so answers
   // never leave the server and question edits ship with a normal deploy.
+
+  // One immutable lineup per UTC date. The first daily start creates it in the
+  // same transaction as the run; later starts reuse the indexed row, so a
+  // deploy that adds or reorders candidates cannot change an aired episode.
+  dailyEpisodes: defineTable({
+    dateKey: v.string(),
+    contentVersion: v.string(),
+    rulesVersion: v.string(),
+    seed: v.string(),
+    mutatorKey: v.string(),
+    candidates: v.array(
+      v.object({
+        questionId: v.string(),
+        format: triviaQuestionFormat,
+        clipId: v.optional(v.string()),
+        choiceOrder: v.array(v.number()),
+        // Full private content makes an aired lineup immutable across deploys.
+        snapshot: v.optional(triviaQuestionSnapshot),
+      }),
+    ),
+    createdAt: v.number(),
+  }).index("by_date", ["dateKey"]),
 
   // playerKey is the anonymous client-generated key (guest play). When a player
   // signs in with Clerk, their Clerk subject is stored in authSubject on the
@@ -63,6 +174,10 @@ export default defineSchema({
   triviaRuns: defineTable({
     playerId: v.id("triviaPlayers"),
     seed: v.string(),
+    // Optional for rows created before persisted daily episodes shipped.
+    dailyEpisodeId: v.optional(v.id("dailyEpisodes")),
+    contentVersion: v.optional(v.string()),
+    rulesVersion: v.optional(v.string()),
     status: v.union(v.literal("active"), v.literal("dead"), v.literal("abandoned")),
     isDaily: v.boolean(),
     // Daily broadcast condition (mutator), seeded from the date — identical

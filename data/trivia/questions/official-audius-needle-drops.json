@@ -1,0 +1,215 @@
+{
+  "minigame": "official-audius-needle-drops",
+  "voice": "clide",
+  "curated": true,
+  "questions": [
+    {
+      "id": "official-needle-drop-001",
+      "category": "dance-and-electronic",
+      "difficulty": 1,
+      "format": "needle-drop",
+      "prompt": "Needle Drop, Deep House: Which song title matches the excerpt?",
+      "choices": ["Funky Road", "Funky Route", "Groovy Road", "Natural Road"],
+      "answer": 0,
+      "explanation": "Audius identifies Jazcardan's track as “Jazcardan - Funky Road”; the song-title portion is “Funky Road.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Jazcardan - Funky Road",
+        "url": "https://audius.co/Jazcardan/jazcardan-funky-road",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius record identifies track X6zzGva as Jazcardan - Funky Road, tagged Deep House and streamable."
+      },
+      "clip": {
+        "id": "ms-clip-7f3a91c2",
+        "provider": "audius",
+        "providerAssetId": "X6zzGva",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Jazcardan published this Deep House track in July 2026; its two-word title pairs a groove adjective with a route.",
+        "attribution": {
+          "creator": "Jazcardan",
+          "copyrightNotice": "Copyright © 2026 Jazcardan.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Jazcardan - Funky Road",
+          "sourceUrl": "https://audius.co/Jazcardan/jazcardan-funky-road"
+        }
+      }
+    },
+    {
+      "id": "official-needle-drop-002",
+      "category": "dance-and-electronic",
+      "difficulty": 2,
+      "format": "needle-drop",
+      "prompt": "Needle Drop, Tech House: Which song title matches the excerpt?",
+      "choices": ["Natural Flow", "Flow Natural", "Flow Original", "Bass Natural"],
+      "answer": 1,
+      "explanation": "Audius identifies Fattybass's track as “Fattybass - Flow Natural”; the song-title portion is “Flow Natural.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Fattybass - Flow Natural",
+        "url": "https://audius.co/fattybass/fattybass-flow-natural",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius record identifies track zK7XlRp as Fattybass - Flow Natural, tagged Tech House and streamable."
+      },
+      "clip": {
+        "id": "ms-clip-b4e82d16",
+        "provider": "audius",
+        "providerAssetId": "zK7XlRp",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Fattybass published this fiery Tech House track in June 2026; its two-word title puts a movement word before an unforced quality.",
+        "attribution": {
+          "creator": "Fattybass",
+          "copyrightNotice": "Copyright © 2026 Fattybass.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Fattybass - Flow Natural",
+          "sourceUrl": "https://audius.co/fattybass/fattybass-flow-natural"
+        }
+      }
+    },
+    {
+      "id": "official-needle-drop-003",
+      "category": "dance-and-electronic",
+      "difficulty": 3,
+      "format": "needle-drop",
+      "prompt": "Needle Drop, Dubstep: Which song title matches the excerpt?",
+      "choices": ["Whoa", "Woe", "Woah", "Wow"],
+      "answer": 2,
+      "explanation": "DISKADE's artist-published Audius record identifies the track title as “Woah.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Woah",
+        "url": "https://audius.co/diskadebass/woah",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius record identifies track zyy3mQZ as Woah by DISKADE, tagged Dubstep and streamable."
+      },
+      "clip": {
+        "id": "ms-clip-29c7fd40",
+        "provider": "audius",
+        "providerAssetId": "zyy3mQZ",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "DISKADE published this cool Dubstep track in June 2026; its four-letter reaction title puts the h at the end.",
+        "attribution": {
+          "creator": "DISKADE",
+          "copyrightNotice": "Copyright © 2026 DISKADE.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Woah",
+          "sourceUrl": "https://audius.co/diskadebass/woah"
+        }
+      }
+    },
+    {
+      "id": "official-needle-drop-004",
+      "category": "dance-and-electronic",
+      "difficulty": 4,
+      "format": "needle-drop",
+      "prompt": "Needle Drop, Electronic: Which song title matches the excerpt?",
+      "choices": ["IDK", "IDC", "IDW", "IDGAF"],
+      "answer": 3,
+      "explanation": "Audius identifies NEWER's track as “NEWER - IDGAF”; the song-title portion is “IDGAF.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "NEWER - IDGAF",
+        "url": "https://audius.co/newerall/newer-idgaf",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius record identifies track 7G9NN5y as NEWER - IDGAF, tagged Electronic and streamable."
+      },
+      "pronunciation": {
+        "IDK": "I D K",
+        "IDC": "I D C",
+        "IDW": "I D W",
+        "IDGAF": "I D G A F"
+      },
+      "clip": {
+        "id": "ms-clip-e163ab75",
+        "provider": "audius",
+        "providerAssetId": "7G9NN5y",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "NEWER published this cool Electronic track in June 2026; its title is a five-letter initialism beginning with I.",
+        "attribution": {
+          "creator": "NEWER",
+          "copyrightNotice": "Copyright © 2026 NEWER.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "NEWER - IDGAF",
+          "sourceUrl": "https://audius.co/newerall/newer-idgaf"
+        }
+      }
+    },
+    {
+      "id": "official-needle-drop-005",
+      "category": "latin-and-ibero-american",
+      "difficulty": 5,
+      "format": "needle-drop",
+      "prompt": "Needle Drop, Latin: Which song title matches the excerpt?",
+      "choices": ["Los De La Maña", "Los De La Banda", "Los De La Noche", "Los De La Calle"],
+      "answer": 0,
+      "explanation": "Mizter Bonezz's artist-published Audius record identifies the track as “Los De La Maña.”",
+      "source": {
+        "publisher": "Audius",
+        "title": "Los De La Maña",
+        "url": "https://audius.co/mizterbonezzmusic/los-de-la-maña",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The artist-published Audius record identifies track rKB7Y7Z as Los De La Maña by Mizter Bonezz, tagged Latin and streamable."
+      },
+      "pronunciation": {
+        "Maña": "MAHN-yah"
+      },
+      "clip": {
+        "id": "ms-clip-5d90c4fe",
+        "provider": "audius",
+        "providerAssetId": "rKB7Y7Z",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Mizter Bonezz published this fiery Latin track in June 2026; its four-word Spanish title ends with a four-letter word containing eñe.",
+        "attribution": {
+          "creator": "Mizter Bonezz",
+          "copyrightNotice": "Copyright © 2026 Mizter Bonezz.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "Los De La Maña",
+          "sourceUrl": "https://audius.co/mizterbonezzmusic/los-de-la-maña"
+        }
+      }
+    },
+    {
+      "id": "official-sound-lab-001",
+      "category": "classical-opera-composition",
+      "difficulty": 2,
+      "format": "sound-lab",
+      "prompt": "Sound Lab: Which Audius genre tag accompanies Ben Cura's “A Stroll” excerpt?",
+      "choices": ["Ambient", "Classical", "Acoustic", "Soundtrack"],
+      "answer": 1,
+      "explanation": "Ben Cura's artist-published Audius record categorizes “A Stroll (Audius Exclusive)” as Classical.",
+      "source": {
+        "publisher": "Audius",
+        "title": "A Stroll (Audius Exclusive)",
+        "url": "https://audius.co/mrbencura/a-stroll-audius-exclusive",
+        "accessedAt": "2026-07-10",
+        "evidenceSummary": "The verified artist's Audius record identifies track 1d7E3 as A Stroll (Audius Exclusive), tagged Classical and streamable."
+      },
+      "voice": false,
+      "clip": {
+        "id": "ms-clip-c9458e2a",
+        "provider": "audius",
+        "providerAssetId": "1d7E3",
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "textClue": "Ben Cura published this 2022 Audius exclusive; its catalog tag names a centuries-old concert tradition rather than a production style.",
+        "attribution": {
+          "creator": "Ben Cura",
+          "copyrightNotice": "Copyright © 2022 Ben Cura.",
+          "licenseTitle": "Audius Open Music License",
+          "licenseUrl": "https://audius.org/open-music-license.pdf",
+          "sourceTitle": "A Stroll (Audius Exclusive)",
+          "sourceUrl": "https://audius.co/mrbencura/a-stroll-audius-exclusive"
+        }
+      }
+    }
+  ]
+}

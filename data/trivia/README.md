@@ -4,9 +4,11 @@ The JSON files in this directory are the authoring source of truth for the
 trivia game. Question banks are bundled directly into the Convex server
 functions (see `convex/questionBank.ts` — add an import there for each new
 bank file), so answers are checked server-side and never reach the client;
-editing questions ships with a normal deploy. Host audio is pre-generated
-offline with `scripts/generate-tts.mjs`; the site only ever serves static
-MP3s, so players can never spend ElevenLabs credits.
+editing questions ships with a normal deploy. Host and question narration is
+pre-generated offline with `scripts/generate-tts.mjs`, so players can never
+spend ElevenLabs credits. Mystery-song audio is different: approved clips are
+streamed online from rights-cleared providers and are never bundled or cached
+as game assets.
 
 ## Files
 
@@ -20,12 +22,20 @@ MP3s, so players can never spend ElevenLabs credits.
   picks randomly among lines sharing a trigger, so add as many variants as
   you like. This file doubles as the transcript source for captions and
   screen-reader text.
-- `questions/*.json` — one file per minigame or theme. Every question needs
-  a unique `id` (stable forever — it names the audio file and is the key in
-  Convex), `category`, `difficulty` (1–5), `prompt`, `choices` (2+), and
-  `answer` (zero-based index into `choices`). Optional: `explanation`
-  (read out after answering), `voice: false` (skip TTS for this question),
-  or `voice: "<name>"` (use a different configured voice).
+- `questions/*.json` — one file per minigame or theme. Strict official
+  questions use the contract documented below: a stable unique ID, category,
+  difficulty, segment format, prompt, exactly four choices, answer,
+  explanation, and exact official provenance. `voice: false` skips TTS and
+  `voice: "<name>"` selects another configured voice.
+- `questions/general-trivia.json`, `questions/musicbrainz-generated.json`, and
+  `questions/opentdb-music.json` — the pre-existing active banks. Their original
+  schema and source/license metadata are preserved and validated through the
+  legacy compatibility loader rather than the strict official-source gate.
+- `clips.json` — the server-only mystery-clip rights ledger. It stores opaque
+  game IDs, provider asset IDs, clip timing, equivalent text clues, access
+  dates, immutable artist-published metadata snapshots, copyright notices,
+  license links, and exact source links. Provider and answer-bearing metadata
+  stay out of pre-answer payloads.
 - `achievements.json` — achievement definitions (key, name, description,
   secret). Unlocks are stored per player in Convex.
 - `story.json` — the show bible for "The Midnight Signal": premise, the ten
@@ -44,51 +54,93 @@ MP3s, so players can never spend ElevenLabs credits.
   knows which audio exists; anything without audio yet falls back to
   on-screen text and Web Speech.
 
-## Importing questions from Open Trivia Database
+## Validating official question files
 
-```
-node scripts/import-opentdb.mjs                   # up to 100 music questions
-node scripts/import-opentdb.mjs --amount 300      # bigger haul
-node scripts/import-opentdb.mjs --difficulty easy # easy | medium | hard
-```
+The strict authored-question contract and the exact official publisher/host
+policy live in `convex/questionTypes.ts` and `official-sources.json`. Run:
 
-Free and keyless; dedupes against everything already in `questions/`, so
-re-running only appends new material. Imported files carry
-`"curated": false` — review them before deploying (OpenTDB is
-user-contributed and has typos/awkward phrasing). Its license is
-CC BY-SA 4.0, so the site needs a visible credit to opentdb.com wherever
-the game lives.
-
-## Generating questions from MusicBrainz
-
-```
-node scripts/generate-musicbrainz.mjs               # target ~200 questions
-node scripts/generate-musicbrainz.mjs --amount 50   # smaller batch
+```powershell
+npm run trivia:validate
 ```
 
-Free and keyless, but MusicBrainz enforces one request per second, so a
-full run takes a few minutes. Questions are built from tag-search seeded
-well-known artists and their official studio albums, with same-genre
-distractors; dedupes against everything already in `questions/`, so
-re-running only appends new material. Generated files carry
-`"curated": false` — review them before deploying (the difficulty
-heuristic is rough and the data is community-edited). MusicBrainz core
-data is public domain (CC0), so no attribution is legally required, but
-a credit to musicbrainz.org is a nice touch.
+This audits the active strict files. To exercise the release gate, including
+the 460-question and ten-format floors, run:
+
+```powershell
+npm run trivia:validate -- --final-gate
+```
+
+The validator reports legacy banks separately and applies the release floor and
+ten-format coverage only to new strict official banks. A specific staged bank
+can be checked strictly by passing its path after the command.
+
+## Daily episode freezing during the corpus migration
+
+The first daily start for a UTC date writes one immutable `dailyEpisodes` row.
+It records the content/rules versions, seeded candidate order, question IDs,
+format, opaque clip ID when present, and authored choice order `[0, 1, 2, 3]`.
+Later starts reuse that row, so adding or reordering candidates during the day
+cannot reroll the broadcast. Answer positions are balanced by choosing a
+different question; choice text is never shuffled at runtime.
+
+Legacy records receive an internal `legacy-trivia` runtime segment marker but
+their authored files, source strings, questions, answers, and explanations are
+not rewritten. They remain selectable in free play and are frozen into daily
+episodes alongside strict official questions. The stable version constants
+live in `convex/triviaVersions.ts` and must be advanced deliberately when
+corpus or planning rules change.
+
+This validator requires Node.js 24. It directly imports the canonical
+TypeScript contract using Node 24's built-in type stripping so the CLI and the
+server-side model cannot drift into separate schemas.
+
+## Strict official-bank policy
+
+Do not add new community-database records to the strict official banks. Every
+new strict question must cite an exact official publisher page or approved
+institutional open-data record. The pre-existing OpenTDB, MusicBrainz, and
+general-trivia banks remain active under their original licenses and metadata;
+that compatibility exception does not weaken the provenance requirements for
+new content. Automated collectors only stage evidence, and an editor must
+verify every new strict record before it enters that corpus.
 
 ## Generating audio
 
-```
+```powershell
 npm run tts -- --dry-run        # preview what would be generated, free
 npm run tts                     # generate up to 5000 characters
-npm run tts -- --budget 20000   # bigger batch (0 = unlimited)
+npm run tts -- --budget 20000   # larger explicit live ceiling
+npm run tts -- --dry-run --budget 0 # complete plan; unlimited is dry-run only
 npm run tts -- --only barks     # barks first — they carry the personality
+npm run tts:sync                # rebuild manifest and prune inactive/orphaned MP3s, no API calls
+npm run tts:verify              # verify hashes, files, size, and manifest coverage
 ```
 
 Files are named by a hash of voice + model + settings + text, so re-running
 is safe and cheap: existing audio is skipped, and editing a line's text
 automatically queues a regeneration. When monthly credits refresh, just run
-it again — it reports what's still pending and your remaining credits.
+it again — it reports what's still pending and your remaining credits. A live
+run checks the subscription first, reserves 500 included credits by default,
+and refuses an unlimited or over-quota request. It never enables paid extension
+automatically.
+
+## Streaming mystery clips
+
+Mystery music is streamed online through
+`/api/midnight-signal/clips/<opaque-id>`. The route rechecks provider
+availability, forwards a single byte range, returns only audio with strict
+`no-store` headers, and never writes the recording to disk. The service worker
+has no fetch cache.
+
+Audius launch records must identify a verified uploader, exclude explicit,
+cover, and remix records, retain a copyright-owner notice, link the exact
+track, and cite the Audius Open Music License. Availability and attribution
+are rechecked before each stream. A withdrawn or changed record fails into the
+question's equivalent text route.
+
+Feed Clips remains disabled until an executed commercial agreement supplies
+the allowed territories, credentials, signing rules, and reporting contract.
+Environment placeholders do not enable the adapter by themselves.
 
 Note: `eleven_flash_v2_5` bills at 0.5 credits per character, half the cost
 of the multilingual model, which is why it's the default.
@@ -97,6 +149,7 @@ of the multilingual model, which is why it's the default.
 
 Changing `prompt` text changes the hash, so the old MP3 is orphaned and a
 new one is queued. Delete orphans occasionally by clearing files in
-`public/audio/trivia/` that no longer appear in `audio-manifest.json`.
-Changing `choices`/`answer` doesn't affect audio (only the prompt is
-narrated) and ships with the next deploy.
+`public/audio/trivia/` that no longer appear in `manifest.json`.
+Changing the prompt, visible choice text, choice order, voice, model, or voice
+settings changes the narration hash and queues a replacement. The answer
+index is server-only and does not alter narration by itself.

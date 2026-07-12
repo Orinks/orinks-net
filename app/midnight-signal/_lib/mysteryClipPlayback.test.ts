@@ -1,0 +1,167 @@
+import { describe, expect, test, vi } from "vitest";
+import type { MysteryClipEvent } from "./mysteryClipMachine";
+import { MysteryClipPlayback } from "./mysteryClipPlayback";
+
+function harness() {
+  const announcements: string[] = [];
+  const events: MysteryClipEvent[] = [];
+  const release = vi.fn();
+  const beforePlay = vi.fn();
+  const timers: Array<() => void> = [];
+  const audio = {
+    src: "",
+    preload: "",
+    currentTime: 9,
+    volume: 1,
+    onplaying: null as (() => void) | null,
+    onended: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    play: vi.fn(async () => undefined),
+    pause: vi.fn(),
+    load: vi.fn(),
+    removeAttribute: vi.fn(),
+  };
+  const playback = new MysteryClipPlayback({
+    announce: (message) => announcements.push(message),
+    beforePlay,
+    suppressMusic: () => release,
+    onState: (event) => events.push(event),
+    createAudio: () => audio,
+    schedule: (callback) => {
+      timers.push(callback);
+      return timers.length as unknown as ReturnType<typeof setTimeout>;
+    },
+    cancelSchedule: vi.fn(),
+  });
+  return { announcements, audio, beforePlay, events, playback, release, timers };
+}
+
+describe("mystery clip streaming lifecycle", () => {
+  test("suppresses music and announces only confirmed playback", async () => {
+    const { announcements, audio, beforePlay, events, playback, timers } = harness();
+    playback.play("ms-clip-7f3a91c2");
+    await Promise.resolve();
+
+    expect(beforePlay).toHaveBeenCalledOnce();
+    expect(audio.preload).toBe("none");
+    expect(audio.volume).toBe(0.8);
+    expect(audio.src).toBe("/api/midnight-signal/clips/ms-clip-7f3a91c2");
+    expect(events[0]).toEqual({ type: "activate" });
+    expect(announcements).toEqual([]);
+    timers[0]();
+    expect(announcements).toEqual(["Loading mystery clip."]);
+    audio.onplaying?.();
+    expect(announcements.at(-1)).toBe("Mystery clip playing.");
+  });
+
+  test("calls browser timer functions without an illegal receiver", () => {
+    function receiverSensitiveSchedule(this: unknown, callback: () => void) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      return callback as unknown as ReturnType<typeof setTimeout>;
+    }
+    const playback = new MysteryClipPlayback({
+      announce: () => {},
+      beforePlay: () => {},
+      suppressMusic: () => () => {},
+      onState: () => {},
+      createAudio: () => harness().audio,
+      schedule: receiverSensitiveSchedule,
+      cancelSchedule: () => {},
+    });
+
+    expect(() => playback.play("ms-clip-c9458e2a")).not.toThrow();
+  });
+
+  test("turns a stalled load into a retryable failure and cleans up media", () => {
+    const { announcements, audio, events, playback, release, timers } = harness();
+    playback.play("ms-clip-c9458e2a");
+    const latePlaying = audio.onplaying;
+    timers[1]();
+
+    expect(events.at(-1)).toEqual({ type: "failed", attempt: 1 });
+    expect(announcements.at(-1)).toContain("took too long to load");
+    expect(playback.active).toBe(false);
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(audio.removeAttribute).toHaveBeenCalledWith("src");
+    expect(audio.load).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    latePlaying?.();
+    expect(events.at(-1)).toEqual({ type: "failed", attempt: 1 });
+    expect(announcements).toHaveLength(1);
+  });
+
+  test("pauses, resumes, and replays without replacing the active media element", async () => {
+    const { announcements, audio, events, playback, release } = harness();
+    playback.play("ms-clip-7f3a91c2");
+    audio.onplaying?.();
+    playback.pause();
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    expect(events.at(-1)).toEqual({ type: "paused", attempt: 1 });
+
+    playback.resume();
+    await Promise.resolve();
+    expect(audio.play).toHaveBeenCalledTimes(2);
+    audio.onplaying?.();
+    playback.pause();
+    playback.replay();
+    expect(audio.currentTime).toBe(0);
+    expect(announcements).toContain("Mystery clip paused.");
+  });
+
+  test("stops synchronously, resets media, releases suppression, and invalidates callbacks", () => {
+    const { announcements, audio, events, playback, release } = harness();
+    playback.play("ms-clip-b4e82d16");
+    const stalePlaying = audio.onplaying;
+    playback.stop();
+
+    expect(playback.active).toBe(false);
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(audio.currentTime).toBe(0);
+    expect(audio.removeAttribute).toHaveBeenCalledWith("src");
+    expect(audio.load).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    expect(events.at(-1)).toEqual({ type: "stop" });
+    expect(announcements).toEqual(["Mystery clip stopped."]);
+    stalePlaying?.();
+    expect(announcements).toEqual(["Mystery clip stopped."]);
+  });
+
+  test("reports natural completion and failure once while always restoring music", async () => {
+    const ended = harness();
+    ended.playback.play("ms-clip-29c7fd40");
+    ended.audio.onended?.();
+    expect(ended.announcements).toEqual(["Mystery clip finished."]);
+    expect(ended.release).toHaveBeenCalledOnce();
+
+    const failed = harness();
+    failed.audio.play.mockRejectedValueOnce(new Error("unavailable"));
+    failed.playback.play("ms-clip-e163ab75");
+    await Promise.resolve();
+    await Promise.resolve();
+    failed.audio.onerror?.();
+    expect(failed.announcements).toEqual([
+      "Mystery clip unavailable. Use the text clue, or try again.",
+    ]);
+    expect(failed.release).toHaveBeenCalledOnce();
+  });
+
+  test("stops the stream at the curated excerpt boundary", () => {
+    const { announcements, audio, playback, timers } = harness();
+    playback.play("ms-clip-7f3a91c2", 4, 12);
+    audio.currentTime = 4;
+    audio.onplaying?.();
+    timers[2]();
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(audio.currentTime).toBe(16);
+    expect(announcements.at(-1)).toBe("Mystery clip finished.");
+  });
+
+  test("disposes silently during question or route cleanup", () => {
+    const { announcements, playback, release } = harness();
+    playback.play("ms-clip-5d90c4fe");
+    playback.dispose();
+    expect(announcements).toEqual([]);
+    expect(release).toHaveBeenCalledOnce();
+  });
+});

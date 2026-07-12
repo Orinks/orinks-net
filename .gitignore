@@ -1,6 +1,7 @@
 .next/
 node_modules/
 out/
+.cache/
 .omx/
 .env
 .env*.local

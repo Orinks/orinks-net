@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "id": "http://www.loc.gov/item/jukebox-1001/",
+      "title": "La cafe\u0301tera",
+      "date": "1912",
+      "contributor": ["Example Ensemble"],
+      "partof": ["National Jukebox"],
+      "original_format": ["sound recording"],
+      "online_format": ["audio"],
+      "subject": ["Dance music"],
+      "url": "http://www.loc.gov/item/jukebox-1001/"
+    }
+  ]
+}

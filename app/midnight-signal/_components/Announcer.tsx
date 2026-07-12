@@ -18,8 +18,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  SerializedAnnouncementQueue,
+  type AnnouncementChannel,
+} from "../_lib/announcementQueue";
 
-type Channel = "status" | "alert";
+type Channel = AnnouncementChannel;
 
 const AnnouncerContext = createContext<(message: string, channel?: Channel) => void>(() => {});
 
@@ -30,36 +34,26 @@ export function useAnnounce() {
 export function AnnouncerProvider({ children }: { children: ReactNode }) {
   const [statusText, setStatusText] = useState("");
   const [alertText, setAlertText] = useState("");
-  const queues = useRef<{ status: string[]; alert: string[] }>({ status: [], alert: [] });
-  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queue = useRef<SerializedAnnouncementQueue | null>(null);
+
+  if (!queue.current) {
+    queue.current = new SerializedAnnouncementQueue({
+      emit: (channel, text) => {
+        if (channel === "status") setStatusText(text);
+        else setAlertText(text);
+      },
+    });
+  }
 
   const announce = useCallback((message: string, channel: Channel = "status") => {
     const trimmed = message.trim();
     if (!trimmed) return;
-    queues.current[channel].push(trimmed);
-    if (flushTimer.current) return;
-    flushTimer.current = setTimeout(() => {
-      flushTimer.current = null;
-      const statusBundle = queues.current.status.join(" ");
-      const alertBundle = queues.current.alert.join(" ");
-      queues.current = { status: [], alert: [] };
-      // Clear first so repeating the same text still announces.
-      setStatusText("");
-      setAlertText("");
-      if (clearTimer.current) clearTimeout(clearTimer.current);
-      clearTimer.current = setTimeout(() => {
-        clearTimer.current = null;
-        if (statusBundle) setStatusText(statusBundle);
-        if (alertBundle) setAlertText(alertBundle);
-      }, 50);
-    }, 30);
+    queue.current?.enqueue(trimmed, channel);
   }, []);
 
   useEffect(
     () => () => {
-      if (flushTimer.current) clearTimeout(flushTimer.current);
-      if (clearTimer.current) clearTimeout(clearTimer.current);
+      queue.current?.dispose();
     },
     [],
   );

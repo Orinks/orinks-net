@@ -30,6 +30,14 @@ const DUCK_RAMP_S = 0.15;
 const DUCK_SAFETY_MS = 20000; // a duck may never stick (a11y review P0)
 const EFFECTS_LEVEL = 0.5; // ≈ -6 dB relative to speech
 
+export function effectiveMusicLevel(
+  volume: number,
+  muted: boolean,
+  suppressionCount: number,
+) {
+  return muted || suppressionCount > 0 ? 0 : volume;
+}
+
 export class MusicEngine {
   private ctx: AudioContext | null = null;
   private musicGain: GainNode | null = null;
@@ -39,11 +47,16 @@ export class MusicEngine {
   private loopSource: AudioBufferSourceNode | null = null;
   private currentTrack: string | null = null;
   private duckCount = 0;
+  private suppressionCount = 0;
   private volume: number;
   private muted: boolean;
   effectsEnabled: boolean;
 
-  constructor(options: { volume: number; muted: boolean; effectsEnabled: boolean }) {
+  constructor(options: {
+    volume: number;
+    muted: boolean;
+    effectsEnabled: boolean;
+  }) {
     this.volume = options.volume;
     this.muted = options.muted;
     this.effectsEnabled = options.effectsEnabled;
@@ -65,18 +78,27 @@ export class MusicEngine {
     this.duckGain = this.ctx.createGain();
     this.musicGain = this.ctx.createGain();
     this.effectsGain = this.ctx.createGain();
-    this.musicGain.gain.value = this.muted ? 0 : this.volume;
+    this.musicGain.gain.value = effectiveMusicLevel(
+      this.volume,
+      this.muted,
+      this.suppressionCount,
+    );
     this.effectsGain.gain.value = EFFECTS_LEVEL;
     this.duckGain.connect(this.musicGain);
     this.musicGain.connect(this.ctx.destination);
     this.effectsGain.connect(this.ctx.destination);
+    void this.ctx.resume().catch(() => undefined);
   }
 
   private buffer(url: string): Promise<AudioBuffer | null> {
     let cached = this.buffers.get(url);
     if (!cached) {
       cached = fetch(url)
-        .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+        .then((res) =>
+          res.ok
+            ? res.arrayBuffer()
+            : Promise.reject(new Error(String(res.status))),
+        )
         .then((bytes) => this.ctx!.decodeAudioData(bytes))
         .catch(() => null);
       this.buffers.set(url, cached);
@@ -91,7 +113,8 @@ export class MusicEngine {
     this.currentTrack = url;
     const buf = await this.buffer(url);
     // A newer request may have superseded this one while decoding.
-    if (!buf || this.currentTrack !== url || !this.ctx || !this.duckGain) return;
+    if (!buf || this.currentTrack !== url || !this.ctx || !this.duckGain)
+      return;
     const source = this.ctx.createBufferSource();
     source.buffer = buf;
     source.loop = loop;
@@ -143,16 +166,35 @@ export class MusicEngine {
 
   setVolume(volume: number) {
     this.volume = volume;
-    if (this.ctx && this.musicGain && !this.muted) {
-      this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
-    }
+    this.applyMusicLevel();
   }
 
   setMuted(muted: boolean) {
     this.muted = muted;
+    this.applyMusicLevel();
+  }
+
+  private applyMusicLevel() {
     if (this.ctx && this.musicGain) {
-      this.musicGain.gain.setTargetAtTime(muted ? 0 : this.volume, this.ctx.currentTime, 0.05);
+      this.musicGain.gain.setTargetAtTime(
+        effectiveMusicLevel(this.volume, this.muted, this.suppressionCount),
+        this.ctx.currentTime,
+        0.05,
+      );
     }
+  }
+
+  /** Suppresses program music during a mystery clip and restores the exact prior setting. */
+  suppress(): () => void {
+    this.suppressionCount += 1;
+    this.applyMusicLevel();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.suppressionCount = Math.max(0, this.suppressionCount - 1);
+      this.applyMusicLevel();
+    };
   }
 
   /**
@@ -165,7 +207,10 @@ export class MusicEngine {
     if (!this.ctx || !this.duckGain) return () => {};
     this.duckCount++;
     this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.duckGain.gain.linearRampToValueAtTime(DUCK_LEVEL, this.ctx.currentTime + DUCK_RAMP_S);
+    this.duckGain.gain.linearRampToValueAtTime(
+      DUCK_LEVEL,
+      this.ctx.currentTime + DUCK_RAMP_S,
+    );
     let released = false;
     const release = () => {
       if (released) return;
@@ -174,7 +219,10 @@ export class MusicEngine {
       this.duckCount = Math.max(0, this.duckCount - 1);
       if (this.duckCount === 0 && this.ctx && this.duckGain) {
         this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
-        this.duckGain.gain.linearRampToValueAtTime(1, this.ctx.currentTime + DUCK_RAMP_S * 2);
+        this.duckGain.gain.linearRampToValueAtTime(
+          1,
+          this.ctx.currentTime + DUCK_RAMP_S * 2,
+        );
       }
     };
     const safety = setTimeout(release, DUCK_SAFETY_MS);
@@ -182,6 +230,7 @@ export class MusicEngine {
   }
 
   dispose() {
+    this.suppressionCount = 0;
     this.stopMusic();
     if (this.ctx) {
       void this.ctx.close().catch(() => undefined);

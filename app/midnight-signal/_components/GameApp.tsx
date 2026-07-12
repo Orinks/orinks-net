@@ -1,159 +1,34 @@
 "use client";
 
-import Link from "next/link";
-import { Show, useUser } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { AccountControls } from "@/components/AccountControls";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { userDisplayName } from "@/lib/user-name";
-import type { Id } from "@/convex/_generated/dataModel";
 import { useAnnounce } from "./Announcer";
+import { TitleScreen } from "./TitleScreen";
+import { InGameView } from "./InGameView";
+import { useGameShortcuts } from "./useGameShortcuts";
+import { useDailyResultCopy } from "./useDailyResultCopy";
+import {
+  BOSS_REWARDS,
+  buildStatusItems,
+  categoryLabel,
+  dailyShareText,
+  type AnswerResult,
+  type BoostState,
+  type CaptionLine,
+  type GameEvent,
+  type Phase,
+  type PublicQuestion,
+  type RunState,
+  type StoryLine,
+} from "./gameTypes";
 import { pickBark, producerLine, type Bark } from "../_lib/barks";
 import { fetchManifest, HostAudioPlayer, initSpeech, speakProducer, stopProducer, type AudioManifest } from "../_lib/audio";
 import { MusicEngine, MUSIC_TRACKS, STINGS } from "../_lib/music";
-import { getPlayerKey, getStoredName, loadSettings, saveSettings, storeName, type GameSettings } from "../_lib/settings";
-
-// --- Shared styles ---
-const focusRing =
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
-const primaryButton = `inline-flex min-h-10 items-center justify-center rounded-md bg-amber-400 px-4 py-2 font-semibold text-zinc-950 hover:bg-amber-300 ${focusRing}`;
-const secondaryButton = `inline-flex min-h-10 items-center justify-center rounded-md border border-amber-700 px-4 py-2 font-semibold text-amber-100 hover:bg-zinc-900 ${focusRing}`;
-
-// --- Server payload shapes (mirrors convex/trivia.ts) ---
-interface PublicQuestion {
-  key: string;
-  category: string;
-  difficulty: number;
-  prompt: string;
-  choices: string[];
-}
-interface RunState {
-  runId: Id<"triviaRuns">;
-  status: string;
-  isDaily: boolean;
-  score: number;
-  round: number;
-  lives: number;
-  streak: number;
-  answeredInRound: number;
-  questionsPerRound: number;
-  questionNumber: number;
-  roundCategory: string | null;
-  drafting: boolean;
-  deadAir: boolean;
-  bossCall: {
-    caller: string;
-    callerName: string;
-    phase: "question" | "reward";
-    question: PublicQuestion | null;
-  } | null;
-  signalStrength: number;
-  mutator: { key: string; name: string; rules: string; intro: string } | null;
-  dateKey: string;
-}
-
-/** "2026-07-08" → "July 8, 2026" (UTC — the run's night, not the viewer's day). */
-function formatNight(dateKey: string): string {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-US", {
-    timeZone: "UTC",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function dailyShareText(run: RunState): string {
-  const conditions = run.mutator ? ` ("${run.mutator.name}")` : "";
-  return `The Midnight Signal — daily for ${formatNight(run.dateKey)}${conditions}: score ${run.score}, round ${run.round}.`;
-}
-type GameEvent =
-  | { type: "achievement"; key: string; name: string }
-  | { type: "roundComplete"; round: number; nextCategory: string | null }
-  | { type: "boostOffer" }
-  | { type: "boostChosen"; key: string; name: string }
-  | { type: "boostTriggered"; key: string; name: string; detail: string }
-  | { type: "deadAir" }
-  | { type: "deadAirSurvived" }
-  | { type: "bossCall"; caller: string; name: string }
-  | { type: "bossRewardChosen"; reward: string; detail: string }
-  | { type: "signalGained"; strength: number }
-  | { type: "lifeGained"; lives: number }
-  | { type: "tapeUnlocked"; id: string; title: string; order: number; total: number }
-  | { type: "finaleReady" }
-  | { type: "gameOver"; score: number; round: number; isPersonalBest: boolean }
-  | { type: "bankExhausted" };
-interface OwnedBoost {
-  key: string;
-  name: string;
-  kind: string;
-  rules: string;
-  chargesLeft: number | null;
-}
-interface OfferedBoost {
-  key: string;
-  name: string;
-  tagline: string;
-  rules: string;
-  kind: string;
-}
-interface BoostState {
-  owned: OwnedBoost[];
-  offer: OfferedBoost[] | null;
-  activeRoundBoost: { key: string; round: number } | null;
-  eliminatedChoices: number[];
-  eliminatedBy: "static-filter" | "whisper" | null;
-}
-interface AnswerResult {
-  correct: boolean;
-  correctIndex: number;
-  explanation: string | null;
-  scoreDelta: number;
-  events: GameEvent[];
-  run: RunState;
-  boosts: BoostState;
-  nextQuestion: PublicQuestion | null;
-}
-interface CaptionLine {
-  seq: number;
-  speaker: string; // "Clyde", "Producer", or a caller's name
-  text: string;
-}
-interface StoryLine {
-  id: string;
-  title?: string;
-  text: string;
-}
-
-type Phase =
-  | { kind: "title" }
-  | { kind: "intro"; runNumber: number; isDaily: boolean }
-  | { kind: "question" }
-  | { kind: "draft" }
-  | { kind: "bossReward" }
-  | { kind: "feedback"; result: AnswerResult; callerContext?: string }
-  | { kind: "tape"; tape: StoryLine; pending: GameEvent[]; result: AnswerResult }
-  | { kind: "finale"; lines: StoryLine[]; pending: GameEvent[]; result: AnswerResult }
-  | { kind: "gameover"; result: AnswerResult };
-
-// Boss Call rewards: self-contained button copy per the draft contract
-// (number, name, effect — no reliance on surrounding text).
-const BOSS_REWARDS: Array<{ key: "life" | "points" | "filter"; label: string }> = [
-  { key: "life", label: "Extra life. One more life, effective immediately — at full lives it becomes 250 points." },
-  { key: "points", label: "Station credit. Plus 300 points, on the spot." },
-  { key: "filter", label: "Static Filter charge. One more use of Static Filter — it removes two wrong choices on a question." },
-];
-
-function categoryLabel(category: string | null | undefined): string {
-  if (!category) return "Mixed bag";
-  return category
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
-    .replace("Rnb", "R&B");
-}
+import { SingleFlightLatch } from "../_lib/singleFlightLatch";
+import { applyMotionPreference, getPlayerKey, getStoredName, loadSettings, saveSettings, storeName, type GameSettings } from "../_lib/settings";
 
 export function GameApp() {
   const announce = useAnnounce();
@@ -181,30 +56,44 @@ export function GameApp() {
   const [boosts, setBoosts] = useState<BoostState | null>(null);
   const [draftChosen, setDraftChosen] = useState<string | null>(null); // double-activation guard, mirrors chosenIndex
   const [rewardChosen, setRewardChosen] = useState<string | null>(null); // same guard for the boss reward screen
-  // Two choice screens can stack (reward → draft); a brief hold keeps a
-  // number key pressed for one from landing on the other (a11y consult).
+  // Prevent a held number key from activating stacked choice screens.
   const shortcutHoldUntil = useRef(0);
-  const [copyFallback, setCopyFallback] = useState(false); // clipboard API failed: show selectable text
-  const copyFallbackRef = useRef<HTMLTextAreaElement>(null);
+  const { copyDailyResult, copyFallback, copyFallbackRef, resetCopyFallback } =
+    useDailyResultCopy(announce);
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [hostPaused, setHostPaused] = useState(false);
+  const [hostAudioStatus, setHostAudioStatus] = useState<string | null>(null);
+  const lastHostLine = useRef<Pick<CaptionLine, "speaker" | "text"> | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
   const manifestRef = useRef<AudioManifest>({ barks: {}, questions: {}, story: {} });
   const playerRef = useRef<HostAudioPlayer | null>(null);
   const musicRef = useRef<MusicEngine | null>(null);
+  const advancingRef = useRef(new SingleFlightLatch());
+  const stopMysteryClipRef = useRef<(() => void) | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const captionSeq = useRef(0);
+  const registerMysteryClipStop = useCallback((stop: (() => void) | null) => {
+    stopMysteryClipRef.current = stop;
+  }, []);
+  const stopMysteryClip = useCallback(() => {
+    stopMysteryClipRef.current?.();
+  }, []);
+  const prepareMysteryClip = useCallback(() => {
+    playerRef.current?.stop();
+    stopProducer();
+  }, []);
+
+  const suppressMusicForClip = useCallback(
+    () => musicRef.current?.suppress() ?? (() => {}),
+    [],
+  );
 
   const story = useQuery(api.trivia.getStory, playerKey ? { playerKey } : "skip");
   const resumable = useQuery(api.trivia.getActiveRun, playerKey ? { playerKey } : "skip");
   const epilogueBarks: Bark[] | null = story?.epilogueActive && story.epilogueLines ? story.epilogueLines : null;
 
-  // Announce the identity change when the user signs in — the guest name field
-  // is replaced by "Playing as X" elsewhere on screen, so a screen reader user
-  // gets no confirmation of their new leaderboard name otherwise (a11y review).
-  // Fires only on the sign-out → sign-in transition, never on initial load.
+  // Confirm sign-in identity changes without announcing on initial load.
   const wasSignedIn = useRef(isSignedIn);
   useEffect(() => {
     if (isSignedIn === true && wasSignedIn.current === false) {
@@ -213,11 +102,11 @@ export function GameApp() {
     wasSignedIn.current = isSignedIn;
   }, [isSignedIn, accountHandle, announce]);
 
-  // Client-only initialization.
   useEffect(() => {
     setPlayerKey(getPlayerKey());
     setName(getStoredName());
     const loaded = loadSettings();
+    applyMotionPreference(loaded.reducedMotion);
     setSettings(loaded);
     playerRef.current = new HostAudioPlayer(loaded.hostVolume);
     musicRef.current = new MusicEngine({
@@ -241,33 +130,35 @@ export function GameApp() {
     setCaptions((prev) => [...prev.slice(-9), { seq, speaker, text }]);
   }, []);
 
-  /** Plays a Clyde clip with music ducked; the duck can never stick (safety timeout). */
   const playHostClip = useCallback(async (audioPath: string) => {
+    stopMysteryClip();
     const release = musicRef.current?.duck() ?? (() => {});
     try {
-      await playerRef.current?.play(audioPath);
+      return (await playerRef.current?.play(audioPath)) ?? "unavailable";
     } finally {
       release();
     }
-  }, []);
+  }, [stopMysteryClip]);
 
-  /** Replay ducks too — the user explicitly asked to re-hear the line. */
   const replayHostClip = useCallback(async () => {
+    stopMysteryClip();
+    setHostAudioStatus(null);
     const release = musicRef.current?.duck() ?? (() => {});
     try {
-      await playerRef.current?.replayLast();
+      const outcome = (await playerRef.current?.replayLast()) ?? "unavailable";
+      if (outcome === "failed" || outcome === "unavailable") {
+        const line = lastHostLine.current;
+        const fallback = line
+          ? `Recorded audio unavailable. ${line.speaker}: ${line.text}`
+          : "Recorded audio is unavailable, and there is no previous line to replay.";
+        setHostAudioStatus(fallback);
+        announce(fallback, "alert");
+      }
     } finally {
       release();
     }
-  }, []);
+  }, [announce, stopMysteryClip]);
 
-  /**
-   * One voice per line (accessibility requirement): if a clip exists, play it
-   * and keep the caption silent; if not, the caption text is announced so
-   * screen reader users miss nothing. Every line carries its speaker's name
-   * in both text channels — captions and announcements — so callers are
-   * never misattributed to Clyde (a11y consult, Boss Calls).
-   */
   const speakHostLine = useCallback(
     (
       text: string,
@@ -276,8 +167,16 @@ export function GameApp() {
       speaker = "Clyde",
     ): Promise<void> => {
       addCaption(speaker, text);
+      lastHostLine.current = { speaker, text };
+      setHostAudioStatus(null);
       if (audioPath && playerRef.current && !playerRef.current.paused) {
-        return playHostClip(audioPath);
+        return playHostClip(audioPath).then((outcome) => {
+          if (outcome === "failed" || outcome === "unavailable") {
+            const fallback = `Recorded audio unavailable. ${speaker}: ${text}`;
+            setHostAudioStatus(fallback);
+            announce(fallback, "alert");
+          }
+        });
       }
       if (bundle) {
         bundle.push(`${speaker}: ${text}`);
@@ -298,7 +197,6 @@ export function GameApp() {
     [epilogueBarks, speakHostLine],
   );
 
-  /** A caller's voiced line (their own ElevenLabs voice), speaker-attributed. */
   const speakCallerLine = useCallback(
     (callerKey: string, callerName: string, moment: string, bundle: string[] | null): Promise<void> => {
       const bark = pickBark(`boss-${callerKey}-${moment}`, null);
@@ -327,9 +225,7 @@ export function GameApp() {
     [addCaption, announce, settings?.producerVoice, story?.epilogueActive],
   );
 
-  // --- Focus management: focus the heading of whatever just rendered.
-  // Returning to title must also focus (never let focus die on unmount), but
-  // initial page load must NOT steal focus — hence the flag.
+  // Move focus on phase changes and return-to-title, but not initial load.
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const panelHeadingRef = useRef<HTMLHeadingElement>(null);
   const titleHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -361,9 +257,7 @@ export function GameApp() {
     [playHostClip, settings?.autoPlayQuestionAudio],
   );
 
-  // Phase → music mapping. Silent until ensureStarted() runs from a real
-  // button activation; changes are ambient and deliberately unannounced —
-  // music is never the sole carrier of game state (a11y review).
+  // Ambient phase music starts only after user activation and stays unannounced.
   useEffect(() => {
     const music = musicRef.current;
     if (!music?.started) return;
@@ -376,8 +270,6 @@ export function GameApp() {
       phase.kind === "draft" ||
       phase.kind === "bossReward"
     ) {
-      // The draft and the caller's reward screen keep the question bed
-      // running deliberately — still mid-episode (explicit, not fallthrough).
       void music.playLoop(MUSIC_TRACKS.bed);
     } else if (phase.kind === "finale") {
       void music.playOnce(MUSIC_TRACKS.finale);
@@ -396,17 +288,16 @@ export function GameApp() {
     });
   }, []);
 
-  // --- Run flow ---
-
   const beginRun = useCallback(
     async (daily: boolean) => {
       if (!playerKey || busy) return;
       setBusy(true);
       setErrorText(null);
-      setCopyFallback(false);
+      resetCopyFallback();
       announce("Starting the broadcast…");
       try {
         initSpeech(); // user gesture: unlock speechSynthesis
+        playerRef.current?.unlock(); // unlock HTML media before async mutations
         musicRef.current?.ensureStarted(); // same gesture unlocks the AudioContext
         const trimmed = name.trim();
         await ensurePlayer({ playerKey, displayName: trimmed.length > 0 ? trimmed : undefined });
@@ -418,10 +309,8 @@ export function GameApp() {
         setChosenIndex(null);
         setBoosts(started.boosts as BoostState);
         setDraftChosen(null);
-        // Both resume paths re-anchor the night's condition (a11y consult).
         const conditions = started.run.mutator ? ` Conditions: ${started.run.mutator.name}.` : "";
         if (started.resumed && !started.question && started.run.bossCall) {
-          // The daily was left mid-boss-call: same caller, same question.
           const boss = started.run.bossCall;
           if (boss.phase === "question" && boss.question) {
             setQuestion(boss.question);
@@ -438,16 +327,11 @@ export function GameApp() {
             );
           }
         } else if (started.resumed && !started.question) {
-          // The daily was left mid-draft: re-enter the draft with the same
-          // persisted offer (the server never re-rolls it).
           setPhase({ kind: "draft" });
           announce(
             `Resuming tonight's broadcast.${conditions} Round ${started.run.round - 1} complete. Choose your Signal Boost. ${started.boosts.offer?.length ?? 3} options.`,
           );
         } else if (started.resumed && started.question) {
-          // Tonight's daily was already in progress: the server hands the
-          // attempt back mid-episode. No show-open — its "first theme" and
-          // "first question" copy would be false. Mirror resumeRun instead.
           setPhase({ kind: "question" });
           serveQuestionAudio(started.question.key);
           announce(
@@ -457,14 +341,9 @@ export function GameApp() {
               : `Resuming tonight's broadcast.${conditions} Question ${started.run.questionNumber}, round ${started.run.round}. Theme: ${categoryLabel(started.run.roundCategory as string | null)}.`,
           );
         } else {
-          // The show opens before the first question: title theme under Clyde's
-          // greeting, then the player advances at their own pace (no timers).
           setPhase({ kind: "intro", runNumber: started.runNumber, isDaily: daily });
           const bundle: string[] = [];
           if (daily) {
-            // The greeting and the mutator line must play in SEQUENCE — the
-            // audio player stops the current clip when a new one starts, so
-            // firing both in the same tick silences the greeting (a11y delta).
             const greet = pickBark("daily-intro", epilogueBarks);
             const greetDone = greet
               ? speakHostLine(greet.text, manifestRef.current.barks[greet.id], bundle)
@@ -477,8 +356,6 @@ export function GameApp() {
               } else {
                 void speakHostLine(mutator.intro, undefined, bundle);
               }
-              // The canonical system line: the rules always live here, never
-              // only in Clyde's flavor line (a11y consult).
               bundle.push(`Tonight's broadcast conditions: ${mutator.name}. ${mutator.rules}`);
             }
           } else {
@@ -499,12 +376,13 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, busy, ensurePlayer, epilogueBarks, name, playBark, playerKey, producerSay, serveQuestionAudio, speakHostLine, startRunMutation],
+    [announce, busy, ensurePlayer, epilogueBarks, name, playBark, playerKey, producerSay, resetCopyFallback, serveQuestionAudio, speakHostLine, startRunMutation],
   );
 
   const resumeRun = useCallback(() => {
     if (!resumable) return;
     initSpeech(); // user gesture: unlock speechSynthesis for the resumed run too
+    playerRef.current?.unlock();
     musicRef.current?.ensureStarted();
     setRun(resumable.run as RunState);
     setQuestion(resumable.question);
@@ -551,17 +429,16 @@ export function GameApp() {
     serveQuestionAudio(resumable.question.key);
   }, [announce, resumable, serveQuestionAudio]);
 
-  /** Leaves the on-air intro for the first question. */
   const beginQuestions = useCallback(() => {
     if (!question) return;
     setPhase({ kind: "question" });
     serveQuestionAudio(question.key);
   }, [question, serveQuestionAudio]);
 
-  /** Boss Call answers: no scoring, no life risk, caller-voiced reactions. */
   const answerCaller = useCallback(
     async (index: number) => {
       if (!run?.bossCall || !question || chosenIndex !== null || busy) return;
+      stopMysteryClip();
       if (boosts?.eliminatedChoices.includes(index)) {
         announce(`Choice ${index + 1} is eliminated.`);
         return;
@@ -604,12 +481,13 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, answerBossCallMutation, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, question, run, speakCallerLine],
+    [announce, answerBossCallMutation, boosts?.eliminatedChoices, busy, chosenIndex, playerKey, question, run, speakCallerLine, stopMysteryClip],
   );
 
   const chooseAnswer = useCallback(
     async (index: number) => {
       if (!run || !question || chosenIndex !== null || busy) return;
+      stopMysteryClip();
       if (run.bossCall?.phase === "question") {
         // The caller question rides the same panel but its own mutation.
         await answerCaller(index);
@@ -723,12 +601,19 @@ export function GameApp() {
         setBusy(false);
       }
     },
-    [announce, answerCaller, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, submitAnswerMutation],
+    [announce, answerCaller, boosts?.eliminatedChoices, busy, chosenIndex, playBark, playerKey, producerSay, question, run, stopMysteryClip, submitAnswerMutation],
   );
 
   const advanceAfterFeedback = useCallback(
     async (result: AnswerResult, pending: GameEvent[]) => {
-      const [next, ...rest] = pending;
+      if (!advancingRef.current.tryStart()) return;
+      setBusy(true);
+      setErrorText(null);
+      stopMysteryClip();
+      playerRef.current?.stop();
+      stopProducer();
+      const advance = async (events: GameEvent[]): Promise<void> => {
+      const [next, ...rest] = events;
       if (next?.type === "tapeUnlocked") {
         const tape = story?.tapes.find((t) => t.id === next.id);
         if (tape) {
@@ -737,35 +622,30 @@ export function GameApp() {
           setPhase({ kind: "tape", tape, pending: rest, result });
           return;
         }
-        await advanceAfterFeedback(result, rest);
+        await advance(rest);
         return;
       }
       if (next?.type === "finaleReady") {
-        try {
-          const finale = await completeFinaleMutation({ playerKey });
-          setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
-          const first = finale.lines[0];
-          const audioPath = manifestRef.current.story[first.id];
-          if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
-          return;
-        } catch {
-          // Not eligible after all; fall through to the next event.
-          await advanceAfterFeedback(result, rest);
+        const finale = await completeFinaleMutation({ playerKey });
+        if (finale.lines.length === 0) {
+          await advance(rest);
           return;
         }
+        setPhase({ kind: "finale", lines: finale.lines, pending: rest, result });
+        const first = finale.lines[0];
+        const audioPath = first ? manifestRef.current.story[first.id] : undefined;
+        if (audioPath && playerRef.current && !playerRef.current.paused) void playHostClip(audioPath);
+        return;
       }
       if (next?.type === "gameOver" || next?.type === "bankExhausted") {
         setPhase({ kind: "gameover", result });
         return;
       }
       if (next) {
-        await advanceAfterFeedback(result, rest);
+        await advance(rest);
         return;
       }
       if (result.nextQuestion) {
-        // Occasional flavor between questions: an archive fact or a lead-in.
-        // Kept infrequent so it stays charming at question three hundred —
-        // and never before the Dead Air redemption (wrong moment for trivia).
         const roll = Math.random();
         const flavor = result.run.deadAir
           ? null
@@ -784,9 +664,6 @@ export function GameApp() {
         setPhase({ kind: "question" });
         void flavorDone.then(() => serveQuestionAudio(nextKey));
       } else if (result.run.bossCall?.phase === "question" && result.run.bossCall.question) {
-        // Taking the call: the caller question rides the normal question
-        // panel; the caller was named in the feedback bundle, and their
-        // voiced intro plays before Clyde relays the question clip.
         const boss = result.run.bossCall;
         const bossQuestion = boss.question!;
         setQuestion(bossQuestion);
@@ -813,11 +690,22 @@ export function GameApp() {
       } else {
         setPhase({ kind: "gameover", result });
       }
+      };
+      try {
+        await advance(pending);
+      } catch (error) {
+        console.error("[Midnight Signal] Broadcast transition failed.", error);
+        const message = "The broadcast transition stalled. Try the transition button again.";
+        setErrorText(message);
+        announce(message, "alert");
+      } finally {
+        advancingRef.current.release();
+        setBusy(false);
+      }
     },
-    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, story?.tapes],
+    [announce, completeFinaleMutation, epilogueBarks, playBark, playerKey, playHostClip, serveQuestionAudio, speakCallerLine, speakHostLine, stopMysteryClip, story?.tapes],
   );
 
-  /** Resolves the won Boss Call, then rolls straight into the boost draft. */
   const pickReward = useCallback(
     async (reward: "life" | "points" | "filter") => {
       if (!run || rewardChosen !== null || busy) return;
@@ -920,6 +808,7 @@ export function GameApp() {
               run: drafted.run as RunState,
               boosts: drafted.boosts as BoostState,
               nextQuestion: null,
+              disclosure: null,
             },
           });
         }
@@ -1002,10 +891,10 @@ export function GameApp() {
     setQuestion(null);
     setBoosts(null);
     setDraftChosen(null);
-    setCopyFallback(false);
+    resetCopyFallback();
     returningToTitle.current = true; // focus the title heading, don't let focus die
     setPhase({ kind: "title" });
-  }, []);
+  }, [resetCopyFallback]);
 
   const quitRun = useCallback(async () => {
     if (run && run.status === "active") {
@@ -1018,45 +907,20 @@ export function GameApp() {
     backToTitle();
   }, [abandonRunMutation, backToTitle, playerKey, run]);
 
-  // --- Keyboard shortcuts (guarded; toggleable per WCAG 2.1.4) ---
-  useEffect(() => {
-    if (!settings?.numberShortcuts) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-      if (event.key === "r" || event.key === "R") {
-        void replayHostClip();
-        return;
-      }
-      // Stacked choice screens: ignore number keys during the brief hold so a
-      // press meant for one screen can't land on its replacement.
-      if (Date.now() < shortcutHoldUntil.current) return;
-      if (phase.kind === "question" && question && chosenIndex === null) {
-        const num = Number.parseInt(event.key, 10);
-        if (num >= 1 && num <= question.choices.length) {
-          event.preventDefault();
-          void chooseAnswer(num - 1);
-        }
-      }
-      if (phase.kind === "draft" && boosts?.offer && draftChosen === null) {
-        const num = Number.parseInt(event.key, 10);
-        if (num >= 1 && num <= boosts.offer.length) {
-          event.preventDefault();
-          void pickBoost(boosts.offer[num - 1].key);
-        }
-      }
-      if (phase.kind === "bossReward" && rewardChosen === null) {
-        const num = Number.parseInt(event.key, 10);
-        if (num >= 1 && num <= BOSS_REWARDS.length) {
-          event.preventDefault();
-          void pickReward(BOSS_REWARDS[num - 1].key);
-        }
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [boosts?.offer, chooseAnswer, chosenIndex, draftChosen, phase.kind, pickBoost, pickReward, question, replayHostClip, rewardChosen, settings?.numberShortcuts]);
+  useGameShortcuts({
+    enabled: settings?.numberShortcuts ?? false,
+    phase,
+    question,
+    chosenIndex,
+    boosts,
+    draftChosen,
+    rewardChosen,
+    holdUntil: shortcutHoldUntil,
+    replayHostClip,
+    chooseAnswer,
+    pickBoost,
+    pickReward,
+  });
 
   const toggleHostPaused = useCallback(() => {
     setHostPaused((prev) => {
@@ -1066,528 +930,70 @@ export function GameApp() {
     });
   }, []);
 
-  const statusItems = useMemo(() => {
-    if (!run) return [];
-    const items = [
-      { label: "Score", value: String(run.score) },
-      { label: "Round", value: String(run.round) },
-      // "0" alone reads like the run is over; the suffix carries the reprieve.
-      { label: "Lives", value: run.deadAir ? "0 — dead air" : String(run.lives) },
-      { label: "Streak", value: String(run.streak) },
-    ];
-    if (boosts && boosts.owned.length > 0) {
-      // The re-checkable record; every CHANGE is announced when it happens,
-      // so this list stays non-live (a11y review).
-      items.push({
-        label: "Boosts",
-        value: boosts.owned
-          .map((b) =>
-            b.chargesLeft !== null
-              ? `${b.name}, ${b.chargesLeft} ${b.chargesLeft === 1 ? "use" : "uses"} left`
-              : b.name,
-          )
-          .join("; "),
-      });
-    }
-    // Always visible, even at 0 — the only discoverable record that the
-    // signal economy exists before the first earn (a11y consult).
-    items.push({ label: "Signal strength", value: `${run.signalStrength} of 3` });
-    if (run.mutator) {
-      // Last row, name + short rules: the intro announcement is ephemeral and
-      // the intro panel unmounts, so this is where the rules stay re-readable.
-      items.push({ label: "Conditions", value: `${run.mutator.name} — ${run.mutator.rules}` });
-    }
-    return items;
-  }, [boosts, run]);
-
-  /** Copies the daily result; on failure, exposes selectable text instead. */
-  const copyDailyResult = useCallback(
-    async (text: string) => {
-      try {
-        await navigator.clipboard.writeText(text);
-        setCopyFallback(false); // a retry succeeded: retire the fallback text
-        announce("Result copied to clipboard."); // status channel; focus stays put
-      } catch {
-        setCopyFallback(true);
-        requestAnimationFrame(() => {
-          copyFallbackRef.current?.focus();
-          copyFallbackRef.current?.select();
-        });
-        announce(
-          "Couldn't copy automatically. The result text is selected below — press Control C (Command C on Mac) to copy.",
-          "alert",
-        );
-      }
-    },
-    [announce],
-  );
+  const statusItems = useMemo(() => buildStatusItems(run, boosts), [boosts, run]);
 
   if (!settings) {
     return <p className="py-8 text-center">Tuning the signal…</p>;
   }
 
-  // --- Title screen ---
   if (phase.kind === "title") {
     return (
-      <div className="mx-auto max-w-2xl">
-        <h1 className="text-3xl font-bold text-amber-200" ref={titleHeadingRef} tabIndex={-1}>
-          The Midnight Signal
-        </h1>
-        <p className="mt-3 leading-7 text-amber-50">
-          A late-night music quiz show that has been broadcasting since 1963 and never officially
-          ended. Answer trivia, survive the rounds, and recover the master tapes. Fully playable
-          with a screen reader — the host speaks, and everything he says is also text.
-        </p>
-        <form
-          className="mt-6"
-          onSubmit={(event: FormEvent) => {
-            event.preventDefault();
-            void beginRun(false);
-          }}
-        >
-          <Show when="signed-out">
-            <label className="block font-semibold text-amber-100" htmlFor="contestant-name">
-              Contestant name
-            </label>
-            <input
-              autoComplete="nickname"
-              className={`mt-1 w-full max-w-xs rounded-md border border-amber-700 bg-zinc-900 px-3 py-2 text-amber-50 ${focusRing}`}
-              id="contestant-name"
-              maxLength={24}
-              onChange={(event) => setName(event.target.value)}
-              type="text"
-              value={name}
-            />
-          </Show>
-          <Show when="signed-in">
-            <p className="font-semibold text-amber-100">Playing as {accountHandle}</p>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              Your account name is what appears on the leaderboards. To change it, use the account
-              button in the Account section below.
-            </p>
-          </Show>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button aria-disabled={busy} className={primaryButton} type="submit">
-              Start broadcast
-            </button>
-            <button aria-disabled={busy} className={secondaryButton} onClick={() => void beginRun(true)} type="button">
-              Tonight&apos;s broadcast (daily)
-            </button>
-            {resumable ? (
-              <button className={secondaryButton} onClick={resumeRun} type="button">
-                Resume broadcast
-              </button>
-            ) : null}
-            <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
-              {musicMuted ? "Unmute music" : "Mute music"}
-            </button>
-          </div>
-        </form>
-        {errorText ? <p className="mt-4 font-semibold text-amber-300">{errorText}</p> : null}
-        <section aria-labelledby="account-heading" className="mt-8">
-          <h2 className="text-lg font-semibold text-amber-100" id="account-heading">
-            Account
-          </h2>
-          <Show when="signed-out">
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
-              Sign in to save your progress and appear on the leaderboards across all the games.
-              It&apos;s optional — you can keep playing as a guest.
-            </p>
-          </Show>
-          <div className="mt-3">
-            <AccountControls
-              nameClassName="text-sm font-semibold text-amber-100"
-              signInClassName={primaryButton}
-              signUpClassName={secondaryButton}
-              userButtonAppearance={{
-                theme: dark,
-                variables: {
-                  colorBackground: "#18181b",
-                  // Clerk renders light-on-primary by default; amber needs
-                  // dark text (a11y review: white on amber-500 is 2.14:1).
-                  colorPrimary: "#f59e0b",
-                  colorPrimaryForeground: "#1c1917",
-                  colorDanger: "#f87171",
-                },
-              }}
-            />
-          </div>
-        </section>
-        <nav aria-label="Game sections" className="mt-8">
-          <ul className="flex flex-wrap gap-3">
-            <li>
-              <Link className={secondaryButton} href="/midnight-signal/archive">
-                Tape archive
-              </Link>
-            </li>
-            <li>
-              <Link className={secondaryButton} href="/midnight-signal/leaderboard">
-                Leaderboard
-              </Link>
-            </li>
-            <li>
-              <Link className={secondaryButton} href="/midnight-signal/profile">
-                Profile
-              </Link>
-            </li>
-            <li>
-              <Link className={secondaryButton} href="/midnight-signal/settings">
-                Settings
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <p className="mt-6 text-sm leading-6 text-zinc-400">
-          The Producer (the show&apos;s second voice) can speak through your device&apos;s speech
-          synthesis. It&apos;s off by default — screen reader users usually prefer announcements
-          through their own screen reader. Keyboard shortcuts: 1 to 4 answer questions and pick
-          Signal Boosts between rounds, R replays the last spoken line. Both can be changed in
-          Settings. Questions include material from{" "}
-          <a className={`underline ${focusRing}`} href="https://opentdb.com">
-            Open Trivia Database
-          </a>{" "}
-          (CC BY-SA 4.0).
-        </p>
-      </div>
+      <TitleScreen
+        accountHandle={accountHandle}
+        beginRun={beginRun}
+        busy={busy}
+        canResume={Boolean(resumable)}
+        errorText={errorText}
+        musicMuted={musicMuted}
+        name={name}
+        resumeRun={resumeRun}
+        setName={setName}
+        titleHeadingRef={titleHeadingRef}
+        toggleMusicMuted={toggleMusicMuted}
+      />
     );
   }
-
-  // --- In-game screens share the status bar, global audio controls, caption log ---
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold text-amber-200">The Midnight Signal</h1>
-      {run ? (
-        <dl aria-label="Run status" className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-b border-amber-700 pb-3">
-          {statusItems.map((item) => (
-            <div className="flex gap-2" key={item.label}>
-              <dt className="font-semibold text-amber-100">{item.label}</dt>
-              <dd>{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-
-      {phase.kind === "intro" ? (
-        <section aria-labelledby="intro-heading" className="mt-6">
-          <h2 className="text-xl font-semibold text-amber-200" id="intro-heading" ref={panelHeadingRef} tabIndex={-1}>
-            {phase.isDaily
-              ? "Tonight's broadcast — on the air"
-              : `On the air — Episode ${phase.runNumber}`}
-          </h2>
-          <p className="mt-2 leading-7">
-            The studio lights are up, Clyde is at the desk, and the signal is warm. Tonight&apos;s
-            first theme: {categoryLabel(run?.roundCategory)}. The first question comes when
-            you&apos;re ready.
-          </p>
-          {phase.isDaily && run?.mutator ? (
-            <p className="mt-2 leading-7 text-amber-100">
-              Tonight&apos;s broadcast conditions: {run.mutator.name}. {run.mutator.rules}
-            </p>
-          ) : null}
-          <button className={`${primaryButton} mt-4`} onClick={beginQuestions} type="button">
-            Begin the questions
-          </button>
-        </section>
-      ) : null}
-
-      {phase.kind === "draft" && boosts?.offer ? (
-        <section aria-labelledby="draft-heading" className="mt-6">
-          <h2
-            className="text-xl font-semibold text-amber-200"
-            id="draft-heading"
-            ref={panelHeadingRef}
-            tabIndex={-1}
-          >
-            Round {(run?.round ?? 2) - 1} complete — choose a Signal Boost
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Word from the booth: pick one before we go back on the air. No rush — the signal holds.
-          </p>
-          <div aria-labelledby="draft-heading" className="mt-4 grid gap-3" role="group">
-            {boosts.offer.map((boost, index) => (
-              <button
-                aria-disabled={draftChosen !== null}
-                aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
-                className={`${secondaryButton} justify-start text-left`}
-                key={boost.key}
-                onClick={() => void pickBoost(boost.key)}
-                type="button"
-              >
-                {index + 1}. {boost.name}. {boost.tagline} {boost.rules}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {phase.kind === "bossReward" && run?.bossCall?.phase === "reward" ? (
-        <section aria-labelledby="reward-heading" className="mt-6">
-          <h2
-            className="text-xl font-semibold text-amber-200"
-            id="reward-heading"
-            ref={panelHeadingRef}
-            tabIndex={-1}
-          >
-            {run.bossCall.callerName} is pleased — choose your reward
-          </h2>
-          <div aria-labelledby="reward-heading" className="mt-4 grid gap-3" role="group">
-            {BOSS_REWARDS.map((option, index) => (
-              <button
-                aria-disabled={rewardChosen !== null}
-                aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
-                className={`${secondaryButton} justify-start text-left`}
-                key={option.key}
-                onClick={() => void pickReward(option.key)}
-                type="button"
-              >
-                {index + 1}. {option.label}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {(phase.kind === "question" || phase.kind === "feedback") && question ? (
-        <section aria-labelledby="question-heading" className="mt-6">
-          <p className="text-sm text-zinc-400">
-            {phase.kind === "feedback" && phase.callerContext
-              ? phase.callerContext
-              : run?.bossCall?.phase === "question"
-                ? `Caller on the line: ${run.bossCall.callerName} · one question, no lives at stake`
-                : run?.deadAir
-                  ? `Dead air — one final question · Round ${run.round}`
-                  : `Question ${questionNumber} · Round ${run?.round} · Theme: ${categoryLabel(run?.roundCategory)}`}
-          </p>
-          <h2 className="mt-2 text-xl font-semibold" id="question-heading" ref={questionHeadingRef} tabIndex={-1}>
-            {question.prompt}
-          </h2>
-          <div aria-labelledby="question-heading" className="mt-4 grid gap-3" role="group">
-            {question.choices.map((choice, index) => {
-              const eliminated = boosts?.eliminatedChoices.includes(index) ?? false;
-              return (
-                <button
-                  aria-disabled={chosenIndex !== null || eliminated}
-                  aria-keyshortcuts={settings.numberShortcuts ? String(index + 1) : undefined}
-                  className={`${secondaryButton} justify-start text-left ${eliminated ? "line-through opacity-70" : ""}`}
-                  key={choice}
-                  onClick={() => void chooseAnswer(index)}
-                  type="button"
-                >
-                  {index + 1}.{" "}
-                  {eliminated
-                    ? boosts?.eliminatedBy === "whisper"
-                      ? "(whisper — eliminated) "
-                      : "(static — eliminated) "
-                    : ""}
-                  {choice}
-                </button>
-              );
-            })}
-          </div>
-          {phase.kind === "question"
-            ? (() => {
-                const filter = boosts?.owned.find((b) => b.key === "static-filter");
-                const eliminationApplied = (boosts?.eliminatedChoices.length ?? 0) > 0;
-                const showFilter = filter && ((filter.chargesLeft ?? 0) > 0 || eliminationApplied);
-                const showWhisper = (run?.signalStrength ?? 0) > 0 || eliminationApplied;
-                if (!showFilter && !showWhisper) return null;
-                return (
-                  <div aria-label="Signal Boosts" className="mt-3 flex flex-wrap gap-3" role="group">
-                    {showFilter ? (
-                      <button
-                        aria-disabled={busy || chosenIndex !== null || eliminationApplied}
-                        className={secondaryButton}
-                        onClick={() => void activateStaticFilter()}
-                        type="button"
-                      >
-                        {eliminationApplied
-                          ? boosts!.eliminatedBy === "whisper"
-                            ? "Static Filter — unavailable, Producer's Whisper used this question"
-                            : "Static Filter applied"
-                          : `Use Static Filter — ${filter?.chargesLeft ?? 0} left`}
-                      </button>
-                    ) : null}
-                    {showWhisper ? (
-                      <button
-                        aria-disabled={busy || chosenIndex !== null || eliminationApplied}
-                        className={secondaryButton}
-                        onClick={() => void activateWhisper()}
-                        type="button"
-                      >
-                        {eliminationApplied
-                          ? boosts!.eliminatedBy === "whisper"
-                            ? "Producer's Whisper applied"
-                            : "Producer's Whisper — unavailable, Static Filter used this question"
-                          : `Producer's Whisper — uses 1 signal, ${run?.signalStrength ?? 0} stored`}
-                      </button>
-                    ) : null}
-                  </div>
-                );
-              })()
-            : null}
-        </section>
-      ) : null}
-
-      {phase.kind === "feedback" ? (
-        <section aria-labelledby="feedback-heading" className="mt-6">
-          <h2
-            className={`text-xl font-semibold ${phase.result.correct ? "text-amber-200" : "text-amber-300"}`}
-            id="feedback-heading"
-            ref={panelHeadingRef}
-            tabIndex={-1}
-          >
-            {phase.result.correct ? "Correct!" : "Wrong."}
-          </h2>
-          {question ? (
-            <p className="mt-2 leading-7">
-              {phase.result.correct
-                ? `You picked the right answer: ${question.choices[phase.result.correctIndex]}.`
-                : `Your answer: ${chosenIndex !== null ? question.choices[chosenIndex] : "none"}. Correct answer: ${question.choices[phase.result.correctIndex]}.`}
-              {phase.result.correct && phase.result.scoreDelta > 0
-                ? ` Plus ${phase.result.scoreDelta} points.`
-                : ""}
-            </p>
-          ) : null}
-          {phase.result.explanation ? <p className="mt-2 leading-7 text-zinc-400">{phase.result.explanation}</p> : null}
-          <button
-            className={`${primaryButton} mt-4`}
-            onClick={() => void advanceAfterFeedback(phase.result, phase.result.events)}
-            type="button"
-          >
-            {phase.result.events.some((e) => e.type === "gameOver" || e.type === "bankExhausted")
-              ? "Continue"
-              : phase.result.run.deadAir
-                ? "Face the final question"
-                : phase.result.events.some((e) => e.type === "tapeUnlocked" || e.type === "finaleReady")
-                  ? // A tape/finale screen serves first; promising the call or
-                    // draft here would name the wrong destination.
-                    "Continue"
-                  : phase.result.run.bossCall?.phase === "question"
-                    ? "Take the call"
-                    : phase.result.run.bossCall?.phase === "reward"
-                      ? "Choose your reward"
-                      : phase.result.run.drafting
-                        ? "Choose your Signal Boost"
-                        : "Next question"}
-          </button>
-        </section>
-      ) : null}
-
-      {phase.kind === "tape" ? (
-        <section aria-labelledby="tape-heading" className="mt-6">
-          <h2 className="text-xl font-semibold text-amber-200" id="tape-heading" ref={panelHeadingRef} tabIndex={-1}>
-            Master tape recovered: {phase.tape.title}
-          </h2>
-          <p className="mt-3 leading-7">{phase.tape.text}</p>
-          <button
-            className={`${primaryButton} mt-4`}
-            onClick={() => void advanceAfterFeedback(phase.result, phase.pending)}
-            type="button"
-          >
-            Continue
-          </button>
-        </section>
-      ) : null}
-
-      {phase.kind === "finale" ? (
-        <section aria-labelledby="finale-heading" className="mt-6">
-          <h2 className="text-xl font-semibold text-amber-200" id="finale-heading" ref={panelHeadingRef} tabIndex={-1}>
-            Channel 100
-          </h2>
-          {phase.lines.map((line) => (
-            <div className="mt-4" key={line.id}>
-              {line.title ? <h3 className="font-semibold text-amber-100">{line.title}</h3> : null}
-              <p className="mt-1 leading-7">{line.text}</p>
-            </div>
-          ))}
-          <button
-            className={`${primaryButton} mt-6`}
-            onClick={() => void advanceAfterFeedback(phase.result, phase.pending)}
-            type="button"
-          >
-            Continue
-          </button>
-        </section>
-      ) : null}
-
-      {phase.kind === "gameover" ? (
-        <section aria-labelledby="gameover-heading" className="mt-6">
-          <h2 className="text-xl font-semibold text-amber-200" id="gameover-heading" ref={panelHeadingRef} tabIndex={-1}>
-            Broadcast over
-          </h2>
-          <p className="mt-2 leading-7">
-            Final score {phase.result.run.score}, round {phase.result.run.round}.
-            {phase.result.events.some((e) => e.type === "gameOver" && e.isPersonalBest)
-              ? " That's a new personal best!"
-              : ""}
-          </p>
-          {phase.result.run.isDaily ? (
-            <div className="mt-3">
-              <p className="leading-7 text-zinc-400">{dailyShareText(phase.result.run)}</p>
-              <button
-                className={`${secondaryButton} mt-2`}
-                onClick={() => void copyDailyResult(dailyShareText(phase.result.run))}
-                type="button"
-              >
-                Copy tonight&apos;s result
-              </button>
-              {copyFallback ? (
-                <textarea
-                  aria-label="Tonight's result, ready to copy"
-                  className={`mt-2 w-full rounded-md border border-amber-700 bg-zinc-900 px-3 py-2 text-amber-50 ${focusRing}`}
-                  readOnly
-                  ref={copyFallbackRef}
-                  rows={2}
-                  value={dailyShareText(phase.result.run)}
-                />
-              ) : null}
-            </div>
-          ) : null}
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button className={primaryButton} onClick={() => void beginRun(false)} type="button">
-              Start new broadcast
-            </button>
-            <Link className={secondaryButton} href="/midnight-signal/leaderboard">
-              View leaderboard
-            </Link>
-            <button className={secondaryButton} onClick={backToTitle} type="button">
-              Back to title
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      <div className="mt-8 flex flex-wrap gap-3 border-t border-amber-700 pt-4">
-        <button className={secondaryButton} onClick={() => void replayHostClip()} type="button">
-          Replay the last spoken line
-        </button>
-        <button className={secondaryButton} onClick={toggleHostPaused} type="button">
-          {hostPaused ? "Resume host audio" : "Pause host audio"}
-        </button>
-        <button className={secondaryButton} onClick={toggleMusicMuted} type="button">
-          {musicMuted ? "Unmute music" : "Mute music"}
-        </button>
-        {phase.kind === "intro" || phase.kind === "question" || phase.kind === "feedback" || phase.kind === "draft" || phase.kind === "bossReward" ? (
-          <button className={secondaryButton} onClick={() => void quitRun()} type="button">
-            Quit run
-          </button>
-        ) : null}
-      </div>
-
-      {settings.captions && captions.length > 0 ? (
-        <section aria-labelledby="captions-heading" className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400" id="captions-heading">
-            Captions
-          </h2>
-          <ul className="mt-2 space-y-1 text-sm leading-6 text-zinc-400">
-            {captions.map((line) => (
-              <li key={line.seq}>
-                <span className="font-semibold text-amber-100">{line.speaker}:</span> {line.text}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-    </div>
+    <InGameView
+      activateStaticFilter={activateStaticFilter}
+      activateWhisper={activateWhisper}
+      advanceAfterFeedback={advanceAfterFeedback}
+      announce={announce}
+      backToTitle={backToTitle}
+      beginQuestions={beginQuestions}
+      beginRun={beginRun}
+      boosts={boosts}
+      busy={busy}
+      captions={captions}
+      chooseAnswer={chooseAnswer}
+      chosenIndex={chosenIndex}
+      copyDailyResult={copyDailyResult}
+      copyFallback={copyFallback}
+      copyFallbackRef={copyFallbackRef}
+      draftChosen={draftChosen}
+      hostPaused={hostPaused}
+      hostAudioStatus={hostAudioStatus}
+      transitionError={errorText}
+      availableTapeIds={story?.tapes.map((tape) => tape.id) ?? []}
+      musicMuted={musicMuted}
+      panelHeadingRef={panelHeadingRef}
+      pickBoost={pickBoost}
+      pickReward={pickReward}
+      prepareMysteryClip={prepareMysteryClip}
+      question={question}
+      questionHeadingRef={questionHeadingRef}
+      questionNumber={questionNumber}
+      quitRun={quitRun}
+      registerMysteryClipStop={registerMysteryClipStop}
+      replayHostClip={replayHostClip}
+      rewardChosen={rewardChosen}
+      run={run}
+      settings={settings}
+      statusItems={statusItems}
+      suppressMusicForClip={suppressMusicForClip}
+      toggleHostPaused={toggleHostPaused}
+      toggleMusicMuted={toggleMusicMuted}
+      phase={phase}
+    />
   );
 }

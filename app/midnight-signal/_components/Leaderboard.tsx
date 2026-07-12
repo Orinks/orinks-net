@@ -82,7 +82,13 @@ export function Leaderboard() {
           No broadcasts on record yet for this period. The signal waits for its first contestant.
         </p>
       ) : (
-        <table className="mt-6 w-full border-collapse text-left">
+        <div
+          aria-label={`${scopeLabels[scope]} leaderboard table`}
+          className={`mt-6 overflow-x-auto ${focusRing}`}
+          role="region"
+          tabIndex={0}
+        >
+        <table className="w-full border-collapse text-left">
           <caption className="sr-only">{scopeLabels[scope]} leaderboard, ranked by score</caption>
           <thead>
             <tr className="border-b border-amber-700">
@@ -103,19 +109,20 @@ export function Leaderboard() {
           <tbody>
             {rows.map((row) => (
               <tr className="border-b border-zinc-700" key={`${row.rank}-${row.endedAt}`}>
-                <th className="py-2 pr-4 font-normal" scope="row">
-                  {row.rank}
-                </th>
                 <td className="py-2 pr-4">
+                  {row.rank}
+                </td>
+                <th className="break-words py-2 pr-4 font-normal" scope="row">
                   {row.displayName}
                   {row.isYou ? " (you)" : ""}
-                </td>
+                </th>
                 <td className="py-2 pr-4">{row.score}</td>
                 <td className="py-2">{row.round}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
       <p className="mt-8">
         <Link className={buttonStyle} href="/midnight-signal">

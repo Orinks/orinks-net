@@ -1,6 +1,8 @@
 {
   "apiBase": "https://api.elevenlabs.io/v1",
   "modelId": "eleven_flash_v2_5",
+  "creditMultiplier": 0.5,
+  "reserveCredits": 500,
   "outputDir": "public/audio/trivia",
   "manifestPath": "public/audio/trivia/manifest.json",
   "defaultVoice": "clide",

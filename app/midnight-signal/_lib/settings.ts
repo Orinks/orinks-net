@@ -47,6 +47,12 @@ export function saveSettings(settings: GameSettings) {
   window.localStorage.setItem(`${KEY_PREFIX}settings`, JSON.stringify(settings));
 }
 
+export function applyMotionPreference(preference: GameSettings["reducedMotion"]) {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("motion-reduce", preference === "on");
+  document.documentElement.classList.toggle("motion-full", preference === "off");
+}
+
 export function getPlayerKey(): string {
   if (typeof window === "undefined") return "";
   let key = window.localStorage.getItem(`${KEY_PREFIX}playerKey`);

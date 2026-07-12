@@ -247,7 +247,7 @@ function DriverSetup() {
   }
 
   const nameDescribedBy =
-    ["displayName-hint", nameError ? "displayName-error" : null].filter(Boolean).join(" ") ||
+    [nameError ? "displayName-error" : null, "displayName-hint"].filter(Boolean).join(" ") ||
     undefined;
 
   return (
@@ -349,11 +349,8 @@ function DriverSetup() {
         <Section title={myDriver ? "Your driver" : "Set up your driver"}>
           {myDriver?.needsRename ? (
             <p className="max-w-xl rounded border border-red-300 bg-red-50 p-4 text-slate-800">
-              A moderator reset your driver name because it broke the{" "}
-              <Link className={focusRing} href="/freight-fate/online/rules">
-                driver naming rules
-              </Link>
-              . Choose a new name below and save your changes.
+              A moderator reset your driver name because it broke the driver naming rules. Choose a
+              new name below and save your changes.
             </p>
           ) : null}
           <form
@@ -394,6 +391,12 @@ function DriverSetup() {
                 type="text"
                 value={name}
               />
+              {nameError ? (
+                <p className="text-sm text-red-700" id="displayName-error">
+                  <span aria-hidden="true">⚠ </span>
+                  {nameError.message}
+                </p>
+              ) : null}
               <p className="text-sm text-slate-600" id="displayName-hint">
                 3 to 48 characters, including at least three letters. Names must follow the{" "}
                 <Link className={focusRing} href="/freight-fate/online/rules">
@@ -401,22 +404,6 @@ function DriverSetup() {
                 </Link>
                 . Where this name appears depends on the Profile visibility setting.
               </p>
-              {nameError ? (
-                <p className="text-sm text-red-700" id="displayName-error">
-                  <span aria-hidden="true">⚠ </span>
-                  {nameError.kind === "blocked" ? (
-                    <>
-                      {BLOCKED_MESSAGE_PREFIX}
-                      <Link className={focusRing} href="/freight-fate/online/rules">
-                        {RULES_LINK_TEXT}
-                      </Link>
-                      .
-                    </>
-                  ) : (
-                    nameError.message
-                  )}
-                </p>
-              ) : null}
             </div>
 
             <div className="space-y-2">

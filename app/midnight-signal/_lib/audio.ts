@@ -10,11 +10,15 @@ export interface AudioManifest {
   story: Record<string, string>;
 }
 
+export type HostPlaybackOutcome = "played" | "failed" | "stopped" | "unavailable";
+
 let manifestPromise: Promise<AudioManifest> | null = null;
 
 export function fetchManifest(): Promise<AudioManifest> {
   manifestPromise ??= fetch("/audio/trivia/manifest.json")
-    .then((res) => (res.ok ? res.json() : { barks: {}, questions: {}, story: {} }))
+    .then((res) =>
+      res.ok ? res.json() : { barks: {}, questions: {}, story: {} },
+    )
     .catch(() => ({ barks: {}, questions: {}, story: {} }));
   return manifestPromise;
 }
@@ -22,6 +26,8 @@ export function fetchManifest(): Promise<AudioManifest> {
 /** Plays one host clip at a time with pause/resume/replay and independent volume (WCAG 1.4.2). */
 export class HostAudioPlayer {
   private audio: HTMLAudioElement | null = null;
+  private reusableAudio: HTMLAudioElement | null = null;
+  private finishCurrent: ((outcome: HostPlaybackOutcome) => void) | null = null;
   private lastUrl: string | null = null;
   private _volume: number;
   paused = false;
@@ -30,28 +36,69 @@ export class HostAudioPlayer {
     this._volume = volume;
   }
 
+  /** Unlocks reusable media while the activating button gesture is live. */
+  unlock() {
+    if (typeof Audio === "undefined") return;
+    const audio = this.reusableAudio ?? new Audio();
+    this.reusableAudio = audio;
+    audio.muted = false;
+    audio.volume = 0;
+    audio.src =
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+    void audio
+      .play()
+      .then(() => {
+        if (this.audio === audio) return;
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        audio.volume = this._volume;
+      })
+      .catch((error: unknown) => {
+        audio.volume = this._volume;
+        console.error("[Midnight Signal] Audio unlock failed.", error);
+      });
+  }
+
   set volume(value: number) {
     this._volume = value;
     if (this.audio) this.audio.volume = value;
   }
 
   /** Starts a clip, stopping any current one. Resolves when playback ends or fails. */
-  play(url: string): Promise<void> {
+  play(url: string): Promise<HostPlaybackOutcome> {
     this.stop();
     this.lastUrl = url;
-    if (this.paused) return Promise.resolve();
-    const audio = new Audio(url);
+    if (this.paused) return Promise.resolve("unavailable");
+    const audio = this.reusableAudio ?? new Audio();
+    this.reusableAudio = audio;
+    audio.muted = false;
+    audio.src = url;
     audio.volume = this._volume;
     this.audio = audio;
     return new Promise((resolve) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => resolve();
-      audio.play().catch(() => resolve());
+      let settled = false;
+      const finish = (outcome: HostPlaybackOutcome) => {
+        if (settled) return;
+        settled = true;
+        audio.onended = null;
+        audio.onerror = null;
+        if (this.audio === audio) this.audio = null;
+        if (this.finishCurrent === finish) this.finishCurrent = null;
+        resolve(outcome);
+      };
+      this.finishCurrent = finish;
+      audio.onended = () => finish("played");
+      audio.onerror = () => finish("failed");
+      audio.play().catch((error: unknown) => {
+        console.error("[Midnight Signal] Host audio playback failed.", error);
+        finish("failed");
+      });
     });
   }
 
-  replayLast(): Promise<void> {
-    if (!this.lastUrl) return Promise.resolve();
+  replayLast(): Promise<HostPlaybackOutcome> {
+    if (!this.lastUrl) return Promise.resolve("unavailable");
     this.paused = false;
     return this.play(this.lastUrl);
   }
@@ -72,23 +119,33 @@ export class HostAudioPlayer {
   }
 
   stop() {
-    if (this.audio) {
-      this.audio.onended = null;
-      this.audio.onerror = null;
-      this.audio.pause();
-      this.audio = null;
+    const audio = this.audio;
+    const finish = this.finishCurrent;
+    this.audio = null;
+    this.finishCurrent = null;
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
     }
+    finish?.("stopped");
   }
 }
 
 // --- Producer speech (speechSynthesis) ---
 
 let currentUtterance: SpeechSynthesisUtterance | null = null; // hold a ref: GC kills speech mid-utterance
+const activeSpeechFinishes = new Set<() => void>();
 let speechReady = false;
 
 /** Must be called from a user gesture (Start Broadcast) before first speak. */
 export function initSpeech() {
-  if (speechReady || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  if (
+    speechReady ||
+    typeof window === "undefined" ||
+    !("speechSynthesis" in window)
+  )
+    return;
   // A silent utterance from a gesture unlocks speech in gesture-gated browsers.
   const warmup = new SpeechSynthesisUtterance("");
   warmup.volume = 0;
@@ -119,12 +176,14 @@ export function speakProducer(text: string): Promise<void> {
       if (done) return;
       done = true;
       clearTimeout(safety);
+      activeSpeechFinishes.delete(finish);
       if (currentUtterance === utterance) currentUtterance = null;
       resolve();
     };
     utterance.onend = finish;
     utterance.onerror = finish;
     const safety = setTimeout(finish, Math.min(20000, 2000 + text.length * 80));
+    activeSpeechFinishes.add(finish);
     window.speechSynthesis.speak(utterance);
   });
 }
@@ -132,5 +191,6 @@ export function speakProducer(text: string): Promise<void> {
 export function stopProducer() {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
+  for (const finish of [...activeSpeechFinishes]) finish();
   currentUtterance = null;
 }
