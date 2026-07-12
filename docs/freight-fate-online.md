@@ -1,6 +1,6 @@
 # Freight Fate Online Sharing
 
-Freight Fate online identity is built on Orinks accounts (Clerk). The
+Freight Fate online identity is built on orinks.net accounts (Clerk). The
 website issues driver credentials after sign-in; the desktop game only ever
 posts presence and road-journal events with those credentials. There are no
 pairing codes and no setup sessions — the old `/api/freight-fate/setup`

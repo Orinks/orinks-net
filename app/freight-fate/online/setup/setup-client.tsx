@@ -85,8 +85,8 @@ export function FreightFateSetupClient() {
     ) : !isSignedIn ? (
       <Section title="Sign in to continue">
         <p>
-          Freight Fate drivers are Orinks accounts. Sign in — or create an account — to set up your
-          driver identity and get a posting token for the game.
+          Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account — to
+          set up your driver identity and get a posting token for the game.
         </p>
         <AccountControls />
       </Section>

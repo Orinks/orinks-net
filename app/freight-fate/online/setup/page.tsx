@@ -12,7 +12,7 @@ export default function FreightFateOnlineSetupPage() {
     <div className="space-y-8">
       <PageHeader
         title="Freight Fate Online Setup"
-        intro="Sign in with your Orinks account to create a Freight Fate driver and get a posting token for the game."
+        intro="Sign in with your orinks.net account to create a Freight Fate driver and get a posting token for the game."
       />
 
       <FreightFateOnlineProviders>
