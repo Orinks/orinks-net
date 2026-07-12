@@ -129,7 +129,7 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   const allowed = await consumeFreightFateWrite(ctx, args);
   if (!allowed) return { error: "rate_limited" as const };
   if (driver.driverTokenHash !== args.driverTokenHash) return { error: "unauthorized" as const };
-  if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+  if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION || driver.visibility !== "public") {
     return { error: "sharing_not_enabled" as const };
   }
   return { driver };
@@ -162,7 +162,8 @@ export const getMyDriver = query({
       updatedAt: driver.updatedAt,
       hasToken: true,
       needsRename: driver.needsRename === true,
-      sharingEnabled: driver.sharingConsentVersion === SHARING_CONSENT_VERSION,
+      sharingEnabled:
+        driver.sharingConsentVersion === SHARING_CONSENT_VERSION && driver.visibility === "public",
     };
   },
 });
@@ -218,7 +219,12 @@ export const provisionDriver = mutation({
         driverTokenHash?: string;
       } = {
         displayName,
-        visibility: args.visibility,
+        visibility:
+          args.expandedSharingConsent === true
+            ? "public"
+            : args.expandedSharingConsent === false
+              ? "private"
+              : existing.visibility,
         updatedAt: args.now,
         needsRename: undefined,
       };
@@ -264,7 +270,7 @@ export const provisionDriver = mutation({
     await ctx.db.insert("freightFateDrivers", {
       driverId,
       displayName,
-      visibility: args.visibility,
+      visibility: args.expandedSharingConsent ? "public" : "private",
       authSubject: identity.subject,
       driverTokenHash,
       ...(args.expandedSharingConsent

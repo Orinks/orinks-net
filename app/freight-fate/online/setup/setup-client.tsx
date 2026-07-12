@@ -9,8 +9,6 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 
-type Visibility = "public" | "private" | "unlisted";
-
 export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unknown | undefined) {
   return !alreadyAnnounced && driver !== undefined;
 }
@@ -103,8 +101,7 @@ function DriverSetup() {
   const { politeStatus, errorStatus, announcePolite, announceError } = useAnnouncer();
 
   const [name, setName] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("private");
-  const [expandedSharing, setExpandedSharing] = useState(false);
+  const [profileSharing, setProfileSharing] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
   const [pending, setPending] = useState(false);
   // Carries BOTH values from the provision result: the reactive getMyDriver
@@ -134,12 +131,10 @@ function DriverSetup() {
     }
     if (myDriver) {
       setName(myDriver.displayName);
-      setVisibility(myDriver.visibility);
-      setExpandedSharing(myDriver.sharingEnabled === true);
+      setProfileSharing(myDriver.sharingEnabled === true);
     } else {
       setName(user?.username ?? user?.firstName ?? "");
-      setVisibility("private");
-      setExpandedSharing(false);
+      setProfileSharing(false);
     }
     setInitialized(true);
   }, [initialized, myDriver, user]);
@@ -203,8 +198,8 @@ function DriverSetup() {
     try {
       const result = await provision({
         displayName: trimmed,
-        visibility,
-        expandedSharingConsent: expandedSharing,
+        visibility: profileSharing ? "public" : "private",
+        expandedSharingConsent: profileSharing,
         rotateToken: false,
         now: Date.now(),
       });
@@ -212,11 +207,11 @@ function DriverSetup() {
         setCopyStatus("");
         setIssued({ token: result.token, driverId: result.driverId });
         announcePolite(
-          `Driver ready. Activity sharing is ${expandedSharing ? "on" : "off"}. Profile visibility is ${visibility}. Copy your Driver ID and one-time token below.`,
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
         );
       } else {
         announcePolite(
-          `Changes saved. Activity sharing is ${expandedSharing ? "on" : "off"}. Profile visibility is ${visibility}.`,
+          `Changes saved. Profile sharing is ${profileSharing ? "on" : "off"}.`,
         );
       }
     } catch (error) {
@@ -227,7 +222,7 @@ function DriverSetup() {
       if (rejection) {
         showNameError(rejection);
       } else {
-        setExpandedSharing(myDriver?.sharingEnabled === true);
+        setProfileSharing(myDriver?.sharingEnabled === true);
         announcePolite("Save failed. Your changes were not applied. Please try again.");
       }
     } finally {
@@ -244,7 +239,7 @@ function DriverSetup() {
     try {
       const result = await provision({
         displayName: myDriver.displayName,
-        visibility: myDriver.visibility,
+        visibility: myDriver.sharingEnabled ? "public" : "private",
         expandedSharingConsent: myDriver.sharingEnabled,
         rotateToken: true,
         now: Date.now(),
@@ -375,7 +370,7 @@ function DriverSetup() {
           >
             <p className="text-slate-800">
               {myDriver
-                ? "Update your driver name or visibility. Your Driver ID and posting token stay the same unless you rotate the token."
+                ? "Update your driver name or profile sharing. Your Driver ID and posting token stay the same unless you rotate the token."
                 : "Create your driver identity. This makes a driver profile and issues a posting token you paste into Freight Fate on your PC."}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
@@ -417,60 +412,34 @@ function DriverSetup() {
                 <Link className={focusRing} href="/freight-fate/online/rules">
                   driver naming rules
                 </Link>
-                . Where this name appears depends on the Profile visibility setting.
+                . This name appears publicly only while Profile sharing is on.
               </p>
             </div>
 
             <fieldset className="space-y-4 rounded border border-line-strong p-4">
-              <legend className="px-1 font-semibold text-ink">Sharing preferences</legend>
-              <div className="space-y-2">
-                <label className="block font-semibold text-ink" htmlFor="visibility">
-                  Profile visibility
-                </label>
-                <p className="text-sm text-slate-700" id="visibility-help">
-                  Private hides all shared profile data. Unlisted is visible to anyone with the profile
-                  link. Public is visible to everyone and can appear on the drivers board while you are
-                  on duty. Changing from private can reveal retained journal entries, achievements, and
-                  the latest profile snapshot when activity sharing is on.
-                </p>
-                <select
-                  aria-describedby="visibility-help"
-                  className="w-full rounded border border-line-strong px-3 py-2 text-ink"
-                  id="visibility"
-                  name="visibility"
-                  onChange={(event) => setVisibility(event.target.value as Visibility)}
-                  value={visibility}
-                >
-                  <option value="private">Private: do not show profile data publicly</option>
-                  <option value="unlisted">Unlisted: show profile data to anyone with the link</option>
-                  <option value="public">Public: show profile data publicly and allow board listing</option>
-                </select>
-              </div>
-
+              <legend className="px-1 font-semibold text-ink">Profile sharing</legend>
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
                   <input
-                    aria-describedby="expanded-sharing-help"
-                    checked={expandedSharing}
+                    aria-describedby="profile-sharing-help"
+                    checked={profileSharing}
                     className="mt-1 h-5 w-5 shrink-0"
-                    id="expandedSharing"
-                    name="expandedSharing"
-                    onChange={(event) => setExpandedSharing(event.target.checked)}
+                    id="profileSharing"
+                    name="profileSharing"
+                    onChange={(event) => setProfileSharing(event.target.checked)}
                     type="checkbox"
                   />
-                  <label className="font-semibold text-ink" htmlFor="expandedSharing">
-                    Share my Freight Fate activity on Orinks
+                  <label className="font-semibold text-ink" htmlFor="profileSharing">
+                    Profile sharing
                   </label>
                 </div>
-                <p className="text-sm text-slate-700" id="expanded-sharing-help">
-                  This renewed opt-in covers the live drivers board and broad on-duty activity,
-                  automatic factual road-journal events, earned achievements, occurrence times, and an
-                  allowlisted career snapshot with level, totals, current truck, last-saved city, and
-                  snapshot time. Public profiles can appear in the updates feed; unlisted profiles are
-                  visible to anyone with their link; private profiles expose none of it. Turning this
-                  off immediately hides expanded data and stops future publication. Orinks retains
-                  received records privately unless sharing is enabled again. Freight Fate never sends
-                  the full save, money, coordinates, active cargo details, or precise live location.
+                <p className="text-sm text-slate-700" id="profile-sharing-help">
+                  When on, eligible driver-profile details, official achievements you earn, fictional
+                  road-journal posts generated automatically from gameplay, public-feed updates, and
+                  on-duty board activity can appear publicly on Orinks. When off, all of this is hidden
+                  and future public updates stop. Orinks may retain records privately unless sharing is
+                  enabled again. Freight Fate never sends the full save, money, coordinates, active
+                  cargo details, or precise live location.
                   {" "}<Link href="/freight-fate/online/privacy">Read the Freight Fate sharing and privacy details</Link>.
                 </p>
               </div>
@@ -524,15 +493,11 @@ function DriverSetup() {
               </div>
 
               {!myDriver.sharingEnabled ? (
-                <p className="text-slate-700">Activity sharing is off, so this profile is not shown publicly.</p>
-              ) : myDriver.visibility === "private" ? (
-                <p className="text-slate-700">Your profile is private, so it is not shown publicly.</p>
+                <p className="text-slate-700">Profile sharing is off. Your driver profile is private.</p>
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>
-                    {myDriver.visibility === "unlisted"
-                      ? "View your unlisted driver profile"
-                      : "View your public driver profile"}
+                    View your public driver profile
                   </Link>
                   .
                 </p>

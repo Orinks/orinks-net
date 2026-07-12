@@ -80,7 +80,8 @@ describe("provisionDriver / getMyDriver", () => {
     expect(mine).not.toBeNull();
     expect(mine!.driverId).toBe(result.driverId);
     expect(mine!.displayName).toBe("Rig Hauler"); // whitespace normalized
-    expect(mine!.visibility).toBe("public");
+    expect(mine!.visibility).toBe("private");
+    expect(mine!.sharingEnabled).toBe(false);
     expect(mine!.hasToken).toBe(true);
     expect(mine).not.toHaveProperty("token"); // the plaintext token never leaks
 
@@ -176,7 +177,8 @@ describe("provisionDriver / getMyDriver", () => {
     });
     expect(resave.rotated).toBe(false);
     const mine = await second.query(api.freightFate.getMyDriver, {});
-    expect(mine!.visibility).toBe("unlisted");
+    expect(mine!.visibility).toBe("private");
+    expect(mine!.sharingEnabled).toBe(false);
   });
 
   test("rate limits presence writes per driver", async () => {
@@ -603,7 +605,7 @@ describe("expanded sharing", () => {
     expect(profilePage?.nextBefore).toEqual({ occurredAt: now, eventId: "delivery-22" });
 
     await as.mutation(api.freightFate.provisionDriver, {
-      displayName: "Journal Hauler", visibility: "private", expandedSharingConsent: true, now: now + 2,
+      displayName: "Journal Hauler", visibility: "public", expandedSharingConsent: false, now: now + 2,
     });
     expect(await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId })).toBeNull();
     expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toEqual([]);

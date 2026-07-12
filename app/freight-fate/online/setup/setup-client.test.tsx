@@ -15,18 +15,20 @@ vi.mock("@/components/AccountControls", () => ({ AccountControls: () => null }))
 
 import { FreightFateSetupClient, shouldAnnounceDriverReady } from "./setup-client";
 
-test("legacy drivers receive an unchecked, labelled renewed-consent control", () => {
+test("drivers receive one unchecked, labelled profile-sharing control", () => {
   const html = renderToStaticMarkup(<FreightFateSetupClient />);
   expect(html).toContain("<fieldset");
-  expect(html).toContain("Sharing preferences");
-  expect(html).toContain('id="expandedSharing"');
-  expect(html).toContain('aria-describedby="expanded-sharing-help"');
-  expect(html).toContain("Share my Freight Fate activity on Orinks");
-  expect(html).toContain("live drivers board");
-  expect(html).toContain("road-journal events");
-  expect(html).toContain("earned achievements");
-  expect(html).toContain("last-saved city");
-  expect(html).not.toMatch(/id="expandedSharing"[^>]*checked/);
+  expect(html).toContain("Profile sharing");
+  expect(html).toContain('id="profileSharing"');
+  expect(html).toContain('aria-describedby="profile-sharing-help"');
+  expect(html).toContain('<label class="font-semibold text-ink" for="profileSharing">Profile sharing</label>');
+  expect(html).toContain("on-duty board activity");
+  expect(html).toContain("fictional road-journal posts");
+  expect(html).toContain("official achievements");
+  expect(html).not.toContain('id="visibility"');
+  expect(html).not.toContain("Unlisted:");
+  expect(html.match(/type="checkbox"/g)).toHaveLength(1);
+  expect(html).not.toMatch(/id="profileSharing"[^>]*checked/);
   expect(html.match(/role="status"><\/div>/g)?.length).toBe(2);
   expect(html).not.toContain("Loading your driver settings");
 });
