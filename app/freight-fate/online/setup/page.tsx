@@ -23,11 +23,14 @@ export default function FreightFateOnlineSetupPage() {
         <ul>
           <li>A public driver ID and the driver name you choose.</li>
           <li>A posting token, stored only as a hash on Orinks.</li>
-          <li>Short road journal events that Freight Fate chooses to publish after you opt in.</li>
+          <li>Broad on-duty activity for the live drivers board after renewed consent.</li>
+          <li>Short factual road-journal events and official earned achievements.</li>
+          <li>An allowlisted career snapshot: level, totals, current truck, last-saved city, and snapshot time.</li>
         </ul>
         <p>
-          Career save files, raw trip snapshots, and personal account details are not part of this
-          setup.
+          Orinks does not receive the full save, money, coordinates, active cargo details, or precise
+          live location. Legacy board sharing does not activate expanded sharing; you must renew
+          consent in the form above.
         </p>
       </Section>
     </div>

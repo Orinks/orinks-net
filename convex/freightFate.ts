@@ -113,6 +113,13 @@ function deliverySummary(payload: {
   return `${cleanFact(payload.cargo, 80)}, ${weight} pounds, delivered from ${cleanFact(payload.origin, 80)} to ${cleanFact(payload.destination, 80)} over ${distance} miles${payload.onTime ? " on time" : ""}.${condition}`.slice(0, 280);
 }
 
+async function pruneDriverEvents(ctx: MutationCtx, driverId: string) {
+  const events = await ctx.db.query("freightFateDriverEvents")
+    .withIndex("by_driver", (q) => q.eq("driverId", driverId)).collect();
+  events.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
+  for (const row of events.slice(MAX_DRIVER_EVENTS)) await ctx.db.delete(row._id);
+}
+
 async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   driverId: string; driverTokenHash: string; now: number; scope: string; limit: number;
 }) {
@@ -434,7 +441,11 @@ export const getPresenceBoard = query({
         .query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
         .unique();
-      if (!driver || driver.visibility !== "public") {
+      if (
+        !driver ||
+        driver.visibility !== "public" ||
+        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION
+      ) {
         continue;
       }
       drivers.push({
@@ -475,6 +486,7 @@ export const publishDeliveryCompleted = mutation({
       payloadVersion: 1, payload: args.payload,
       occurredAt: clampOccurredAt(args.occurredAt, args.now), createdAt: args.now,
     });
+    await pruneDriverEvents(ctx, args.driverId);
     return { ok: true as const, duplicate: false, driverId: args.driverId };
   },
 });
@@ -506,6 +518,36 @@ export const publishAchievementEarned = mutation({
       payloadVersion: 1, payload: { achievementKey: cleanFact(args.achievementKey, 96), name, description },
       occurredAt: earnedAt, createdAt: args.now,
     });
+    await pruneDriverEvents(ctx, args.driverId);
+    return { ok: true as const, duplicate: false, driverId: args.driverId };
+  },
+});
+
+export const publishCareerMilestone = mutation({
+  args: {
+    driverId: v.string(), driverTokenHash: v.string(), eventId: v.string(),
+    milestoneType: v.union(v.literal("first_delivery"), v.literal("career_level")),
+    level: v.optional(v.number()), occurredAt: v.number(), now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const auth = await authenticatedSharingDriver(ctx, {
+      ...args, scope: "driver-event", limit: DRIVER_EVENT_WRITE_LIMIT,
+    });
+    if ("error" in auth) return { ok: false as const, reason: auth.error };
+    const existing = await ctx.db.query("freightFateDriverEvents")
+      .withIndex("by_driver_event", (q) => q.eq("driverId", args.driverId).eq("eventId", args.eventId)).unique();
+    if (existing) return { ok: true as const, duplicate: true, driverId: args.driverId };
+    const level = args.level === undefined ? undefined : Math.max(1, Math.min(999, Math.trunc(args.level)));
+    const summary = args.milestoneType === "first_delivery"
+      ? "Completed a first Freight Fate delivery."
+      : `Reached driver level ${level ?? 1}.`;
+    await ctx.db.insert("freightFateDriverEvents", {
+      driverId: args.driverId, eventId: cleanFact(args.eventId, 96),
+      eventType: "career_milestone", summary, payloadVersion: 1,
+      payload: { milestoneType: args.milestoneType, ...(level ? { level } : {}) },
+      occurredAt: clampOccurredAt(args.occurredAt, args.now), createdAt: args.now,
+    });
+    await pruneDriverEvents(ctx, args.driverId);
     return { ok: true as const, duplicate: false, driverId: args.driverId };
   },
 });
@@ -576,7 +618,7 @@ export const getPublicUpdates = query({
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
     const rows = await ctx.db.query("freightFateDriverEvents")
       .withIndex("by_occurred", (q) => args.before ? q.lte("occurredAt", args.before.occurredAt) : q)
-      .order("desc").take(200);
+      .order("desc").collect();
     const updates = [];
     for (const row of rows) {
       const driver = await ctx.db.query("freightFateDrivers")
@@ -598,6 +640,7 @@ export const getDriverProfile = query({
     driverId: v.string(),
     limit: v.optional(v.number()),
     before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })),
+    now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const driver = await ctx.db
@@ -625,12 +668,19 @@ export const getDriverProfile = query({
     const eligible = allEvents
       .filter((event) => args.before === undefined || event.occurredAt < args.before.occurredAt ||
         (event.occurredAt === args.before.occurredAt && event.eventId < args.before.eventId))
-      .sort((a, b) => b.occurredAt - a.occurredAt || b.createdAt - a.createdAt || b.eventId.localeCompare(a.eventId));
+      .sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
     const events = eligible.slice(0, limit);
     const snapshot = await ctx.db.query("freightFateProfileSnapshots")
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
-    const achievements = await ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).order("desc").take(limit);
+    const presenceRow = await ctx.db.query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+    const presence = presenceRow && args.now !== undefined && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
+      ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
+      : null;
+    const achievements = (await ctx.db.query("freightFateAchievements")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).collect())
+      .sort((a, b) => b.earnedAt - a.earnedAt || b.achievementKey.localeCompare(a.achievementKey))
+      .slice(0, limit);
 
     return {
       driver: {
@@ -653,6 +703,7 @@ export const getDriverProfile = query({
         employmentStatus: snapshot.employmentStatus, capturedAt: snapshot.capturedAt,
       } : null,
       achievements,
+      presence,
     };
   },
 });

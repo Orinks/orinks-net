@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-12-freight-fate-road-journals",
+      "date": "2026-07-12",
+      "project": "Freight Fate",
+      "title": "Freight Fate drivers can share factual road journals",
+      "body": [
+        "Freight Fate driver profiles now have separate Overview, Road journal, and Achievements pages. Drivers who renew consent can share completed-delivery facts, official achievements, and an allowlisted career snapshot with a clearly labeled last-saved city and snapshot time.",
+        "A public updates page collects automatic factual game updates from public drivers. Unlisted profiles remain visible only to people with their link, private and opted-out drivers reveal nothing, and legacy drivers are not enrolled automatically."
+      ],
+      "link": {
+        "href": "/freight-fate/updates",
+        "label": "Browse public Freight Fate updates"
+      }
+    },
+    {
       "id": "2026-07-10-midnight-signal-broadcast-expansion",
       "date": "2026-07-10",
       "project": "The Midnight Signal",

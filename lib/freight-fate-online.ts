@@ -231,6 +231,21 @@ export async function postFreightFateAchievement(input: {
   });
 }
 
+export async function postFreightFateCareerMilestone(input: {
+  driverId: string; driverToken: string; eventId: string;
+  milestoneType: "first_delivery" | "career_level"; level?: number; occurredAt: number;
+}) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.mutation(anyApi.freightFate.publishCareerMilestone, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    eventId: normalizeFreightFateEventText(input.eventId, "Event ID", 96),
+    milestoneType: input.milestoneType, ...(input.level === undefined ? {} : { level: input.level }),
+    occurredAt: input.occurredAt, now: Date.now(),
+  });
+}
+
 export async function postFreightFateProfileSnapshot(input: {
   driverId: string; driverToken: string; snapshot: Record<string, unknown>;
 }) {
@@ -305,5 +320,6 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20, 
     driverId: normalizeFreightFateDriverId(driverId),
     limit,
     ...(before ? { before } : {}),
+    now: Date.now(),
   });
 }
