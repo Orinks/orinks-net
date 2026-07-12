@@ -265,6 +265,10 @@ export default defineSchema({
     // Set by the moderation force-rename; the setup page demands a fresh name
     // and provisionDriver clears it once one passes screening.
     needsRename: v.optional(v.boolean()),
+    // Expanded public sharing requires an explicit, versioned renewal. Legacy
+    // board consent never implies journal/profile consent.
+    sharingConsentVersion: v.optional(v.number()),
+    sharingConsentedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -314,11 +318,42 @@ export default defineSchema({
     eventId: v.string(),
     eventType: v.string(),
     summary: v.string(),
+    payloadVersion: v.optional(v.number()),
+    payload: v.optional(v.any()),
     occurredAt: v.number(),
     createdAt: v.number(),
   })
     .index("by_driver", ["driverId"])
-    .index("by_driver_event", ["driverId", "eventId"]),
+    .index("by_driver_event", ["driverId", "eventId"])
+    .index("by_occurred", ["occurredAt"]),
+  freightFateAchievements: defineTable({
+    driverId: v.string(),
+    achievementKey: v.string(),
+    name: v.string(),
+    description: v.string(),
+    earnedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_driver", ["driverId"])
+    .index("by_driver_achievement", ["driverId", "achievementKey"]),
+  freightFateProfileSnapshots: defineTable({
+    driverId: v.string(),
+    version: v.number(),
+    level: v.number(),
+    careerTitle: v.string(),
+    lastSavedCity: v.string(),
+    deliveries: v.number(),
+    milesDriven: v.number(),
+    reputation: v.number(),
+    onTimeDeliveries: v.optional(v.number()),
+    truckName: v.optional(v.string()),
+    employmentStatus: v.optional(v.string()),
+    capturedAt: v.number(),
+    updatedAt: v.number(),
+    // Reserved server-gated compatibility envelope. Current public queries
+    // intentionally never return it until a later activation migration.
+    future: v.optional(v.any()),
+  }).index("by_driver", ["driverId"]),
   freightFateRateLimits: defineTable({
     key: v.string(),
     count: v.number(),

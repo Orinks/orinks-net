@@ -77,6 +77,35 @@ Events are idempotent on `(driverId, eventId)` — a repeat post returns
 
 Recommended first game-side events:
 
+Expanded journal/profile sharing uses consent version 2. Existing drivers are
+not migrated implicitly: the setup form must record a new explicit opt-in.
+Without that exact version, journal, achievement, snapshot, profile, and public
+feed queries return no expanded data even when the legacy presence board was
+enabled.
+
+The structured endpoints are:
+
+- `POST /api/freight-fate/events/delivery` for allowlisted delivery facts;
+- `POST /api/freight-fate/events/achievement` for official achievement data;
+- `POST /api/freight-fate/profile-snapshot` for version 1 career summaries.
+
+The snapshot contains only driver level/title, last-saved city, career totals,
+reputation, current truck label, ownership/employment status, and capture time.
+It never contains the full save, money, coordinates, facilities, active cargo,
+route position, or exact live location. The server formats trusted delivery
+summary text from structured facts and clamps client timestamps.
+
+## Career 1.9 activation plan
+
+The snapshot table reserves a server-private future compatibility envelope,
+but current mutations do not accept it and current queries never return it.
+Before Career 1.9 activation, add explicit validators and allowlists for each
+business, fleet, trailer, authority, inspection, route, and ownership field;
+backfill only from newly published signed-in snapshots; add a new consent
+version if the disclosure changes; and gate every new field behind the server
+feature flag and public-query projection. No 1.9 label or field is active in
+the current UI.
+
 - `delivery_settled`: summary, on-time result, damage band, miles, route endpoints, net pay band.
 - `career_milestone`: level, reputation band, endorsement unlock, owner-operator progress.
 - `challenge_completed`: weather, mountain, HOS, or long-haul completion.

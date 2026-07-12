@@ -199,6 +199,57 @@ export async function postFreightFateDriverEvent(input: {
   });
 }
 
+export async function postFreightFateDelivery(input: {
+  driverId: string; driverToken: string; eventId: string; occurredAt: number;
+  payload: { version: 1; cargo: string; weightPounds: number; origin: string;
+    destination: string; distanceMiles: number; onTime: boolean; notableCondition?: string };
+}) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.mutation(anyApi.freightFate.publishDeliveryCompleted, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    eventId: normalizeFreightFateEventText(input.eventId, "Event ID", 96),
+    occurredAt: input.occurredAt, payload: input.payload, now: Date.now(),
+  });
+}
+
+export async function postFreightFateAchievement(input: {
+  driverId: string; driverToken: string; eventId: string; achievementKey: string;
+  name: string; description: string; earnedAt: number;
+}) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.mutation(anyApi.freightFate.publishAchievementEarned, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    eventId: normalizeFreightFateEventText(input.eventId, "Event ID", 96),
+    achievementKey: normalizeFreightFateEventText(input.achievementKey, "Achievement key", 96),
+    name: normalizeFreightFateEventText(input.name, "Achievement name", 100),
+    description: normalizeFreightFateEventText(input.description, "Achievement description", 240),
+    earnedAt: input.earnedAt, now: Date.now(),
+  });
+}
+
+export async function postFreightFateProfileSnapshot(input: {
+  driverId: string; driverToken: string; snapshot: Record<string, unknown>;
+}) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.mutation(anyApi.freightFate.publishProfileSnapshot, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    snapshot: input.snapshot,
+    now: Date.now(),
+  });
+}
+
+export async function getFreightFatePublicUpdates(limit = 20, before?: number) {
+  const client = getConvexClient();
+  if (!client) return null;
+  return client.query(anyApi.freightFate.getPublicUpdates, { limit, ...(before ? { before } : {}) });
+}
+
 export async function postFreightFatePresence(input: {
   driverId: string;
   driverToken: string;
