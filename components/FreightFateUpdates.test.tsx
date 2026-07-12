@@ -33,13 +33,22 @@ test("validates public feed cursors", () => {
 });
 
 test("renders the compact feed as a closed native disclosure", async () => {
-  getUpdates.mockResolvedValue({ updates: [], nextBefore: undefined });
+  getUpdates.mockResolvedValue({
+    updates: [{ _id: "compact-row", driverId: "road-star-1234", displayName: "Road Star", eventId: "delivery-compact", eventType: "delivery_completed", summary: "Delivered steel.", occurredAt: 1_800_000_000_000 }],
+    nextBefore: undefined,
+  });
   const html = renderToStaticMarkup(await FreightFateUpdates({ compact: true, limit: 5 }));
+  expect(html).toContain('<section aria-labelledby="public-driver-updates-heading"');
+  expect(html).toContain('<h2 class="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Updates from public drivers</h2><details');
   expect(html).toContain("<details");
   expect(html).not.toContain("<details open");
   expect(html).toContain("<summary");
   expect(html).toContain("Public Freight Fate updates");
-  expect(html).toContain("focus:ring-4");
+  expect(html).toContain("focus-visible:ring-4");
+  expect(html).not.toMatch(/<summary[^>]*>\s*<h[1-6]/);
+  expect(html).toContain("<h3");
+  expect(html).toContain('<time dateTime="2027-01-15T08:00:00.000Z">');
+  expect(html).toContain("EST");
   expect(html).not.toContain("aria-expanded");
   expect(html).not.toContain("renewed sharing consent");
 });

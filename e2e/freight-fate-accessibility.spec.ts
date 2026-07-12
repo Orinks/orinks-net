@@ -51,8 +51,12 @@ test("keyboard skip navigation and route links remain usable", async ({ page }) 
 
 test("compact updates disclosure is closed by default and uses native keyboard behavior", async ({ page }) => {
   await page.goto("/freight-fate");
+  const heading = page.getByRole("heading", { level: 2, name: "Updates from public drivers" });
+  await expect(heading).toBeVisible();
   const details = page.locator("details").filter({ hasText: "Public Freight Fate updates" });
   const summary = details.locator("summary");
+  await expect(heading.locator("xpath=following-sibling::*[1]")).toHaveJSProperty("tagName", "DETAILS");
+  await expect(summary).toHaveText("Public Freight Fate updates");
   await expect(details).not.toHaveAttribute("open", "");
   await expect(details.getByRole("link", { name: "View all public Freight Fate updates" })).not.toBeVisible();
   await summary.focus();

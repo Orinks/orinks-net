@@ -50,13 +50,10 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
             const headingId = `update-${freightFateEventFragment(`${event.driverId}:${event.eventId}`)}`;
             return <li key={event._id}>
               <article aria-labelledby={headingId} className="rounded border border-line-strong p-4">
-                {compact ? <p className="text-lg font-bold" id={headingId}>
+                <h3 className="text-lg font-bold" id={headingId}>
                   <Link href={`/freight-fate/drivers/${event.driverId}`}>{event.displayName}</Link>
                   {`: ${eventLabel(event.eventType)}`}
-                </p> : <h3 className="text-lg font-bold" id={headingId}>
-                  <Link href={`/freight-fate/drivers/${event.driverId}`}>{event.displayName}</Link>
-                  {`: ${eventLabel(event.eventType)}`}
-                </h3>}
+                </h3>
                 <p>
                   <FreightFateEventLink
                     fragment={freightFateEventFragment(event.eventId)}
@@ -82,12 +79,15 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
       ) : null}
     </>;
   if (compact) {
-    return <details className="my-8 rounded-lg border border-line bg-white p-5">
-      <summary className="cursor-pointer list-none text-2xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-sky-600 [&::-webkit-details-marker]:hidden">
-        Public Freight Fate updates
-      </summary>
-      <div className="mt-5">{content}</div>
-    </details>;
+    return <section aria-labelledby="public-driver-updates-heading" className="my-8">
+      <h2 className="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Updates from public drivers</h2>
+      <details className="rounded-lg border border-line bg-white p-5">
+        <summary className="cursor-pointer font-semibold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-600">
+          Public Freight Fate updates
+        </summary>
+        <div className="mt-5">{content}</div>
+      </details>
+    </section>;
   }
   return <section aria-labelledby="freight-fate-updates-heading" className="py-8">
     <h2 className="mb-4 text-2xl font-bold text-ink" id="freight-fate-updates-heading">Freight Fate updates</h2>
