@@ -103,12 +103,6 @@ export async function FreightFateDriversBoard() {
           })}
         </ul>
       ) : null}
-
-      <p>
-        Players appear here while hauling a load, and only if they turned on sharing inside Freight Fate
-        and chose the public listing. The board shows in-game activity only, never anything about the real
-        player. <Link href="/freight-fate">Open the Freight Fate page</Link> for the latest board.
-      </p>
     </Section>
   );
 }

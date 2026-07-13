@@ -41,9 +41,9 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
     result = null;
   }
   const content = <>
-      <p className="mb-5 max-w-3xl">Factual public in-game activity, newest first.</p>
+      <p className="mb-5 max-w-3xl">Newest updates first.</p>
       {!result ? <p>Freight Fate updates are temporarily unavailable.</p> : result.updates.length === 0 ? (
-        <p>No public Freight Fate updates are available on this page.</p>
+        <p>No Freight Fate updates yet.</p>
       ) : (
         <ol className="space-y-4">
           {result.updates.map((event: PublicUpdate) => {
@@ -74,16 +74,16 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
         {result?.nextBefore ? (
           <Link href={`/freight-fate/updates?before=${encodeURIComponent(`${result.nextBefore.occurredAt}:${result.nextBefore.eventId}`)}`}>Older updates</Link>
         ) : null}
-        {compact ? <Link href="/freight-fate/updates">View all public Freight Fate updates</Link> : null}
+        {compact ? <Link href="/freight-fate/updates">View all Freight Fate updates</Link> : null}
       </nav>
       ) : null}
     </>;
   if (compact) {
     return <section aria-labelledby="public-driver-updates-heading" className="my-8">
-      <h2 className="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Updates from public drivers</h2>
+      <h2 className="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Driver updates</h2>
       <details className="rounded-lg border border-line bg-white p-5">
         <summary className="cursor-pointer font-semibold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-600">
-          Public Freight Fate updates
+          Freight Fate updates
         </summary>
         <div className="mt-5">{content}</div>
       </details>
