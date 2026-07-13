@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+
 export type GitHubAsset = {
   name: string;
   browser_download_url: string;
@@ -49,43 +51,61 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
   return headers;
 };
 
+export const githubReleasesCacheTag = "github-releases";
+
+const getCachedReleases = unstable_cache(
+  async (repo: string): Promise<GitHubRelease[]> => {
+    const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/releases?per_page=20`, {
+      headers: githubHeaders(),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub releases request failed for ${repo}: ${response.status}`);
+    }
+
+    return response.json() as Promise<GitHubRelease[]>;
+  },
+  [githubReleasesCacheTag],
+  { revalidate: 60, tags: [githubReleasesCacheTag] },
+);
+
+const getCachedRenderedMarkdown = unstable_cache(
+  async (body: string, repo: string) => {
+    const response = await fetch("https://api.github.com/markdown", {
+      method: "POST",
+      headers: {
+        ...githubHeaders("text/html"),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: body,
+        mode: "gfm",
+        context: `Orinks/${repo}`,
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return response.text();
+  },
+  ["github-rendered-markdown"],
+  { revalidate: 86_400 },
+);
+
 export async function renderMarkdown(body: string | null, repo: string) {
   if (!body?.trim()) {
     return null;
   }
 
-  const response = await fetch("https://api.github.com/markdown", {
-    method: "POST",
-    headers: {
-      ...githubHeaders("text/html"),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      text: body,
-      mode: "gfm",
-      context: `Orinks/${repo}`,
-    }),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return response.text();
+  return getCachedRenderedMarkdown(body, repo);
 }
 
 export async function getReleases(repo: string): Promise<GitHubRelease[]> {
-  const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/releases?per_page=20`, {
-    headers: githubHeaders(),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`GitHub releases request failed for ${repo}: ${response.status}`);
-  }
-
-  return response.json() as Promise<GitHubRelease[]>;
+  return getCachedReleases(repo);
 }
 
 export async function getRecentReleaseActivity(repo: string): Promise<GitHubActivityItem[]> {

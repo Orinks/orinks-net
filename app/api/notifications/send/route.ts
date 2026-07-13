@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import webPush from "web-push";
+import { githubReleasesCacheTag } from "@/lib/github";
 import { listBuildSubscriptions, removeBuildSubscription } from "@/lib/notifications";
 
 export const runtime = "nodejs";
@@ -36,15 +38,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!configureWebPush()) {
-    return NextResponse.json({ error: "Web Push is not configured." }, { status: 503 });
-  }
-
   const body = (await request.json()) as SendBody;
   const product = body.product?.trim();
 
   if (!product) {
     return NextResponse.json({ error: "A product is required." }, { status: 400 });
+  }
+
+  revalidateTag(githubReleasesCacheTag);
+
+  if (!configureWebPush()) {
+    return NextResponse.json({ error: "Web Push is not configured." }, { status: 503 });
   }
 
   const subscriptions = await listBuildSubscriptions(product);

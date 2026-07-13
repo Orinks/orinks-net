@@ -46,7 +46,22 @@ function DownloadList({ release }: { release: GitHubRelease }) {
   );
 }
 
-function Notes({ release }: { release: GitHubRelease }) {
+function rebaseNoteHeadings(html: string, minimumLevel: 4 | 5) {
+  const levels = Array.from(html.matchAll(/<h([1-6])\b/gi), (match) => Number(match[1]));
+
+  if (levels.length === 0) {
+    return html;
+  }
+
+  const offset = minimumLevel - Math.min(...levels);
+
+  return html.replace(/<(\/?)h([1-6])(\b[^>]*)>/gi, (_match, closing, level, attributes) => {
+    const rebasedLevel = Math.min(6, Number(level) + offset);
+    return `<${closing}h${rebasedLevel}${attributes}>`;
+  });
+}
+
+function Notes({ release, headingLevel }: { release: GitHubRelease; headingLevel: 4 | 5 }) {
   const body = release.body_html || release.body;
 
   if (!body?.trim()) {
@@ -61,7 +76,7 @@ function Notes({ release }: { release: GitHubRelease }) {
       {release.body_html ? (
         <div
           className="prose mt-4 max-w-none text-sm leading-6 text-slate-700"
-          dangerouslySetInnerHTML={{ __html: release.body_html }}
+          dangerouslySetInnerHTML={{ __html: rebaseNoteHeadings(release.body_html, headingLevel) }}
         />
       ) : (
         <pre className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
@@ -122,7 +137,7 @@ export async function ReleaseDownloads({
                 View full release
               </ButtonLink>
             </div>
-            <Notes release={stable} />
+            <Notes headingLevel={4} release={stable} />
           </article>
         ) : (
           <p>No stable release was found on GitHub.</p>
@@ -147,7 +162,7 @@ export async function ReleaseDownloads({
                     Full {singularPrereleaseLabel}: {prereleaseTitle(release, singularPrereleaseLabel)}
                   </a>
                 </p>
-                <Notes release={release} />
+                <Notes headingLevel={5} release={release} />
               </article>
             ))}
           </div>
@@ -155,12 +170,15 @@ export async function ReleaseDownloads({
       </section>
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown GitHub error";
+    console.error("Unable to load GitHub releases", error);
 
     return (
-      <section className="rounded-lg border border-amber-300 bg-soft-gold p-5" role="status">
+      <section className="rounded-lg border border-amber-300 bg-soft-gold p-5">
         <h2 className="text-xl font-bold text-ink">Downloads are temporarily unavailable</h2>
-        <p className="mt-2 text-slate-800">{message}</p>
+        <p className="mt-2 text-slate-800">
+          Please try again in a few minutes. You can also download {productName} from GitHub
+          releases.
+        </p>
         <p className="mt-4">
           <a href={`https://github.com/Orinks/${repo}/releases`}>Open GitHub releases</a>
         </p>
