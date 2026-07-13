@@ -35,6 +35,8 @@ describe("driver profile routes", () => {
     expect(html).toContain('dateTime="2027-01-15T08:00:00.000Z"');
     expect(html).toContain("EST");
     expect(html).not.toContain('role="tab"');
+    expect(html).not.toContain("A Freight Fate driver profile shared through orinks.net.");
+    expect(html).not.toContain("Shared profiles may appear in discovery.");
   });
 
   test("uses an identical non-leaking unavailable presentation", async () => {
