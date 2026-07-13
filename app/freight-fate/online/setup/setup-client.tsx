@@ -436,10 +436,12 @@ function DriverSetup() {
                 <p className="text-sm text-slate-700" id="profile-sharing-help">
                   When on, eligible driver-profile details, official achievements you earn,
                   road-journal posts generated automatically from gameplay, public-feed updates, and
-                  on-duty board activity can appear publicly on Orinks. When off, all of this is hidden
-                  and future public updates stop. Orinks may retain records privately unless sharing is
-                  enabled again. Freight Fate never sends the full save, money, coordinates, active
-                  cargo details, or precise live location.
+                  on-duty board activity can appear publicly on orinks.net. When off, all of this is hidden
+                  and future public updates stop. orinks.net may retain records privately unless sharing is
+                  enabled again. Detailed career statistics appear only after orinks.net accepts and verifies
+                  a private Cloud Backup. Cloud Backup is a separate setting in the game and can be on or
+                  off independently. The public profile never includes the full backup, money,
+                  coordinates, active cargo details, or precise live location.
                   {" "}<Link href="/freight-fate/online/privacy">Read the Freight Fate sharing and privacy details</Link>.
                 </p>
               </div>

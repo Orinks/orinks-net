@@ -142,7 +142,7 @@ export const setIntegrityFlag = internalMutation({
 });
 
 // Who runs what: one line per driver with the game build it last posted from
-// (stamped by updatePresence / publishProfileSnapshot / uploadSave) and any
+// (stamped by updatePresence, journal events, or Cloud Backup upload) and any
 // sticky save-tamper verdict from upload screening. Internal only — build
 // identity and integrity flags are moderation data, never shown on the site.
 // Run it from the dashboard or the CLI:

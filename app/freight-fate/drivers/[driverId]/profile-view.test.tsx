@@ -45,6 +45,13 @@ describe("driver profile routes", () => {
     expect(html).not.toContain("Road Star");
   });
 
+  test("explains when verified career statistics are not available", async () => {
+    getProfile.mockResolvedValue({ ...profile, snapshot: null });
+    const html = renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" }));
+    expect(html).toContain("No server-verified career statistics are available yet.");
+    expect(html).not.toContain("No shared profile snapshot is available yet.");
+  });
+
   test("validates opaque journal cursors", () => {
     expect(parseJournalCursor("1800000000000:delivery-12")).toEqual({ occurredAt: 1_800_000_000_000, eventId: "delivery-12" });
     expect(parseJournalCursor("bad")).toBeUndefined();

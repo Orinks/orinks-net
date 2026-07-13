@@ -25,6 +25,9 @@ test("drivers receive one unchecked, labelled profile-sharing control", () => {
   expect(html).toContain("on-duty board activity");
   expect(html).toContain("road-journal posts generated automatically");
   expect(html).toContain("official achievements");
+  expect(html).toContain("Detailed career statistics appear only after orinks.net accepts and verifies");
+  expect(html).toContain("Cloud Backup is a separate setting in the game");
+  expect(html).toContain("The public profile never includes the full backup");
   expect(html).not.toContain('id="visibility"');
   expect(html).not.toContain("Unlisted:");
   expect(html.match(/type="checkbox"/g)).toHaveLength(1);

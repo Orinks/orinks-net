@@ -11,7 +11,7 @@ export default function FreightFateOnlineRulesPage() {
     <div className="space-y-8">
       <PageHeader
         title="Freight Fate Online Rules"
-        intro="Driver names and careers appear on public profiles and the live drivers board, so both have to follow these rules."
+        intro="Driver names and career statistics can appear on public profiles and the live drivers board, so both have to follow these rules."
       />
 
       <Section title="Naming rules">
@@ -39,22 +39,18 @@ export default function FreightFateOnlineRulesPage() {
         </p>
       </Section>
 
-      <Section title="Fair play on public boards">
+      <Section title="Fair play online">
         <p>
-          Freight Fate is a single-player game, and your save files are yours. Editing them on
-          your own machine is not against any rule. The public spaces are different: the drivers
-          board, the updates feed, and public profiles present careers as really driven, next to
-          players who earned every mile.
+          Your local career is yours. You can edit it or play however you like on your own
+          computer.
         </p>
         <p>
-          So there is one rule: an edited or impossible career is not shown publicly. Shared saves
-          and profiles are checked against the game&apos;s own arithmetic, and a career that could
-          not have happened — money no delivery ever paid, experience no mileage could earn — is
-          held back from the board, the updates feed, and its public profile until we review it.
+          Profile sharing controls whether your driver appears online. Career statistics shown
+          online come only from a Cloud Backup that orinks.net has checked and accepted.
         </p>
         <p>
-          The game itself is never blocked. You keep playing, and cloud backup keeps working.
-          Starting a fresh, honestly driven career is always enough to come back.
+          If a backup does not pass those checks, the new statistics are not shown. Your last
+          accepted statistics stay in place, and nothing changes on your computer.
         </p>
         <p>
           <Link href="/freight-fate/online/setup">Back to Freight Fate online setup</Link>.

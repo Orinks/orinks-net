@@ -1,8 +1,9 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import type { QueryCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { stampClientVersion } from "./freightFate";
+import invariants from "../data/freight-fate-profile-invariants.json";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -70,7 +71,59 @@ async function latestRevision(ctx: QueryCtx, driverId: string, saveName: string)
     .first();
 }
 
-export const uploadSave = mutation({
+function levelForXp(xp: number) {
+  const thresholds = invariants.levelXp as number[];
+  let level = 1;
+  for (let index = 1; index < thresholds.length; index += 1) {
+    if (xp >= thresholds[index]) level = index + 1;
+  }
+  const extra = xp - thresholds[thresholds.length - 1];
+  if (extra > 0) level = thresholds.length + Math.floor(extra / 1500);
+  return level;
+}
+
+async function upsertVerifiedSnapshot(
+  ctx: MutationCtx,
+  args: { driverId: string; saveName: string; revision: number; payload: Record<string, unknown>; now: number; validatorVersion: number },
+) {
+  const career = args.payload.career as Record<string, number>;
+  const level = levelForXp(career.xp);
+  const cityLabels = invariants.cityLabels as Record<string, string>;
+  const truckLabels = invariants.truckLabels as Record<string, string>;
+  const truck = args.payload.truck as string;
+  const clean = {
+    driverId: args.driverId,
+    version: 1,
+    level,
+    careerTitle: `Level ${level} driver`,
+    lastSavedCity: cityLabels[args.payload.current_city as string],
+    deliveries: career.deliveries,
+    milesDriven: Math.round(career.total_miles * 10) / 10,
+    reputation: Math.round(career.reputation * 10) / 10,
+    onTimeDeliveries: career.on_time_deliveries,
+    truckName: truckLabels[truck],
+    employmentStatus: "Owner-operator",
+    capturedAt: args.now,
+    updatedAt: args.now,
+    sourceSaveName: args.saveName,
+    sourceRevision: args.revision,
+    validatorVersion: args.validatorVersion,
+  };
+  const existing = await ctx.db.query("freightFateProfileSnapshots")
+    .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
+  if (existing) await ctx.db.patch(existing._id, clean);
+  else await ctx.db.insert("freightFateProfileSnapshots", clean);
+}
+
+export const authorizeSaveAction = internalQuery({
+  args: { driverId: v.string(), driverTokenHash: v.string() },
+  handler: async (ctx, args) => {
+    const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    return Boolean(driver);
+  },
+});
+
+export const storeValidatedSave = internalMutation({
   args: {
     driverId: v.string(),
     driverTokenHash: v.string(),
@@ -84,11 +137,11 @@ export const uploadSave = mutation({
     content: v.bytes(),
     summary: v.string(),
     clientVersion: v.optional(v.string()),
-    // Tamper verdict the REST route computed from the blob (it has node:zlib;
-    // this runtime does not). Anything other than "ok" is stamped on the
-    // driver row for moderation. The upload itself always proceeds — cloud
-    // backup keeps working; the flag is evidence, not punishment.
-    integrity: v.optional(v.string()),
+    sig: v.string(),
+    keyId: v.string(),
+    signedAt: v.string(),
+    validatorVersion: v.number(),
+    payload: v.any(),
     now: v.number(),
   },
   handler: async (ctx, args) => {
@@ -116,13 +169,6 @@ export const uploadSave = mutation({
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-
-    if (args.integrity && args.integrity !== "ok" && !driver.integrityFlag) {
-      await ctx.db.patch(driver._id, {
-        integrityFlag: args.integrity.slice(0, 32),
-        integrityFlaggedAt: args.now,
-      });
-    }
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
       return { ok: false as const, reason: "too_large" as const };
@@ -171,7 +217,20 @@ export const uploadSave = mutation({
       sizeBytes: args.content.byteLength,
       summary: args.summary,
       contentId,
+      sig: args.sig,
+      keyId: args.keyId,
+      signedAt: args.signedAt,
+      validatorVersion: args.validatorVersion,
       createdAt: args.now,
+    });
+
+    await upsertVerifiedSnapshot(ctx, {
+      driverId: args.driverId,
+      saveName: args.saveName,
+      revision,
+      payload: args.payload as Record<string, unknown>,
+      now: args.now,
+      validatorVersion: args.validatorVersion,
     });
 
     // Prune revisions beyond the keep window, oldest first, content included.
@@ -190,6 +249,51 @@ export const uploadSave = mutation({
     }
 
     return { ok: true as const, revision };
+  },
+});
+
+export const readSaveForAction = internalQuery({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    saveName: v.string(),
+    revision: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { driver, reason } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver) return { ok: false as const, reason };
+    const row = args.revision === undefined
+      ? await latestRevision(ctx, args.driverId, args.saveName)
+      : await ctx.db.query("freightFateSaves").withIndex("by_slot", (q) =>
+          q.eq("driverId", args.driverId).eq("saveName", args.saveName).eq("revision", args.revision!),
+        ).unique();
+    if (!row) return { ok: false as const, reason: "save_not_found" as const };
+    const content = await ctx.db.get(row.contentId);
+    if (!content) return { ok: false as const, reason: "save_not_found" as const };
+    return { ok: true as const, row, content: content.content };
+  },
+});
+
+export const attachLegacySignature = internalMutation({
+  args: {
+    driverId: v.string(), driverTokenHash: v.string(), saveId: v.id("freightFateSaves"),
+    sig: v.string(), keyId: v.string(), signedAt: v.string(), validatorVersion: v.number(),
+    payload: v.any(), now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver) return { ok: false as const, reason: "unauthorized" as const };
+    const row = await ctx.db.get(args.saveId);
+    if (!row || row.driverId !== args.driverId) return { ok: false as const, reason: "save_not_found" as const };
+    await ctx.db.patch(row._id, {
+      sig: args.sig, keyId: args.keyId, signedAt: args.signedAt, validatorVersion: args.validatorVersion,
+    });
+    await upsertVerifiedSnapshot(ctx, {
+      driverId: args.driverId, saveName: row.saveName, revision: row.revision,
+      payload: args.payload as Record<string, unknown>, now: args.now,
+      validatorVersion: args.validatorVersion,
+    });
+    return { ok: true as const };
   },
 });
 
@@ -226,53 +330,6 @@ export const listSaves = query({
   },
 });
 
-export const downloadSave = query({
-  args: {
-    driverId: v.string(),
-    driverTokenHash: v.string(),
-    saveName: v.string(),
-    // Omitted: the latest revision. Set: that exact revision (rollback).
-    revision: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const { driver, reason } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
-    if (!driver) {
-      return { ok: false as const, reason };
-    }
-
-    const row =
-      args.revision === undefined
-        ? await latestRevision(ctx, args.driverId, args.saveName)
-        : await ctx.db
-            .query("freightFateSaves")
-            .withIndex("by_slot", (q) =>
-              q.eq("driverId", args.driverId).eq("saveName", args.saveName).eq("revision", args.revision!),
-            )
-            .unique();
-
-    if (!row) {
-      return { ok: false as const, reason: "save_not_found" as const };
-    }
-
-    const content = await ctx.db.get(row.contentId);
-    if (!content) {
-      return { ok: false as const, reason: "save_not_found" as const };
-    }
-
-    return {
-      ok: true as const,
-      saveName: row.saveName,
-      revision: row.revision,
-      saveVersion: row.saveVersion,
-      contentHash: row.contentHash,
-      sizeBytes: row.sizeBytes,
-      summary: row.summary,
-      createdAt: row.createdAt,
-      content: content.content,
-    };
-  },
-});
-
 export const deleteSaveSlot = mutation({
   args: {
     driverId: v.string(),
@@ -293,6 +350,14 @@ export const deleteSaveSlot = mutation({
     for (const row of rows) {
       await ctx.db.delete(row.contentId);
       await ctx.db.delete(row._id);
+    }
+
+    const snapshot = await ctx.db
+      .query("freightFateProfileSnapshots")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+      .unique();
+    if (snapshot?.sourceSaveName === args.saveName) {
+      await ctx.db.delete(snapshot._id);
     }
 
     return { ok: true as const, deletedRevisions: rows.length };
