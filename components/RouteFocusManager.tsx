@@ -17,10 +17,15 @@ export function RouteFocusManager() {
     if (window.location.hash) {
       return;
     }
-
-
     const frame = window.requestAnimationFrame(() => {
-      document.querySelector<HTMLHeadingElement>("main h1")?.focus();
+      const heading = document.querySelector<HTMLHeadingElement>("main h1");
+      if (!heading) {
+        return;
+      }
+      if (!heading.hasAttribute("tabindex")) {
+        heading.tabIndex = -1;
+      }
+      heading.focus();
     });
     return () => window.cancelAnimationFrame(frame);
   }, [routeKey]);

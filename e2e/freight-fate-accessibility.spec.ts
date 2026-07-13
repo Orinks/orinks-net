@@ -102,6 +102,15 @@ test("cursor pagination uses native route links in both directions", async ({ pa
   await expect(page.getByRole("heading", { level: 1, name: "E2E Driver" })).toBeFocused();
 });
 
+test("shared route focus supports custom page headings", async ({ page }) => {
+  await page.goto("/midnight-signal");
+  const leaderboard = page.getByRole("link", { name: "Leaderboard" });
+  await leaderboard.focus();
+  await leaderboard.press("Enter");
+  await expect(page).toHaveURL(/\/midnight-signal\/leaderboard$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeFocused();
+});
+
 test("updates reflow at a narrow viewport and forced colors preserve controls", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.emulateMedia({ forcedColors: "active" });
