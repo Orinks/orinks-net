@@ -261,7 +261,11 @@ export default defineSchema({
     // public: listed on the live drivers board; unlisted: profile reachable
     // by URL only; private: nothing shown anywhere.
     visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
-    driverTokenHash: v.string(),
+    // Legacy single-token hash from before freightFateDeviceTokens. Still
+    // accepted by every authenticated call so tokens pasted into games before
+    // the computer list shipped keep working; new tokens are always device
+    // rows, and the setup page can retire this one explicitly.
+    driverTokenHash: v.optional(v.string()),
     // Set by the moderation force-rename; the setup page demands a fresh name
     // and provisionDriver clears it once one passes screening.
     needsRename: v.optional(v.boolean()),
@@ -288,6 +292,22 @@ export default defineSchema({
   })
     .index("by_driver_id", ["driverId"])
     .index("by_auth_subject", ["authSubject"]),
+  // One posting token per computer the player connects, so adding a laptop
+  // never retires the desktop's sign-in (Freight Fate issue #64). Tokens
+  // exist only as hashes; the plain token is shown once at issuance on the
+  // setup page. Deleting a row is the revocation.
+  freightFateDeviceTokens: defineTable({
+    driverId: v.string(),
+    tokenHash: v.string(),
+    // Player-chosen computer name shown only to the owner on the setup page.
+    label: v.string(),
+    createdAt: v.number(),
+    // Coarse (see DEVICE_TOKEN_USE_STAMP_MS): "which computer was this again"
+    // freshness for the owner, not an audit log.
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_driver_id", ["driverId"])
+    .index("by_driver_token", ["driverId", "tokenHash"]),
   // Live "who's on duty" board: one row per driver holding only the latest
   // heartbeat. Rows older than the board TTL are treated as offline and
   // pruned on the next write; no history is kept by design.

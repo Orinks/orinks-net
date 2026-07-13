@@ -2,7 +2,7 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import { stampClientVersion } from "./freightFate";
+import { driverTokenAccepted, stampClientVersion, stampDeviceTokenUse } from "./freightFate";
 import invariants from "../data/freight-fate-profile-invariants.json";
 
 // --- Cloud saves for Freight Fate ---
@@ -10,8 +10,8 @@ import invariants from "../data/freight-fate-profile-invariants.json";
 // The desktop game mirrors each local save file (one per profile name) to a
 // slot here. Auth is the same account-issued driver token used by presence
 // and driver events: the REST layer hashes the Bearer token and the functions
-// compare it against freightFateDrivers.driverTokenHash — the player never
-// handles a second credential.
+// accept any of the driver's tokens (driverTokenAccepted in freightFate.ts)
+// — the player never handles a second credential.
 //
 // Sync model is last-write-wins with a conflict guard: every upload names the
 // revision it was based on, and a mismatch is rejected so the game can offer
@@ -56,7 +56,7 @@ async function authorizedDriver(ctx: QueryCtx, driverId: string, driverTokenHash
     return { driver: null, reason: "driver_not_found" as const };
   }
 
-  if (driver.driverTokenHash !== driverTokenHash) {
+  if (!(await driverTokenAccepted(ctx, driver, driverTokenHash))) {
     return { driver: null, reason: "unauthorized" as const };
   }
 
@@ -164,11 +164,12 @@ export const storeValidatedSave = internalMutation({
       return { ok: false as const, reason: "rate_limited" as const };
     }
 
-    if (driver.driverTokenHash !== args.driverTokenHash) {
+    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
       return { ok: false as const, reason: "unauthorized" as const };
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
+    await stampDeviceTokenUse(ctx, driver, args.driverTokenHash, args.now);
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
       return { ok: false as const, reason: "too_large" as const };

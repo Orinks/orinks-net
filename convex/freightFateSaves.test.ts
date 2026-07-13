@@ -170,3 +170,32 @@ describe("validated private cloud revisions", () => {
     expect(row?.sig).toEqual(expect.any(String));
   });
 });
+
+describe("per-computer tokens", () => {
+  test("a second computer's token uploads to the same slots and stamps its last use", async () => {
+    const t = setup();
+    const subject = "user_cloud";
+    const auth = await provisionedDriver(t, subject);
+    const as = t.withIdentity({ subject });
+
+    const laptop = await as.mutation(api.freightFate.addComputer, {
+      label: "Laptop",
+      now: Date.now(),
+    });
+    const laptopAuth = {
+      driverId: auth.driverId,
+      driverTokenHash: createHash("sha256").update(laptop.token).digest("hex"),
+    };
+
+    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    await expect(
+      upload(t, laptopAuth, { ...validProfile(), money: 9_100 }, 1),
+    ).resolves.toMatchObject({ ok: true, revision: 2 });
+
+    // The upload marked the laptop row so the setup page can say when that
+    // computer last played; the desktop's original token has no row to stamp.
+    const computers = await as.query(api.freightFate.getMyComputers, {});
+    const laptopRow = computers!.computers.find((c) => c.label === "Laptop")!;
+    expect(laptopRow.lastUsedAt).not.toBeNull();
+  });
+});
