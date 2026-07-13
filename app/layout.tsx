@@ -1,8 +1,9 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { RouteFocusManager } from "@/components/RouteFocusManager";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -20,6 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <ClerkProvider>
       <html lang="en">
         <body className="font-sans">
+          <Suspense fallback={null}>
+            <RouteFocusManager />
+          </Suspense>
           <a
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-ink focus:shadow"
             href="#main"

@@ -92,15 +92,14 @@ test("cursor pagination uses native route links in both directions", async ({ pa
   await page.goto("/freight-fate/e2e-fixture?view=journal");
   const older = page.getByRole("link", { name: "Older road-journal entries" });
   await older.focus();
-  await page.keyboard.press("Enter");
+  await older.press("Enter");
   await expect(page).toHaveURL(/before=older/);
-  await expect(page.locator("body")).toBeFocused();
-  await expect(page.getByRole("heading", { level: 1, name: "E2E Driver" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "E2E Driver" })).toBeFocused();
   const newest = page.getByRole("link", { name: "Back to newest road-journal entries" });
   await newest.focus();
-  await page.keyboard.press("Enter");
+  await newest.press("Enter");
   await expect(page).not.toHaveURL(/before=older/);
-  await expect(page.locator("body")).toBeFocused();
+  await expect(page.getByRole("heading", { level: 1, name: "E2E Driver" })).toBeFocused();
 });
 
 test("updates reflow at a narrow viewport and forced colors preserve controls", async ({ page }) => {
@@ -128,4 +127,18 @@ test("updates and profile routes remain available without JavaScript", async ({ 
   await page.goto(`http://127.0.0.1:3108${olderHref}`);
   await expect(page).toHaveURL(/before=older/);
   await context.close();
+});
+
+test("global navigation, footer status, and game links remain unambiguous", async ({ page }) => {
+  await page.goto("/games");
+  await expect(page.getByRole("link", { name: "Skip to main content" })).toHaveCount(1);
+  await expect(page.locator("footer [aria-live], footer [role=status]")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "View Freight Fate details" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Downloads: Freight Fate" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Freight Fate: GitHub repository" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Saltwake: Report an issue" }),
+  ).toBeVisible();
 });

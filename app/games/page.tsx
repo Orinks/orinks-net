@@ -19,13 +19,15 @@ export default function GamesPage() {
             <h2 className="text-xl font-bold text-ink">{game.title}</h2>
             <p className="mt-2 leading-7 text-slate-700">{game.summary}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <ButtonLink href={game.primaryHref}>{game.primaryLabel}</ButtonLink>
+              <ButtonLink href={game.primaryHref}>
+                {game.primaryLabel}: {game.title}
+              </ButtonLink>
               <ButtonLink href={game.href} variant="secondary">
-                Details
+                View {game.title} details
               </ButtonLink>
               {game.links.map((link) => (
                 <ButtonLink href={link.href} key={link.href} variant="secondary">
-                  {link.label}
+                  {game.title}: {link.label}
                 </ButtonLink>
               ))}
             </div>

@@ -21,12 +21,6 @@ const disclosureNav = {
 export function Header() {
   return (
     <header className="border-b border-line bg-white">
-      <a
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-action focus:ring-4 focus:ring-sky-600"
-        href="#main"
-      >
-        Skip to content
-      </a>
       <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
           <Image
