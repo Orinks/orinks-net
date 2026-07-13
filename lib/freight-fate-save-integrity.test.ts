@@ -41,16 +41,12 @@ describe("screenSaveBlob", () => {
     );
   });
 
-  test("a stripped signature on a version-4 save is flagged", () => {
-    const edited = profile();
-    delete (edited as Record<string, unknown>)._signature;
-    expect(screenSaveBlob(blobOf(edited))).toBe("unsigned");
-  });
-
-  test("a pre-signature save version is not falsely flagged as unsigned", () => {
-    const legacy = profile({ version: 3 });
-    delete (legacy as Record<string, unknown>)._signature;
-    expect(screenSaveBlob(blobOf(legacy))).toBe("ok");
+  test("an unsigned blob passes: the game strips signatures from cloud uploads", () => {
+    // Every legitimate cloud blob arrives without a signature (cloud_saves.py
+    // removes it before upload), so its absence must never be a verdict.
+    const cloud = profile();
+    delete (cloud as Record<string, unknown>)._signature;
+    expect(screenSaveBlob(blobOf(cloud))).toBe("ok");
   });
 
   test("edited money beyond lifetime earnings is impossible", () => {

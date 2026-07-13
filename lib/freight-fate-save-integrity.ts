@@ -36,10 +36,13 @@ const XP_PER_MILE_V4 = 1.2;
 const XP_RULE_MAX_VERSION = 4;
 const EPSILON = 1;
 
+// NOTE: no signature check here on purpose. The game's local saves are
+// HMAC-signed, but the cloud upload path strips the signature by design
+// (cloud_saves.py _SIGNATURE_FIELDS — it only verifies on the machine that
+// wrote it), so every legitimate cloud blob arrives unsigned.
 export type SaveIntegrity =
   | "ok"
   | "unreadable" // not gzip/JSON — corrupt or not a profile at all
-  | "unsigned" // the game always signs; a missing signature means hand editing
   | "impossible_money" // money exceeds every legitimate source
   | "impossible_xp"; // XP exceeds the per-mile ceiling for its save version
 
@@ -65,10 +68,6 @@ export function screenSaveBlob(content: ArrayBuffer): SaveIntegrity {
   const earnings = num(career.total_earnings);
   const advance = Math.min(Math.max(0, num(profile.pay_advance)), PAY_ADVANCE_LIMIT);
   const version = num(profile.version);
-
-  if (version >= 4 && typeof profile._signature !== "string") {
-    return "unsigned";
-  }
 
   let gearSpend = 0;
   for (const key of Array.isArray(profile.owned_trucks) ? profile.owned_trucks : []) {
