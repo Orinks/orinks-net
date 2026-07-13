@@ -269,6 +269,20 @@ export default defineSchema({
     // board consent never implies journal/profile consent.
     sharingConsentVersion: v.optional(v.number()),
     sharingConsentedAt: v.optional(v.number()),
+    // The game build this driver last posted from ("v1.8.0",
+    // "nightly-20260711", or "source-<version>" for source checkouts),
+    // parsed from the game's User-Agent by the REST routes. Never public;
+    // exists so moderation can tell which build a suspicious profile came
+    // from. lastClientVersionAt is when that exact build was first reported.
+    lastClientVersion: v.optional(v.string()),
+    lastClientVersionAt: v.optional(v.number()),
+    // Sticky tamper verdict from screening uploaded save blobs (see
+    // lib/freight-fate-save-integrity.ts): "unsigned", "impossible_money",
+    // "impossible_xp", or "unreadable". Set by uploadSave when a screen
+    // fails; never cleared automatically — moderation clears it from the
+    // dashboard after review. Never public.
+    integrityFlag: v.optional(v.string()),
+    integrityFlaggedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

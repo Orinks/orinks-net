@@ -3,18 +3,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 
 export const metadata = {
-  title: "Freight Fate Driver Naming Rules",
+  title: "Freight Fate Online Rules",
 };
 
-export default function FreightFateNamingRulesPage() {
+export default function FreightFateOnlineRulesPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Freight Fate Driver Naming Rules"
-        intro="Driver names appear on public profiles and the live drivers board, so every name has to follow these rules."
+        title="Freight Fate Online Rules"
+        intro="Driver names and careers appear on public profiles and the live drivers board, so both have to follow these rules."
       />
 
-      <Section title="The rules">
+      <Section title="Naming rules">
         <ul>
           <li>No slurs or hate speech.</li>
           <li>No names of hate figures, and no hate symbols or their number codes.</li>
@@ -36,6 +36,25 @@ export default function FreightFateNamingRulesPage() {
           we consider abusive, at our discretion and without notice. If a moderator resets your
           name, the setup page will ask you to choose a new one before your driver appears publicly
           again.
+        </p>
+      </Section>
+
+      <Section title="Fair play on public boards">
+        <p>
+          Freight Fate is a single-player game, and your save files are yours. Editing them on
+          your own machine is not against any rule. The public spaces are different: the drivers
+          board, the updates feed, and public profiles present careers as really driven, next to
+          players who earned every mile.
+        </p>
+        <p>
+          So there is one rule: an edited or impossible career is not shown publicly. Shared saves
+          and profiles are checked against the game&apos;s own arithmetic, and a career that could
+          not have happened — money no delivery ever paid, experience no mileage could earn — is
+          held back from the board, the updates feed, and its public profile until we review it.
+        </p>
+        <p>
+          The game itself is never blocked. You keep playing, and cloud backup keeps working.
+          Starting a fresh, honestly driven career is always enough to come back.
         </p>
         <p>
           <Link href="/freight-fate/online/setup">Back to Freight Fate online setup</Link>.

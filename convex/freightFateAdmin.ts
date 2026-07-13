@@ -1,4 +1,4 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { driverIdFromName } from "./freightFate";
 import { screenDisplayName } from "./moderation";
@@ -99,5 +99,73 @@ export const forceRename = internalMutation({
     });
 
     return { driverId, displayName, regeneratedId: driverId !== args.driverId };
+  },
+});
+
+// Set or clear a driver's save-tamper flag by hand. Upload screening stamps
+// flags automatically; this exists for flags decided from offline forensics
+// and for clearing a reviewed flag. While flagged, the driver is hidden from
+// the live board, the updates feed, and their public profile (the fair-play
+// section of /freight-fate/online/rules); their game and cloud backups keep
+// working. Internal only:
+//
+//   npx convex run freightFateAdmin:setIntegrityFlag \
+//     '{"driverId":"<id>","flag":"impossible_money"}' --prod
+//   npx convex run freightFateAdmin:setIntegrityFlag \
+//     '{"driverId":"<id>","flag":null}' --prod          # clear after review
+export const setIntegrityFlag = internalMutation({
+  args: {
+    driverId: v.string(),
+    flag: v.union(v.string(), v.null()),
+  },
+  handler: async (ctx, args) => {
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+
+    if (!driver) {
+      throw new Error(`No driver with id "${args.driverId}".`);
+    }
+
+    await ctx.db.patch(driver._id, {
+      integrityFlag: args.flag === null ? undefined : args.flag.slice(0, 32),
+      integrityFlaggedAt: args.flag === null ? undefined : Date.now(),
+    });
+
+    return {
+      driverId: driver.driverId,
+      displayName: driver.displayName,
+      integrityFlag: args.flag,
+    };
+  },
+});
+
+// Who runs what: one line per driver with the game build it last posted from
+// (stamped by updatePresence / publishProfileSnapshot / uploadSave) and any
+// sticky save-tamper verdict from upload screening. Internal only — build
+// identity and integrity flags are moderation data, never shown on the site.
+// Run it from the dashboard or the CLI:
+//
+//   npx convex run freightFateAdmin:listClientVersions
+//
+// clientVersion is null for drivers who have not posted since version
+// stamping shipped (or who run a game from before it); clientVersionAt is
+// when the reported build was FIRST seen, not the last heartbeat. Clear a
+// reviewed integrityFlag by editing the driver row in the dashboard.
+export const listClientVersions = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const drivers = await ctx.db.query("freightFateDrivers").collect();
+    return drivers
+      .map((driver) => ({
+        driverId: driver.driverId,
+        displayName: driver.displayName,
+        clientVersion: driver.lastClientVersion ?? null,
+        clientVersionAt: driver.lastClientVersionAt ?? null,
+        integrityFlag: driver.integrityFlag ?? null,
+        integrityFlaggedAt: driver.integrityFlaggedAt ?? null,
+      }))
+      .sort((a, b) => (b.clientVersionAt ?? 0) - (a.clientVersionAt ?? 0));
   },
 });

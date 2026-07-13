@@ -128,6 +128,131 @@ describe("provisionDriver / getMyDriver", () => {
     expect(board.drivers.map((driver) => driver.driverId)).toContain(driverId);
   });
 
+  test("authenticated writes stamp the reporting game build on the driver row", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    const driverTokenHash = await sha256Hex(token!);
+    const driverRow = async () =>
+      (await t.run(async (ctx) =>
+        ctx.db
+          .query("freightFateDrivers")
+          .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+          .unique(),
+      ))!;
+
+    // A heartbeat without a version (pre-stamp game build) leaves no mark.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "hauling", detail: "", now,
+    });
+    expect((await driverRow()).lastClientVersion).toBeUndefined();
+
+    // A wrong token must not stamp: an unauthenticated caller cannot plant
+    // a build identity on someone else's driver row.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId,
+      driverTokenHash: await sha256Hex("ffd_not_the_real_token_value_here"),
+      activity: "hauling", detail: "", clientVersion: "nightly-20260712", now,
+    });
+    expect((await driverRow()).lastClientVersion).toBeUndefined();
+
+    // First versioned heartbeat records the build and when it appeared.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "hauling", detail: "",
+      clientVersion: "nightly-20260711", now: now + 1,
+    });
+    let row = await driverRow();
+    expect(row.lastClientVersion).toBe("nightly-20260711");
+    expect(row.lastClientVersionAt).toBe(now + 1);
+
+    // Steady heartbeats on the same build do not touch the row again, so
+    // lastClientVersionAt stays "first seen", not "last heartbeat".
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "hauling", detail: "",
+      clientVersion: "nightly-20260711", now: now + 2,
+    });
+    row = await driverRow();
+    expect(row.lastClientVersionAt).toBe(now + 1);
+
+    // Switching builds (say, a source checkout) re-stamps both fields.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "hauling", detail: "",
+      clientVersion: "source-1.9.0.dev0", now: now + 3,
+    });
+    row = await driverRow();
+    expect(row.lastClientVersion).toBe("source-1.9.0.dev0");
+    expect(row.lastClientVersionAt).toBe(now + 3);
+
+    // The moderation report lists the stamped build per driver.
+    const report = await t.query(internal.freightFateAdmin.listClientVersions, {});
+    expect(report).toContainEqual({
+      driverId,
+      displayName: "Rig Hauler",
+      clientVersion: "source-1.9.0.dev0",
+      clientVersionAt: now + 3,
+      integrityFlag: null,
+      integrityFlaggedAt: null,
+    });
+  });
+
+  test("an integrity-flagged driver is hidden from every public surface until cleared", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now,
+    });
+    const driverTokenHash = await sha256Hex(token!);
+
+    // On the board, in the feed, and profile visible while unflagged.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "hauling", detail: "", now,
+    });
+    await t.mutation(api.freightFate.publishCareerMilestone, {
+      driverId, driverTokenHash, eventId: "career-1", milestoneType: "first_delivery",
+      occurredAt: now, now,
+    });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toHaveLength(1);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).not.toBeNull();
+
+    // Flagged (as upload screening or offline forensics would): every public
+    // surface goes quiet, exactly like a private profile.
+    await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
+      driverId, flag: "impossible_money",
+    });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toHaveLength(0);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(0);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).toBeNull();
+
+    // The driver's own game is never blocked: heartbeats and journal posts
+    // still succeed while hidden.
+    const heartbeat = await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "still hauling", detail: "", now: now + 1,
+    });
+    expect(heartbeat.ok).toBe(true);
+
+    // Clearing after review restores the public face.
+    await t.mutation(internal.freightFateAdmin.setIntegrityFlag, { driverId, flag: null });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 1 })).drivers)
+      .toHaveLength(1);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now: now + 1 }))
+      .not.toBeNull();
+  });
+
   test("a display name used by another account is rejected, case-insensitively", async () => {
     const t = setup();
     const now = Date.now();

@@ -42,6 +42,17 @@ export function normalizeFreightFateVisibility(value: unknown): FreightFateVisib
   return "private";
 }
 
+// The game stamps every request's User-Agent as "FreightFate/<build>", where
+// <build> is the packaged build tag ("v1.8.0", "nightly-20260711") or
+// "source-<version>" for source checkouts. Builds from before the stamp send
+// a bare "FreightFate", and anything else (curl, a browser) matches nothing;
+// both yield undefined, which the Convex mutations treat as "no version
+// reported" rather than an error.
+export function freightFateClientVersion(request: Request) {
+  const header = (request.headers.get("user-agent") ?? "").trim();
+  return /^FreightFate\/([\x21-\x7e]{1,64})$/.exec(header)?.[1];
+}
+
 export function normalizeFreightFateToken(value: unknown, label: string) {
   if (typeof value !== "string") {
     throw new Error(`${label} is required.`);
@@ -119,6 +130,8 @@ export async function postFreightFateSave(input: {
   contentHash: string;
   content: ArrayBuffer;
   summary: string;
+  clientVersion?: string;
+  integrity?: string;
 }) {
   const client = getConvexClient();
 
@@ -135,6 +148,8 @@ export async function postFreightFateSave(input: {
     contentHash: input.contentHash,
     content: input.content,
     summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
+    ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
+    ...(input.integrity ? { integrity: input.integrity } : {}),
     now: Date.now(),
   });
 }
@@ -248,6 +263,7 @@ export async function postFreightFateCareerMilestone(input: {
 
 export async function postFreightFateProfileSnapshot(input: {
   driverId: string; driverToken: string; snapshot: Record<string, unknown>;
+  clientVersion?: string;
 }) {
   const client = getConvexClient();
   if (!client) return null;
@@ -255,6 +271,7 @@ export async function postFreightFateProfileSnapshot(input: {
     driverId: normalizeFreightFateDriverId(input.driverId),
     driverTokenHash: hashFreightFateToken(input.driverToken),
     snapshot: input.snapshot,
+    ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
     now: Date.now(),
   });
 }
@@ -270,6 +287,7 @@ export async function postFreightFatePresence(input: {
   driverToken: string;
   activity: string;
   detail: string;
+  clientVersion?: string;
 }) {
   const client = getConvexClient();
 
@@ -284,6 +302,7 @@ export async function postFreightFatePresence(input: {
     // letting the normalizer reject it.
     activity: input.activity.trim().replace(/\s+/g, " ").slice(0, 160),
     detail: input.detail.trim().replace(/\s+/g, " ").slice(0, 160),
+    ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
     now: Date.now(),
   });
 }

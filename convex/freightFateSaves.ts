@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
+import { stampClientVersion } from "./freightFate";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -82,6 +83,12 @@ export const uploadSave = mutation({
     contentHash: v.string(),
     content: v.bytes(),
     summary: v.string(),
+    clientVersion: v.optional(v.string()),
+    // Tamper verdict the REST route computed from the blob (it has node:zlib;
+    // this runtime does not). Anything other than "ok" is stamped on the
+    // driver row for moderation. The upload itself always proceeds — cloud
+    // backup keeps working; the flag is evidence, not punishment.
+    integrity: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
@@ -106,6 +113,15 @@ export const uploadSave = mutation({
 
     if (driver.driverTokenHash !== args.driverTokenHash) {
       return { ok: false as const, reason: "unauthorized" as const };
+    }
+
+    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
+
+    if (args.integrity && args.integrity !== "ok" && !driver.integrityFlag) {
+      await ctx.db.patch(driver._id, {
+        integrityFlag: args.integrity.slice(0, 32),
+        integrityFlaggedAt: args.now,
+      });
     }
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
