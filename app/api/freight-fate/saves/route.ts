@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import {
   FREIGHT_FATE_MAX_SAVE_BYTES,
   decodeFreightFateSaveContent,
+  freightFateClientVersion,
   listFreightFateSaves,
   normalizeFreightFateDriverId,
   normalizeFreightFateSaveName,
   normalizeFreightFateToken,
   postFreightFateSave,
 } from "@/lib/freight-fate-online";
+import { screenSaveBlob } from "@/lib/freight-fate-save-integrity";
 
 export const runtime = "nodejs";
 
@@ -75,6 +77,8 @@ export async function POST(request: Request) {
       contentHash: body.contentHash,
       content,
       summary,
+      clientVersion: freightFateClientVersion(request),
+      integrity: screenSaveBlob(content),
     });
 
     if (!result) {

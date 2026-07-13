@@ -95,6 +95,78 @@ describe("uploadSave", () => {
     expect(wrongToken).toMatchObject({ ok: false, reason: "unauthorized" });
   });
 
+  test("an upload carrying a client version stamps it on the driver row", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const now = Date.now();
+
+    const result = await t.mutation(api.freightFateSaves.uploadSave, {
+      driverId: auth.driverId,
+      driverTokenHash: auth.driverTokenHash,
+      saveName: "Driver",
+      saveVersion: 3,
+      parentRevision: null,
+      content: saveBytes('{"name": "Driver"}'),
+      contentHash: await sha256Hex(saveBytes('{"name": "Driver"}')),
+      summary: "Level 3, $12,000, in Chicago",
+      clientVersion: "v1.8.0",
+      now,
+    });
+    expect(result).toMatchObject({ ok: true, revision: 1 });
+
+    const driver = await t.run(async (ctx) =>
+      ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId))
+        .unique(),
+    );
+    expect(driver!.lastClientVersion).toBe("v1.8.0");
+    expect(driver!.lastClientVersionAt).toBe(now);
+  });
+
+  test("a failed integrity screen stamps a sticky flag on the driver row", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const now = Date.now();
+    const driverRow = async () =>
+      (await t.run(async (ctx) =>
+        ctx.db
+          .query("freightFateDrivers")
+          .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId))
+          .unique(),
+      ))!;
+
+    // A clean screen leaves no mark.
+    let result = await upload(t, auth, { now });
+    expect(result).toMatchObject({ ok: true, revision: 1 });
+    expect((await driverRow()).integrityFlag).toBeUndefined();
+
+    const flagged = await t.mutation(api.freightFateSaves.uploadSave, {
+      driverId: auth.driverId,
+      driverTokenHash: auth.driverTokenHash,
+      saveName: "Driver",
+      saveVersion: 3,
+      parentRevision: 1,
+      content: saveBytes('{"name": "Driver", "money": 1000113758}'),
+      contentHash: await sha256Hex(saveBytes('{"name": "Driver", "money": 1000113758}')),
+      summary: "Level 28, $1,000,113,758, in Tacoma",
+      integrity: "impossible_money",
+      now: now + 1,
+    });
+    expect(flagged).toMatchObject({ ok: true, revision: 2 });
+    let row = await driverRow();
+    expect(row.integrityFlag).toBe("impossible_money");
+    expect(row.integrityFlaggedAt).toBe(now + 1);
+
+    // The flag is sticky: a later clean upload does not clear the evidence,
+    // and a different verdict does not overwrite the first one.
+    result = await upload(t, auth, { parentRevision: 2, now: now + 2 });
+    expect(result).toMatchObject({ ok: true, revision: 3 });
+    row = await driverRow();
+    expect(row.integrityFlag).toBe("impossible_money");
+    expect(row.integrityFlaggedAt).toBe(now + 1);
+  });
+
   test("first upload creates revision 1 and round-trips through download", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);

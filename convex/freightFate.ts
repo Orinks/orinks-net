@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
 
@@ -118,6 +119,27 @@ async function pruneDriverEvents(ctx: MutationCtx, driverId: string) {
     .withIndex("by_driver", (q) => q.eq("driverId", driverId)).collect();
   events.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
   for (const row of events.slice(MAX_DRIVER_EVENTS)) await ctx.db.delete(row._id);
+}
+
+// Remember which game build a driver posts from. The version rides in on the
+// game's User-Agent (parsed by freightFateClientVersion in
+// lib/freight-fate-online.ts) with every authenticated write; the driver row
+// is only patched when the string changes, so steady one-a-minute heartbeats
+// cost no extra writes. Call only after the token hash has been verified —
+// an unauthenticated guess must not leave a mark on the driver row.
+export async function stampClientVersion(
+  ctx: MutationCtx,
+  driver: Doc<"freightFateDrivers">,
+  clientVersion: string | undefined,
+  now: number,
+) {
+  if (!clientVersion || driver.lastClientVersion === clientVersion) {
+    return;
+  }
+  await ctx.db.patch(driver._id, {
+    lastClientVersion: clientVersion.slice(0, 64),
+    lastClientVersionAt: now,
+  });
 }
 
 async function authenticatedSharingDriver(ctx: MutationCtx, args: {
@@ -361,6 +383,7 @@ export const updatePresence = mutation({
     driverTokenHash: v.string(),
     activity: v.string(),
     detail: v.string(),
+    clientVersion: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
@@ -386,6 +409,8 @@ export const updatePresence = mutation({
     if (driver.driverTokenHash !== args.driverTokenHash) {
       return { ok: false as const, reason: "unauthorized" };
     }
+
+    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
 
     const existing = await ctx.db
       .query("freightFatePresence")
@@ -450,7 +475,8 @@ export const getPresenceBoard = query({
       if (
         !driver ||
         driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION
+        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+        driver.integrityFlag
       ) {
         continue;
       }
@@ -610,6 +636,7 @@ export const publishProfileSnapshot = mutation({
     driverId: v.string(),
     driverTokenHash: v.string(),
     snapshot: v.object(snapshotArgs),
+    clientVersion: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
@@ -624,6 +651,9 @@ export const publishProfileSnapshot = mutation({
     if (driver.driverTokenHash !== args.driverTokenHash) {
       return { ok: false as const, reason: "unauthorized" };
     }
+    // Stamp before the consent gate: a snapshot refused for lapsed consent
+    // still proves which build the authenticated driver is running.
+    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
     if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
@@ -663,7 +693,8 @@ export const getPublicUpdates = query({
       const driver = await ctx.db.query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
       if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) continue;
+          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+          driver.integrityFlag) continue;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
     }
@@ -696,6 +727,14 @@ export const getDriverProfile = query({
     }
 
     if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+      return null;
+    }
+
+    // A tamper-flagged career is not presented as real: the profile hides
+    // exactly as a private one does until moderation clears the flag. The
+    // player keeps playing and keeps cloud backups; only the public face
+    // is held. See the fair-play section of /freight-fate/online/rules.
+    if (driver.integrityFlag) {
       return null;
     }
 

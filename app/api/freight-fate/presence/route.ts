@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  freightFateClientVersion,
   getFreightFatePresenceBoard,
   normalizeFreightFateDriverId,
   normalizeFreightFateToken,
@@ -34,7 +35,13 @@ export async function POST(request: Request) {
     const driverId = normalizeFreightFateDriverId(body.driverId);
     const activity = typeof body.activity === "string" ? body.activity : "";
     const detail = typeof body.detail === "string" ? body.detail : "";
-    const result = await postFreightFatePresence({ driverId, driverToken, activity, detail });
+    const result = await postFreightFatePresence({
+      driverId,
+      driverToken,
+      activity,
+      detail,
+      clientVersion: freightFateClientVersion(request),
+    });
 
     if (!result) {
       return NextResponse.json({ error: "Freight Fate online presence is not configured." }, { status: 503 });
