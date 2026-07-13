@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 
@@ -9,10 +8,7 @@ export const metadata = {
 export default function FreightFateOnlineRulesPage() {
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Freight Fate Online Rules"
-        intro="Driver names and career statistics can appear on public profiles and the live drivers board, so both have to follow these rules."
-      />
+      <PageHeader title="Freight Fate Online Rules" />
 
       <Section title="Naming rules">
         <ul>
@@ -36,24 +32,6 @@ export default function FreightFateOnlineRulesPage() {
           we consider abusive, at our discretion and without notice. If a moderator resets your
           name, the setup page will ask you to choose a new one before your driver appears publicly
           again.
-        </p>
-      </Section>
-
-      <Section title="Fair play online">
-        <p>
-          Your local career is yours. You can edit it or play however you like on your own
-          computer.
-        </p>
-        <p>
-          Profile sharing controls whether your driver appears online. Career statistics shown
-          online come only from a Cloud Backup that orinks.net has checked and accepted.
-        </p>
-        <p>
-          If a backup does not pass those checks, the new statistics are not shown. Your last
-          accepted statistics stay in place, and nothing changes on your computer.
-        </p>
-        <p>
-          <Link href="/freight-fate/online/setup">Back to Freight Fate online setup</Link>.
         </p>
       </Section>
     </div>

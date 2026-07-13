@@ -45,12 +45,15 @@ describe("driver profile routes", () => {
     expect(html).toContain("Freight Fate Profile Unavailable");
     expect(html).not.toContain("private-driver-secret");
     expect(html).not.toContain("Road Star");
+    expect(html).not.toContain("opted out");
+    expect(html).not.toContain("does not reveal driver details");
   });
 
-  test("explains when verified career statistics are not available", async () => {
+  test("uses a concise empty state when career statistics are unavailable", async () => {
     getProfile.mockResolvedValue({ ...profile, snapshot: null });
     const html = renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" }));
-    expect(html).toContain("No server-verified career statistics are available yet.");
+    expect(html).toContain("No career statistics yet.");
+    expect(html).not.toContain("server-verified");
     expect(html).not.toContain("No shared profile snapshot is available yet.");
   });
 

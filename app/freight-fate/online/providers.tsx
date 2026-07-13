@@ -18,11 +18,8 @@ export function FreightFateOnlineProviders({ children }: { children: ReactNode }
 
   if (!client) {
     return (
-      <Section title="Online sharing is unavailable">
-        <p>
-          Freight Fate online sharing is not configured on this orinks.net deployment, so driver setup
-          is off the air here. It works on the live site.
-        </p>
+      <Section title="Online setup unavailable">
+        <p>Freight Fate online setup is unavailable here.</p>
       </Section>
     );
   }

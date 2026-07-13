@@ -456,7 +456,7 @@ function DriverSetup() {
                 <Link className={focusRing} href="/freight-fate/online/rules">
                   driver naming rules
                 </Link>
-                . This name appears publicly only while Profile sharing is on.
+                . Your driver name is public while Profile sharing is on.
               </p>
             </div>
 
@@ -478,15 +478,10 @@ function DriverSetup() {
                   </label>
                 </div>
                 <p className="text-sm text-slate-700" id="profile-sharing-help">
-                  When on, eligible driver-profile details, official achievements you earn,
-                  road-journal posts generated automatically from gameplay, public-feed updates, and
-                  on-duty board activity can appear publicly on orinks.net. When off, all of this is hidden
-                  and future public updates stop. orinks.net may retain records privately unless sharing is
-                  enabled again. Detailed career statistics appear only after orinks.net accepts and verifies
-                  a private Cloud Backup. Cloud Backup is a separate setting in the game and can be on or
-                  off independently. The public profile never includes the full backup, money,
-                  coordinates, active cargo details, or precise live location.
-                  {" "}<Link href="/freight-fate/online/privacy">Read the Freight Fate sharing and privacy details</Link>.
+                  Shows your driver profile, board status, road-journal posts, and achievements on
+                  orinks.net. Career statistics come from an accepted Cloud Backup. Turning it off removes
+                  them from public pages. {" "}
+                  <Link href="/freight-fate/online/privacy">Profile sharing and Cloud Backup details</Link>.
                 </p>
               </div>
             </fieldset>
@@ -553,7 +548,7 @@ function DriverSetup() {
               </div>
 
               {!myDriver.sharingEnabled ? (
-                <p className="text-slate-700">Profile sharing is off. Your driver profile is private.</p>
+                <p className="text-slate-700">Profile sharing is off.</p>
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>

@@ -25,6 +25,8 @@ test("renders the public feed as a labeled newest-first ordered list", async () 
   expect(new Set([...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1])).size).toBe(3);
   expect(html).not.toContain("aria-live");
   expect(html).not.toContain('role="feed"');
+  expect(html).toContain("Newest updates first.");
+  expect(html).not.toContain("Factual public in-game activity");
 });
 
 test("validates public feed cursors", () => {
@@ -39,11 +41,12 @@ test("renders the compact feed as a closed native disclosure", async () => {
   });
   const html = renderToStaticMarkup(await FreightFateUpdates({ compact: true, limit: 5 }));
   expect(html).toContain('<section aria-labelledby="public-driver-updates-heading"');
-  expect(html).toContain('<h2 class="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Updates from public drivers</h2><details');
+  expect(html).toContain('<h2 class="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Driver updates</h2><details');
   expect(html).toContain("<details");
   expect(html).not.toContain("<details open");
   expect(html).toContain("<summary");
-  expect(html).toContain("Public Freight Fate updates");
+  expect(html).toContain("Freight Fate updates");
+  expect(html).not.toContain("Public Freight Fate updates");
   expect(html).toContain("focus-visible:ring-4");
   expect(html).not.toMatch(/<summary[^>]*>\s*<h[1-6]/);
   expect(html).toContain("<h3");

@@ -7,22 +7,20 @@
       "project": "Freight Fate",
       "title": "Freight Fate cloud backups are now server-verified",
       "body": [
-        "Private Cloud Backup revisions are now accepted only after orinks.net validates the career and signs it. Freight Fate verifies that server signature before a restore can touch the local save, and a successful restore is signed for the current computer.",
-        "Profile sharing remains a separate choice. Detailed public career statistics are derived only from an accepted private backup. If no verified revision exists, the public driver profile remains available but leaves those statistics out; the full backup is never a public download."
+        "Cloud Backup revisions are accepted after orinks.net validates and signs them. Freight Fate verifies the signature before restoring a save."
       ]
     },
     {
       "id": "2026-07-12-freight-fate-road-journals",
       "date": "2026-07-12",
       "project": "Freight Fate",
-      "title": "Freight Fate profiles: road journals, achievements, and sharing you control in-game",
+      "title": "Freight Fate profiles add road journals and achievements",
       "body": [
-        "Freight Fate driver profiles now have separate Overview, Road journal, and Achievements pages. Drivers who renew consent can share completed-delivery facts and official achievements. Detailed career statistics, including a clearly labeled last-saved city and acceptance time, appear only from an accepted private Cloud Backup. A public updates page collects automatic factual game updates from drivers who share. Drivers with sharing off reveal nothing, and legacy drivers are not enrolled automatically.",
-        "Profile sharing stays in sync between the game and the site: change the setting inside Freight Fate and orinks.net follows right away, with turning it off removing your profile and its updates from public discovery on the spot. The in-game setting arrives with the next Freight Fate update. A new sharing and privacy page, linked from online setup, spells out exactly what is published. Profile sharing never publishes your money, save file, or precise location; private Cloud Backup is a separate choice."
+        "Freight Fate driver profiles now have separate Overview, Road journal, and Achievements pages, plus a driver updates feed."
       ],
       "link": {
         "href": "/freight-fate/updates",
-        "label": "Browse public Freight Fate updates"
+        "label": "Browse Freight Fate updates"
       }
     },
     {

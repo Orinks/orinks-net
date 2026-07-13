@@ -62,15 +62,7 @@ export function parseJournalCursor(value: string | undefined): JournalCursor | u
 }
 
 function Unavailable() {
-  return (
-    <div className="space-y-8">
-      <PageHeader title="Freight Fate Profile Unavailable" intro="This profile may be private, opted out, unavailable, or unknown." />
-      <section aria-labelledby="profile-status-heading" className="py-4">
-        <h2 className="mb-4 text-2xl font-bold text-ink" id="profile-status-heading">Profile status</h2>
-        <p>orinks.net does not reveal driver details, statistics, journal entries, achievements, presence, or counts for unavailable profiles.</p>
-      </section>
-    </div>
-  );
+  return <PageHeader title="Freight Fate Profile Unavailable" />;
 }
 
 export async function DriverProfileView({ driverId: raw, section, cursor, confirmed = false }: {
@@ -83,7 +75,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
   return (
     <div className="space-y-8">
       <PageHeader title={driver.displayName} />
-      {confirmed ? <p className="rounded border border-line-strong bg-soft-green p-4">Expanded sharing is confirmed.</p> : null}
+      {confirmed ? <p className="rounded border border-line-strong bg-soft-green p-4">Profile sharing is on.</p> : null}
       <ProfileNav driverId={driver.driverId} section={section} />
 
       {section === "overview" ? (
@@ -105,7 +97,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               {snapshot.truckName ? <div><dt className="font-semibold">Current truck</dt><dd>{snapshot.truckName}</dd></div> : null}
               {snapshot.employmentStatus ? <div><dt className="font-semibold">Employment status</dt><dd>{snapshot.employmentStatus}</dd></div> : null}
             </dl>
-          ) : <p>No server-verified career statistics are available yet.</p>}
+          ) : <p>No career statistics yet.</p>}
         </section>
       ) : null}
 
@@ -127,7 +119,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
                 </li>);
               })}
             </ol>
-          ) : <p>No road-journal entries are shared on this page.</p>}
+          ) : <p>No road-journal entries yet.</p>}
           {cursor || profile.nextBefore ? (
           <nav aria-label="Road journal pagination" className="mt-6 flex flex-wrap gap-4">
             {cursor ? <Link href={`${root}/road-journal`}>Back to newest road-journal entries</Link> : null}
@@ -151,11 +143,11 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
                 </li>
               ))}
             </ul>
-          ) : <p>No achievements are currently shared.</p>}
+          ) : <p>No achievements yet.</p>}
         </section>
       ) : null}
 
-      <p><Link href="/freight-fate/updates">View all public Freight Fate updates</Link>.</p>
+      <p><Link href="/freight-fate/updates">View all Freight Fate updates</Link>.</p>
     </div>
   );
 }
