@@ -191,7 +191,7 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
       <div className="rounded-lg border border-line bg-white p-5">
         <p className="text-sm font-semibold uppercase tracking-wide text-action">Lumberton, New Jersey</p>
         <p className="mt-2 font-semibold text-ink">Local time: {localTime}</p>
-        <p aria-atomic="true" className="mt-2 text-sm text-slate-700" role="status">
+        <p className="mt-2 text-sm text-slate-700">
           Site visits:{" "}
           {visitCounts == null
             ? visitorUnavailable
@@ -202,7 +202,7 @@ export function HomeStatusPanel({ variant = "page" }: HomeStatusPanelProps) {
               )} today`}
         </p>
 
-        <div className="mt-5 border-t border-line pt-5" aria-live="polite">
+        <div className="mt-5 border-t border-line pt-5">
           {weatherLoading && !weather ? (
             <p className="text-slate-700">Loading current conditions...</p>
           ) : (

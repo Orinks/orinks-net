@@ -19,6 +19,10 @@ const FAILURE_STATUS: Record<string, number> = {
   driver_not_found: 404,
   unauthorized: 401,
   save_not_found: 404,
+  invalid_schema: 422,
+  invalid_name: 422,
+  unsupported_version: 422,
+  signing_unavailable: 503,
 };
 
 export async function GET(request: Request) {
@@ -58,6 +62,10 @@ export async function GET(request: Request) {
         summary: result.summary,
         createdAt: result.createdAt,
         content: Buffer.from(result.content).toString("base64"),
+        sig: result.sig,
+        keyId: result.keyId,
+        signedAt: result.signedAt,
+        validatorVersion: result.validatorVersion,
       },
       { headers: { "cache-control": "no-store" } },
     );

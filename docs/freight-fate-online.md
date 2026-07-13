@@ -81,37 +81,69 @@ Events are idempotent on `(driverId, eventId)` — a repeat post returns
 
 Recommended first game-side events:
 
-Expanded journal/profile sharing uses consent version 2. Existing drivers are
+Expanded journal/profile sharing uses consent version 3. Existing drivers are
 not migrated implicitly: the setup form must record a new explicit opt-in.
-Without that exact version, journal, achievement, snapshot, profile, and public
-feed queries return no expanded data even when the legacy presence board was
-enabled.
+Without that exact version, journal, achievement, detailed career statistics,
+profile, and public feed queries return no expanded data even when the legacy
+presence board was enabled.
 
 The structured endpoints are:
 
 - `POST /api/freight-fate/events/delivery` for allowlisted delivery facts;
-- `POST /api/freight-fate/events/achievement` for official achievement data;
-- `POST /api/freight-fate/profile-snapshot` for version 1 career summaries.
+- `POST /api/freight-fate/events/achievement` for official achievement data.
 
-The snapshot contains only driver level/title, last-saved city, career totals,
-reputation, current truck label, ownership/employment status, and capture time.
-It never contains the full save, money, coordinates, facilities, active cargo,
-route position, or exact live location. The server formats trusted delivery
-summary text from structured facts and clamps client timestamps.
+The public career summary is derived only from an accepted private Cloud Backup
+revision. It contains driver level/title, last-saved city, career totals,
+reputation, current truck label, ownership/employment status, and acceptance
+time. The full save never enters a public query. The server formats trusted
+delivery summary text from structured facts and clamps client timestamps.
 
 ## Career 1.9 activation plan
 
-The snapshot table reserves a server-private future compatibility envelope,
-but current mutations do not accept it and current queries never return it.
+The server-derived profile summary table reserves a private future
+compatibility envelope, but current queries never return it.
 Before Career 1.9 activation, add explicit validators and allowlists for each
 business, fleet, trailer, authority, inspection, route, and ownership field;
-backfill only from newly published signed-in snapshots; add a new consent
-version if the disclosure changes; and gate every new field behind the server
-feature flag and public-query projection. No 1.9 label or field is active in
-the current UI.
+backfill only from newly accepted validated Cloud Backup revisions; add a new
+consent version if the disclosure changes; and gate every new field behind the
+server feature flag and public-query projection. No 1.9 label or field is
+active in the current UI.
 
 - `delivery_settled`: summary, on-time result, damage band, miles, route endpoints, net pay band.
 - `career_milestone`: level, reputation band, endorsement unlock, owner-operator progress.
 - `challenge_completed`: weather, mountain, HOS, or long-haul completion.
 
 Do not post raw save files, route snapshots, exact local paths, or unrestricted telemetry.
+
+## Validated private cloud revisions
+
+Cloud Backup and Profile sharing are independent. The authenticated saves API
+accepts a private backup only after validating the portable profile, then
+stores the revision with an Ed25519 signature. Authenticated downloads use
+`cache-control: no-store` and include signing metadata for the game to verify.
+Legacy unsigned revisions are validated and signed on their first authenticated
+download. The public profile never receives the full backup; its allowlisted
+career details are derived from the most recently accepted revision.
+
+The validator allowlists are generated from the game catalogs into
+`data/freight-fate-profile-invariants.json`. From the Freight Fate repository,
+run `uv run python tools/export_profile_integrity_invariants.py
+../orinks-net/data/freight-fate-profile-invariants.json`, then commit both sides
+of the contract in the same change whenever the game adds a city, achievement,
+truck, upgrade, market cargo key, or save-schema version. Gated possessions
+such as Golden Antlers must not be added until the server can validate their
+grant trail.
+
+Signing configuration lives only in the Convex environment:
+
+```text
+FREIGHT_FATE_PROFILE_SIGNING_KEY_ID=2026-07
+FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY=<base64 PKCS8 DER>
+```
+
+Generate a rotation pair with
+`node scripts/generate-freight-fate-profile-key.mjs YYYY-MM <private-output>`.
+Move the private value into the secrets manager, never commit it, and add the
+reported raw public key to the game's `PUBLIC_KEYS` map before signing with the
+new key ID. Old public keys stay in the game while private revisions using them
+remain restorable.

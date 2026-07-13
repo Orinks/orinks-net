@@ -9,7 +9,6 @@ import {
   normalizeFreightFateToken,
   postFreightFateSave,
 } from "@/lib/freight-fate-online";
-import { screenSaveBlob } from "@/lib/freight-fate-save-integrity";
 
 export const runtime = "nodejs";
 
@@ -38,6 +37,19 @@ const FAILURE_STATUS: Record<string, number> = {
   too_large: 413,
   too_many_slots: 409,
   hash_mismatch: 400,
+  invalid_schema: 422,
+  invalid_name: 422,
+  invalid_city: 422,
+  invalid_range: 422,
+  invalid_possession: 422,
+  invalid_career: 422,
+  impossible_xp: 422,
+  impossible_money: 422,
+  invalid_market: 422,
+  invalid_hos: 422,
+  invalid_achievement: 422,
+  unsupported_version: 422,
+  signing_unavailable: 503,
   rate_limited: 429,
 };
 
@@ -78,7 +90,6 @@ export async function POST(request: Request) {
       content,
       summary,
       clientVersion: freightFateClientVersion(request),
-      integrity: screenSaveBlob(content),
     });
 
     if (!result) {

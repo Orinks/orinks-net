@@ -15,8 +15,7 @@ export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
 export const MAX_DRIVER_EVENTS = 50;
-export const SHARING_CONSENT_VERSION = 2;
-export const PROFILE_SNAPSHOT_WRITE_LIMIT = 30;
+export const SHARING_CONSENT_VERSION = 3;
 
 // --- Account-issued driver identity (Clerk) ---
 //
@@ -475,8 +474,7 @@ export const getPresenceBoard = query({
       if (
         !driver ||
         driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
-        driver.integrityFlag
+        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION
       ) {
         continue;
       }
@@ -617,70 +615,6 @@ export const publishCareerMilestone = mutation({
   },
 });
 
-const snapshotArgs = {
-  version: v.number(),
-  level: v.number(),
-  careerTitle: v.string(),
-  lastSavedCity: v.string(),
-  deliveries: v.number(),
-  milesDriven: v.number(),
-  reputation: v.number(),
-  onTimeDeliveries: v.optional(v.number()),
-  truckName: v.optional(v.string()),
-  employmentStatus: v.optional(v.string()),
-  capturedAt: v.number(),
-};
-
-export const publishProfileSnapshot = mutation({
-  args: {
-    driverId: v.string(),
-    driverTokenHash: v.string(),
-    snapshot: v.object(snapshotArgs),
-    clientVersion: v.optional(v.string()),
-    now: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const driver = await ctx.db.query("freightFateDrivers")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
-    if (!driver) return { ok: false as const, reason: "driver_not_found" };
-    const allowed = await consumeFreightFateWrite(ctx, {
-      scope: "profile-snapshot", driverId: args.driverId, now: args.now,
-      limit: PROFILE_SNAPSHOT_WRITE_LIMIT,
-    });
-    if (!allowed) return { ok: false as const, reason: "rate_limited" };
-    if (driver.driverTokenHash !== args.driverTokenHash) {
-      return { ok: false as const, reason: "unauthorized" };
-    }
-    // Stamp before the consent gate: a snapshot refused for lapsed consent
-    // still proves which build the authenticated driver is running.
-    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
-      return { ok: false as const, reason: "sharing_not_enabled" };
-    }
-    const s = args.snapshot;
-    if (s.version !== 1 || s.level < 1 || s.level > 999 || s.deliveries < 0 ||
-        s.milesDriven < 0 || s.reputation < 0 || s.reputation > 100) {
-      return { ok: false as const, reason: "invalid_snapshot" };
-    }
-    const clean = {
-      driverId: args.driverId, version: 1,
-      level: Math.trunc(s.level), careerTitle: s.careerTitle.trim().slice(0, 80),
-      lastSavedCity: s.lastSavedCity.trim().slice(0, 100),
-      deliveries: Math.trunc(s.deliveries), milesDriven: Math.round(s.milesDriven * 10) / 10,
-      reputation: Math.round(s.reputation * 10) / 10,
-      ...(s.onTimeDeliveries === undefined ? {} : { onTimeDeliveries: Math.max(0, Math.trunc(s.onTimeDeliveries)) }),
-      ...(s.truckName ? { truckName: s.truckName.trim().slice(0, 100) } : {}),
-      ...(s.employmentStatus ? { employmentStatus: s.employmentStatus.trim().slice(0, 80) } : {}),
-      capturedAt: clampOccurredAt(s.capturedAt, args.now), updatedAt: args.now,
-    };
-    const existing = await ctx.db.query("freightFateProfileSnapshots")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
-    if (existing) await ctx.db.patch(existing._id, clean);
-    else await ctx.db.insert("freightFateProfileSnapshots", clean);
-    return { ok: true as const, driverId: args.driverId };
-  },
-});
-
 export const getPublicUpdates = query({
   args: { limit: v.optional(v.number()), before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })) },
   handler: async (ctx, args) => {
@@ -693,8 +627,7 @@ export const getPublicUpdates = query({
       const driver = await ctx.db.query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
       if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
-          driver.integrityFlag) continue;
+          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) continue;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
     }
@@ -727,14 +660,6 @@ export const getDriverProfile = query({
     }
 
     if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
-      return null;
-    }
-
-    // A tamper-flagged career is not presented as real: the profile hides
-    // exactly as a private one does until moderation clears the flag. The
-    // player keeps playing and keeps cloud backups; only the public face
-    // is held. See the fair-play section of /freight-fate/online/rules.
-    if (driver.integrityFlag) {
       return null;
     }
 
@@ -773,7 +698,7 @@ export const getDriverProfile = query({
       nextBefore: eligible.length > limit && events.at(-1) ? {
         occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
       } : null,
-      snapshot: snapshot ? {
+      snapshot: snapshot?.sourceRevision && snapshot.validatorVersion ? {
         version: snapshot.version, level: snapshot.level, careerTitle: snapshot.careerTitle,
         lastSavedCity: snapshot.lastSavedCity, deliveries: snapshot.deliveries,
         milesDriven: snapshot.milesDriven, reputation: snapshot.reputation,

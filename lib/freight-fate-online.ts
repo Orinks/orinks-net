@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { freightFateSaveSlotName } from "./freight-fate-save-name";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
 
@@ -89,14 +90,10 @@ export function normalizeFreightFateSaveName(value: unknown) {
     throw new Error("Save name is required.");
   }
 
-  const saveName = value
-    .trim()
-    .replace(/[^A-Za-z0-9 _-]+/g, "_")
-    .replace(/\s+/g, " ")
-    .slice(0, 64);
+  const saveName = freightFateSaveSlotName(value);
 
-  if (!saveName) {
-    throw new Error("Save name is required.");
+  if (saveName.length > 64) {
+    throw new Error("Save name is too long.");
   }
 
   return saveName;
@@ -131,7 +128,6 @@ export async function postFreightFateSave(input: {
   content: ArrayBuffer;
   summary: string;
   clientVersion?: string;
-  integrity?: string;
 }) {
   const client = getConvexClient();
 
@@ -139,7 +135,7 @@ export async function postFreightFateSave(input: {
     return null;
   }
 
-  return client.mutation(anyApi.freightFateSaves.uploadSave, {
+  return client.action(anyApi.freightFateSaveActions.uploadValidatedSave, {
     driverId: normalizeFreightFateDriverId(input.driverId),
     driverTokenHash: hashFreightFateToken(input.driverToken),
     saveName: normalizeFreightFateSaveName(input.saveName),
@@ -149,7 +145,6 @@ export async function postFreightFateSave(input: {
     content: input.content,
     summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
-    ...(input.integrity ? { integrity: input.integrity } : {}),
     now: Date.now(),
   });
 }
@@ -179,11 +174,12 @@ export async function downloadFreightFateSave(input: {
     return null;
   }
 
-  return client.query(anyApi.freightFateSaves.downloadSave, {
+  return client.action(anyApi.freightFateSaveActions.downloadValidatedSave, {
     driverId: normalizeFreightFateDriverId(input.driverId),
     driverTokenHash: hashFreightFateToken(input.driverToken),
     saveName: normalizeFreightFateSaveName(input.saveName),
     ...(input.revision === undefined ? {} : { revision: input.revision }),
+    now: Date.now(),
   });
 }
 
@@ -258,21 +254,6 @@ export async function postFreightFateCareerMilestone(input: {
     eventId: normalizeFreightFateEventText(input.eventId, "Event ID", 96),
     milestoneType: input.milestoneType, ...(input.level === undefined ? {} : { level: input.level }),
     occurredAt: input.occurredAt, now: Date.now(),
-  });
-}
-
-export async function postFreightFateProfileSnapshot(input: {
-  driverId: string; driverToken: string; snapshot: Record<string, unknown>;
-  clientVersion?: string;
-}) {
-  const client = getConvexClient();
-  if (!client) return null;
-  return client.mutation(anyApi.freightFate.publishProfileSnapshot, {
-    driverId: normalizeFreightFateDriverId(input.driverId),
-    driverTokenHash: hashFreightFateToken(input.driverToken),
-    snapshot: input.snapshot,
-    ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
-    now: Date.now(),
   });
 }
 

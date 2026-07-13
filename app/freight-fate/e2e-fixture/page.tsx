@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FreightFateEventLink } from "@/components/FreightFateEventLink";
 import { FreightFateHashFocus } from "@/components/FreightFateHashFocus";
@@ -23,7 +24,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ v
           return <li key={event.id}><h3 id={fragment} tabIndex={-1}>{event.summary}</h3></li>;
         })}</ol>
         <nav aria-label="Road journal pagination">
-          {query.before ? <a href="/freight-fate/e2e-fixture?view=journal">Back to newest road-journal entries</a> : <a href="/freight-fate/e2e-fixture?view=journal&before=older">Older road-journal entries</a>}
+          {query.before ? (
+            <Link href="/freight-fate/e2e-fixture?view=journal">
+              Back to newest road-journal entries
+            </Link>
+          ) : (
+            <Link href="/freight-fate/e2e-fixture?view=journal&before=older">
+              Older road-journal entries
+            </Link>
+          )}
         </nav>
       </div>
     );

@@ -319,6 +319,10 @@ export default defineSchema({
     // game speaks when offering a restore; never parsed.
     summary: v.string(),
     contentId: v.id("freightFateSaveContent"),
+    sig: v.optional(v.string()),
+    keyId: v.optional(v.string()),
+    signedAt: v.optional(v.string()),
+    validatorVersion: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_slot", ["driverId", "saveName", "revision"])
@@ -364,6 +368,9 @@ export default defineSchema({
     employmentStatus: v.optional(v.string()),
     capturedAt: v.number(),
     updatedAt: v.number(),
+    sourceSaveName: v.optional(v.string()),
+    sourceRevision: v.optional(v.number()),
+    validatorVersion: v.optional(v.number()),
     // Reserved server-gated compatibility envelope. Current public queries
     // intentionally never return it until a later activation migration.
     future: v.optional(v.any()),

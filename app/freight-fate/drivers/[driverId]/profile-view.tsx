@@ -67,7 +67,7 @@ function Unavailable() {
       <PageHeader title="Freight Fate Profile Unavailable" intro="This profile may be private, opted out, unavailable, or unknown." />
       <section aria-labelledby="profile-status-heading" className="py-4">
         <h2 className="mb-4 text-2xl font-bold text-ink" id="profile-status-heading">Profile status</h2>
-        <p>Orinks does not reveal driver details, statistics, journal entries, achievements, presence, or counts for unavailable profiles.</p>
+        <p>orinks.net does not reveal driver details, statistics, journal entries, achievements, presence, or counts for unavailable profiles.</p>
       </section>
     </div>
   );
@@ -82,7 +82,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
   const root = `/freight-fate/drivers/${driver.driverId}`;
   return (
     <div className="space-y-8">
-      <PageHeader title={driver.displayName} intro="A Freight Fate driver profile shared through Orinks." />
+      <PageHeader title={driver.displayName} intro="A Freight Fate driver profile shared through orinks.net." />
       {confirmed ? <p className="rounded border border-line-strong bg-soft-green p-4">Expanded sharing is confirmed.</p> : null}
       <p>Shared profiles may appear in discovery. Shared facts describe the game, never the player&apos;s real-world location.</p>
       <ProfileNav driverId={driver.driverId} section={section} />
@@ -98,7 +98,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               <div><dt className="font-semibold">Driver level</dt><dd>{snapshot.level}</dd></div>
               <div><dt className="font-semibold">Career rank</dt><dd>{snapshot.careerTitle}</dd></div>
               <div><dt className="font-semibold">Last saved location</dt><dd>{snapshot.lastSavedCity}</dd></div>
-              <div><dt className="font-semibold">Snapshot time</dt><dd><Time value={snapshot.capturedAt} /></dd></div>
+              <div><dt className="font-semibold">Backup accepted</dt><dd><Time value={snapshot.capturedAt} /></dd></div>
               <div><dt className="font-semibold">Total deliveries</dt><dd>{snapshot.deliveries.toLocaleString("en-US")}</dd></div>
               <div><dt className="font-semibold">Miles driven</dt><dd>{snapshot.milesDriven.toLocaleString("en-US")}</dd></div>
               <div><dt className="font-semibold">Reputation</dt><dd>{snapshot.reputation} out of 100</dd></div>
@@ -106,7 +106,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               {snapshot.truckName ? <div><dt className="font-semibold">Current truck</dt><dd>{snapshot.truckName}</dd></div> : null}
               {snapshot.employmentStatus ? <div><dt className="font-semibold">Employment status</dt><dd>{snapshot.employmentStatus}</dd></div> : null}
             </dl>
-          ) : <p>No shared profile snapshot is available yet.</p>}
+          ) : <p>No server-verified career statistics are available yet.</p>}
         </section>
       ) : null}
 

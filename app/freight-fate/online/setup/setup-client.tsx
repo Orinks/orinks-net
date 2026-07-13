@@ -16,6 +16,12 @@ export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unk
 // kind picks the inline rendering: "blocked" renders PREFIX + the rules link
 // instead of message; every other kind renders message verbatim.
 type NameError = { kind: "length" | "letters" | "blocked" | "taken"; message: string };
+type PendingAction = "save" | "rotate" | null;
+type CopyStatus = {
+  area: "issued-driver-id" | "issued-token" | "driver";
+  kind: "success" | "error";
+  message: string;
+};
 
 const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
 const RULES_LINK_TEXT = "driver naming rules";
@@ -75,7 +81,17 @@ function useAnnouncer() {
 
 export function FreightFateSetupClient() {
   const { isLoaded, isSignedIn } = useUser();
+  const setupRef = useRef<HTMLDivElement>(null);
+  const previousSignedIn = useRef(isSignedIn);
   const accountStatus = !isLoaded ? "Loading your account…" : isSignedIn ? "" : "Sign in required.";
+
+  useEffect(() => {
+    const justSignedIn = isSignedIn === true && previousSignedIn.current === false;
+    previousSignedIn.current = isSignedIn;
+    if (justSignedIn) {
+      setupRef.current?.focus();
+    }
+  }, [isSignedIn]);
   return <>
     <div aria-atomic="true" className="sr-only" role="status">{accountStatus}</div>
     {!isLoaded ? (
@@ -90,7 +106,11 @@ export function FreightFateSetupClient() {
         </p>
         <AccountControls />
       </Section>
-    ) : <DriverSetup />}
+    ) : (
+      <div aria-label="Freight Fate driver setup" ref={setupRef} role="region" tabIndex={-1}>
+        <DriverSetup />
+      </div>
+    )}
   </>;
 }
 
@@ -103,13 +123,15 @@ function DriverSetup() {
   const [name, setName] = useState("");
   const [profileSharing, setProfileSharing] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [saveError, setSaveError] = useState("");
+  const [rotateError, setRotateError] = useState("");
   // Carries BOTH values from the provision result: the reactive getMyDriver
   // query can lag the mutation, so myDriver may still be null at the moment
   // the panel renders and focus arrives (a11y review: an empty ID field
   // would be copied as nothing).
   const [issued, setIssued] = useState<{ token: string; driverId: string } | null>(null);
-  const [copyStatus, setCopyStatus] = useState("");
+  const [copyStatus, setCopyStatus] = useState<CopyStatus | null>(null);
   const [initialized, setInitialized] = useState(false);
   const driverReadyAnnounced = useRef(false);
 
@@ -147,21 +169,24 @@ function DriverSetup() {
   }, [issued]);
 
   const copyText = useCallback(
-    async (value: string, label: string) => {
+    async (value: string, label: string, area: CopyStatus["area"]) => {
       try {
         await navigator.clipboard.writeText(value);
-        setCopyStatus(`${label} copied to clipboard.`);
-        announcePolite(`${label} copied to clipboard.`);
+        const message = `${label} copied to clipboard.`;
+        setCopyStatus({ area, kind: "success", message });
+        announcePolite(message);
       } catch {
-        announcePolite(`Copy failed. Select the ${label} field and press Control C to copy it.`);
+        const message = `Copy failed. Select the ${label} field and press Control C to copy it.`;
+        setCopyStatus({ area, kind: "error", message });
+        announceError(message);
       }
     },
-    [announcePolite],
+    [announceError, announcePolite],
   );
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (pending) {
+    if (pendingAction) {
       return;
     }
 
@@ -192,7 +217,8 @@ function DriverSetup() {
 
     const editing = myDriver != null;
     setNameError(null);
-    setPending(true);
+    setSaveError("");
+    setPendingAction("save");
     announcePolite(editing ? "Saving changes." : "Setting up your driver.");
 
     try {
@@ -204,7 +230,7 @@ function DriverSetup() {
         now: Date.now(),
       });
       if (result.token) {
-        setCopyStatus("");
+        setCopyStatus(null);
         setIssued({ token: result.token, driverId: result.driverId });
         announcePolite(
           `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
@@ -223,18 +249,21 @@ function DriverSetup() {
         showNameError(rejection);
       } else {
         setProfileSharing(myDriver?.sharingEnabled === true);
-        announcePolite("Save failed. Your changes were not applied. Please try again.");
+        const message = "Save failed. Your changes were not applied. Please try again.";
+        setSaveError(message);
+        announceError(message);
       }
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   }
 
   async function handleRotate() {
-    if (pending || !myDriver) {
+    if (pendingAction || !myDriver) {
       return;
     }
-    setPending(true);
+    setRotateError("");
+    setPendingAction("rotate");
     announcePolite("Rotating token.");
     try {
       const result = await provision({
@@ -245,14 +274,16 @@ function DriverSetup() {
         now: Date.now(),
       });
       if (result.token) {
-        setCopyStatus("");
+        setCopyStatus(null);
         setIssued({ token: result.token, driverId: result.driverId });
         announcePolite("Token rotated. The new token is shown below — copy it now. The old token no longer works.");
       }
     } catch {
-      announcePolite("Token rotation failed. Please try again.");
+      const message = "Token rotation failed. Please try again.";
+      setRotateError(message);
+      announceError(message);
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   }
 
@@ -309,7 +340,8 @@ function DriverSetup() {
               />
               <button
                 className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                onClick={() => copyText(issued.driverId, "Driver ID")}
+                aria-describedby={copyStatus?.area === "issued-driver-id" ? "ff-issued-driver-copy-status" : undefined}
+                onClick={() => copyText(issued.driverId, "Driver ID", "issued-driver-id")}
                 type="button"
               >
                 Copy Driver ID
@@ -339,7 +371,8 @@ function DriverSetup() {
               />
               <button
                 className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                onClick={() => copyText(issued.token, "Token")}
+                aria-describedby={copyStatus?.area === "issued-token" ? "ff-issued-token-copy-status" : undefined}
+                onClick={() => copyText(issued.token, "Token", "issued-token")}
                 type="button"
               >
                 Copy token
@@ -347,7 +380,18 @@ function DriverSetup() {
             </div>
           </div>
 
-          {copyStatus ? <p className="text-sm text-slate-700">{copyStatus}</p> : null}
+          {copyStatus?.area === "issued-driver-id" || copyStatus?.area === "issued-token" ? (
+            <p
+              className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
+              id={
+                copyStatus.area === "issued-driver-id"
+                  ? "ff-issued-driver-copy-status"
+                  : "ff-issued-token-copy-status"
+              }
+            >
+              {copyStatus.message}
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -436,21 +480,24 @@ function DriverSetup() {
                 <p className="text-sm text-slate-700" id="profile-sharing-help">
                   When on, eligible driver-profile details, official achievements you earn,
                   road-journal posts generated automatically from gameplay, public-feed updates, and
-                  on-duty board activity can appear publicly on Orinks. When off, all of this is hidden
-                  and future public updates stop. Orinks may retain records privately unless sharing is
-                  enabled again. Freight Fate never sends the full save, money, coordinates, active
-                  cargo details, or precise live location.
+                  on-duty board activity can appear publicly on orinks.net. When off, all of this is hidden
+                  and future public updates stop. orinks.net may retain records privately unless sharing is
+                  enabled again. Detailed career statistics appear only after orinks.net accepts and verifies
+                  a private Cloud Backup. Cloud Backup is a separate setting in the game and can be on or
+                  off independently. The public profile never includes the full backup, money,
+                  coordinates, active cargo details, or precise live location.
                   {" "}<Link href="/freight-fate/online/privacy">Read the Freight Fate sharing and privacy details</Link>.
                 </p>
               </div>
             </fieldset>
 
             <button
-              aria-disabled={pending || undefined}
+              aria-describedby={saveError ? "setup-save-error" : undefined}
+              aria-disabled={pendingAction !== null || undefined}
               className={`rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
               type="submit"
             >
-              {pending
+              {pendingAction === "save"
                 ? myDriver
                   ? "Saving…"
                   : "Setting up…"
@@ -458,6 +505,11 @@ function DriverSetup() {
                   ? "Save changes"
                   : "Set up driver"}
             </button>
+            {saveError ? (
+              <p className="text-sm text-red-700" id="setup-save-error">
+                {saveError}
+              </p>
+            ) : null}
           </form>
 
           {myDriver ? (
@@ -483,13 +535,21 @@ function DriverSetup() {
                   />
                   <button
                     className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 ${focusRing}`}
-                    onClick={() => copyText(myDriver.driverId, "Driver ID")}
+                    aria-describedby={copyStatus?.area === "driver" ? "ff-driver-copy-status" : undefined}
+                    onClick={() => copyText(myDriver.driverId, "Driver ID", "driver")}
                     type="button"
                   >
                     Copy Driver ID
                   </button>
                 </div>
-                {copyStatus ? <p className="text-sm text-slate-700">{copyStatus}</p> : null}
+                {copyStatus?.area === "driver" ? (
+                  <p
+                    className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
+                    id="ff-driver-copy-status"
+                  >
+                    {copyStatus.message}
+                  </p>
+                ) : null}
               </div>
 
               {!myDriver.sharingEnabled ? (
@@ -510,13 +570,19 @@ function DriverSetup() {
                   new one into Freight Fate.
                 </p>
                 <button
-                  aria-disabled={pending || undefined}
+                  aria-describedby={rotateError ? "rotate-token-error" : undefined}
+                  aria-disabled={pendingAction !== null || undefined}
                   className={`rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
                   onClick={handleRotate}
                   type="button"
                 >
-                  {pending ? "Rotating…" : "Rotate token"}
+                  {pendingAction === "rotate" ? "Rotating…" : "Rotate token"}
                 </button>
+                {rotateError ? (
+                  <p className="text-sm text-red-700" id="rotate-token-error">
+                    {rotateError}
+                  </p>
+                ) : null}
               </div>
             </div>
           ) : null}

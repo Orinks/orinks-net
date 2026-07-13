@@ -201,7 +201,7 @@ describe("provisionDriver / getMyDriver", () => {
     });
   });
 
-  test("an integrity-flagged driver is hidden from every public surface until cleared", async () => {
+  test("a legacy integrity flag does not suppress independently shared public surfaces", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
@@ -227,18 +227,18 @@ describe("provisionDriver / getMyDriver", () => {
     expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
     expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).not.toBeNull();
 
-    // Flagged (as upload screening or offline forensics would): every public
-    // surface goes quiet, exactly like a private profile.
+    // A rejected cloud revision must not become a global public-profile ban.
+    // Integrity flags are retained for moderation history, but visibility is
+    // controlled only by the driver's explicit Profile sharing setting.
     await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
       driverId, flag: "impossible_money",
     });
     expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
-      .toHaveLength(0);
-    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(0);
-    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).toBeNull();
+      .toHaveLength(1);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).not.toBeNull();
 
-    // The driver's own game is never blocked: heartbeats and journal posts
-    // still succeed while hidden.
+    // The driver's own game is never blocked either.
     const heartbeat = await t.mutation(api.freightFate.updatePresence, {
       driverId, driverTokenHash, activity: "still hauling", detail: "", now: now + 1,
     });
@@ -685,11 +685,11 @@ describe("expanded sharing", () => {
     const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Legacy Hauler", visibility: "public", now,
     });
-    const result = await t.mutation(api.freightFate.publishProfileSnapshot, {
-      driverId, driverTokenHash: await sha256Hex(token!), now,
-      snapshot: { version: 1, level: 3, careerTitle: "Regional driver", lastSavedCity: "Chicago, Illinois", deliveries: 4, milesDriven: 500, reputation: 60, capturedAt: now },
-    });
-    expect(result).toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    await t.run((ctx) => ctx.db.insert("freightFateProfileSnapshots", {
+      driverId, version: 1, level: 3, careerTitle: "Regional driver",
+      lastSavedCity: "Chicago, Illinois", deliveries: 4, milesDriven: 500,
+      reputation: 60, capturedAt: now, updatedAt: now,
+    }));
     expect(await t.query(api.freightFate.getDriverProfile, { driverId })).toBeNull();
     expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toEqual([]);
   });
@@ -702,9 +702,12 @@ describe("expanded sharing", () => {
       displayName: "Journal Hauler", visibility: "public", expandedSharingConsent: true, now,
     });
     const auth = { driverId: provisioned.driverId, driverTokenHash: await sha256Hex(provisioned.token!) };
-    expect(await t.mutation(api.freightFate.publishProfileSnapshot, {
-      ...auth, now, snapshot: { version: 1, level: 7, careerTitle: "Long-haul driver", lastSavedCity: "Denver, Colorado", deliveries: 22, milesDriven: 8123.4, reputation: 91, truckName: "heavy hauler", capturedAt: now },
-    })).toMatchObject({ ok: true });
+    await t.run((ctx) => ctx.db.insert("freightFateProfileSnapshots", {
+      driverId: auth.driverId, version: 1, level: 7, careerTitle: "Long-haul driver",
+      lastSavedCity: "Denver, Colorado", deliveries: 22, milesDriven: 8123.4,
+      reputation: 91, truckName: "heavy hauler", capturedAt: now, updatedAt: now,
+      sourceSaveName: "Journal Hauler", sourceRevision: 1, validatorVersion: 1,
+    }));
     expect(await t.mutation(api.freightFate.publishDeliveryCompleted, {
       ...auth, eventId: "delivery-22", occurredAt: now, now,
       payload: { version: 1, cargo: "steel coils", weightPounds: 42000, origin: "Chicago, Illinois", destination: "Denver, Colorado", distanceMiles: 1002, onTime: true },

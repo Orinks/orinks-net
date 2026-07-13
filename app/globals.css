@@ -46,6 +46,16 @@ a {
   text-underline-offset: 0.18em;
 }
 
+.prose a {
+  color: #075985;
+  font-weight: 600;
+  text-decoration-line: underline;
+}
+
+.prose a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
 :focus-visible {
   /* sky-600: ≥4:1 against white/paper (WCAG 1.4.11); sky-500 was 2.9:1 */
   outline: 3px solid #0284c7;
