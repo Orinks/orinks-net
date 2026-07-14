@@ -657,7 +657,8 @@ export const getPresenceBoard = query({
       if (
         !driver ||
         driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION
+        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+        driver.integrityFlag
       ) {
         continue;
       }
@@ -810,7 +811,8 @@ export const getPublicUpdates = query({
       const driver = await ctx.db.query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
       if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) continue;
+          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+          driver.integrityFlag) continue;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
     }
@@ -843,6 +845,14 @@ export const getDriverProfile = query({
     }
 
     if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+      return null;
+    }
+
+    // A tamper-flagged career is not presented as real: the profile hides
+    // exactly as a private one does until moderation clears the flag. The
+    // player keeps playing and keeps cloud backups; only the public face
+    // is held. See the fair-play section of /freight-fate/online/rules.
+    if (driver.integrityFlag) {
       return null;
     }
 
