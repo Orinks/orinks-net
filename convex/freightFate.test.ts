@@ -7,6 +7,7 @@ import { api, internal } from "./_generated/api";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
+  MAX_DEVICE_TOKENS,
   MAX_DRIVER_EVENTS,
   PRESENCE_WRITE_LIMIT,
   SHARING_CONSENT_VERSION,
@@ -813,5 +814,220 @@ describe("expanded sharing", () => {
     });
     const result = await t.query(api.freightFate.getPublicUpdates, { limit: 10 });
     expect(result.updates.map((event) => event.eventId)).toEqual(["older-public"]);
+  });
+});
+
+describe("per-computer tokens", () => {
+  test("adding a computer never signs out the others (issue #64)", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const first = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now,
+    });
+    const laptop = await as.mutation(api.freightFate.addComputer, {
+      label: "Laptop",
+      now: now + 1,
+    });
+    expect(laptop.token).not.toBe(first.token);
+
+    // Both machines heartbeat successfully — neither token retired the other.
+    for (const token of [first.token!, laptop.token]) {
+      const beat = await t.mutation(api.freightFate.updatePresence, {
+        driverId: first.driverId,
+        driverTokenHash: await sha256Hex(token),
+        activity: "Hauling",
+        detail: "",
+        now: now + 2,
+      });
+      expect(beat).toMatchObject({ ok: true });
+    }
+
+    const computers = await as.query(api.freightFate.getMyComputers, {});
+    expect(computers!.hasLegacyToken).toBe(false);
+    expect(computers!.computers.map((c) => c.label)).toEqual(["My computer", "Laptop"]);
+  });
+
+  test("signing out one computer leaves the rest connected", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const first = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    const laptop = await as.mutation(api.freightFate.addComputer, { label: "Laptop", now });
+    const computers = await as.query(api.freightFate.getMyComputers, {});
+    const laptopRow = computers!.computers.find((c) => c.label === "Laptop")!;
+
+    const removed = await as.mutation(api.freightFate.removeComputer, {
+      tokenId: laptopRow.id,
+      now: now + 1,
+    });
+    expect(removed.removed).toBe(true);
+
+    const laptopFails = await t.mutation(api.freightFate.updatePresence, {
+      driverId: first.driverId,
+      driverTokenHash: await sha256Hex(laptop.token),
+      activity: "Hauling",
+      detail: "",
+      now: now + 2,
+    });
+    expect(laptopFails).toMatchObject({ ok: false, reason: "unauthorized" });
+
+    const firstStillWorks = await t.mutation(api.freightFate.updatePresence, {
+      driverId: first.driverId,
+      driverTokenHash: await sha256Hex(first.token!),
+      activity: "Hauling",
+      detail: "",
+      now: now + 3,
+    });
+    expect(firstStillWorks).toMatchObject({ ok: true });
+  });
+
+  test("a pre-computer-list legacy token keeps working and can be retired", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+    const legacyToken = "ffd_legacy_token_from_before_the_computer_list";
+
+    // A driver row exactly as provisionDriver wrote it before device tokens.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "rig-hauler-00000000",
+        displayName: "Rig Hauler",
+        visibility: "public",
+        authSubject: SUBJECT,
+        driverTokenHash: await sha256Hex(legacyToken),
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const beat = await t.mutation(api.freightFate.updatePresence, {
+      driverId: "rig-hauler-00000000",
+      driverTokenHash: await sha256Hex(legacyToken),
+      activity: "Hauling",
+      detail: "",
+      now,
+    });
+    expect(beat).toMatchObject({ ok: true });
+
+    const computers = await as.query(api.freightFate.getMyComputers, {});
+    expect(computers!.hasLegacyToken).toBe(true);
+
+    const removed = await as.mutation(api.freightFate.removeComputer, {
+      tokenId: "legacy",
+      now: now + 1,
+    });
+    expect(removed.removed).toBe(true);
+    expect((await as.query(api.freightFate.getMyComputers, {}))!.hasLegacyToken).toBe(false);
+
+    const legacyFails = await t.mutation(api.freightFate.updatePresence, {
+      driverId: "rig-hauler-00000000",
+      driverTokenHash: await sha256Hex(legacyToken),
+      activity: "Hauling",
+      detail: "",
+      now: now + 2,
+    });
+    expect(legacyFails).toMatchObject({ ok: false, reason: "unauthorized" });
+  });
+
+  test("rotateToken is the full sign-out: every computer dies, one fresh token lives", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    const first = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    const laptop = await as.mutation(api.freightFate.addComputer, { label: "Laptop", now });
+
+    const rotated = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      rotateToken: true,
+      now: now + 1,
+    });
+    expect(rotated.rotated).toBe(true);
+
+    for (const dead of [first.token!, laptop.token]) {
+      const fails = await t.mutation(api.freightFate.updatePresence, {
+        driverId: first.driverId,
+        driverTokenHash: await sha256Hex(dead),
+        activity: "Hauling",
+        detail: "",
+        now: now + 2,
+      });
+      expect(fails).toMatchObject({ ok: false, reason: "unauthorized" });
+    }
+
+    const fresh = await t.mutation(api.freightFate.updatePresence, {
+      driverId: first.driverId,
+      driverTokenHash: await sha256Hex(rotated.token!),
+      activity: "Hauling",
+      detail: "",
+      now: now + 3,
+    });
+    expect(fresh).toMatchObject({ ok: true });
+    expect((await as.query(api.freightFate.getMyComputers, {}))!.computers).toHaveLength(1);
+  });
+
+  test("the computer cap rejects the eleventh token", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = Date.now();
+
+    await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    for (let i = 1; i < MAX_DEVICE_TOKENS; i += 1) {
+      await as.mutation(api.freightFate.addComputer, { label: `PC ${i}`, now });
+    }
+    await expect(
+      as.mutation(api.freightFate.addComputer, { label: "One too many", now }),
+    ).rejects.toThrow(ConvexError);
+  });
+
+  test("computer management requires the owning account", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const other = t.withIdentity({ subject: OTHER });
+    const now = Date.now();
+
+    await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      now,
+    });
+    const computers = await as.query(api.freightFate.getMyComputers, {});
+    const row = computers!.computers[0]!;
+
+    // Another signed-in account cannot see or remove them.
+    expect(await other.query(api.freightFate.getMyComputers, {})).toBeNull();
+    await expect(
+      t.mutation(api.freightFate.addComputer, { label: "Sneaky", now }),
+    ).rejects.toThrow();
+
+    await other.mutation(api.freightFate.provisionDriver, {
+      displayName: "Other Driver",
+      visibility: "private",
+      now,
+    });
+    const crossRemove = await other.mutation(api.freightFate.removeComputer, {
+      tokenId: row.id,
+      now,
+    });
+    expect(crossRemove.removed).toBe(false);
   });
 });

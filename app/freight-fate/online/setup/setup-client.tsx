@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unknown | undefined) {
   return !alreadyAnnounced && driver !== undefined;
@@ -114,10 +115,34 @@ export function FreightFateSetupClient() {
   </>;
 }
 
+// Owner-facing dates on the computer list. Absolute dates ("July 13, 2026")
+// read consistently under a screen reader on a later visit; relative ones
+// ("2 days ago") go stale as static text.
+function computerDate(ms: number) {
+  return new Date(ms).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+// One row of the computer list: device tokens plus, for accounts from before
+// the list existed, the single legacy token as its own retirable entry.
+type ComputerRow = {
+  id: string; // device token id, or "legacy"
+  label: string;
+  createdAt: number | null;
+  lastUsedAt: number | null;
+  legacy: boolean;
+};
+
 function DriverSetup() {
   const { user } = useUser();
   const myDriver = useQuery(api.freightFate.getMyDriver, {});
+  const myComputers = useQuery(api.freightFate.getMyComputers, {});
   const provision = useMutation(api.freightFate.provisionDriver);
+  const addComputer = useMutation(api.freightFate.addComputer);
+  const removeComputer = useMutation(api.freightFate.removeComputer);
   const { politeStatus, errorStatus, announcePolite, announceError } = useAnnouncer();
 
   const [name, setName] = useState("");
@@ -129,11 +154,50 @@ function DriverSetup() {
   // Carries BOTH values from the provision result: the reactive getMyDriver
   // query can lag the mutation, so myDriver may still be null at the moment
   // the panel renders and focus arrives (a11y review: an empty ID field
-  // would be copied as nothing).
-  const [issued, setIssued] = useState<{ token: string; driverId: string } | null>(null);
+  // would be copied as nothing). label names the computer this token was
+  // minted for — the panel is shared state, so it must say which one.
+  const [issued, setIssued] = useState<{ token: string; driverId: string; label: string | null } | null>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus | null>(null);
   const [initialized, setInitialized] = useState(false);
   const driverReadyAnnounced = useRef(false);
+
+  // The computer list's own action state. Deliberately separate from the
+  // driver form's pendingAction: sharing one flag would disable and relabel
+  // unrelated buttons across the page (a11y review).
+  const [computerName, setComputerName] = useState("");
+  const [addPending, setAddPending] = useState(false);
+  // Persistent inline error for the add form: live-region text is ephemeral
+  // and cannot be re-read, so the limit error must also exist in the page.
+  const [addError, setAddError] = useState<string | null>(null);
+  // Two-click confirm: the armed button's row id (or "rotate-all"). Never
+  // auto-reset on a timer — readers take their time (WCAG 2.2.1); reset on
+  // blur or Escape, and announce the reset so a silent disarm cannot trick
+  // a returning user into re-arming when they meant to confirm.
+  const [armedId, setArmedId] = useState<string | null>(null);
+  const [signingOutId, setSigningOutId] = useState<string | null>(null);
+  const rowButtonRefs = useRef(new Map<string, HTMLButtonElement | null>());
+  const computersHeadingRef = useRef<HTMLHeadingElement>(null);
+  // The armed button's spoken label, for the outside-press disarm below.
+  const armedLabelRef = useRef("");
+
+  // Safari does not focus buttons on mouse click, so an armed button never
+  // blurs there; a document-level press outside the armed button disarms
+  // audibly for mouse users too. pointerdown runs before blur, so keyboard
+  // users cannot get a double "canceled" announcement.
+  useEffect(() => {
+    if (armedId === null) {
+      return;
+    }
+    const armedButton = rowButtonRefs.current.get(armedId);
+    const onOutsidePress = (event: PointerEvent) => {
+      if (!armedButton || !armedButton.contains(event.target as Node)) {
+        setArmedId(null);
+        announcePolite(`Sign out of ${armedLabelRef.current} canceled.`);
+      }
+    };
+    document.addEventListener("pointerdown", onOutsidePress);
+    return () => document.removeEventListener("pointerdown", onOutsidePress);
+  }, [armedId, announcePolite]);
 
   useEffect(() => {
     if (shouldAnnounceDriverReady(driverReadyAnnounced.current, myDriver)) {
@@ -231,7 +295,7 @@ function DriverSetup() {
       });
       if (result.token) {
         setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId });
+        setIssued({ token: result.token, driverId: result.driverId, label: null });
         announcePolite(
           `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
         );
@@ -258,13 +322,43 @@ function DriverSetup() {
     }
   }
 
-  async function handleRotate() {
+  // Shared two-click confirm plumbing for every destructive token action:
+  // first activation arms the button (its accessible name changes and the
+  // change is announced — readers do not re-read a focused button whose text
+  // node swapped), the second executes. Blur and Escape disarm audibly.
+  function disarm(spokenLabel: string) {
+    setArmedId(null);
+    announcePolite(`Sign out of ${spokenLabel} canceled.`);
+  }
+
+  function armedBlur(id: string, spokenLabel: string) {
+    // The row unmounting after a confirmed sign-out also fires blur; that
+    // path is a completed action, not a cancel.
+    if (armedId === id && signingOutId === null) {
+      disarm(spokenLabel);
+    }
+  }
+
+  function armedKeyDown(event: React.KeyboardEvent, id: string, spokenLabel: string) {
+    if (event.key === "Escape" && armedId === id) {
+      disarm(spokenLabel);
+    }
+  }
+
+  async function handleRotateAll() {
     if (pendingAction || !myDriver) {
       return;
     }
+    if (armedId !== "rotate-all") {
+      setArmedId("rotate-all");
+      armedLabelRef.current = "every computer";
+      announcePolite("Press again to confirm signing out every computer.");
+      return;
+    }
+    setArmedId(null);
     setRotateError("");
     setPendingAction("rotate");
-    announcePolite("Rotating token.");
+    announcePolite("Signing out all computers.");
     try {
       const result = await provision({
         displayName: myDriver.displayName,
@@ -275,11 +369,13 @@ function DriverSetup() {
       });
       if (result.token) {
         setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId });
-        announcePolite("Token rotated. The new token is shown below — copy it now. The old token no longer works.");
+        setIssued({ token: result.token, driverId: result.driverId, label: null });
+        announcePolite(
+          "Done. Every computer is signed out. The new token is shown below — copy it now; every other computer will need its own new token to reconnect.",
+        );
       }
     } catch {
-      const message = "Token rotation failed. Please try again.";
+      const message = "Signing out all computers failed. Nothing changed. Please try again.";
       setRotateError(message);
       announceError(message);
     } finally {
@@ -287,9 +383,275 @@ function DriverSetup() {
     }
   }
 
+  async function handleAddComputer(event: React.FormEvent) {
+    event.preventDefault();
+    if (addPending) {
+      return;
+    }
+    const label = computerName.trim() || "My computer";
+    setAddPending(true);
+    setAddError(null);
+    announcePolite(`Adding ${label}.`);
+    try {
+      const result = await addComputer({
+        label: computerName.trim() || undefined,
+        now: Date.now(),
+      });
+      setCopyStatus(null);
+      setIssued({ token: result.token, driverId: result.driverId, label });
+      setComputerName("");
+      announcePolite(`${label} added. Copy its one-time token below.`);
+    } catch (error) {
+      const data =
+        error instanceof ConvexError
+          ? (error.data as { code?: string; limit?: number } | undefined)
+          : undefined;
+      const message =
+        data?.code === "too_many_computers"
+          ? `You have reached the limit of ${data.limit ?? 10} computers. Sign out a computer you no longer use, then try again.`
+          : "Adding the computer failed. Nothing changed. Please try again.";
+      setAddError(message);
+      announceError(message);
+    } finally {
+      setAddPending(false);
+    }
+  }
+
+  async function handleSignOut(row: ComputerRow, rows: ComputerRow[]) {
+    const spokenLabel = row.legacy ? "the original token" : row.label;
+    // Arming is always allowed — a silently dead "Sign out" button on the
+    // other rows while one sign-out is in flight would be unexplained to a
+    // reader. Only the confirm step waits, and it says so.
+    if (armedId !== row.id) {
+      setArmedId(row.id);
+      armedLabelRef.current = spokenLabel;
+      announcePolite(`Press again to confirm signing out ${spokenLabel}.`);
+      return;
+    }
+    if (signingOutId !== null) {
+      announcePolite("Still signing out another computer. Try again in a moment.");
+      return;
+    }
+    // Pick the focus target before the row unmounts: the next row's button,
+    // else the previous one's, else the list heading (focus falling to
+    // <body> would throw a reader back to the top of the page).
+    const index = rows.findIndex((r) => r.id === row.id);
+    const neighbor = rows[index + 1] ?? rows[index - 1] ?? null;
+    setArmedId(null);
+    setSigningOutId(row.id);
+    try {
+      await removeComputer({
+        tokenId: row.legacy ? "legacy" : (row.id as Id<"freightFateDeviceTokens">),
+        now: Date.now(),
+      });
+      announcePolite(
+        row.legacy
+          ? "Original token signed out. Any computer still using it will need a new token."
+          : `${row.label} signed out. That computer will need a new token to post again.`,
+      );
+      if (neighbor) {
+        rowButtonRefs.current.get(neighbor.id)?.focus();
+      } else {
+        computersHeadingRef.current?.focus();
+      }
+    } catch {
+      announceError(`Signing out ${spokenLabel} failed. Nothing changed. Please try again.`);
+    } finally {
+      setSigningOutId(null);
+    }
+  }
+
   const nameDescribedBy =
     [nameError ? "displayName-error" : null, "displayName-hint"].filter(Boolean).join(" ") ||
     undefined;
+
+  type MyComputers = typeof myComputers;
+
+  function ComputerList(props: {
+    addError: string | null;
+    addPending: boolean;
+    armedId: string | null;
+    computerName: string;
+    computersHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+    myComputers: MyComputers;
+    onAddComputer: (event: React.FormEvent) => void;
+    onArmedBlur: (id: string, spokenLabel: string) => void;
+    onArmedKeyDown: (event: React.KeyboardEvent, id: string, spokenLabel: string) => void;
+    onComputerName: (value: string) => void;
+    onRotateAll: () => void;
+    onSignOut: (row: ComputerRow, rows: ComputerRow[]) => void;
+    rotateError: string;
+    rotatePending: boolean;
+    rowButtonRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
+    signingOutId: string | null;
+  }) {
+    const computers = props.myComputers;
+    const rows: ComputerRow[] =
+      computers == null
+        ? []
+        : [
+            ...computers.computers.map((computer) => ({
+              id: computer.id as string,
+              label: computer.label,
+              createdAt: computer.createdAt,
+              lastUsedAt: computer.lastUsedAt,
+              legacy: false,
+            })),
+            ...(computers.hasLegacyToken
+              ? [
+                  {
+                    id: "legacy",
+                    label: "Original token (from before this computer list)",
+                    createdAt: null,
+                    lastUsedAt: null,
+                    legacy: true,
+                  },
+                ]
+              : []),
+          ];
+
+    return (
+      <div className="space-y-3">
+        <h3
+          className={`text-lg font-bold text-ink ${focusRing}`}
+          id="ff-computers-heading"
+          ref={props.computersHeadingRef}
+          tabIndex={-1}
+        >
+          Your computers
+        </h3>
+        <p className="text-sm text-slate-700">
+          Each computer you play on gets its own token. Adding a computer never signs out the
+          others, so your desktop keeps working when you set up a laptop.
+        </p>
+
+        {computers === undefined ? (
+          <p className="text-slate-700">Loading your computers…</p>
+        ) : rows.length === 0 ? (
+          <p className="text-slate-700">
+            No computers are connected yet. Add one below to get its token.
+          </p>
+        ) : (
+          // Tailwind's list-style reset strips list semantics in some
+          // readers; the explicit role keeps "list, N items" announced.
+          <ul className="space-y-3" role="list">
+            {rows.map((row) => {
+              const spokenLabel = row.legacy ? "the original token" : row.label;
+              const armed = props.armedId === row.id;
+              const busy = props.signingOutId === row.id;
+              return (
+                <li
+                  className="flex flex-col gap-2 rounded border border-line p-3 sm:flex-row sm:items-center sm:justify-between"
+                  key={row.id}
+                >
+                  <div>
+                    <span className="font-semibold text-ink">{row.label}</span>
+                    <p className="text-sm text-slate-600">
+                      {row.createdAt !== null ? `Added ${computerDate(row.createdAt)}. ` : ""}
+                      {row.legacy
+                        ? "Still works anywhere it was pasted; sign it out once every computer has its own token."
+                        : row.lastUsedAt !== null
+                          ? `Last played ${computerDate(row.lastUsedAt)}.`
+                          : "Not used yet."}
+                    </p>
+                  </div>
+                  <button
+                    aria-disabled={busy || undefined}
+                    aria-label={
+                      busy
+                        ? `Signing out ${spokenLabel}`
+                        : armed
+                          ? `Confirm sign out of ${spokenLabel}`
+                          : `Sign out ${spokenLabel}`
+                    }
+                    className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+                    onBlur={() => props.onArmedBlur(row.id, spokenLabel)}
+                    onClick={() => props.onSignOut(row, rows)}
+                    onKeyDown={(event) => props.onArmedKeyDown(event, row.id, spokenLabel)}
+                    ref={(element) => {
+                      props.rowButtonRefs.current.set(row.id, element);
+                    }}
+                    type="button"
+                  >
+                    {busy ? "Signing out…" : armed ? "Confirm sign out" : "Sign out"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <form className="space-y-2" onSubmit={props.onAddComputer}>
+          <label className="block font-semibold text-ink" htmlFor="new-computer-name">
+            Computer name
+          </label>
+          <p className="text-sm text-slate-600" id="new-computer-name-hint">
+            Just for you, to tell your computers apart — for example Desktop or Laptop. Leave it
+            blank for “My computer”.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              aria-describedby={
+                props.addError ? "new-computer-name-hint new-computer-error" : "new-computer-name-hint"
+              }
+              autoComplete="off"
+              className="w-full rounded border border-line-strong px-3 py-2 text-ink"
+              id="new-computer-name"
+              maxLength={64}
+              onChange={(event) => props.onComputerName(event.target.value)}
+              type="text"
+              value={props.computerName}
+            />
+            <button
+              aria-disabled={props.addPending || undefined}
+              className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+              type="submit"
+            >
+              {props.addPending ? "Adding…" : "Add computer and get its token"}
+            </button>
+          </div>
+          {props.addError ? (
+            <p className="text-sm text-red-700" id="new-computer-error">
+              <span aria-hidden="true">⚠ </span>
+              {props.addError}
+            </p>
+          ) : null}
+        </form>
+
+        <div className="space-y-2 border-t border-line pt-3">
+          <p className="text-sm text-slate-600">
+            If a token may have leaked, sign out everything at once: every computer stops posting
+            and you get one fresh token for the computer you are on.
+          </p>
+          <button
+            aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
+            aria-disabled={props.rotatePending || undefined}
+            className={`rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+            onBlur={() => props.onArmedBlur("rotate-all", "every computer")}
+            onClick={props.onRotateAll}
+            onKeyDown={(event) => props.onArmedKeyDown(event, "rotate-all", "every computer")}
+            ref={(element) => {
+              // Registered under its armed id so the outside-press disarm
+              // can tell presses on this button from presses elsewhere.
+              props.rowButtonRefs.current.set("rotate-all", element);
+            }}
+            type="button"
+          >
+            {props.rotatePending
+              ? "Signing out…"
+              : props.armedId === "rotate-all"
+                ? "Confirm: sign out all computers"
+                : "Sign out all computers and get a new token"}
+          </button>
+          {props.rotateError ? (
+            <p className="text-sm text-red-700" id="rotate-token-error">
+              {props.rotateError}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -315,6 +677,11 @@ function DriverSetup() {
             Connect Freight Fate
           </h2>
           <p className="text-slate-800">
+            {issued.label ? (
+              <>
+                This token is for <strong>{issued.label}</strong>.{" "}
+              </>
+            ) : null}
             Freight Fate needs two values. In the game, open Online Sharing, then paste your
             Driver ID first and your token second.
           </p>
@@ -414,7 +781,7 @@ function DriverSetup() {
           >
             <p className="text-slate-800">
               {myDriver
-                ? "Update your driver name or profile sharing. Your Driver ID and posting token stay the same unless you rotate the token."
+                ? "Update your driver name or profile sharing. Your Driver ID stays the same; tokens for each of your computers are managed below."
                 : "Create your driver identity. This makes a driver profile and issues a posting token you paste into Freight Fate on your PC."}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
@@ -558,27 +925,29 @@ function DriverSetup() {
                 </p>
               )}
 
-              <div className="space-y-2">
-                <p className="text-slate-800">A posting token is active for this driver.</p>
-                <p className="text-sm text-slate-600">
-                  Rotating replaces the current token. The old token stops working, and you paste the
-                  new one into Freight Fate.
-                </p>
-                <button
-                  aria-describedby={rotateError ? "rotate-token-error" : undefined}
-                  aria-disabled={pendingAction !== null || undefined}
-                  className={`rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
-                  onClick={handleRotate}
-                  type="button"
-                >
-                  {pendingAction === "rotate" ? "Rotating…" : "Rotate token"}
-                </button>
-                {rotateError ? (
-                  <p className="text-sm text-red-700" id="rotate-token-error">
-                    {rotateError}
-                  </p>
-                ) : null}
-              </div>
+              {/* Called directly (not as a JSX element): a component defined
+                  inside DriverSetup would remount every render and drop
+                  keyboard focus out of the computer-name field mid-typing.
+                  Must remain hook-free — this is a conditional direct call,
+                  and rules-of-hooks lint cannot see into it. */}
+              {ComputerList({
+                addError,
+                addPending,
+                armedId,
+                computerName,
+                computersHeadingRef,
+                myComputers,
+                onAddComputer: handleAddComputer,
+                onArmedBlur: armedBlur,
+                onArmedKeyDown: armedKeyDown,
+                onComputerName: setComputerName,
+                onRotateAll: handleRotateAll,
+                onSignOut: handleSignOut,
+                rotateError,
+                rotatePending: pendingAction === "rotate",
+                rowButtonRefs,
+                signingOutId,
+              })}
             </div>
           ) : null}
         </Section>

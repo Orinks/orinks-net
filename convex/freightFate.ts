@@ -50,6 +50,79 @@ function mintDriverToken() {
   return `ffd_${toHex(bytes)}`;
 }
 
+// --- Per-computer tokens ---
+//
+// Every computer the player connects gets its own token row, so adding a
+// laptop never retires the desktop's sign-in (Freight Fate issue #64). A
+// driver row's legacy driverTokenHash (from before the computer list) stays
+// accepted until the owner retires it from the setup page.
+
+// Enough for any real household of gaming machines; a cap only so a scripted
+// caller cannot grow the table unbounded.
+export const MAX_DEVICE_TOKENS = 10;
+
+// lastUsedAt is patched at most this often per device: coarse enough that a
+// one-a-minute heartbeat costs one extra write every six hours, fresh enough
+// to answer "which computer was this again" on the setup page.
+export const DEVICE_TOKEN_USE_STAMP_MS = 6 * 60 * 60_000;
+
+function normalizeDeviceLabel(value: string | undefined) {
+  const label = (value ?? "").trim().replace(/\s+/g, " ").slice(0, 64);
+  return label || "My computer";
+}
+
+async function findDeviceToken(ctx: QueryCtx, driverId: string, tokenHash: string) {
+  return await ctx.db
+    .query("freightFateDeviceTokens")
+    .withIndex("by_driver_token", (q) => q.eq("driverId", driverId).eq("tokenHash", tokenHash))
+    .unique();
+}
+
+// The one token check every authenticated game call goes through: the legacy
+// single token or any active device token signs the driver in. Never call
+// before the rate limiter — a token guess must stay as cheap as a wrong one.
+export async function driverTokenAccepted(
+  ctx: QueryCtx,
+  driver: Doc<"freightFateDrivers">,
+  tokenHash: string,
+) {
+  if (driver.driverTokenHash !== undefined && driver.driverTokenHash === tokenHash) {
+    return true;
+  }
+  return (await findDeviceToken(ctx, driver.driverId, tokenHash)) !== null;
+}
+
+// Mutation-path companion to driverTokenAccepted: after a successful check,
+// coarsely stamp the device row so the setup page can say when each computer
+// last played. Legacy-token traffic has no row to stamp.
+export async function stampDeviceTokenUse(
+  ctx: MutationCtx,
+  driver: Doc<"freightFateDrivers">,
+  tokenHash: string,
+  now: number,
+) {
+  const device = await findDeviceToken(ctx, driver.driverId, tokenHash);
+  if (device && (device.lastUsedAt === undefined || now - device.lastUsedAt > DEVICE_TOKEN_USE_STAMP_MS)) {
+    await ctx.db.patch(device._id, { lastUsedAt: now });
+  }
+}
+
+async function mintDeviceTokenRow(
+  ctx: MutationCtx,
+  driverId: string,
+  label: string | undefined,
+  now: number,
+) {
+  const token = mintDriverToken();
+  await ctx.db.insert("freightFateDeviceTokens", {
+    driverId,
+    tokenHash: await hashDriverToken(token),
+    label: normalizeDeviceLabel(label),
+    createdAt: now,
+  });
+  return token;
+}
+
 // Produce a public slug already in normalizeFreightFateDriverId's canonical
 // form (lowercase, [a-z0-9_-], no leading/trailing dash, 8..64) so the id the
 // game echoes back round-trips through that normalizer unchanged.
@@ -149,7 +222,9 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!driver) return { error: "driver_not_found" as const };
   const allowed = await consumeFreightFateWrite(ctx, args);
   if (!allowed) return { error: "rate_limited" as const };
-  if (driver.driverTokenHash !== args.driverTokenHash) return { error: "unauthorized" as const };
+  if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
+    return { error: "unauthorized" as const };
+  }
   if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION || driver.visibility !== "public") {
     return { error: "sharing_not_enabled" as const };
   }
@@ -173,15 +248,19 @@ export const getMyDriver = query({
       return null;
     }
 
-    // Never returns the token — it exists only as a hash and is shown once at
-    // issuance. hasToken lets the UI say "a token is active" without it.
+    // Never returns a token — tokens exist only as hashes and are shown once
+    // at issuance. hasToken lets the UI say "a token is active" without one.
+    const anyDevice = await ctx.db
+      .query("freightFateDeviceTokens")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+      .first();
     return {
       driverId: driver.driverId,
       displayName: driver.displayName,
       visibility: driver.visibility,
       createdAt: driver.createdAt,
       updatedAt: driver.updatedAt,
-      hasToken: true,
+      hasToken: driver.driverTokenHash !== undefined || anyDevice !== null,
       needsRename: driver.needsRename === true,
       sharingEnabled:
         driver.sharingConsentVersion === SHARING_CONSENT_VERSION && driver.visibility === "public",
@@ -193,10 +272,13 @@ export const provisionDriver = mutation({
   args: {
     displayName: v.string(),
     visibility,
-    // First provision always mints a token. For an existing driver the token
-    // is only re-minted when the player explicitly rotates it; otherwise the
-    // pasted token in the game keeps working.
+    // First provision always mints a token (a device row labeled
+    // deviceLabel). For an existing driver, rotateToken is the panic switch:
+    // it signs out every computer — legacy token and all device rows — and
+    // mints one fresh token. Routine "add a computer" goes through
+    // addComputer instead and touches nothing else.
     rotateToken: v.optional(v.boolean()),
+    deviceLabel: v.optional(v.string()),
     expandedSharingConsent: v.optional(v.boolean()),
     now: v.number(),
   },
@@ -237,7 +319,7 @@ export const provisionDriver = mutation({
         needsRename: undefined;
         sharingConsentVersion?: number | undefined;
         sharingConsentedAt?: number | undefined;
-        driverTokenHash?: string;
+        driverTokenHash?: string | undefined;
       } = {
         displayName,
         visibility:
@@ -259,8 +341,18 @@ export const provisionDriver = mutation({
 
       let token: string | null = null;
       if (args.rotateToken) {
-        token = mintDriverToken();
-        patch.driverTokenHash = await hashDriverToken(token);
+        // The full sign-out: every computer's token dies, one fresh one is
+        // issued. This is the "my token leaked" recovery, so it must not
+        // leave any older credential alive.
+        const devices = await ctx.db
+          .query("freightFateDeviceTokens")
+          .withIndex("by_driver_id", (q) => q.eq("driverId", existing.driverId))
+          .collect();
+        for (const device of devices) {
+          await ctx.db.delete(device._id);
+        }
+        patch.driverTokenHash = undefined;
+        token = await mintDeviceTokenRow(ctx, existing.driverId, args.deviceLabel, args.now);
       }
 
       await ctx.db.patch(existing._id, patch);
@@ -271,9 +363,6 @@ export const provisionDriver = mutation({
     if (await displayNameTaken(ctx, displayName, identity.subject)) {
       throw new ConvexError(NAME_TAKEN);
     }
-
-    const token = mintDriverToken();
-    const driverTokenHash = await hashDriverToken(token);
 
     // Regenerate on the rare slug collision so the public id stays unique.
     let driverId = driverIdFromName(displayName);
@@ -293,15 +382,108 @@ export const provisionDriver = mutation({
       displayName,
       visibility: args.expandedSharingConsent ? "public" : "private",
       authSubject: identity.subject,
-      driverTokenHash,
       ...(args.expandedSharingConsent
         ? { sharingConsentVersion: SHARING_CONSENT_VERSION, sharingConsentedAt: args.now }
         : {}),
       createdAt: args.now,
       updatedAt: args.now,
     });
+    const token = await mintDeviceTokenRow(ctx, driverId, args.deviceLabel, args.now);
 
     return { driverId, token, rotated: false };
+  },
+});
+
+// --- The setup page's computer list ---
+
+// The Clerk-authenticated driver row, or null. The computer-list functions
+// below authenticate by account, never by driver token: only the owner can
+// see or manage their computers.
+async function driverForIdentity(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    return null;
+  }
+  return await ctx.db
+    .query("freightFateDrivers")
+    .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
+    .unique();
+}
+
+export const getMyComputers = query({
+  args: {},
+  handler: async (ctx) => {
+    const driver = await driverForIdentity(ctx);
+    if (!driver) {
+      return null;
+    }
+    const devices = await ctx.db
+      .query("freightFateDeviceTokens")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+      .collect();
+    devices.sort((a, b) => a.createdAt - b.createdAt);
+    return {
+      computers: devices.map((device) => ({
+        id: device._id,
+        label: device.label,
+        createdAt: device.createdAt,
+        lastUsedAt: device.lastUsedAt ?? null,
+      })),
+      // A pre-computer-list token may still be pasted into a game somewhere;
+      // the page shows it as its own entry so it can be retired deliberately.
+      hasLegacyToken: driver.driverTokenHash !== undefined,
+    };
+  },
+});
+
+export const addComputer = mutation({
+  args: {
+    label: v.optional(v.string()),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const driver = await driverForIdentity(ctx);
+    if (!driver) {
+      throw new Error("You must be signed in to add a computer.");
+    }
+    const devices = await ctx.db
+      .query("freightFateDeviceTokens")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+      .collect();
+    if (devices.length >= MAX_DEVICE_TOKENS) {
+      throw new ConvexError({ code: "too_many_computers" as const, limit: MAX_DEVICE_TOKENS });
+    }
+    const token = await mintDeviceTokenRow(ctx, driver.driverId, args.label, args.now);
+    await ctx.db.patch(driver._id, { updatedAt: args.now });
+    return { driverId: driver.driverId, token };
+  },
+});
+
+export const removeComputer = mutation({
+  args: {
+    // "legacy" retires the pre-computer-list single token.
+    tokenId: v.union(v.id("freightFateDeviceTokens"), v.literal("legacy")),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const driver = await driverForIdentity(ctx);
+    if (!driver) {
+      throw new Error("You must be signed in to remove a computer.");
+    }
+    if (args.tokenId === "legacy") {
+      if (driver.driverTokenHash !== undefined) {
+        await ctx.db.patch(driver._id, { driverTokenHash: undefined, updatedAt: args.now });
+      }
+      return { removed: true };
+    }
+    const device = await ctx.db.get(args.tokenId);
+    if (!device || device.driverId !== driver.driverId) {
+      // Owned-by-someone-else and already-gone look identical on purpose.
+      return { removed: false };
+    }
+    await ctx.db.delete(device._id);
+    await ctx.db.patch(driver._id, { updatedAt: args.now });
+    return { removed: true };
   },
 });
 
@@ -335,7 +517,7 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "rate_limited" };
     }
 
-    if (driver.driverTokenHash !== args.driverTokenHash) {
+    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
       return { ok: false as const, reason: "unauthorized" };
     }
 
@@ -405,11 +587,12 @@ export const updatePresence = mutation({
       return { ok: false as const, reason: "rate_limited" };
     }
 
-    if (driver.driverTokenHash !== args.driverTokenHash) {
+    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
       return { ok: false as const, reason: "unauthorized" };
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
+    await stampDeviceTokenUse(ctx, driver, args.driverTokenHash, args.now);
 
     const existing = await ctx.db
       .query("freightFatePresence")
@@ -507,7 +690,7 @@ export const setProfileSharing = mutation({
       scope: "profile_sharing", driverId: args.driverId, now: args.now, limit: 12,
     });
     if (!allowed) return { ok: false as const, reason: "rate_limited" };
-    if (driver.driverTokenHash !== args.driverTokenHash) {
+    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
       return { ok: false as const, reason: "unauthorized" };
     }
     await ctx.db.patch(driver._id, {

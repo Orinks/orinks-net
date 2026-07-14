@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-13-freight-fate-computer-tokens",
+      "date": "2026-07-13",
+      "project": "Freight Fate",
+      "title": "Play Freight Fate from every computer you own",
+      "body": [
+        "Each computer you play on now gets its own posting token from the driver setup page, so connecting a laptop no longer signs your desktop out. The setup page lists your computers by the names you give them, shows when each one was added and last played, and lets you sign out any single computer — or all of them at once with one fresh token if you think a token leaked.",
+        "Tokens issued before this change keep working. They appear on the setup page as your original token, and you can retire that token yourself once every computer has one of its own. Cloud saves keep their existing conflict guard, so two computers still cannot silently overwrite each other's progress."
+      ],
+      "link": {
+        "href": "/freight-fate/online/setup",
+        "label": "Manage your Freight Fate computers"
+      }
+    },
+    {
       "id": "2026-07-13-freight-fate-verified-cloud-backups",
       "date": "2026-07-13",
       "project": "Freight Fate",
