@@ -123,6 +123,30 @@ export const authorizeSaveAction = internalQuery({
   },
 });
 
+// A cloud upload whose arithmetic contradicts itself (money the career never
+// earned, XP the miles cannot support) is evidence of an edited save, not a
+// sync accident — schema or version mismatches never land here. The upload is
+// still rejected; this stamps the sticky moderation verdict that holds the
+// driver's public face until setIntegrityFlag clears it after review. First
+// verdict wins: an already-flagged driver keeps the original reason until
+// review, but fresh evidence after a clear stamps again.
+export const stampIntegrityFromValidation = internalMutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    reason: v.string(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver || driver.integrityFlag) return;
+    await ctx.db.patch(driver._id, {
+      integrityFlag: args.reason.slice(0, 32),
+      integrityFlaggedAt: args.now,
+    });
+  },
+});
+
 export const storeValidatedSave = internalMutation({
   args: {
     driverId: v.string(),

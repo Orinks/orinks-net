@@ -5,7 +5,7 @@ import { convexTest } from "convex-test";
 import { anyApi } from "convex/server";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import schema from "./schema";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -86,6 +86,45 @@ describe("validated private cloud revisions", () => {
     });
     const listed = await t.query(api.freightFateSaves.listSaves, auth);
     expect(listed).toMatchObject({ ok: true, saves: [] });
+  });
+
+  test("a self-contradicting upload stamps the sticky integrity verdict", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const flagOf = async () => {
+      const report = await t.query(internal.freightFateAdmin.listClientVersions, {});
+      return report.find((row) => row.driverId === auth.driverId)?.integrityFlag ?? null;
+    };
+
+    // A malformed upload is damage or version drift, not cheat evidence.
+    const unknownField = Object.assign(validProfile(), { cheat_menu: true });
+    await expect(upload(t, auth, unknownField))
+      .resolves.toMatchObject({ ok: false, reason: "invalid_schema" });
+    expect(await flagOf()).toBeNull();
+
+    // Money the career never earned is rejected AND stamps the verdict.
+    await expect(upload(t, auth, { ...validProfile(), money: 1_000_000 }))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+    expect(await flagOf()).toBe("impossible_money");
+
+    // The first verdict is sticky: new evidence does not overwrite it.
+    const inflatedXp = validProfile();
+    inflatedXp.career.total_miles = 100;
+    await expect(upload(t, auth, inflatedXp))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_xp" });
+    expect(await flagOf()).toBe("impossible_money");
+
+    // Honest cloud backups keep working while the flag awaits review.
+    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await flagOf()).toBe("impossible_money");
+
+    // After a reviewed clear, fresh evidence stamps a fresh verdict.
+    await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
+      driverId: auth.driverId, flag: null,
+    });
+    await expect(upload(t, auth, inflatedXp, 1))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_xp" });
+    expect(await flagOf()).toBe("impossible_xp");
   });
 
   test("rejects a compressed payload that expands beyond the validation limit", async () => {

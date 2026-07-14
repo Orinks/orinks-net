@@ -65,7 +65,19 @@ export const uploadValidatedSave = action({
     });
     if (!authorized) return { ok: false, reason: "unauthorized" };
     const validation = decodeAndValidate(args.content, args.saveName, args.contentHash);
-    if (!validation.ok) return { ok: false, reason: validation.reason };
+    if (!validation.ok) {
+      // Only the self-contradicting arithmetic reasons are cheat evidence;
+      // damaged or outdated uploads are rejected without a verdict.
+      if (validation.reason === "impossible_money" || validation.reason === "impossible_xp") {
+        await ctx.runMutation(anyApi.freightFateSaves.stampIntegrityFromValidation, {
+          driverId: args.driverId,
+          driverTokenHash: args.driverTokenHash,
+          reason: validation.reason,
+          now: args.now,
+        });
+      }
+      return { ok: false, reason: validation.reason };
+    }
     if (validation.payload.version !== args.saveVersion) {
       return { ok: false, reason: "unsupported_version" };
     }

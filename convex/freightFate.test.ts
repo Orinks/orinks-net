@@ -202,7 +202,7 @@ describe("provisionDriver / getMyDriver", () => {
     });
   });
 
-  test("a legacy integrity flag does not suppress independently shared public surfaces", async () => {
+  test("an integrity-flagged driver is hidden from every public surface until cleared", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
@@ -228,18 +228,18 @@ describe("provisionDriver / getMyDriver", () => {
     expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
     expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).not.toBeNull();
 
-    // A rejected cloud revision must not become a global public-profile ban.
-    // Integrity flags are retained for moderation history, but visibility is
-    // controlled only by the driver's explicit Profile sharing setting.
+    // The sticky verdict holds the whole public face — board, feed, and
+    // profile — even though the driver's sharing setting is still public.
+    // Sharing consent says "may show me"; the flag says "not until reviewed".
     await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
       driverId, flag: "impossible_money",
     });
     expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
-      .toHaveLength(1);
-    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(1);
-    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).not.toBeNull();
+      .toHaveLength(0);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates).toHaveLength(0);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId, now })).toBeNull();
 
-    // The driver's own game is never blocked either.
+    // The driver's own game keeps working: only the public face is held.
     const heartbeat = await t.mutation(api.freightFate.updatePresence, {
       driverId, driverTokenHash, activity: "still hauling", detail: "", now: now + 1,
     });

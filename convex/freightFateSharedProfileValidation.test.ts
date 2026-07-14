@@ -97,6 +97,30 @@ describe("validateSharedProfile", () => {
 });
 
 describe("signed profile envelope bytes", () => {
+  test("matches the game's canonical form byte for byte", () => {
+    // Mirror of Freight Fate's
+    // tests/test_cloud_saves.py::test_canonical_profile_matches_the_server_byte_for_byte.
+    // Both suites pin the same payload to the same string; if either side's
+    // canonicalization drifts, one of them fails instead of restores breaking
+    // silently in production. Change them together or not at all.
+    const payload = {
+      b: [1.5, 2.0, 1e-7, 0.00001],
+      a: { x: -0.0, y: 129881.73999999999, z: 29571.0 },
+      n: null,
+      s: "café — truck",
+      t: true,
+      big: 1e21,
+      tiny: 8.673617379884035e-19,
+      whole: 6.0,
+    };
+    expect(canonicalSharedProfile(payload)).toBe(
+      '{"a":{"x":0,"y":129881.73999999999,"z":29571},'
+      + '"b":[1.5,2,1e-7,0.00001],"big":1e+21,"n":null,'
+      + '"s":"caf\\u00e9 \\u2014 truck","t":true,'
+      + '"tiny":8.673617379884035e-19,"whole":6}',
+    );
+  });
+
   test("canonicalizes recursively with ASCII escapes and verifies Ed25519", () => {
     const payload = { ...validProfile(), name: "Jos\u00e9 \ud83d\ude9a" };
     const canonical = canonicalSharedProfile(payload);
