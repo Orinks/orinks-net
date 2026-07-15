@@ -88,6 +88,27 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "impossible_xp" });
   });
 
+  test("accepts a legacy market carrying only the original cargo classes", () => {
+    // Careers begun before a cargo-class expansion keep the smaller
+    // multiplier set (seen in the wild: 8 of the current 16 classes).
+    const legacy = validProfile();
+    legacy.market.multipliers = Object.fromEntries(
+      invariants.marketCargoKeys.slice(0, 8).map((key) => [key, 1]),
+    );
+    expect(validateSharedProfile(legacy, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("rejects empty or unknown market multipliers", () => {
+    const empty = validProfile();
+    empty.market.multipliers = {};
+    expect(validateSharedProfile(empty, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_market" });
+    const unknown = validProfile();
+    unknown.market.multipliers = { antigravity: 1 };
+    expect(validateSharedProfile(unknown, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_market" });
+  });
+
   test("rejects unknown achievements and unsupported save versions", () => {
     expect(validateSharedProfile({ ...validProfile(), achievements: ["invented"] }, "Road Star"))
       .toMatchObject({ ok: false, reason: "invalid_achievement" });
