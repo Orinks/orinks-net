@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { anyApi } from "convex/server";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { signSharedProfile } from "./freightFateSharedProfileSigning";
 import {
@@ -88,6 +88,59 @@ export const uploadValidatedSave = action({
       ...signed,
       payload: validation.payload,
     });
+  },
+});
+
+// One-time repair for drivers hidden by the validator rollout: re-validate
+// each unverified snapshot's newest stored revision and stamp it (see
+// freightFateSaves.listBackfillTargets). Run from the CLI:
+//   npx convex run freightFateSaveActions:backfillVerifiedSnapshots '{"now": <ms>}' --prod
+export const backfillVerifiedSnapshots = internalAction({
+  args: { now: v.number() },
+  handler: async (ctx, args): Promise<Array<Record<string, unknown>>> => {
+    const targets: Array<{ saveId: string }> = await ctx.runQuery(
+      anyApi.freightFateSaves.listBackfillTargets,
+      {},
+    );
+    const report: Array<Record<string, unknown>> = [];
+    for (const target of targets) {
+      const stored = await ctx.runQuery(anyApi.freightFateSaves.readSaveForBackfill, {
+        saveId: target.saveId,
+      });
+      if (!stored) {
+        report.push({ saveId: target.saveId, ok: false, reason: "save_not_found" });
+        continue;
+      }
+      const validation = decodeAndValidate(
+        stored.content,
+        stored.row.saveName,
+        stored.row.contentHash,
+      );
+      if (!validation.ok) {
+        report.push({ driverId: stored.row.driverId, ok: false, reason: validation.reason });
+        continue;
+      }
+      if (validation.payload.version !== stored.row.saveVersion) {
+        report.push({ driverId: stored.row.driverId, ok: false, reason: "unsupported_version" });
+        continue;
+      }
+      const signed = signPayload(validation.payload, args.now);
+      if (!signed) {
+        report.push({ driverId: stored.row.driverId, ok: false, reason: "signing_unavailable" });
+        continue;
+      }
+      const stamped = await ctx.runMutation(anyApi.freightFateSaves.stampBackfilledSnapshot, {
+        saveId: target.saveId,
+        ...signed,
+        payload: validation.payload,
+      });
+      report.push({
+        driverId: stored.row.driverId,
+        revision: stored.row.revision,
+        ...stamped,
+      });
+    }
+    return report;
   },
 });
 

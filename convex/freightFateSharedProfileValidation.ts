@@ -206,7 +206,10 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     || !integer(market.seed, 0, 2_147_483_647)
     || !integer(market.day, 0, Math.floor((payload.game_hours as number) / 24) + 1)
     || !multipliers
-    || Object.keys(multipliers).length !== MARKET_KEYS.size
+    // Careers begun before a cargo-class expansion carry multipliers only
+    // for the classes that existed then; any non-empty subset of the
+    // current classes is a legitimate market.
+    || Object.keys(multipliers).length === 0
     || Object.keys(multipliers).some((key) => !MARKET_KEYS.has(key))
     || Object.values(multipliers).some((entry) => !finite(entry, 0.8, 1.3))) {
     return failure("invalid_market", "The cloud backup freight market is not valid.");

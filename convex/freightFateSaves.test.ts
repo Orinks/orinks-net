@@ -238,3 +238,81 @@ describe("per-computer tokens", () => {
     expect(laptopRow.lastUsedAt).not.toBeNull();
   });
 });
+
+describe("verified snapshot backfill", () => {
+  test("re-validates and stamps pre-validator revisions, legacy market included", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_backfill");
+
+    // A career from before the cargo-class expansion: only 8 of the current
+    // 16 market classes, uploaded before the validator existed (no sig, and
+    // an old-format snapshot without sourceRevision/validatorVersion).
+    const payload = validProfile();
+    payload.market.multipliers = Object.fromEntries(
+      invariants.marketCargoKeys.slice(0, 8).map((key) => [key, 1]),
+    );
+    const content = contentFor(payload);
+    const savedAt = Date.now() - 86_400_000;
+    await t.run(async (ctx) => {
+      const contentId = await ctx.db.insert("freightFateSaveContent", {
+        driverId: auth.driverId,
+        content,
+      });
+      await ctx.db.insert("freightFateSaves", {
+        driverId: auth.driverId,
+        saveName: payload.name,
+        revision: 21,
+        saveVersion: payload.version,
+        contentHash: hash(content),
+        sizeBytes: content.byteLength,
+        summary: "Road Star, level 4",
+        contentId,
+        createdAt: savedAt,
+      });
+      await ctx.db.insert("freightFateProfileSnapshots", {
+        driverId: auth.driverId,
+        version: 1,
+        level: 4,
+        careerTitle: "Level 4 driver",
+        lastSavedCity: "Chicago, Illinois",
+        deliveries: 12,
+        milesDriven: 4_100,
+        reputation: 70,
+        capturedAt: savedAt,
+        updatedAt: savedAt,
+      });
+    });
+
+    const report = await t.action(
+      anyApi.freightFateSaveActions.backfillVerifiedSnapshots,
+      { now: Date.now() },
+    );
+    expect(report).toEqual([
+      { driverId: auth.driverId, revision: 21, ok: true },
+    ]);
+
+    await t.run(async (ctx) => {
+      const snapshot = await ctx.db
+        .query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", auth.driverId))
+        .unique();
+      expect(snapshot).toMatchObject({
+        sourceRevision: 21,
+        validatorVersion: 1,
+        deliveries: 12,
+        capturedAt: savedAt,
+      });
+      const row = await ctx.db
+        .query("freightFateSaves")
+        .withIndex("by_driver", (q) => q.eq("driverId", auth.driverId))
+        .unique();
+      expect(row!.sig).toBeTruthy();
+      expect(row!.validatorVersion).toBe(1);
+    });
+
+    // A second run finds nothing left to repair.
+    await expect(
+      t.action(anyApi.freightFateSaveActions.backfillVerifiedSnapshots, { now: Date.now() }),
+    ).resolves.toEqual([]);
+  });
+});

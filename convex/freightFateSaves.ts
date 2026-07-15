@@ -322,6 +322,78 @@ export const attachLegacySignature = internalMutation({
   },
 });
 
+// --- One-time backfill: verify snapshots from pre-validator uploads ---
+//
+// Drivers whose latest accepted upload predates the shared-profile validator
+// have snapshot rows without sourceRevision/validatorVersion, which the
+// public profile hides. The backfill re-validates each such driver's newest
+// stored revision under the current rules and stamps both the revision's
+// signature and the snapshot, so those drivers reappear without having to
+// upload again. Trigger via freightFateSaveActions.backfillVerifiedSnapshots.
+
+export const listBackfillTargets = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const snapshots = await ctx.db.query("freightFateProfileSnapshots").collect();
+    const targets: Array<{ saveId: string }> = [];
+    for (const snapshot of snapshots) {
+      if (snapshot.validatorVersion) continue;
+      const rows = await ctx.db
+        .query("freightFateSaves")
+        .withIndex("by_driver", (q) => q.eq("driverId", snapshot.driverId))
+        .collect();
+      rows.sort((a, b) => b.createdAt - a.createdAt);
+      if (rows[0]) targets.push({ saveId: rows[0]._id });
+    }
+    return targets;
+  },
+});
+
+export const readSaveForBackfill = internalQuery({
+  args: { saveId: v.id("freightFateSaves") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.saveId);
+    if (!row) return null;
+    const content = await ctx.db.get(row.contentId);
+    if (!content) return null;
+    return { row, content: content.content };
+  },
+});
+
+export const stampBackfilledSnapshot = internalMutation({
+  args: {
+    saveId: v.id("freightFateSaves"),
+    sig: v.string(),
+    keyId: v.string(),
+    signedAt: v.string(),
+    validatorVersion: v.number(),
+    payload: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.saveId);
+    if (!row) return { ok: false as const, reason: "save_not_found" as const };
+    if (!row.sig) {
+      await ctx.db.patch(row._id, {
+        sig: args.sig,
+        keyId: args.keyId,
+        signedAt: args.signedAt,
+        validatorVersion: args.validatorVersion,
+      });
+    }
+    await upsertVerifiedSnapshot(ctx, {
+      driverId: row.driverId,
+      saveName: row.saveName,
+      revision: row.revision,
+      payload: args.payload as Record<string, unknown>,
+      // The snapshot reflects when that revision was actually accepted, not
+      // when the backfill ran.
+      now: row.createdAt,
+      validatorVersion: args.validatorVersion,
+    });
+    return { ok: true as const };
+  },
+});
+
 export const listSaves = query({
   args: {
     driverId: v.string(),
