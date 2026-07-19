@@ -8,9 +8,11 @@ import { maskDisplayName, screenDisplayName } from "./moderation";
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
 // A driver whose latest heartbeat is older than this is off the live board.
-// The game sends a heartbeat roughly every minute, so three missed beats
-// (game closed, went off duty, lost connection) removes the row.
-export const PRESENCE_TTL_MS = 3 * 60_000;
+// The game beats every ninety seconds (HEARTBEAT_INTERVAL_S in Freight Fate's
+// online_presence.py), so four minutes still absorbs one dropped request
+// before a driver is called gone. Shortening this without slowing the beat to
+// match will blink live drivers off the board on a single lost packet.
+export const PRESENCE_TTL_MS = 4 * 60_000;
 export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;

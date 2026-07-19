@@ -24,7 +24,10 @@ function asOfPhrase(asOf: number) {
     timeZone: "America/New_York",
   }).format(new Date(asOf));
 
-  return `Board as of ${stamp} Eastern.`;
+  // The page does not refresh itself, and a screen reader lands on this
+  // section with no page-load cue that the roster is a still frame. Say so,
+  // and give the reader something to do about it.
+  return `Board as of ${stamp} Eastern. Refresh the page to check again.`;
 }
 
 function sentence(text: string) {

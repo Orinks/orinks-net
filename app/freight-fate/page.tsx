@@ -7,9 +7,12 @@ export const metadata = {
   title: "Freight Fate",
 };
 
-// The embedded drivers board is live data with a three-minute heartbeat TTL;
-// a cached page would make its "updated N minutes ago" phrases a lie.
-export const dynamic = "force-dynamic";
+// The embedded drivers board is a timestamped snapshot, not a live feed: its
+// "as of" stamp and every "updated N minutes ago" phrase render from the same
+// moment, so they stay true to each other in a cached page. Regenerate once a
+// minute -- a fraction of the presence TTL, so the roster still means
+// something -- instead of querying the backend on every page view.
+export const revalidate = 60;
 
 export default function FreightFatePage() {
   return (

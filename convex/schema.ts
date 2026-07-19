@@ -400,5 +400,9 @@ export default defineSchema({
     count: v.number(),
     windowStart: v.number(),
     updatedAt: v.number(),
-  }).index("by_key", ["key"]),
+    // by_window lets the cleanup cron find expired counters; without it the
+    // table grows a row per driver per minute and is never emptied.
+  })
+    .index("by_key", ["key"])
+    .index("by_window", ["windowStart"]),
 });
