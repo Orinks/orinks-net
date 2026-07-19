@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { unstable_cache } from "next/cache";
 import { freightFateSaveSlotName } from "./freight-fate-save-name";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
@@ -299,15 +300,61 @@ export type FreightFatePresenceBoard = {
   asOf: number;
 };
 
-export async function getFreightFatePresenceBoard(): Promise<FreightFatePresenceBoard | null> {
+export const FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG = "freight-fate-presence-board";
+
+// How long a display snapshot may be reused. Kept well inside the server's
+// PRESENCE_TTL_MS so a cached roster still describes drivers the server would
+// agree are on duty.
+export const FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS = 60;
+
+/** Authoritative, uncached read of who is on duty right now.
+ *
+ * Every call reaches the backend, so this is the expensive path -- reserve it
+ * for decisions, not for display. When something actionable is built on
+ * presence (a CB channel by range, joining a convoy, messaging a driver), the
+ * action must confirm against this rather than against a snapshot: acting on a
+ * cached roster means offering the player a driver who has already signed off,
+ * and a failure the player cannot make sense of. Anything that merely *shows*
+ * the board wants getFreightFatePresenceBoardSnapshot instead.
+ *
+ * Returns null when online presence is not configured (no Convex client);
+ * anything else that goes wrong throws.
+ */
+export async function getFreightFateLivePresenceBoard(): Promise<FreightFatePresenceBoard | null> {
   const client = getConvexClient();
 
   if (!client) {
+    if (process.env.NODE_ENV === "production") {
+      // Not configured in production means an env-var problem, and the board
+      // simply omits itself -- silently, and with nothing thrown to catch.
+      // Leave a trace so it is not invisible from both sides at once.
+      console.warn("Freight Fate online presence is not configured; the drivers board will be omitted.");
+    }
+
     return null;
   }
 
   return client.query(anyApi.freightFate.getPresenceBoard, { now: Date.now() });
 }
+
+/** The board as a cached snapshot, for anything that displays it.
+ *
+ * The whole payload is cached together, `asOf` included, so a snapshot stays
+ * true to itself: every "updated N minutes ago" phrase is measured against the
+ * same stamp the page shows. Callers therefore never need to re-derive ages
+ * against a live clock, which is what would make a cached board lie.
+ *
+ * This is what caps backend reads. Without it, read volume tracks page views
+ * and API polling rather than the number of people actually driving.
+ */
+export const getFreightFatePresenceBoardSnapshot = unstable_cache(
+  getFreightFateLivePresenceBoard,
+  [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
+  {
+    revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
+    tags: [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
+  },
+);
 
 export async function getFreightFateDriverProfile(driverId: string, limit = 20, before?: { occurredAt: number; eventId: string }) {
   const client = getConvexClient();
