@@ -805,18 +805,34 @@ export const getPublicUpdates = query({
   args: { limit: v.optional(v.number()), before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })) },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
-    const rows = await ctx.db.query("freightFateDriverEvents")
-      .withIndex("by_occurred", (q) => args.before ? q.lte("occurredAt", args.before.occurredAt) : q)
-      .order("desc").collect();
+    // Stream the index newest-first and stop once a full page is in hand.
+    // Whether an event is publishable is a property of its driver rather than
+    // the event, so rows still have to be filtered after they are read — but
+    // only the rows we actually need get read. Collecting the whole event
+    // history to return twenty rows was this deployment's single largest
+    // database-bandwidth cost (~1.5 MB per call against a 1 GB monthly cap).
+    const drivers = new Map<string, Doc<"freightFateDrivers"> | null>();
     const updates = [];
-    for (const row of rows) {
-      const driver = await ctx.db.query("freightFateDrivers")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
+    // occurredAt ties are broken by eventId, which the index does not order
+    // by, so the tie group straddling the page boundary has to be read out in
+    // full before sorting or a paged read could skip an event.
+    let boundaryOccurredAt: number | null = null;
+    for await (const row of ctx.db.query("freightFateDriverEvents")
+      .withIndex("by_occurred", (q) => args.before ? q.lte("occurredAt", args.before.occurredAt) : q)
+      .order("desc")) {
+      if (boundaryOccurredAt !== null && row.occurredAt !== boundaryOccurredAt) break;
+      if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
+      let driver = drivers.get(row.driverId);
+      if (driver === undefined) {
+        driver = await ctx.db.query("freightFateDrivers")
+          .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
+        drivers.set(row.driverId, driver);
+      }
       if (!driver || driver.visibility !== "public" ||
           driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
           driver.integrityFlag) continue;
-      if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
+      if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     updates.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
     const page = updates.slice(0, limit);
