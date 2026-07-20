@@ -10,14 +10,16 @@ import {
 
 function validProfile() {
   return {
-    version: 4,
+    version: invariants.sourceSaveVersion,
     name: "Road Star",
     money: 9_000,
     current_city: "chicago_il_us",
-    truck_damage_pct: 2,
-    tire_wear_pct: 3,
-    road_grime_pct: 4,
-    truck_fuel_gal: 125,
+    // Condition lives per owned truck now, not flat on the profile.
+    truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4 } },
+    calendar_offset_days: 0,
+    migration_notice_pending: false,
+    integrity_modified: false,
+    integrity_notice_pending: false,
     game_hours: 240,
     tutorial_done: true,
     truck: "rig",
@@ -72,7 +74,18 @@ describe("validateSharedProfile", () => {
   test.each([
     ["unknown top-level field", { debug_money: 99 }, "invalid_schema"],
     ["unknown city", { current_city: "moon_base" }, "invalid_city"],
-    ["out-of-range wear", { tire_wear_pct: 101 }, "invalid_range"],
+    // Wear lives per truck now, so the range check has to reach inside the
+    // record rather than reading a flat field off the profile.
+    [
+      "out-of-range wear on an owned truck",
+      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 101, grime_pct: 4 } } },
+      "invalid_range",
+    ],
+    [
+      "a condition record carrying an unknown field",
+      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
+      "invalid_range",
+    ],
     ["unowned truck", { truck: "heavy_hauler" }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
@@ -152,5 +165,27 @@ describe("signed profile envelope bytes", () => {
     const privateDer = privateKey.export({ format: "der", type: "pkcs8" }).toString("base64");
     const signature = Buffer.from(signSharedProfile(payload, privateDer), "base64");
     expect(verify(null, Buffer.from(canonical, "utf8"), publicKey, signature)).toBe(true);
+  });
+});
+
+describe("field list stays in step with the game", () => {
+  test("the validator's allow-lists come from the exported invariants", () => {
+    // These were hand-written here once and fell behind the game: the profile
+    // moved condition into truck_conditions and gained calendar_offset_days,
+    // so every upload from a current build was rejected as both unknown and
+    // incomplete. Reading them from the export is what stops that recurring.
+    expect(invariants.profileFields).toContain("truck_conditions");
+    expect(invariants.profileFields).toContain("calendar_offset_days");
+    expect(invariants.profileFields).toContain("integrity_modified");
+    expect(invariants.profileFields).not.toContain("_signature");
+    expect(invariants.profileFields).not.toContain("truck_damage_pct");
+    expect(invariants.careerFields).toContain("total_earnings");
+  });
+
+  test("a profile carrying the modified mark still validates", () => {
+    // The mark is advisory: copying a career to another computer raises it
+    // honestly. The gate must judge the numbers, not the flag.
+    const marked = { ...validProfile(), integrity_modified: true, integrity_notice_pending: true };
+    expect(validateSharedProfile(marked, "Road Star")).toMatchObject({ ok: true });
   });
 });

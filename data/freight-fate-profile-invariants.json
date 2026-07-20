@@ -61,6 +61,14 @@
     "wichita_arrival",
     "winter_or_wind"
   ],
+  "careerFields": [
+    "deliveries",
+    "on_time_deliveries",
+    "reputation",
+    "total_earnings",
+    "total_miles",
+    "xp"
+  ],
   "cityLabels": {
     "aberdeen_sd_us": "Aberdeen, South Dakota",
     "abilene_tx_us": "Abilene, Texas",
@@ -715,7 +723,33 @@
     "retail",
     "steel"
   ],
-  "sourceSaveVersion": 4,
+  "profileFields": [
+    "achievement_stats",
+    "achievements",
+    "active_trip",
+    "calendar_offset_days",
+    "career",
+    "current_city",
+    "dispatch_board_cache",
+    "fatigue",
+    "game_hours",
+    "hos",
+    "integrity_modified",
+    "integrity_notice_pending",
+    "market",
+    "migration_notice_pending",
+    "money",
+    "name",
+    "owned_trucks",
+    "pay_advance",
+    "pay_advance_used_for_load",
+    "truck",
+    "truck_conditions",
+    "tutorial_done",
+    "upgrades",
+    "version"
+  ],
+  "sourceSaveVersion": 5,
   "truckLabels": {
     "heavy_hauler": "heavy hauler",
     "rig": "standard rig"

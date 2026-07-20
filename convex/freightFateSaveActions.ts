@@ -81,6 +81,17 @@ export const uploadValidatedSave = action({
     if (validation.payload.version !== args.saveVersion) {
       return { ok: false, reason: "unsupported_version" };
     }
+    // A profile marked modified is a risk signal, never a verdict: the same
+    // mark is raised by copying a career to a second computer, which is
+    // honest. It has already been through the full gate above -- nothing here
+    // samples or shortcuts -- so record that it passed and let it through.
+    // Absolution rides the next verified download (see downloadValidatedSave).
+    if (validation.payload.integrity_modified === true) {
+      console.warn(
+        `Freight Fate: modified-marked profile passed validation for driver ${args.driverId}` +
+        ` (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
+      );
+    }
     const signed = signPayload(validation.payload, args.now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
     return ctx.runMutation(anyApi.freightFateSaves.storeValidatedSave, {
@@ -175,6 +186,12 @@ export const downloadValidatedSave = action({
       });
       if (!attached.ok) return attached;
     }
+    // Absolution. This profile carries the client's "changed outside the
+    // game" mark and has just passed the full gate on a signed revision --
+    // the only place the signal is allowed to ride. Tell the client to clear
+    // the mark, so moving a career to a second computer stops branding it
+    // forever. A profile that fails validation never reaches this line.
+    const absolve = validation.payload.integrity_modified === true;
     return {
       ok: true,
       saveName: result.row.saveName,
@@ -185,6 +202,7 @@ export const downloadValidatedSave = action({
       summary: result.row.summary,
       createdAt: result.row.createdAt,
       content: result.content,
+      ...(absolve ? { clearIntegrityFlag: true } : {}),
       ...signed,
     };
   },

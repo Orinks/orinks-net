@@ -16,8 +16,12 @@ function setup() {
 
 function validProfile() {
   return {
-    version: 4, name: "Road Star", money: 9_000, current_city: "chicago_il_us",
-    truck_damage_pct: 2, tire_wear_pct: 3, road_grime_pct: 4, truck_fuel_gal: 125,
+    version: invariants.sourceSaveVersion, name: "Road Star", money: 9_000,
+    current_city: "chicago_il_us",
+    // Condition is per owned truck now; the flat fields are gone.
+    truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4 } },
+    calendar_offset_days: 0, migration_notice_pending: false,
+    integrity_modified: false, integrity_notice_pending: false,
     game_hours: 240, tutorial_done: true, truck: "rig", owned_trucks: ["rig"],
     upgrades: {}, active_trip: null, dispatch_board_cache: null, fatigue: 10,
     pay_advance: 0, pay_advance_used_for_load: false,
