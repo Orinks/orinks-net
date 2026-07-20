@@ -10,16 +10,18 @@ export type SharedProfileValidation =
   | { ok: true; payload: JsonObject }
   | { ok: false; reason: string; message: string };
 
-const TOP_LEVEL_FIELDS = new Set([
-  "version", "name", "money", "current_city", "truck_damage_pct", "tire_wear_pct",
-  "road_grime_pct", "truck_fuel_gal", "game_hours", "tutorial_done", "truck",
-  "owned_trucks", "upgrades", "active_trip", "dispatch_board_cache", "fatigue",
-  "pay_advance", "pay_advance_used_for_load", "career", "market", "hos",
-  "achievements", "achievement_stats",
-]);
+// Both lists come from the game's own dataclasses via
+// tools/export_profile_integrity_invariants.py. They used to be written out
+// here by hand, and fell behind: the game moved per-truck condition into
+// truck_conditions and added calendar_offset_days, so every upload from a
+// current build failed the exact-field check as both unknown AND incomplete,
+// and players heard "your backup is broken" for what was really version skew.
+// Regenerate the export instead of editing these.
+const TOP_LEVEL_FIELDS = new Set(invariants.profileFields);
 const REQUIRED_FIELDS = [...TOP_LEVEL_FIELDS];
-const CAREER_FIELDS = new Set([
-  "xp", "reputation", "deliveries", "on_time_deliveries", "total_miles", "total_earnings",
+const CAREER_FIELDS = new Set(invariants.careerFields);
+const TRUCK_CONDITION_FIELDS = new Set([
+  "fuel_gal", "damage_pct", "tire_wear_pct", "grime_pct",
 ]);
 const MARKET_FIELDS = new Set(["seed", "day", "multipliers"]);
 const HOS_FIELDS = new Set([
@@ -149,16 +151,37 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (!CITY_SLUGS.has(payload.current_city as string)) {
     return failure("invalid_city", "The cloud backup is not in a known Freight Fate city.");
   }
-  for (const key of ["truck_damage_pct", "tire_wear_pct", "road_grime_pct", "fatigue"]) {
-    if (!finite(payload[key], 0, 100)) return failure("invalid_range", `${key} is outside its allowed range.`);
+  if (!finite(payload.fatigue, 0, 100)) {
+    return failure("invalid_range", "fatigue is outside its allowed range.");
   }
   if (!finite(payload.money, 0, 100_000_000)
-    || !finite(payload.truck_fuel_gal, 0, 500)
     || !finite(payload.game_hours, 0, 10_000_000)
     || !finite(payload.pay_advance, 0, 1_500)
+    || !integer(payload.calendar_offset_days, -100_000, 100_000)
     || typeof payload.tutorial_done !== "boolean"
-    || typeof payload.pay_advance_used_for_load !== "boolean") {
+    || typeof payload.pay_advance_used_for_load !== "boolean"
+    || typeof payload.migration_notice_pending !== "boolean"
+    || typeof payload.integrity_modified !== "boolean"
+    || typeof payload.integrity_notice_pending !== "boolean") {
     return failure("invalid_range", "The cloud backup has a value outside its allowed range.");
+  }
+
+  // Condition moved off the profile and onto each owned truck. Records for
+  // trucks this build does not know are left alone on purpose -- a newer
+  // client may own one -- but every record's numbers still have to be sane.
+  const conditions = object(payload.truck_conditions);
+  if (!conditions) {
+    return failure("invalid_schema", "The cloud backup has no truck condition records.");
+  }
+  for (const record of Object.values(conditions)) {
+    const condition = object(record);
+    if (!condition || !exactFields(condition, TRUCK_CONDITION_FIELDS)
+      || !finite(condition.fuel_gal, 0, 500)
+      || !finite(condition.damage_pct, 0, 100)
+      || !finite(condition.tire_wear_pct, 0, 100)
+      || !finite(condition.grime_pct, 0, 100)) {
+      return failure("invalid_range", "A truck's condition is outside its allowed range.");
+    }
   }
 
   const truck = typeof payload.truck === "string" ? payload.truck : "";
