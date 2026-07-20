@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import { REJECTED_UPLOAD_TTL_MS } from "./freightFateSaves";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -92,43 +93,107 @@ describe("validated private cloud revisions", () => {
     expect(listed).toMatchObject({ ok: true, saves: [] });
   });
 
-  test("a self-contradicting upload stamps the sticky integrity verdict", async () => {
+  test("a self-contradicting upload is kept as evidence, never auto-flagged", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
     const flagOf = async () => {
       const report = await t.query(internal.freightFateAdmin.listClientVersions, {});
       return report.find((row) => row.driverId === auth.driverId)?.integrityFlag ?? null;
     };
+    const evidence = async () =>
+      await t.query(internal.freightFateAdmin.listRejectedUploads, {});
 
-    // A malformed upload is damage or version drift, not cheat evidence.
+    // A malformed upload is damage or version drift. Not evidence, not kept.
     const unknownField = Object.assign(validProfile(), { cheat_menu: true });
     await expect(upload(t, auth, unknownField))
       .resolves.toMatchObject({ ok: false, reason: "invalid_schema" });
     expect(await flagOf()).toBeNull();
+    expect(await evidence()).toHaveLength(0);
 
-    // Money the career never earned is rejected AND stamps the verdict.
+    // Money the career never earned is rejected and retained -- but the
+    // account is NOT branded. Screening rejects; humans convict.
     await expect(upload(t, auth, { ...validProfile(), money: 1_000_000 }))
       .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
-    expect(await flagOf()).toBe("impossible_money");
+    expect(await flagOf()).toBeNull();
+    expect(await evidence()).toMatchObject([{ reason: "impossible_money" }]);
 
-    // The first verdict is sticky: new evidence does not overwrite it.
+    // A second, different rejection is kept alongside the first.
     const inflatedXp = validProfile();
     inflatedXp.career.total_miles = 100;
     await expect(upload(t, auth, inflatedXp))
       .resolves.toMatchObject({ ok: false, reason: "impossible_xp" });
-    expect(await flagOf()).toBe("impossible_money");
+    expect(await flagOf()).toBeNull();
+    expect(await evidence()).toHaveLength(2);
 
-    // Honest cloud backups keep working while the flag awaits review.
-    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
-    expect(await flagOf()).toBe("impossible_money");
-
-    // After a reviewed clear, fresh evidence stamps a fresh verdict.
-    await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
-      driverId: auth.driverId, flag: null,
-    });
-    await expect(upload(t, auth, inflatedXp, 1))
+    // Retrying the same rejected payload does not grow the table.
+    await expect(upload(t, auth, inflatedXp))
       .resolves.toMatchObject({ ok: false, reason: "impossible_xp" });
-    expect(await flagOf()).toBe("impossible_xp");
+    expect(await evidence()).toHaveLength(2);
+
+    // Honest cloud backups keep working throughout.
+    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await flagOf()).toBeNull();
+
+    // A flag is still available, by hand, after reviewing the evidence.
+    await t.mutation(internal.freightFateAdmin.setIntegrityFlag, {
+      driverId: auth.driverId, flag: "impossible_money",
+    });
+    expect(await flagOf()).toBe("impossible_money");
+  });
+
+  test("gear a career was granted rather than bought is not invented money", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    // Pricing owned gear as if it had been bought meant an owner-operator who
+    // took title to a carrier tractor read as ~$150k of money the career never
+    // earned, and their backup was rejected from then on.
+    const bought = validProfile();
+    bought.owned_trucks = ["rig", "heavy_hauler"];
+    bought.upgrades = { engine_tune: 2, aero_kit: 1 };
+    await expect(upload(t, auth, bought)).resolves.toMatchObject({ ok: true });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(0);
+  });
+
+  test("retained evidence is pruned once its review window has passed", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await expect(upload(t, auth, { ...validProfile(), money: 1_000_000 }))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(1);
+
+    // Still inside the window: evidence a moderator might still want stays.
+    await t.mutation(internal.freightFateSaves.pruneRejectedUploads, {
+      now: Date.now() + REJECTED_UPLOAD_TTL_MS - 60_000,
+    });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(1);
+
+    // Past it, the payload goes: these rows carry a whole career each, so a
+    // rejected save is not archived forever.
+    await t.mutation(internal.freightFateSaves.pruneRejectedUploads, {
+      now: Date.now() + REJECTED_UPLOAD_TTL_MS + 60_000,
+    });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(0);
+  });
+
+  test("the XP ceiling tracks the game's own rate, not a copied number", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    // A career that delivered every mile on time earns exactly the exported
+    // rate, so it lands ON the ceiling rather than under it. This passes on
+    // today's rates too -- it is here to fail the day the game's XP model
+    // outgrows the server's, which is how the hand-copied 1.2 came to sit
+    // below what the 1.9 arc pays and started convicting honest drivers.
+    const spotless = validProfile();
+    spotless.career.total_miles = 5_000;
+    spotless.career.deliveries = 20;
+    spotless.career.on_time_deliveries = 20;
+    spotless.career.xp = 20 * invariants.xpFlatPerDelivery
+      + 5_000 * invariants.xpPerMileMax;
+    await expect(upload(t, auth, spotless)).resolves.toMatchObject({ ok: true });
   });
 
   test("rejects a compressed payload that expands beyond the validation limit", async () => {

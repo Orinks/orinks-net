@@ -131,27 +131,87 @@ export const authorizeSaveAction = internalQuery({
   },
 });
 
-// A cloud upload whose arithmetic contradicts itself (money the career never
-// earned, XP the miles cannot support) is evidence of an edited save, not a
-// sync accident — schema or version mismatches never land here. The upload is
-// still rejected; this stamps the sticky moderation verdict that holds the
-// driver's public face until setIntegrityFlag clears it after review. First
-// verdict wins: an already-flagged driver keeps the original reason until
-// review, but fresh evidence after a clear stamps again.
-export const stampIntegrityFromValidation = internalMutation({
+// How long a rejected upload's payload is kept for review. Long enough to
+// notice a pattern and audit it by hand, short enough that a rejected career
+// is not archived indefinitely.
+export const REJECTED_UPLOAD_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+
+// Rows deleted per prune pass. These carry a full save payload each, so the
+// batch stays small: a backlog drains over several ticks rather than one long
+// transaction.
+export const REJECTED_UPLOAD_PRUNE_BATCH = 50;
+
+// Keep the payload behind an arithmetic rejection (money the career never
+// earned, XP the miles cannot support) so the verdict can be checked later.
+// Schema, hash, and version failures never land here — they are sync skew, not
+// evidence of anything.
+//
+// This replaced stampIntegrityFromValidation, which branded the driver row
+// instead. Both arithmetic rules were wrong in the accusing direction, the
+// brand was sticky and hid the player until a human cleared it, and the
+// payload that triggered it was thrown away — so the single flag it raised in
+// production could not be reviewed at all. Rejecting the upload is the
+// enforcement; conviction is a human call made against these rows.
+export const recordRejectedUpload = internalMutation({
   args: {
     driverId: v.string(),
     driverTokenHash: v.string(),
     reason: v.string(),
+    saveName: v.string(),
+    saveVersion: v.number(),
+    contentHash: v.string(),
+    content: v.bytes(),
+    clientVersion: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
     const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
-    if (!driver || driver.integrityFlag) return;
-    await ctx.db.patch(driver._id, {
-      integrityFlag: args.reason.slice(0, 32),
-      integrityFlaggedAt: args.now,
+    if (!driver) return;
+    // One row per driver per distinct payload: a game that retries the same
+    // rejected save must not be able to grow the table.
+    const seen = await ctx.db
+      .query("freightFateRejectedUploads")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+      .collect();
+    if (seen.some((row) => row.contentHash === args.contentHash)) return;
+    await ctx.db.insert("freightFateRejectedUploads", {
+      driverId: args.driverId,
+      reason: args.reason.slice(0, 32),
+      saveName: args.saveName,
+      saveVersion: args.saveVersion,
+      contentHash: args.contentHash,
+      content: args.content,
+      clientVersion: args.clientVersion,
+      rejectedAt: args.now,
     });
+  },
+});
+
+// Drop retained payloads past the review window. Internal only:
+// Runs on a cron; returns how much it removed so a backlog is visible in the
+// logs. Also runnable by hand:
+//
+//   npx convex run freightFateSaves:pruneRejectedUploads --prod
+export const pruneRejectedUploads = internalMutation({
+  args: { now: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = args.now ?? Date.now();
+    const cutoff = now - REJECTED_UPLOAD_TTL_MS;
+    const stale = await ctx.db
+      .query("freightFateRejectedUploads")
+      .withIndex("by_rejected_at", (q) => q.lt("rejectedAt", cutoff))
+      .take(REJECTED_UPLOAD_PRUNE_BATCH);
+
+    for (const row of stale) {
+      await ctx.db.delete(row._id);
+    }
+
+    // A full batch means more was waiting than one pass can take; the next
+    // tick continues from there.
+    return {
+      deleted: stale.length,
+      moreWaiting: stale.length === REJECTED_UPLOAD_PRUNE_BATCH,
+    };
   },
 });
 

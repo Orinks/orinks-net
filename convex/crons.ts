@@ -14,4 +14,15 @@ crons.interval(
   {},
 );
 
+// Uploads rejected for self-contradicting arithmetic are kept so a human can
+// review the verdict before deciding anything. Each row carries a whole save
+// payload, so the review window is finite: sweep what has aged past it. Daily
+// is plenty for a ninety-day window, and the pass is batched.
+crons.interval(
+  "drop reviewed-window Freight Fate rejected uploads",
+  { hours: 24 },
+  internal.freightFateSaves.pruneRejectedUploads,
+  {},
+);
+
 export default crons;

@@ -102,12 +102,13 @@ export const forceRename = internalMutation({
   },
 });
 
-// Set or clear a driver's save-tamper flag by hand. Upload screening stamps
-// flags automatically; this exists for flags decided from offline forensics
-// and for clearing a reviewed flag. While flagged, the driver is hidden from
-// the live board, the updates feed, and their public profile (the fair-play
-// section of /freight-fate/online/rules); their game and cloud backups keep
-// working. Internal only:
+// Set or clear a driver's save-tamper flag. This is now the ONLY way one is
+// raised: upload screening rejects a bad save and keeps the payload
+// (listRejectedUploads below), but never brands the account, because the
+// arithmetic behind those verdicts proved wrong in the accusing direction.
+// Decide from offline forensics, then stamp here. While flagged, the driver is
+// hidden from the live board, the updates feed, and their public profile;
+// their game and cloud backups keep working. Internal only:
 //
 //   npx convex run freightFateAdmin:setIntegrityFlag \
 //     '{"driverId":"<id>","flag":"impossible_money"}' --prod
@@ -167,5 +168,38 @@ export const listClientVersions = internalQuery({
         integrityFlaggedAt: driver.integrityFlaggedAt ?? null,
       }))
       .sort((a, b) => (b.clientVersionAt ?? 0) - (a.clientVersionAt ?? 0));
+  },
+});
+
+// Uploads rejected for self-contradicting arithmetic, newest first. Screening
+// no longer brands an account on these — it rejects the upload and keeps the
+// payload, and a flag is a human call made after reading one. Internal only:
+//
+//   npx convex run freightFateAdmin:listRejectedUploads --prod
+//   npx convex run freightFateAdmin:listRejectedUploads '{"driverId":"<id>"}' --prod
+//
+// The payload itself is deliberately not returned here — pull it by _id and
+// run it through ff-admin/save_forensics.py rather than eyeballing base64.
+export const listRejectedUploads = internalQuery({
+  args: { driverId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const rows = args.driverId
+      ? await ctx.db
+        .query("freightFateRejectedUploads")
+        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId as string))
+        .collect()
+      : await ctx.db.query("freightFateRejectedUploads").collect();
+    return rows
+      .map((row) => ({
+        id: row._id,
+        driverId: row.driverId,
+        reason: row.reason,
+        saveName: row.saveName,
+        saveVersion: row.saveVersion,
+        clientVersion: row.clientVersion ?? null,
+        contentHash: row.contentHash,
+        rejectedAt: row.rejectedAt,
+      }))
+      .sort((a, b) => b.rejectedAt - a.rejectedAt);
   },
 });
