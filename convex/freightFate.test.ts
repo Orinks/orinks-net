@@ -815,6 +815,45 @@ describe("expanded sharing", () => {
     const result = await t.query(api.freightFate.getPublicUpdates, { limit: 10 });
     expect(result.updates.map((event) => event.eventId)).toEqual(["older-public"]);
   });
+
+  // The read stops as soon as a page is full, so a run of equal timestamps
+  // that straddles the page boundary is the one place early exit could drop
+  // an event: the index does not order ties by eventId, and hidden rows in
+  // the same tie group shift where the boundary falls.
+  test("a tie group spanning the page boundary pages without gaps", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      for (const [driverId, driverVisibility] of [["tie-public", "public"], ["tie-hidden", "private"]] as const) {
+        await ctx.db.insert("freightFateDrivers", {
+          driverId, displayName: `Tie ${driverId}`, visibility: driverVisibility,
+          driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+          sharingConsentedAt: now, createdAt: now, updatedAt: now,
+        });
+      }
+      // Every event shares one timestamp, so the whole set is a single tie
+      // group. Insertion order deliberately disagrees with eventId order at
+      // both ends, so whichever way the index breaks ties, at least one event
+      // that belongs on page one is only reached after the page is full.
+      for (const suffix of ["m", "a", "h1", "z", "h2", "c"]) {
+        await ctx.db.insert("freightFateDriverEvents", {
+          driverId: suffix.startsWith("h") ? "tie-hidden" : "tie-public",
+          eventId: `tie-${suffix}`, eventType: "delivery_completed",
+          summary: suffix, occurredAt: now, createdAt: now,
+        });
+      }
+    });
+    const seen: string[] = [];
+    let before: { occurredAt: number; eventId: string } | undefined;
+    for (let page = 0; page < 5; page += 1) {
+      const result = await t.query(api.freightFate.getPublicUpdates, { limit: 2, ...(before ? { before } : {}) });
+      seen.push(...result.updates.map((event) => event.eventId));
+      if (!result.nextBefore) break;
+      before = result.nextBefore;
+    }
+    expect(seen).toEqual(["tie-z", "tie-m", "tie-c", "tie-a"]);
+    expect(new Set(seen).size).toBe(4);
+  });
 });
 
 describe("per-computer tokens", () => {
