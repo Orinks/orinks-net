@@ -20,9 +20,10 @@ export type SharedProfileValidation =
 const TOP_LEVEL_FIELDS = new Set(invariants.profileFields);
 const REQUIRED_FIELDS = [...TOP_LEVEL_FIELDS];
 const CAREER_FIELDS = new Set(invariants.careerFields);
-const TRUCK_CONDITION_FIELDS = new Set([
-  "fuel_gal", "damage_pct", "tire_wear_pct", "grime_pct",
-]);
+// Exported too, for the same reason as the profile list: this record is where
+// new per-truck state lands (brake and engine wear, traction gear), and a copy
+// kept here would reject the next build's saves the day one is added.
+const TRUCK_CONDITION_FIELDS = new Set(invariants.truckConditionFields);
 const MARKET_FIELDS = new Set(["seed", "day", "multipliers"]);
 const HOS_FIELDS = new Set([
   "driving_min", "duty_min", "since_break_min", "status", "non_driving_min",

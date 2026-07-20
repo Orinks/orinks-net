@@ -750,6 +750,12 @@
     "version"
   ],
   "sourceSaveVersion": 5,
+  "truckConditionFields": [
+    "damage_pct",
+    "fuel_gal",
+    "grime_pct",
+    "tire_wear_pct"
+  ],
   "truckLabels": {
     "heavy_hauler": "heavy hauler",
     "rig": "standard rig"
