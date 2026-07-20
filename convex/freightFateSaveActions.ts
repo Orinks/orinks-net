@@ -66,13 +66,29 @@ export const uploadValidatedSave = action({
     if (!authorized) return { ok: false, reason: "unauthorized" };
     const validation = decodeAndValidate(args.content, args.saveName, args.contentHash);
     if (!validation.ok) {
-      // Only the self-contradicting arithmetic reasons are cheat evidence;
-      // damaged or outdated uploads are rejected without a verdict.
+      // The arithmetic reasons used to stamp a sticky integrityFlag here, which
+      // hid the driver from every public surface until a human cleared it. The
+      // rules behind those two verdicts were provably wrong in the player's
+      // disfavour -- the XP ceiling sat below the game's own rate, and the
+      // money check priced granted equipment as if it had been bought -- and
+      // the one flag they raised in production was a false positive on an
+      // ordinary level 2 career. A rejected upload already stops a bad save
+      // from reaching the board; branding the account on top of it is a
+      // verdict this arithmetic has not earned.
+      //
+      // Keep the evidence instead. Real edits are convicted offline against a
+      // retained payload (ff-admin/save_forensics.py), which is what caught
+      // every confirmed case, and setIntegrityFlag stamps the result by hand.
       if (validation.reason === "impossible_money" || validation.reason === "impossible_xp") {
-        await ctx.runMutation(anyApi.freightFateSaves.stampIntegrityFromValidation, {
+        await ctx.runMutation(anyApi.freightFateSaves.recordRejectedUpload, {
           driverId: args.driverId,
           driverTokenHash: args.driverTokenHash,
           reason: validation.reason,
+          saveName: args.saveName,
+          saveVersion: args.saveVersion,
+          contentHash: args.contentHash,
+          content: args.content,
+          clientVersion: args.clientVersion,
           now: args.now,
         });
       }

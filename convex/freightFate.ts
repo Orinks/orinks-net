@@ -853,7 +853,9 @@ export const getDriverProfile = query({
     // A tamper-flagged career is not presented as real: the profile hides
     // exactly as a private one does until moderation clears the flag. The
     // player keeps playing and keeps cloud backups; only the public face
-    // is held. See the fair-play section of /freight-fate/online/rules.
+    // is held. Upload screening no longer raises this flag on its own — it
+    // rejects the save and keeps the payload, and a human sets the flag from
+    // that evidence (see recordRejectedUpload in freightFateSaves.ts).
     if (driver.integrityFlag) {
       return null;
     }

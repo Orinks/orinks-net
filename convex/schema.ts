@@ -351,6 +351,24 @@ export default defineSchema({
     driverId: v.string(),
     content: v.bytes(), // gzipped profile JSON, exactly as the game sent it
   }).index("by_driver", ["driverId"]),
+  // Uploads rejected for self-contradicting arithmetic, kept so the verdict
+  // can be reviewed. Screening used to brand the account and discard the
+  // payload, which left the one production flag it raised impossible to audit
+  // after the fact -- the career it accused looked entirely ordinary and the
+  // evidence was gone. Moderation reads these by hand; nothing public does.
+  // Pruned by freightFateSaves:pruneRejectedUploads past REJECTED_UPLOAD_TTL.
+  freightFateRejectedUploads: defineTable({
+    driverId: v.string(),
+    reason: v.string(),
+    saveName: v.string(),
+    saveVersion: v.number(),
+    contentHash: v.string(),
+    content: v.bytes(), // gzipped profile JSON, exactly as the game sent it
+    clientVersion: v.optional(v.string()),
+    rejectedAt: v.number(),
+  })
+    .index("by_driver", ["driverId"])
+    .index("by_rejected_at", ["rejectedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),
     eventId: v.string(),

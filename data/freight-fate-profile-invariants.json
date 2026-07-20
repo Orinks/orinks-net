@@ -723,6 +723,7 @@
     "retail",
     "steel"
   ],
+  "payAdvanceLimit": 1500,
   "profileFields": [
     "achievement_stats",
     "achievements",
@@ -750,6 +751,7 @@
     "version"
   ],
   "sourceSaveVersion": 5,
+  "startingMoney": 5000,
   "truckConditionFields": [
     "damage_pct",
     "fuel_gal",
@@ -778,5 +780,7 @@
     "reinforced_brakes": [
       6500
     ]
-  }
+  },
+  "xpFlatPerDelivery": 0,
+  "xpPerMileMax": 1.2
 }

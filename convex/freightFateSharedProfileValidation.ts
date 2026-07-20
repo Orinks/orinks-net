@@ -38,6 +38,15 @@ const ACHIEVEMENT_IDS = new Set(invariants.achievementIds);
 const MARKET_KEYS = new Set(invariants.marketCargoKeys);
 const TRUCK_PRICES = invariants.truckPrices as Record<string, number>;
 const UPGRADE_PRICES = invariants.upgradePrices as Record<string, number[]>;
+// Economy terms behind the two arithmetic checks, exported from the game for
+// the same reason the field lists are: a copy kept here goes stale on the next
+// balance pass and starts rejecting honest backups.
+const STARTING_MONEY = invariants.startingMoney as number;
+const XP_PER_MILE_MAX = invariants.xpPerMileMax as number;
+const XP_FLAT_PER_DELIVERY = invariants.xpFlatPerDelivery as number;
+// Absorbs rounding drift between a total accumulated per delivery and the same
+// total recomputed once here. Cents, not dollars -- it is not a cheat budget.
+const ARITHMETIC_SLACK = 1;
 
 function failure(reason: string, message: string): SharedProfileValidation {
   return { ok: false, reason, message };
@@ -212,16 +221,32 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     || !finite(career.total_earnings, 0, 100_000_000)) {
     return failure("invalid_career", "The cloud backup totals are outside their allowed ranges.");
   }
-  if ((career.xp as number) > (career.total_miles as number) * 1.2 + 1) {
+  // Most XP the recorded driving could have taught, every bonus at its best,
+  // from the game's own rates. It used to be a hand-copied 1.2 per mile, which
+  // sat exactly on what a spotless career earns -- one XP of headroom, and
+  // below the rate the 1.9 arc pays -- so honest drivers were the ones it
+  // caught. Wrong in the generous direction is the survivable wrong here.
+  const xpCeiling = (career.deliveries as number) * XP_FLAT_PER_DELIVERY
+    + (career.total_miles as number) * XP_PER_MILE_MAX
+    + ARITHMETIC_SLACK;
+  if ((career.xp as number) > xpCeiling) {
     return failure("impossible_xp", "The cloud backup experience is not supported by its recorded miles.");
   }
-  let gearSpend = owned.reduce((sum, key) => sum + TRUCK_PRICES[key as string], 0);
-  for (const [key, tier] of Object.entries(upgrades)) {
-    gearSpend += UPGRADE_PRICES[key].slice(0, tier as number).reduce((sum, price) => sum + price, 0);
-  }
-  if ((payload.money as number) + gearSpend
-    > 5_000 + (career.total_earnings as number) + (payload.pay_advance as number) + 1) {
-    return failure("impossible_money", "The cloud backup money and equipment exceed its recorded earnings.");
+  // Every dollar held has to trace to starting cash, lifetime earnings, or an
+  // outstanding advance. Spending only ever lowers money, so this holds for
+  // any honest career without the server modelling what things cost.
+  //
+  // It deliberately does NOT price owned gear. Doing so meant re-deriving
+  // every way a truck can be acquired, and the game grants some outright --
+  // an owner-operator buys out a carrier tractor worth far more than the
+  // buy-in, which read as ~$150k of invented money and rejected the backup of
+  // everyone who took that step. A career that launders invented money
+  // through the garage is left to offline forensics, which is what has
+  // actually caught every real edit so far.
+  if ((payload.money as number)
+    > STARTING_MONEY + (career.total_earnings as number)
+      + (payload.pay_advance as number) + ARITHMETIC_SLACK) {
+    return failure("impossible_money", "The cloud backup money exceeds what the career has earned.");
   }
 
   const market = object(payload.market);
