@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   freightFateClientVersion,
-  getFreightFatePresenceBoard,
+  getFreightFatePresenceBoardSnapshot,
   normalizeFreightFateDriverId,
   normalizeFreightFateToken,
   postFreightFatePresence,
@@ -59,8 +59,13 @@ export async function POST(request: Request) {
   }
 }
 
+// Public and unauthenticated, so its call volume is whatever the internet
+// decides: read from the shared snapshot rather than the backend, or a single
+// impatient poller costs a backend query per request. `no-store` still stops
+// clients and CDNs holding a roster past its stamp; the snapshot is what keeps
+// the backend cost flat.
 export async function GET() {
-  const board = await getFreightFatePresenceBoard();
+  const board = await getFreightFatePresenceBoardSnapshot();
 
   if (!board) {
     return NextResponse.json({ error: "Freight Fate online presence is not configured." }, { status: 503 });

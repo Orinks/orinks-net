@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Section } from "@/components/Section";
 import {
-  getFreightFatePresenceBoard,
+  getFreightFatePresenceBoardSnapshot,
   normalizeFreightFateDisplayName,
 } from "@/lib/freight-fate-online";
 
@@ -24,7 +24,10 @@ function asOfPhrase(asOf: number) {
     timeZone: "America/New_York",
   }).format(new Date(asOf));
 
-  return `Board as of ${stamp} Eastern.`;
+  // The page does not refresh itself, and a screen reader lands on this
+  // section with no page-load cue that the roster is a still frame. Say so,
+  // and give the reader something to do about it.
+  return `Board as of ${stamp} Eastern. Refresh the page to check again.`;
 }
 
 function sentence(text: string) {
@@ -45,21 +48,42 @@ function comparableSentence(text: string) {
     .toLocaleLowerCase("en-US");
 }
 
-/** The live "who's on duty" board, embedded on the Freight Fate page.
+/** The "who's on duty" board, embedded on the Freight Fate page.
  *
  * Drivers opt in from the game (browser-confirmed identity, public
  * visibility chosen on the setup page); this component only ever renders
- * broad in-game activity. When the board is unreachable or not configured
- * the section quietly disappears rather than showing an error on the
- * project landing page.
+ * broad in-game activity.
+ *
+ * Three outcomes, deliberately kept apart:
+ *
+ * - Not configured (no Convex client): the section is omitted entirely. That
+ *   is a property of the deployment, not of the request -- on a build without
+ *   online presence the board genuinely does not exist, and saying so would be
+ *   noise. The library logs it in production so a bad env var is not invisible.
+ * - Unreachable: the heading stays and the paragraph explains. Most readers
+ *   here navigate by heading, and a section that silently changes shape
+ *   between loads sends them hunting for something that is not there -- worse
+ *   now that a snapshot can hold the same state for a minute.
+ * - Reachable with nobody driving: its own wording, never the failure wording.
+ *   An empty road is real information.
  */
 export async function FreightFateDriversBoard() {
   let board = null;
 
   try {
-    board = await getFreightFatePresenceBoard();
+    board = await getFreightFatePresenceBoardSnapshot();
   } catch {
-    board = null;
+    // Reachability failure, not a missing deployment: keep the section and say
+    // so. No live region -- this is server-rendered, present at first paint,
+    // and never changes while the page is open.
+    return (
+      <Section title="Drivers on duty">
+        <p>
+          We can&apos;t show who&apos;s on duty right now. This doesn&apos;t affect your game or
+          your driver profile. Check back in a few minutes.
+        </p>
+      </Section>
+    );
   }
 
   if (!board) {

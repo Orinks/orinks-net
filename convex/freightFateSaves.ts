@@ -111,8 +111,16 @@ async function upsertVerifiedSnapshot(
   };
   const existing = await ctx.db.query("freightFateProfileSnapshots")
     .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
-  if (existing) await ctx.db.patch(existing._id, clean);
-  else await ctx.db.insert("freightFateProfileSnapshots", clean);
+  if (existing) {
+    // The first verified slot owns the public projection until that slot is
+    // deleted. Uploading a different career must not silently replace the
+    // driver's chosen public identity. Legacy rows without an owner are
+    // claimed by the first verified upload that reaches them.
+    if (existing.sourceSaveName && existing.sourceSaveName !== args.saveName) return;
+    await ctx.db.patch(existing._id, clean);
+  } else {
+    await ctx.db.insert("freightFateProfileSnapshots", clean);
+  }
 }
 
 export const authorizeSaveAction = internalQuery({

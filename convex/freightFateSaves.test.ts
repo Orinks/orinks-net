@@ -158,6 +158,61 @@ describe("validated private cloud revisions", () => {
     });
   });
 
+  test("keeps the first verified slot as the public profile owner", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth);
+
+    const experiment = validProfile();
+    experiment.name = "Experiment";
+    experiment.money = 0;
+    experiment.career.xp = 0;
+    experiment.career.deliveries = 0;
+    experiment.career.on_time_deliveries = 0;
+    experiment.career.total_miles = 0;
+    experiment.career.total_earnings = 0;
+    await expect(upload(t, auth, experiment))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+
+    const afterExperiment = await t.run((ctx) => ctx.db
+      .query("freightFateProfileSnapshots").first());
+    expect(afterExperiment).toMatchObject({
+      sourceSaveName: "Road Star",
+      level: 4,
+      deliveries: 12,
+      milesDriven: 4_100,
+    });
+
+    const updatedOwner = validProfile();
+    updatedOwner.career.reputation = 75;
+    await upload(t, auth, updatedOwner, 1);
+
+    const afterOwnerUpdate = await t.run((ctx) => ctx.db
+      .query("freightFateProfileSnapshots").first());
+    expect(afterOwnerUpdate).toMatchObject({
+      sourceSaveName: "Road Star",
+      sourceRevision: 2,
+      reputation: 75,
+    });
+
+    await t.mutation(api.freightFateSaves.deleteSaveSlot, {
+      ...auth, saveName: "Experiment",
+    });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .not.toBeNull();
+
+    await t.mutation(api.freightFateSaves.deleteSaveSlot, {
+      ...auth, saveName: "Road Star",
+    });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toBeNull();
+
+    await expect(upload(t, auth, experiment))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Experiment", level: 1, deliveries: 0 });
+  });
+
   test("preserves revision conflicts", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
