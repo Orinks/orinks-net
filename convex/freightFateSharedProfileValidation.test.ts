@@ -189,3 +189,14 @@ describe("field list stays in step with the game", () => {
     expect(validateSharedProfile(marked, "Road Star")).toMatchObject({ ok: true });
   });
 });
+
+describe("per-truck condition fields track the game", () => {
+  test("the condition allow-list is exported, not hand-kept", () => {
+    // The 1.9 line adds brake_wear_pct, engine_wear_pct and traction gear to
+    // this record. A list written out here would reject those saves on the
+    // day they ship -- the same drift that broke cloud backup once already.
+    expect(invariants.truckConditionFields).toContain("fuel_gal");
+    expect(invariants.truckConditionFields).toContain("tire_wear_pct");
+    expect(invariants.truckConditionFields.length).toBeGreaterThan(0);
+  });
+});
