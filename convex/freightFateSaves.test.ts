@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import { REJECTED_UPLOAD_TTL_MS } from "./freightFateSaves";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -150,6 +151,30 @@ describe("validated private cloud revisions", () => {
     bought.owned_trucks = ["rig", "heavy_hauler"];
     bought.upgrades = { engine_tune: 2, aero_kit: 1 };
     await expect(upload(t, auth, bought)).resolves.toMatchObject({ ok: true });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(0);
+  });
+
+  test("retained evidence is pruned once its review window has passed", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await expect(upload(t, auth, { ...validProfile(), money: 1_000_000 }))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(1);
+
+    // Still inside the window: evidence a moderator might still want stays.
+    await t.mutation(internal.freightFateSaves.pruneRejectedUploads, {
+      now: Date.now() + REJECTED_UPLOAD_TTL_MS - 60_000,
+    });
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(1);
+
+    // Past it, the payload goes: these rows carry a whole career each, so a
+    // rejected save is not archived forever.
+    await t.mutation(internal.freightFateSaves.pruneRejectedUploads, {
+      now: Date.now() + REJECTED_UPLOAD_TTL_MS + 60_000,
+    });
     expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
       .toHaveLength(0);
   });

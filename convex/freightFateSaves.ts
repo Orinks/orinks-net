@@ -136,6 +136,11 @@ export const authorizeSaveAction = internalQuery({
 // is not archived indefinitely.
 export const REJECTED_UPLOAD_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
+// Rows deleted per prune pass. These carry a full save payload each, so the
+// batch stays small: a backlog drains over several ticks rather than one long
+// transaction.
+export const REJECTED_UPLOAD_PRUNE_BATCH = 50;
+
 // Keep the payload behind an arithmetic rejection (money the career never
 // earned, XP the miles cannot support) so the verdict can be checked later.
 // Schema, hash, and version failures never land here — they are sync skew, not
@@ -183,18 +188,30 @@ export const recordRejectedUpload = internalMutation({
 });
 
 // Drop retained payloads past the review window. Internal only:
+// Runs on a cron; returns how much it removed so a backlog is visible in the
+// logs. Also runnable by hand:
 //
-//   npx convex run freightFateSaves:pruneRejectedUploads '{"now":0}' --prod
+//   npx convex run freightFateSaves:pruneRejectedUploads --prod
 export const pruneRejectedUploads = internalMutation({
-  args: { now: v.number() },
+  args: { now: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const cutoff = (args.now || Date.now()) - REJECTED_UPLOAD_TTL_MS;
+    const now = args.now ?? Date.now();
+    const cutoff = now - REJECTED_UPLOAD_TTL_MS;
     const stale = await ctx.db
       .query("freightFateRejectedUploads")
       .withIndex("by_rejected_at", (q) => q.lt("rejectedAt", cutoff))
-      .collect();
-    for (const row of stale) await ctx.db.delete(row._id);
-    return { deleted: stale.length };
+      .take(REJECTED_UPLOAD_PRUNE_BATCH);
+
+    for (const row of stale) {
+      await ctx.db.delete(row._id);
+    }
+
+    // A full batch means more was waiting than one pass can take; the next
+    // tick continues from there.
+    return {
+      deleted: stale.length,
+      moreWaiting: stale.length === REJECTED_UPLOAD_PRUNE_BATCH,
+    };
   },
 });
 
