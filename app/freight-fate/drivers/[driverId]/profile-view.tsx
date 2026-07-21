@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { FreightFateHashFocus } from "@/components/FreightFateHashFocus";
 import { freightFateEventFragment } from "@/lib/freight-fate-fragments";
@@ -42,13 +43,18 @@ function ProfileNav({ driverId, section }: { driverId: string; section: ProfileS
   );
 }
 
-export async function safeProfile(driverId: string, cursor?: JournalCursor) {
+// Every one of these pages reads the profile twice: once for the page title
+// and once for the body. Memoizing per request makes that a single database
+// read, and the title can no longer describe a different snapshot than the
+// page under it. A paginated road journal still reads twice — its title is
+// built without the cursor, so the two calls are genuinely different reads.
+export const safeProfile = cache(async (driverId: string, cursor?: JournalCursor) => {
   try {
     return await getFreightFateDriverProfile(normalizeFreightFateDriverId(driverId), 20, cursor);
   } catch {
     return null;
   }
-}
+});
 
 export function parseJournalCursor(value: string | undefined): JournalCursor | undefined {
   if (!value) return undefined;

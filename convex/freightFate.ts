@@ -83,27 +83,38 @@ async function findDeviceToken(ctx: QueryCtx, driverId: string, tokenHash: strin
 // The one token check every authenticated game call goes through: the legacy
 // single token or any active device token signs the driver in. Never call
 // before the rate limiter — a token guess must stay as cheap as a wrong one.
-export async function driverTokenAccepted(
+//
+// Returns the device row it matched, so a caller that also wants to stamp the
+// row does not have to look it up a second time. A legacy-token driver
+// matches with no row at all, hence accepted and device being separate.
+export async function acceptDriverToken(
   ctx: QueryCtx,
   driver: Doc<"freightFateDrivers">,
   tokenHash: string,
 ) {
   if (driver.driverTokenHash !== undefined && driver.driverTokenHash === tokenHash) {
-    return true;
+    return { accepted: true, device: null };
   }
-  return (await findDeviceToken(ctx, driver.driverId, tokenHash)) !== null;
+  const device = await findDeviceToken(ctx, driver.driverId, tokenHash);
+  return { accepted: device !== null, device };
 }
 
-// Mutation-path companion to driverTokenAccepted: after a successful check,
-// coarsely stamp the device row so the setup page can say when each computer
-// last played. Legacy-token traffic has no row to stamp.
-export async function stampDeviceTokenUse(
-  ctx: MutationCtx,
+export async function driverTokenAccepted(
+  ctx: QueryCtx,
   driver: Doc<"freightFateDrivers">,
   tokenHash: string,
+) {
+  return (await acceptDriverToken(ctx, driver, tokenHash)).accepted;
+}
+
+// Mutation-path companion to acceptDriverToken: after a successful check,
+// coarsely stamp the device row so the setup page can say when each computer
+// last played. Legacy-token traffic has no row to stamp, so device is null.
+export async function stampDeviceTokenUse(
+  ctx: MutationCtx,
+  device: Doc<"freightFateDeviceTokens"> | null,
   now: number,
 ) {
-  const device = await findDeviceToken(ctx, driver.driverId, tokenHash);
   if (device && (device.lastUsedAt === undefined || now - device.lastUsedAt > DEVICE_TOKEN_USE_STAMP_MS)) {
     await ctx.db.patch(device._id, { lastUsedAt: now });
   }
@@ -589,12 +600,13 @@ export const updatePresence = mutation({
       return { ok: false as const, reason: "rate_limited" };
     }
 
-    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
+    const { accepted, device } = await acceptDriverToken(ctx, driver, args.driverTokenHash);
+    if (!accepted) {
       return { ok: false as const, reason: "unauthorized" };
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-    await stampDeviceTokenUse(ctx, driver, args.driverTokenHash, args.now);
+    await stampDeviceTokenUse(ctx, device, args.now);
 
     const existing = await ctx.db
       .query("freightFatePresence")
@@ -877,15 +889,29 @@ export const getDriverProfile = query({
     }
 
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
-    const allEvents = await ctx.db
-      .query("freightFateDriverEvents")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
-      .collect();
-    const eligible = allEvents
-      .filter((event) => args.before === undefined || event.occurredAt < args.before.occurredAt ||
-        (event.occurredAt === args.before.occurredAt && event.eventId < args.before.eventId))
-      .sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
-    const events = eligible.slice(0, limit);
+    // Stream one page of history instead of the whole career. This read was
+    // the deployment's largest remaining database cost after getPublicUpdates
+    // was given the same treatment: about 23 KB per profile view, growing
+    // with every delivery the driver ever posted, to show twenty rows.
+    //
+    // occurredAt ties are broken by eventId, which the index does not order
+    // by, so the tie group straddling the page boundary is read out in full
+    // before sorting — stopping the moment the page filled could drop an
+    // event from the middle of the feed.
+    const collected = [];
+    let boundaryOccurredAt: number | null = null;
+    for await (const row of ctx.db.query("freightFateDriverEvents")
+      .withIndex("by_driver_occurred", (q) => args.before
+        ? q.eq("driverId", args.driverId).lte("occurredAt", args.before.occurredAt)
+        : q.eq("driverId", args.driverId))
+      .order("desc")) {
+      if (boundaryOccurredAt !== null && row.occurredAt !== boundaryOccurredAt) break;
+      if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
+      collected.push(row);
+      if (collected.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
+    }
+    collected.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
+    const events = collected.slice(0, limit);
     const snapshot = await ctx.db.query("freightFateProfileSnapshots")
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
     const presenceRow = await ctx.db.query("freightFatePresence")
@@ -893,8 +919,19 @@ export const getDriverProfile = query({
     const presence = presenceRow && args.now !== undefined && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
       : null;
-    const achievements = (await ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).collect())
+    // Same shape as the events above: earnedAt ties break by achievementKey,
+    // which the index does not order by, so the boundary tie group is read in
+    // full and the rest of the shelf is left on disk.
+    const earned = [];
+    let boundaryEarnedAt: number | null = null;
+    for await (const row of ctx.db.query("freightFateAchievements")
+      .withIndex("by_driver_earned", (q) => q.eq("driverId", args.driverId))
+      .order("desc")) {
+      if (boundaryEarnedAt !== null && row.earnedAt !== boundaryEarnedAt) break;
+      earned.push(row);
+      if (earned.length > limit && boundaryEarnedAt === null) boundaryEarnedAt = row.earnedAt;
+    }
+    const achievements = earned
       .sort((a, b) => b.earnedAt - a.earnedAt || b.achievementKey.localeCompare(a.achievementKey))
       .slice(0, limit);
 
@@ -908,7 +945,7 @@ export const getDriverProfile = query({
         updatedAt: driver.updatedAt,
       },
       events,
-      nextBefore: eligible.length > limit && events.at(-1) ? {
+      nextBefore: collected.length > limit && events.at(-1) ? {
         occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
       } : null,
       snapshot: snapshot?.sourceRevision && snapshot.validatorVersion ? {
