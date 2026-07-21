@@ -3,7 +3,11 @@ import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
 import { internal } from "./_generated/api";
-import { RATE_LIMIT_RETENTION_MS, RATE_LIMIT_WINDOW_MS } from "./freightFateRateLimit";
+import {
+  RATE_LIMIT_RETENTION_MS,
+  RATE_LIMIT_WINDOW_MS,
+  consumeFreightFateWrite,
+} from "./freightFateRateLimit";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -28,6 +32,50 @@ async function remainingKeys(t: ReturnType<typeof setup>) {
     return rows.map((row) => row.key).sort();
   });
 }
+
+describe("write rate limiter", () => {
+  const now = 1_800_000_000_000;
+
+  async function consume(t: ReturnType<typeof setup>, at: number) {
+    return t.run(async (ctx) => consumeFreightFateWrite(ctx, {
+      scope: "presence", driverId: "driver-a", now: at, limit: 2,
+    }));
+  }
+
+  async function counters(t: ReturnType<typeof setup>) {
+    return t.run(async (ctx) => ctx.db.query("freightFateRateLimits").collect());
+  }
+
+  test("a driver keeps one counter no matter how long they play", async () => {
+    const t = setup();
+
+    expect(await consume(t, now)).toBe(true);
+    expect(await consume(t, now + 1)).toBe(true);
+    // Third write inside the same minute is over the limit of two.
+    expect(await consume(t, now + 2)).toBe(false);
+
+    // The next minute rolls the same row over rather than leaving the spent
+    // one behind: keying each window separately is what used to grow this
+    // table by a row per driver-minute of play.
+    expect(await consume(t, now + RATE_LIMIT_WINDOW_MS)).toBe(true);
+
+    const rows = await counters(t);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].key).toBe("presence:driver-a");
+    expect(rows[0].count).toBe(1);
+  });
+
+  test("a slow clock does not buy a fresh allowance", async () => {
+    const t = setup();
+
+    expect(await consume(t, now)).toBe(true);
+    expect(await consume(t, now + 1)).toBe(true);
+    // Same driver, timestamp reported from the previous minute: the window
+    // only rolls forward, so this still counts against the current one.
+    expect(await consume(t, now - RATE_LIMIT_WINDOW_MS)).toBe(false);
+    expect(await counters(t)).toHaveLength(1);
+  });
+});
 
 describe("rate limit cleanup", () => {
   test("drops spent counters and keeps the live window", async () => {
