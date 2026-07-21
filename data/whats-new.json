@@ -5,16 +5,11 @@
       "id": "2026-07-21-freight-fate-cloud-backup-every-version",
       "date": "2026-07-21",
       "project": "Freight Fate",
-      "title": "Cloud Backup accepts saves from every version of Freight Fate",
+      "title": "Cloud Backup is working again for every version",
       "body": [
-        "Cloud Backup had stopped accepting careers saved by some versions of Freight Fate. If you play version 1.8.3 or 1.8.1, backups stopped going through on 20 July. If you play the nightly builds from 18 or 19 July, they never went through at all. On those versions, backing up told you the backup was not accepted, and your newest progress stayed on your own computer instead of reaching the cloud. That is fixed. Your next backup will go through on its own, and there is nothing you need to change or switch back on.",
-        "Nothing was lost while this was happening. The careers on your computer were never touched, and the backups already in the cloud stayed exactly as they were, so restoring one still works the way it always did. If a career looked out of date when you restored it on another computer, it was showing the last backup that reached the cloud before the problem began. Back that career up again from the computer you play it on and the cloud copy will catch up.",
-        "Freight Fate writes its saves a little differently as the game grows, and orinks.net had been accepting only the newest form. It now accepts every form the released game and the nightly builds have written, so updating the game and updating the site no longer have to happen together."
-      ],
-      "link": {
-        "href": "/freight-fate/online/setup",
-        "label": "Review your Freight Fate online settings"
-      }
+        "Cloud Backup had stopped accepting careers saved by some versions of Freight Fate. If you play version 1.8.3 or 1.8.1, backups stopped going through on 20 July. If you have been playing the developer snapshots released on 18 or 19 July, backups never went through at all. On those versions, backing up told you the backup was not accepted, and your newest progress stayed on your own computer instead of reaching the cloud. That is fixed. Your next backup will go through on its own, and there is nothing you need to change or switch back on.",
+        "Nothing was lost while this was happening. The careers on your computer were never touched, and the backups already in the cloud stayed exactly as they were, so restoring one still works the way it always did. If a career looked out of date when you restored it on another computer, it was showing the last backup that reached the cloud before the problem began. Back that career up again from the computer you play it on and the cloud copy will catch up."
+      ]
     },
     {
       "id": "2026-07-13-freight-fate-computer-tokens",
