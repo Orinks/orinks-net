@@ -8,11 +8,17 @@ import { maskDisplayName, screenDisplayName } from "./moderation";
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
 // A driver whose latest heartbeat is older than this is off the live board.
-// The game beats every ninety seconds (HEARTBEAT_INTERVAL_S in Freight Fate's
-// online_presence.py), so four minutes still absorbs one dropped request
-// before a driver is called gone. Shortening this without slowing the beat to
-// match will blink live drivers off the board on a single lost packet.
-export const PRESENCE_TTL_MS = 4 * 60_000;
+// Paired with HEARTBEAT_INTERVAL_S in Freight Fate's online_presence.py: this
+// has to be more than twice the beat, so one dropped request never blinks a
+// live driver off. The beat is moving from ninety seconds to a hundred and
+// fifty (the heartbeat is the deployment's largest database cost and a driver
+// on a long haul beats for hours), so six minutes here.
+//
+// Widen this before the game slows down, never after: a build that beats
+// every hundred and fifty seconds against a four-minute window has no margin
+// for a single lost packet, while an older build beating every ninety seconds
+// against six minutes only lingers a little longer after a crash.
+export const PRESENCE_TTL_MS = 6 * 60_000;
 export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
