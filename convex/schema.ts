@@ -381,6 +381,10 @@ export default defineSchema({
   })
     .index("by_driver", ["driverId"])
     .index("by_driver_event", ["driverId", "eventId"])
+    // One driver's history, newest first, without reading all of it: the
+    // profile page shows twenty of these and a whole career's worth was
+    // being read to find them.
+    .index("by_driver_occurred", ["driverId", "occurredAt"])
     .index("by_occurred", ["occurredAt"]),
   freightFateAchievements: defineTable({
     driverId: v.string(),
@@ -391,7 +395,10 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_driver", ["driverId"])
-    .index("by_driver_achievement", ["driverId", "achievementKey"]),
+    .index("by_driver_achievement", ["driverId", "achievementKey"])
+    // Same reason as by_driver_occurred above: the profile shows the most
+    // recent badges, not the whole shelf.
+    .index("by_driver_earned", ["driverId", "earnedAt"]),
   freightFateProfileSnapshots: defineTable({
     driverId: v.string(),
     version: v.number(),

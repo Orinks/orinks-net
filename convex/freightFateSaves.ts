@@ -2,7 +2,7 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import { driverTokenAccepted, stampClientVersion, stampDeviceTokenUse } from "./freightFate";
+import { acceptDriverToken, driverTokenAccepted, stampClientVersion, stampDeviceTokenUse } from "./freightFate";
 import invariants from "../data/freight-fate-profile-invariants.json";
 
 // --- Cloud saves for Freight Fate ---
@@ -256,12 +256,13 @@ export const storeValidatedSave = internalMutation({
       return { ok: false as const, reason: "rate_limited" as const };
     }
 
-    if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
+    const { accepted, device } = await acceptDriverToken(ctx, driver, args.driverTokenHash);
+    if (!accepted) {
       return { ok: false as const, reason: "unauthorized" as const };
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-    await stampDeviceTokenUse(ctx, driver, args.driverTokenHash, args.now);
+    await stampDeviceTokenUse(ctx, device, args.now);
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
       return { ok: false as const, reason: "too_large" as const };

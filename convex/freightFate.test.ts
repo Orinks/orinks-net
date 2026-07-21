@@ -854,6 +854,68 @@ describe("expanded sharing", () => {
     expect(seen).toEqual(["tie-z", "tie-m", "tie-c", "tie-a"]);
     expect(new Set(seen).size).toBe(4);
   });
+
+  // One driver's own history pages the same way and for the same reason: the
+  // by_driver_occurred index orders by timestamp only, so a run of equal
+  // timestamps across a page boundary is where an early exit would lose an
+  // event out of the middle of the road journal.
+  test("a driver's own tie group pages without gaps", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "journal-driver", displayName: "Journal Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      // Insertion order disagrees with eventId order at both ends, and one
+      // event sits below the tie group so the last page has to reach past it.
+      for (const suffix of ["m", "a", "z", "c"]) {
+        await ctx.db.insert("freightFateDriverEvents", {
+          driverId: "journal-driver", eventId: `tie-${suffix}`, eventType: "delivery_completed",
+          summary: suffix, occurredAt: now, createdAt: now,
+        });
+      }
+      await ctx.db.insert("freightFateDriverEvents", {
+        driverId: "journal-driver", eventId: "older", eventType: "delivery_completed",
+        summary: "older", occurredAt: now - 500, createdAt: now,
+      });
+    });
+    const seen: string[] = [];
+    let before: { occurredAt: number; eventId: string } | undefined;
+    for (let page = 0; page < 6; page += 1) {
+      const profile = await t.query(api.freightFate.getDriverProfile, {
+        driverId: "journal-driver", limit: 2, ...(before ? { before } : {}),
+      });
+      seen.push(...profile!.events.map((event) => event.eventId));
+      if (!profile!.nextBefore) break;
+      before = profile!.nextBefore;
+    }
+    expect(seen).toEqual(["tie-z", "tie-m", "tie-c", "tie-a", "older"]);
+    expect(new Set(seen).size).toBe(5);
+  });
+
+  // Badges are capped the same way events are, and earnedAt ties break by
+  // achievementKey, which their index does not order by either.
+  test("the newest badges survive a tie at the cap", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "badge-driver", displayName: "Badge Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      for (const [key, earnedAt] of [["b-mid", now], ["a-first", now], ["c-last", now], ["z-older", now - 500]] as const) {
+        await ctx.db.insert("freightFateAchievements", {
+          driverId: "badge-driver", achievementKey: key, name: key,
+          description: key, earnedAt, createdAt: now,
+        });
+      }
+    });
+    const profile = await t.query(api.freightFate.getDriverProfile, { driverId: "badge-driver", limit: 2 });
+    expect(profile!.achievements.map((badge) => badge.achievementKey)).toEqual(["c-last", "b-mid"]);
+  });
 });
 
 describe("per-computer tokens", () => {
