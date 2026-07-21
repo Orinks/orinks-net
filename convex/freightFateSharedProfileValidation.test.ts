@@ -4,6 +4,7 @@ import invariants from "../data/freight-fate-profile-invariants.json";
 import { signSharedProfile } from "./freightFateSharedProfileSigning";
 import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
 import {
+  REQUIRED_FIELDS,
   canonicalSharedProfile,
   validateSharedProfile,
 } from "./freightFateSharedProfileValidation";
@@ -187,6 +188,90 @@ describe("field list stays in step with the game", () => {
     // honestly. The gate must judge the numbers, not the flag.
     const marked = { ...validProfile(), integrity_modified: true, integrity_notice_pending: true };
     expect(validateSharedProfile(marked, "Road Star")).toMatchObject({ ok: true });
+  });
+});
+
+// Every profile shape that has actually shipped, taken from the game's own
+// tags rather than guessed. Four of the five were rejected in production at
+// some point, because the validator demanded an exact match with whichever
+// single build the invariants export had last been generated from. Save
+// version alone does not pin the field set -- two version 4 shapes and two
+// version 5 shapes went out -- so each one is pinned here by name.
+function stableProfile() {
+  // v1.8.1, v1.8.3 (current stable), nightly-20260717: flat condition,
+  // no calendar offset, no notice flags.
+  const {
+    truck_conditions: _conditions,
+    calendar_offset_days: _offset,
+    migration_notice_pending: _migration,
+    integrity_modified: _modified,
+    integrity_notice_pending: _notice,
+    ...rest
+  } = validProfile();
+  return {
+    ...rest,
+    version: 4,
+    truck_fuel_gal: 125,
+    truck_damage_pct: 2,
+    tire_wear_pct: 3,
+    road_grime_pct: 4,
+  };
+}
+
+function calendarNightlyProfile() {
+  // nightly-20260718: still version 4, but calendar_offset_days had landed.
+  // This is the shape in issue #97 -- rejected as an unknown field.
+  return { ...stableProfile(), calendar_offset_days: 0 };
+}
+
+function firstPerTruckNightlyProfile() {
+  // nightly-20260719: version 5 arrived before the integrity flags did.
+  const { integrity_modified: _modified, integrity_notice_pending: _notice, ...rest } =
+    validProfile();
+  return rest;
+}
+
+describe("every shipped profile shape still backs up", () => {
+  test.each([
+    ["v1.8.3, the current stable release", stableProfile],
+    ["nightly-20260718, version 4 plus the calendar offset", calendarNightlyProfile],
+    ["nightly-20260719, version 5 before the integrity flags", firstPerTruckNightlyProfile],
+    ["the current build", validProfile],
+  ])("accepts %s", (_label, build) => {
+    expect(validateSharedProfile(build(), "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("still refuses an invented field on an older shape", () => {
+    expect(validateSharedProfile({ ...stableProfile(), debug_money: 99 }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_schema" });
+  });
+
+  test("holds a version 4 profile to the same condition ranges", () => {
+    expect(validateSharedProfile({ ...stableProfile(), tire_wear_pct: 101 }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_range" });
+    const { road_grime_pct: _missing, ...incomplete } = stableProfile();
+    expect(validateSharedProfile(incomplete, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_range" });
+  });
+
+  test("names version skew as version skew, not a malformed backup", () => {
+    // A save from a build this server has never seen has to say so. Failing
+    // the field check underneath instead tells the player their career is
+    // broken, which is what issue #97 heard for what was only an old build.
+    expect(validateSharedProfile({ ...validProfile(), version: 99 }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "unsupported_version" });
+    expect(validateSharedProfile({ ...stableProfile(), version: 3 }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "unsupported_version" });
+  });
+
+  test("requires only fields the game still writes and the checks still read", () => {
+    // The drift guard. Anything demanded here has to exist in the game's
+    // current export, or the next build's saves are rejected as incomplete.
+    for (const field of REQUIRED_FIELDS) {
+      expect(invariants.profileFields).toContain(field);
+    }
+    expect(REQUIRED_FIELDS).not.toContain("truck_conditions");
+    expect(REQUIRED_FIELDS).not.toContain("integrity_modified");
   });
 });
 

@@ -10,15 +10,48 @@ export type SharedProfileValidation =
   | { ok: true; payload: JsonObject }
   | { ok: false; reason: string; message: string };
 
-// Both lists come from the game's own dataclasses via
-// tools/export_profile_integrity_invariants.py. They used to be written out
-// here by hand, and fell behind: the game moved per-truck condition into
-// truck_conditions and added calendar_offset_days, so every upload from a
-// current build failed the exact-field check as both unknown AND incomplete,
-// and players heard "your backup is broken" for what was really version skew.
-// Regenerate the export instead of editing these.
-const TOP_LEVEL_FIELDS = new Set(invariants.profileFields);
-const REQUIRED_FIELDS = [...TOP_LEVEL_FIELDS];
+// Condition lived flat on the profile through save version 4 and moved into
+// truck_conditions in version 5. Both shapes are still in players' hands, so
+// both are still read; the numbers have to be sane either way.
+const LEGACY_CONDITION_LIMITS: Record<string, number> = {
+  truck_fuel_gal: 500,
+  truck_damage_pct: 100,
+  tire_wear_pct: 100,
+  road_grime_pct: 100,
+};
+// The allowed set comes from the game's own dataclasses via
+// tools/export_profile_integrity_invariants.py, widened by the fields older
+// supported builds still write. Exporting one build's list and demanding an
+// exact match was wrong in both directions: it rejected newer saves as
+// carrying unknown fields until the export was regenerated, and then rejected
+// every older save as incomplete the moment it was. Five profile shapes have
+// shipped between v1.8.1 and today and four of them were refused at some
+// point -- including the one the current stable release writes. So this is a
+// superset guard now: an unknown field is still refused, but a field this
+// validator never reads is never demanded.
+const TOP_LEVEL_FIELDS = new Set([
+  ...invariants.profileFields,
+  ...Object.keys(LEGACY_CONDITION_LIMITS),
+]);
+// Only what every supported build writes and the checks below actually read.
+// A field the game adds later arrives in profileFields, so it is allowed
+// without becoming mandatory -- which is what keeps older builds working.
+export const REQUIRED_FIELDS = [
+  "version", "name", "money", "current_city", "game_hours", "tutorial_done",
+  "truck", "owned_trucks", "upgrades", "active_trip", "dispatch_board_cache",
+  "fatigue", "pay_advance", "pay_advance_used_for_load", "career", "market",
+  "hos", "achievements", "achievement_stats",
+];
+// Fields that arrived after version 4 shipped: calendar_offset_days mid-way
+// through the nightlies, the three notice flags a build or two later again.
+// Checked when present, not missed when absent.
+const OPTIONAL_FLAG_FIELDS = [
+  "migration_notice_pending", "integrity_modified", "integrity_notice_pending",
+];
+// Version 4 is what v1.8.3 -- the current stable release -- writes, and the
+// game migrates it to the current shape on load. Accepting it costs nothing;
+// refusing it locks out every player who is not running a nightly.
+const OLDEST_SUPPORTED_SAVE_VERSION = 4;
 const CAREER_FIELDS = new Set(invariants.careerFields);
 // Exported too, for the same reason as the profile list: this record is where
 // new per-truck state lands (brake and engine wear, traction gear), and a copy
@@ -144,12 +177,16 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (new TextEncoder().encode(canonical).byteLength > MAX_SHARED_PROFILE_BYTES) {
     return failure("too_large", "The cloud backup is too large to validate.");
   }
+  // Version is read before the field lists so a save this server does not
+  // know is named as version skew. Underneath, an unrecognised shape fails
+  // the field check instead, and the player hears that their backup is
+  // malformed when their game is only a different build.
+  if (!integer(payload.version, OLDEST_SUPPORTED_SAVE_VERSION, invariants.sourceSaveVersion)) {
+    return failure("unsupported_version", "This career version is not supported for Cloud Backup.");
+  }
   if (!exactFields(payload, TOP_LEVEL_FIELDS)
     || REQUIRED_FIELDS.some((field) => !(field in payload))) {
     return failure("invalid_schema", "The cloud backup has missing or unknown profile fields.");
-  }
-  if (payload.version !== invariants.sourceSaveVersion) {
-    return failure("unsupported_version", "This career version is not supported for Cloud Backup.");
   }
   const normalizedName = typeof payload.name === "string"
     ? freightFateSaveSlotName(payload.name)
@@ -167,31 +204,44 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (!finite(payload.money, 0, 100_000_000)
     || !finite(payload.game_hours, 0, 10_000_000)
     || !finite(payload.pay_advance, 0, 1_500)
-    || !integer(payload.calendar_offset_days, -100_000, 100_000)
     || typeof payload.tutorial_done !== "boolean"
-    || typeof payload.pay_advance_used_for_load !== "boolean"
-    || typeof payload.migration_notice_pending !== "boolean"
-    || typeof payload.integrity_modified !== "boolean"
-    || typeof payload.integrity_notice_pending !== "boolean") {
+    || typeof payload.pay_advance_used_for_load !== "boolean") {
+    return failure("invalid_range", "The cloud backup has a value outside its allowed range.");
+  }
+  if ("calendar_offset_days" in payload
+    && !integer(payload.calendar_offset_days, -100_000, 100_000)) {
+    return failure("invalid_range", "The cloud backup has a value outside its allowed range.");
+  }
+  if (OPTIONAL_FLAG_FIELDS.some(
+    (flag) => flag in payload && typeof payload[flag] !== "boolean",
+  )) {
     return failure("invalid_range", "The cloud backup has a value outside its allowed range.");
   }
 
-  // Condition moved off the profile and onto each owned truck. Records for
-  // trucks this build does not know are left alone on purpose -- a newer
-  // client may own one -- but every record's numbers still have to be sane.
-  const conditions = object(payload.truck_conditions);
-  if (!conditions) {
-    return failure("invalid_schema", "The cloud backup has no truck condition records.");
-  }
-  for (const record of Object.values(conditions)) {
-    const condition = object(record);
-    if (!condition || !exactFields(condition, TRUCK_CONDITION_FIELDS)
-      || !finite(condition.fuel_gal, 0, 500)
-      || !finite(condition.damage_pct, 0, 100)
-      || !finite(condition.tire_wear_pct, 0, 100)
-      || !finite(condition.grime_pct, 0, 100)) {
-      return failure("invalid_range", "A truck's condition is outside its allowed range.");
+  // Version 5 moved condition off the profile and onto each owned truck.
+  // Records for trucks this build does not know are left alone on purpose --
+  // a newer client may own one -- but every record's numbers still have to be
+  // sane. A version 4 save carries one flat set instead; it is held to the
+  // same ranges, and the game rebuilds it per truck when it loads the restore.
+  if ("truck_conditions" in payload) {
+    const conditions = object(payload.truck_conditions);
+    if (!conditions) {
+      return failure("invalid_schema", "The cloud backup has no truck condition records.");
     }
+    for (const record of Object.values(conditions)) {
+      const condition = object(record);
+      if (!condition || !exactFields(condition, TRUCK_CONDITION_FIELDS)
+        || !finite(condition.fuel_gal, 0, 500)
+        || !finite(condition.damage_pct, 0, 100)
+        || !finite(condition.tire_wear_pct, 0, 100)
+        || !finite(condition.grime_pct, 0, 100)) {
+        return failure("invalid_range", "A truck's condition is outside its allowed range.");
+      }
+    }
+  } else if (Object.entries(LEGACY_CONDITION_LIMITS).some(
+    ([field, high]) => !finite(payload[field], 0, high),
+  )) {
+    return failure("invalid_range", "A truck's condition is outside its allowed range.");
   }
 
   const truck = typeof payload.truck === "string" ? payload.truck : "";
