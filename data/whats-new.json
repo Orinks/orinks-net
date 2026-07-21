@@ -2,6 +2,21 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-21-freight-fate-cloud-backup-every-version",
+      "date": "2026-07-21",
+      "project": "Freight Fate",
+      "title": "Cloud Backup accepts saves from every version of Freight Fate",
+      "body": [
+        "Cloud Backup had stopped accepting careers saved by Freight Fate 1.8.3 and by some of the nightly builds before it. If you play one of those versions, backing up told you the backup was not accepted, and your newest progress stayed on your own computer instead of reaching the cloud. That is fixed. Your next backup will go through on its own, and there is nothing you need to change or switch back on.",
+        "Nothing was lost while this was happening. The careers on your computer were never touched, and the backups already in the cloud stayed exactly as they were, so restoring one still works the way it always did. If a career looked out of date when you restored it on another computer, it was showing the last backup that reached the cloud before the problem began. Back that career up again from the computer you play it on and the cloud copy will catch up.",
+        "Freight Fate writes its saves a little differently as the game grows, and orinks.net had been accepting only the newest form. It now accepts every form the released game and the nightly builds have written, so updating the game and updating the site no longer have to happen together."
+      ],
+      "link": {
+        "href": "/freight-fate/online/setup",
+        "label": "Review your Freight Fate online settings"
+      }
+    },
+    {
       "id": "2026-07-13-freight-fate-computer-tokens",
       "date": "2026-07-13",
       "project": "Freight Fate",
@@ -60,7 +75,10 @@
       "body": [
         "The live drivers board now lists only drivers who are actively hauling. Opening the pause menu takes you off the board just as if you went off duty, and you reappear shortly after you resume driving. A quick pause and resume will not drop you from the list, and Discord presence still shows friends that your game is paused. The change arrives with the next Freight Fate update."
       ],
-      "link": { "href": "/freight-fate", "label": "See the live drivers board" }
+      "link": {
+        "href": "/freight-fate",
+        "label": "See the live drivers board"
+      }
     },
     {
       "id": "2026-07-09-driver-naming-rules",
@@ -110,7 +128,10 @@
       "body": [
         "Freight Fate's online features now run on the same site-wide account as the rest of the games: one sign-in, one driver profile, and control over whether you appear on the live drivers board."
       ],
-      "link": { "href": "/freight-fate", "label": "About Freight Fate" }
+      "link": {
+        "href": "/freight-fate",
+        "label": "About Freight Fate"
+      }
     }
   ]
 }
