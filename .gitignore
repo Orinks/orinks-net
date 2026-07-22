@@ -18,3 +18,4 @@ video-stack.en.vtt
 
 # clerk configuration (can include secrets)
 /.clerk/
+.env*

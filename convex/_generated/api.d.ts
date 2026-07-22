@@ -12,6 +12,7 @@ import type * as boosts from "../boosts.js";
 import type * as crons from "../crons.js";
 import type * as freightFate from "../freightFate.js";
 import type * as freightFateAdmin from "../freightFateAdmin.js";
+import type * as freightFateMastodon from "../freightFateMastodon.js";
 import type * as freightFateRateLimit from "../freightFateRateLimit.js";
 import type * as freightFateSaveActions from "../freightFateSaveActions.js";
 import type * as freightFateSaves from "../freightFateSaves.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   freightFate: typeof freightFate;
   freightFateAdmin: typeof freightFateAdmin;
+  freightFateMastodon: typeof freightFateMastodon;
   freightFateRateLimit: typeof freightFateRateLimit;
   freightFateSaveActions: typeof freightFateSaveActions;
   freightFateSaves: typeof freightFateSaves;
