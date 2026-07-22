@@ -438,6 +438,11 @@ export default defineSchema({
     instanceHost: v.string(),
     clientId: v.string(),
     clientSecret: v.string(),
+    // The scopes this registration was created with. A row whose scopes no
+    // longer match OAUTH_SCOPES (or a legacy row without the field) is
+    // stale — Mastodon refuses authorize requests that exceed the app's
+    // registered scopes — and beginLink re-registers over it.
+    scopes: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_host", ["instanceHost"]),
   // One linked Mastodon account per driver, holding the write:statuses

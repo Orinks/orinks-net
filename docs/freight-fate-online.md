@@ -163,7 +163,9 @@ logic lives in `convex/freightFateMastodon.ts`.
   to `/api/freight-fate/mastodon/callback`, which runs `completeLink`:
   redeem state, exchange the code, `verify_credentials` for the display
   handle, and upsert `freightFateMastodonLinks` (one per driver). Scope is
-  `write:statuses` only. Unlink deletes the row and best-effort revokes the
+  `read:accounts write:statuses` (read:accounts only feeds
+  verify_credentials for the spoken handle). App rows remember their
+  scopes; a scopes change makes beginLink re-register automatically. Unlink deletes the row and best-effort revokes the
   token at the instance.
 - **Posting (game, bearer driver token):** `POST
   /api/freight-fate/mastodon/share` with `{driverId, eventId, occurredAt,

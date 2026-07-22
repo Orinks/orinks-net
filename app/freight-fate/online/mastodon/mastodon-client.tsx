@@ -339,8 +339,9 @@ function MastodonLink() {
           deliveries to Mastodon is turned on in the game.
         </p>
         <p className="text-slate-800">
-          Freight Fate asks your server for permission to post and nothing else: it cannot read
-          your timeline, your messages, or your followers.
+          Freight Fate asks your server for permission to post, plus permission to read your
+          account name so this page and the game can tell you which account is linked. It cannot
+          read your timeline, your messages, or your followers.
         </p>
       </section>
 

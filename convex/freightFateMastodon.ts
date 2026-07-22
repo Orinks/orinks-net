@@ -20,7 +20,11 @@ import { consumeFreightFateWrite } from "./freightFateRateLimit";
 
 export const MASTODON_SHARE_WRITE_LIMIT = 6;
 export const OAUTH_STATE_TTL_MS = 10 * 60_000;
-export const OAUTH_SCOPES = "write:statuses";
+// read:accounts exists solely for verify_credentials, which names the linked
+// account back to the player ("@you@your.server") — a write:statuses-only
+// token gets a 403 there and the link lands with no handle, which a blind
+// player cannot distinguish from "linked to the wrong account".
+export const OAUTH_SCOPES = "read:accounts write:statuses";
 // Mastodon's stock per-post limit. Instances can raise it, never assume more.
 export const MASTODON_STATUS_LIMIT = 500;
 const MAX_BADGE_NAMES = 10;
@@ -251,17 +255,22 @@ export const appForHost = internalQuery({
       .query("freightFateMastodonApps")
       .withIndex("by_host", (q) => q.eq("instanceHost", args.instanceHost))
       .unique();
-    return app ? { clientId: app.clientId, clientSecret: app.clientSecret } : null;
+    return app
+      ? { clientId: app.clientId, clientSecret: app.clientSecret, scopes: app.scopes ?? "" }
+      : null;
   },
 });
 
-// First registration wins: a concurrent duplicate keeps the stored app so an
-// authorize URL already handed out never points at a dead client_id.
+// First registration wins within a scopes version: a concurrent duplicate
+// keeps the stored app so an authorize URL already handed out never points
+// at a dead client_id. A row registered under different scopes is replaced —
+// its client_id is useless for the scopes we now request.
 export const saveApp = internalMutation({
   args: {
     instanceHost: v.string(),
     clientId: v.string(),
     clientSecret: v.string(),
+    scopes: v.string(),
     now: v.number(),
   },
   handler: async (ctx, args) => {
@@ -270,12 +279,16 @@ export const saveApp = internalMutation({
       .withIndex("by_host", (q) => q.eq("instanceHost", args.instanceHost))
       .unique();
     if (existing) {
-      return { clientId: existing.clientId, clientSecret: existing.clientSecret };
+      if ((existing.scopes ?? "") === args.scopes) {
+        return { clientId: existing.clientId, clientSecret: existing.clientSecret };
+      }
+      await ctx.db.delete(existing._id);
     }
     await ctx.db.insert("freightFateMastodonApps", {
       instanceHost: args.instanceHost,
       clientId: args.clientId,
       clientSecret: args.clientSecret,
+      scopes: args.scopes,
       createdAt: args.now,
     });
     return { clientId: args.clientId, clientSecret: args.clientSecret };
@@ -401,6 +414,11 @@ export const beginLink = action({
       return { ok: false, reason: "no_driver" };
     }
     let app = await ctx.runQuery(internal.freightFateMastodon.appForHost, { instanceHost: host });
+    if (app && app.scopes !== OAUTH_SCOPES) {
+      // Stale registration from an earlier scopes version; authorize would
+      // be refused for exceeding it. Register fresh below.
+      app = null;
+    }
     if (!app) {
       let registered: { client_id?: string; client_secret?: string };
       try {
@@ -424,12 +442,14 @@ export const beginLink = action({
       if (!registered.client_id || !registered.client_secret) {
         return { ok: false, reason: "not_a_mastodon_server" };
       }
-      app = await ctx.runMutation(internal.freightFateMastodon.saveApp, {
+      const saved = await ctx.runMutation(internal.freightFateMastodon.saveApp, {
         instanceHost: host,
         clientId: registered.client_id,
         clientSecret: registered.client_secret,
+        scopes: OAUTH_SCOPES,
         now: Date.now(),
       });
+      app = { ...saved, scopes: OAUTH_SCOPES };
     }
     const state = mintOAuthState();
     await ctx.runMutation(internal.freightFateMastodon.createOAuthState, {
