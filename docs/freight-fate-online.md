@@ -170,7 +170,7 @@ logic lives in `convex/freightFateMastodon.ts`.
 - **Posting (game, bearer driver token):** `POST
   /api/freight-fate/mastodon/share` with `{driverId, eventId, occurredAt,
   payload}`. The payload carries allowlisted facts (cargo, cities, distance,
-  on-time) plus `reasons` — new badges, a level, a perfect-streak milestone.
+  on-time) plus `reasons` — new achievements, a level, a perfect-streak milestone.
   Reason-free (routine) payloads are refused; `composeMastodonStatus` builds
   the post text server-side, strips `@`/`#` from every fact, clamps to 500
   characters, and appends `#FreightFate`. Rate limit: scope `mastodon-share`,

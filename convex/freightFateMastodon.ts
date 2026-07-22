@@ -27,7 +27,7 @@ export const OAUTH_STATE_TTL_MS = 10 * 60_000;
 export const OAUTH_SCOPES = "read:accounts write:statuses";
 // Mastodon's stock per-post limit. Instances can raise it, never assume more.
 export const MASTODON_STATUS_LIMIT = 500;
-const MAX_BADGE_NAMES = 10;
+const MAX_ACHIEVEMENT_NAMES = 10;
 
 function mastodonRedirectUri() {
   return (
@@ -68,7 +68,7 @@ export function normalizeMastodonHost(value: unknown): string | null {
 
 type ShareReason =
   | { type: "level"; level: number }
-  | { type: "badges"; names: string[] }
+  | { type: "achievements"; names: string[] }
   | { type: "streak"; count: number };
 
 export type MastodonSharePayload = {
@@ -136,11 +136,11 @@ export function parseSharePayload(
         return { ok: false };
       }
       reasons.push({ type: "level", level: reason.level });
-    } else if (reason.type === "badges") {
+    } else if (reason.type === "achievements") {
       if (
         !Array.isArray(reason.names) ||
         reason.names.length === 0 ||
-        reason.names.length > MAX_BADGE_NAMES
+        reason.names.length > MAX_ACHIEVEMENT_NAMES
       ) {
         return { ok: false };
       }
@@ -152,7 +152,7 @@ export function parseSharePayload(
         }
         names.push(cleanName);
       }
-      reasons.push({ type: "badges", names });
+      reasons.push({ type: "achievements", names });
     } else if (reason.type === "streak") {
       if (
         typeof reason.count !== "number" ||
@@ -181,11 +181,11 @@ export function composeMastodonStatus(payload: MastodonSharePayload): string {
   for (const reason of payload.reasons) {
     if (reason.type === "level") {
       sentences.push(`Reached driver level ${reason.level} on arrival.`);
-    } else if (reason.type === "badges") {
+    } else if (reason.type === "achievements") {
       sentences.push(
         reason.names.length === 1
-          ? `Earned the ${reason.names[0]} badge.`
-          : `Earned ${reason.names.length} badges, including ${reason.names[0]}.`,
+          ? `Earned the ${reason.names[0]} achievement.`
+          : `Earned ${reason.names.length} achievements, including ${reason.names[0]}.`,
       );
     } else {
       sentences.push(`That makes ${reason.count} perfect deliveries in a row.`);

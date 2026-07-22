@@ -7,7 +7,7 @@
       "project": "Freight Fate",
       "title": "Share your notable deliveries to Mastodon",
       "body": [
-        "You can now link your own Mastodon account to your Freight Fate driver and let the game celebrate for you. When a delivery earns you a badge, a driver level, or a perfect streak milestone, Freight Fate posts a short public summary to your account with the FreightFate hashtag so followers can filter it. Routine deliveries are never posted.",
+        "You can now link your own Mastodon account to your Freight Fate driver and let the game celebrate for you. When a delivery earns you an achievement, a driver level, or a perfect streak milestone, Freight Fate posts a short public summary to your account with the FreightFate hashtag so followers can filter it. Routine deliveries are never posted.",
         "Everything is opt-in and stays under your control. Linking happens on this site with your own Mastodon server, and the authorization only allows posting and reading your account name, so the game can tell you which account is linked: Freight Fate cannot read your timeline, messages, or followers. Nothing posts until you also turn on Share notable deliveries to Mastodon in the game under Settings, then Online, and unlinking at any time stops posting immediately."
       ],
       "link": {

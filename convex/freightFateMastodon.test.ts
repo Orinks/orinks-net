@@ -57,7 +57,7 @@ const NOTABLE_PAYLOAD = {
   onTime: true,
   reasons: [
     { type: "level", level: 3 },
-    { type: "badges", names: ["Long Haul"] },
+    { type: "achievements", names: ["Long Haul"] },
   ],
 };
 
@@ -87,7 +87,7 @@ describe("parseSharePayload / composeMastodonStatus", () => {
     expect(status).toContain("Delivered frozen produce from Chicago, Illinois to Denver, Colorado");
     expect(status).toContain("1003 miles, on time");
     expect(status).toContain("Reached driver level 3 on arrival.");
-    expect(status).toContain("Earned the Long Haul badge.");
+    expect(status).toContain("Earned the Long Haul achievement.");
     expect(status.endsWith("#FreightFate")).toBe(true);
     expect(status.length).toBeLessThanOrEqual(MASTODON_STATUS_LIMIT);
   });
@@ -96,7 +96,7 @@ describe("parseSharePayload / composeMastodonStatus", () => {
     const parsed = parseSharePayload({
       ...NOTABLE_PAYLOAD,
       cargo: "#spam @victim beans",
-      reasons: [{ type: "badges", names: ["@admin #evil badge"] }],
+      reasons: [{ type: "achievements", names: ["@admin #evil name"] }],
     });
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -119,7 +119,7 @@ describe("parseSharePayload / composeMastodonStatus", () => {
       cargo: "c".repeat(60),
       origin: "o".repeat(80),
       destination: "d".repeat(80),
-      reasons: [{ type: "badges", names: Array.from({ length: 10 }, (_, i) => `${"b".repeat(70)}${i}`) }],
+      reasons: [{ type: "achievements", names: Array.from({ length: 10 }, (_, i) => `${"b".repeat(70)}${i}`) }],
     });
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;

@@ -332,7 +332,7 @@ function MastodonLink() {
           What Freight Fate posts
         </h2>
         <p className="text-slate-800">
-          Only notable deliveries: runs that earned you a badge, a driver level, or a perfect
+          Only notable deliveries: runs that earned you an achievement, a driver level, or a perfect
           streak milestone. Each post is a short public summary, like the cargo, the cities, and
           what you earned, and always carries the #FreightFate hashtag so followers can filter it.
           Routine deliveries are never posted, and posting only happens while Share notable
