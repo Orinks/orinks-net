@@ -147,3 +147,37 @@ Move the private value into the secrets manager, never commit it, and add the
 reported raw public key to the game's `PUBLIC_KEYS` map before signing with the
 new key ID. Old public keys stay in the game while private revisions using them
 remain restorable.
+
+## Mastodon sharing of notable deliveries
+
+The player links their own Mastodon account (any instance) to their driver on
+the Clerk-authenticated page at `/freight-fate/online/mastodon`; the game then
+offers notable deliveries and the server composes and posts the status. All
+logic lives in `convex/freightFateMastodon.ts`.
+
+- **Linking (browser, Clerk):** the page calls the `beginLink` action with the
+  instance host. The server registers this deployment on that instance once
+  (`POST /api/v1/apps`, dynamic — no pre-provisioned secrets), stores the
+  per-instance app in `freightFateMastodonApps`, mints a single-use state row
+  (10-minute TTL), and returns the authorize URL. The instance redirects back
+  to `/api/freight-fate/mastodon/callback`, which runs `completeLink`:
+  redeem state, exchange the code, `verify_credentials` for the display
+  handle, and upsert `freightFateMastodonLinks` (one per driver). Scope is
+  `write:statuses` only. Unlink deletes the row and best-effort revokes the
+  token at the instance.
+- **Posting (game, bearer driver token):** `POST
+  /api/freight-fate/mastodon/share` with `{driverId, eventId, occurredAt,
+  payload}`. The payload carries allowlisted facts (cargo, cities, distance,
+  on-time) plus `reasons` — new badges, a level, a perfect-streak milestone.
+  Reason-free (routine) payloads are refused; `composeMastodonStatus` builds
+  the post text server-side, strips `@`/`#` from every fact, clamps to 500
+  characters, and appends `#FreightFate`. Rate limit: scope `mastodon-share`,
+  6 per minute per driver. Duplicates are caught by the link row's
+  `lastEventId` and by the instance-side `Idempotency-Key`.
+- **Status (game):** `GET /api/freight-fate/mastodon/status?driverId=...`
+  answers `{linked, handle}` for the game's spoken "Check link status" item.
+- **Env:** `FREIGHT_FATE_MASTODON_REDIRECT_URI` (Convex env, optional)
+  overrides the callback URL for previews/dev; the default is
+  `https://www.orinks.net/api/freight-fate/mastodon/callback`. No other
+  secrets — per-instance app credentials are table rows, and access tokens
+  live in `freightFateMastodonLinks` (never returned by any public query).

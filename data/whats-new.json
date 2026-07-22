@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-22-freight-fate-mastodon-sharing",
+      "date": "2026-07-22",
+      "project": "Freight Fate",
+      "title": "Share your notable deliveries to Mastodon",
+      "body": [
+        "You can now link your own Mastodon account to your Freight Fate driver and let the game celebrate for you. When a delivery earns you a badge, a driver level, or a perfect streak milestone, Freight Fate posts a short public summary to your account with the FreightFate hashtag so followers can filter it. Routine deliveries are never posted.",
+        "Everything is opt-in and stays under your control. Linking happens on this site with your own Mastodon server, and the authorization only allows posting: Freight Fate cannot read your timeline, messages, or followers. Nothing posts until you also turn on Share notable deliveries to Mastodon in the game under Settings, then Online, and unlinking at any time stops posting immediately."
+      ],
+      "link": {
+        "href": "/freight-fate/online/mastodon",
+        "label": "Link Mastodon to Freight Fate"
+      }
+    },
+    {
       "id": "2026-07-21-freight-fate-cloud-backup-every-version",
       "date": "2026-07-21",
       "project": "Freight Fate",

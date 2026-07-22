@@ -430,4 +430,39 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_window", ["windowStart"]),
+  // Mastodon sharing: one dynamically registered OAuth app per instance
+  // (POST /api/v1/apps), reused by every driver on that instance. The
+  // client secret only ever authenticates this deployment to that instance;
+  // it grants nothing by itself and never leaves the server.
+  freightFateMastodonApps: defineTable({
+    instanceHost: v.string(),
+    clientId: v.string(),
+    clientSecret: v.string(),
+    createdAt: v.number(),
+  }).index("by_host", ["instanceHost"]),
+  // One linked Mastodon account per driver, holding the write:statuses
+  // access token the player granted on their own instance. Deleting the row
+  // is the unlink; the token is also revoked at the instance best-effort.
+  freightFateMastodonLinks: defineTable({
+    driverId: v.string(),
+    instanceHost: v.string(),
+    accessToken: v.string(),
+    // "@user@instance" for the setup page and the game's spoken status.
+    handle: v.string(),
+    createdAt: v.number(),
+    lastPostedAt: v.optional(v.number()),
+    // The last posted eventId: the cheap idempotency backstop for a game
+    // outbox retry whose success reply got lost in transit.
+    lastEventId: v.optional(v.string()),
+  }).index("by_driver_id", ["driverId"]),
+  // Single-use CSRF states for the OAuth round trip; rows die on redemption
+  // or by TTL sweep piggybacked on the next state mint.
+  freightFateMastodonOAuthStates: defineTable({
+    state: v.string(),
+    driverId: v.string(),
+    instanceHost: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_state", ["state"])
+    .index("by_created", ["createdAt"]),
 });
