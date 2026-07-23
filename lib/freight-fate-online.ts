@@ -163,6 +163,24 @@ export async function listFreightFateSaves(input: { driverId: string; driverToke
   });
 }
 
+export async function deleteFreightFateSaveSlot(input: {
+  driverId: string;
+  driverToken: string;
+  saveName: string;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.mutation(anyApi.freightFateSaves.deleteSaveSlot, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    saveName: normalizeFreightFateSaveName(input.saveName),
+  });
+}
+
 export async function downloadFreightFateSave(input: {
   driverId: string;
   driverToken: string;
