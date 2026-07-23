@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   FREIGHT_FATE_MAX_SAVE_BYTES,
   decodeFreightFateSaveContent,
+  deleteFreightFateSaveSlot,
   freightFateClientVersion,
   listFreightFateSaves,
   normalizeFreightFateDriverId,
@@ -138,6 +139,31 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid saves request.";
+
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const driverToken = normalizeFreightFateToken(bearerToken(request), "Driver token");
+    const url = new URL(request.url);
+    const driverId = normalizeFreightFateDriverId(url.searchParams.get("driverId"));
+    const saveName = normalizeFreightFateSaveName(url.searchParams.get("saveName"));
+
+    const result = await deleteFreightFateSaveSlot({ driverId, driverToken, saveName });
+
+    if (!result) {
+      return NextResponse.json({ error: "Freight Fate cloud saves are not configured." }, { status: 503 });
+    }
+
+    if (!result.ok) {
+      return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
+    }
+
+    return NextResponse.json({ ok: true, deletedRevisions: result.deletedRevisions });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid delete request.";
 
     return NextResponse.json({ error: message }, { status: 400 });
   }
