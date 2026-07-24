@@ -19,6 +19,16 @@ const visibility = v.union(v.literal("public"), v.literal("private"), v.literal(
 // for a single lost packet, while an older build beating every ninety seconds
 // against six minutes only lingers a little longer after a crash.
 export const PRESENCE_TTL_MS = 6 * 60_000;
+
+// A driver whose activity/detail have not changed for this long is idle: a
+// truck parked on the road with the game left running (a paused game already
+// counts as off duty and stops reporting). The row keeps beating, so the TTL
+// never expires it — the public surfaces just stop showing it. New game
+// builds sign themselves off on the same clock (IDLE_SIGNOFF_S in
+// online_presence.py); this filter is what ages older builds off the board.
+// While actually driving the strings tick every five percent of progress, so
+// half an hour of no change really does mean a parked truck.
+export const PRESENCE_IDLE_MS = 30 * 60_000;
 export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
@@ -628,10 +638,16 @@ export const updatePresence = mutation({
     }
 
     if (existing) {
+      const changed =
+        existing.activity !== args.activity || existing.detail !== args.detail;
       await ctx.db.patch(existing._id, {
         activity: args.activity,
         detail: args.detail,
         updatedAt: args.now,
+        // Pre-filter rows have no changedAt; baseline them at this beat so a
+        // long-parked driver gets one full idle window from deploy, not an
+        // instant drop. Free: this patch already writes updatedAt every beat.
+        changedAt: changed ? args.now : existing.changedAt ?? args.now,
       });
     } else {
       await ctx.db.insert("freightFatePresence", {
@@ -639,6 +655,7 @@ export const updatePresence = mutation({
         activity: args.activity,
         detail: args.detail,
         updatedAt: args.now,
+        changedAt: args.now,
       });
     }
 
@@ -670,6 +687,11 @@ export const getPresenceBoard = query({
     // Only drivers who chose the public listing appear on the board.
     const drivers = [];
     for (const row of fresh) {
+      // Still beating but nothing has changed in half an hour: a parked
+      // truck with the game left running, not a live driver.
+      if ((row.changedAt ?? row.updatedAt) < args.now - PRESENCE_IDLE_MS) {
+        continue;
+      }
       const driver = await ctx.db
         .query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
@@ -922,7 +944,11 @@ export const getDriverProfile = query({
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
     const presenceRow = await ctx.db.query("freightFatePresence")
       .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
-    const presence = presenceRow && args.now !== undefined && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
+    // Same idle rule as the board: a parked-and-forgotten truck should not
+    // read as "on duty" on the profile page either.
+    const presence = presenceRow && args.now !== undefined
+      && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
+      && (presenceRow.changedAt ?? presenceRow.updatedAt) >= args.now - PRESENCE_IDLE_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
       : null;
     // Same shape as the events above: earnedAt ties break by achievementKey,

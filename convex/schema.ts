@@ -316,6 +316,11 @@ export default defineSchema({
     activity: v.string(),
     detail: v.string(),
     updatedAt: v.number(),
+    // When activity/detail last actually changed; updatedAt advances on every
+    // heartbeat, this only on real changes, so the board can hide parked
+    // trucks whose game was left running. Optional: rows written before the
+    // idle filter existed lack it until their next beat stamps a baseline.
+    changedAt: v.optional(v.number()),
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
