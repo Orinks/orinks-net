@@ -760,6 +760,82 @@ describe("expanded sharing", () => {
     expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 1 })).drivers).toEqual([]);
   });
 
+  test("a parked truck that keeps beating ages off the public surfaces", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const minute = 60_000;
+    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Parked Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const driverId = provisioned.driverId;
+    const driverTokenHash = await sha256Hex(provisioned.token!);
+    const beat = (at: number, detail = "parcel freight, 65% there") =>
+      t.mutation(api.freightFate.updatePresence, {
+        driverId, driverTokenHash,
+        activity: "Stopped: Richmond to Lynchburg", detail, now: at,
+      });
+
+    // Heartbeats keep the row alive but the strings never change: still a
+    // live driver until the idle window runs out.
+    await beat(now);
+    await beat(now + 29 * minute);
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 29 * minute })).drivers)
+      .toHaveLength(1);
+
+    // Past the window the game still beats and the row stays fresh (the TTL
+    // never expires it), but board and profile both stop showing it.
+    await beat(now + 31 * minute);
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 31 * minute })).drivers)
+      .toEqual([]);
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId, now: now + 31 * minute,
+    });
+    expect(profile).not.toBeNull();
+    expect(profile!.presence).toBeNull();
+
+    // Any real change — the truck rolling again — re-lists immediately.
+    await beat(now + 32 * minute, "parcel freight, 70% there");
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 32 * minute })).drivers)
+      .toHaveLength(1);
+  });
+
+  test("pre-filter presence rows get a baseline stamp, not an instant drop", async () => {
+    const t = setup();
+    const as = t.withIdentity({ subject: SUBJECT });
+    const now = 1_800_000_000_000;
+    const minute = 60_000;
+    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+      displayName: "Legacy Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const driverId = provisioned.driverId;
+    const driverTokenHash = await sha256Hex(provisioned.token!);
+    // A row written by the deployment before changedAt existed — the driver
+    // may already have been parked for a day when the filter ships.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFatePresence", {
+        driverId, activity: "Stopped: somewhere", detail: "for a day", updatedAt: now,
+      });
+    });
+    const beat = (at: number) =>
+      t.mutation(api.freightFate.updatePresence, {
+        driverId, driverTokenHash,
+        activity: "Stopped: somewhere", detail: "for a day", now: at,
+      });
+
+    // The first post-deploy beat baselines the idle clock instead of judging
+    // the row idle on the spot...
+    await beat(now + 2 * minute);
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 2 * minute })).drivers)
+      .toHaveLength(1);
+
+    // ...and one unchanged idle window after that baseline, the driver ages
+    // off like any other parked truck.
+    await beat(now + 33 * minute);
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 33 * minute })).drivers)
+      .toEqual([]);
+  });
+
   test("cursor pagination has no gaps for equal timestamps", async () => {
     const t = setup();
     const now = 1_800_000_000_000;
