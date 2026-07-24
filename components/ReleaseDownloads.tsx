@@ -28,21 +28,23 @@ function DownloadList({ release }: { release: GitHubRelease }) {
   }
 
   return (
-    <ul className="grid gap-3 p-0 sm:grid-cols-2">
-      {assets.map((asset) => (
-        <li className="list-none" key={asset.browser_download_url}>
-          <a
-            className="block rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-600"
-            href={asset.browser_download_url}
-          >
-            {downloadAssetLabel(asset.name)}
-          </a>
-        </li>
-      ))}
-      <li className="list-none text-sm font-semibold text-slate-700 sm:col-span-2">
+    <>
+      <ul className="grid gap-3 p-0 sm:grid-cols-2" role="list">
+        {assets.map((asset) => (
+          <li className="list-none" key={asset.browser_download_url}>
+            <a
+              className="block rounded-md border border-line bg-white px-4 py-3 font-semibold text-action hover:border-action hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-600"
+              href={asset.browser_download_url}
+            >
+              {downloadAssetLabel(asset.name)}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-sm font-semibold text-slate-700">
         Total downloads: {totalDownloads.toLocaleString("en-US")}
-      </li>
-    </ul>
+      </p>
+    </>
   );
 }
 
