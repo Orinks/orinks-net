@@ -23,7 +23,13 @@ export default function AccessiWeatherDownloadsPage() {
         <p>
           On Linux, choose the <strong>Linux AppImage</strong> download. It runs on any modern
           distribution, including Fedora, Ubuntu, Arch, and openSUSE. Mark the file executable,
-          then run it. The Linux tarball remains available for Ubuntu and Debian systems.
+          then run it. AccessiWeather updates itself in place from inside the AppImage. It
+          downloads the new version, verifies it, and restarts on its own.
+        </p>
+        <p>
+          The Linux tarball remains available for Ubuntu and Debian systems. Tarball updates
+          download and verify themselves, then tell you where the file was saved so you can
+          install it.
         </p>
         <p>
           <a href="/accessiweather">Back to AccessiWeather</a>
