@@ -168,12 +168,19 @@ export const recordRejectedUpload = internalMutation({
     const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
     if (!driver) return;
     // One row per driver per distinct payload: a game that retries the same
-    // rejected save must not be able to grow the table.
+    // rejected save must not be able to grow the table. Look the hash up
+    // through its own index rather than scanning this driver's rows -- each
+    // row carries a whole save, so a scan made the cost of rejecting one
+    // upload grow with every upload already rejected, and a driver rejected
+    // often enough would eventually blow the transaction read limit and stop
+    // producing the evidence these rows exist to keep.
     const seen = await ctx.db
       .query("freightFateRejectedUploads")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
-      .collect();
-    if (seen.some((row) => row.contentHash === args.contentHash)) return;
+      .withIndex("by_driver_content", (q) =>
+        q.eq("driverId", args.driverId).eq("contentHash", args.contentHash),
+      )
+      .first();
+    if (seen) return;
     await ctx.db.insert("freightFateRejectedUploads", {
       driverId: args.driverId,
       reason: args.reason.slice(0, 32),
