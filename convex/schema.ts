@@ -373,6 +373,11 @@ export default defineSchema({
     rejectedAt: v.number(),
   })
     .index("by_driver", ["driverId"])
+    // Deduping a repeat payload used to collect every row this driver had,
+    // each carrying a whole save, so the read cost of one rejection grew with
+    // the number of rejections already stored. This index answers "have I
+    // seen this exact payload" with a single row.
+    .index("by_driver_content", ["driverId", "contentHash"])
     .index("by_rejected_at", ["rejectedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),

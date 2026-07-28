@@ -141,6 +141,30 @@ describe("validated private cloud revisions", () => {
     expect(await flagOf()).toBe("impossible_money");
   });
 
+  test("the same rejected payload from two drivers is kept once per driver", async () => {
+    const t = setup();
+    const one = await provisionedDriver(t, "user_cloud_one");
+    const two = await provisionedDriver(t, "user_cloud_two");
+    // Deduping looks the payload up by driver AND hash. Keyed on the hash
+    // alone, the second driver's evidence would be swallowed by the first
+    // driver's row -- and a shared save doing the rounds would go unrecorded
+    // for everyone but whoever uploaded it first.
+    const shared = { ...validProfile(), money: 1_000_000 };
+    await expect(upload(t, one, shared))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+    await expect(upload(t, two, shared))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {}))
+      .toHaveLength(2);
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {
+      driverId: one.driverId,
+    })).toHaveLength(1);
+    expect(await t.query(internal.freightFateAdmin.listRejectedUploads, {
+      driverId: two.driverId,
+    })).toHaveLength(1);
+  });
+
   test("gear a career was granted rather than bought is not invented money", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
