@@ -266,7 +266,7 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
       >
         <h2 className="text-2xl font-bold text-ink">Your message was sent</h2>
         <p className="mt-3 text-slate-700">
-          Thank you for writing. A reply will go to {values.email}.
+          Thank you for writing. A reply will go to the address you gave.
         </p>
         <p className="mt-3">
           <a className="font-semibold text-action underline hover:no-underline" href="/contact">
