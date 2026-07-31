@@ -3,11 +3,22 @@ export type Playlist = {
   description: string;
   id: string;
   featured?: boolean;
+  embed?: boolean;
   includeInUpdates?: boolean;
   publishedAt: string;
 };
 
 export const playlists: Playlist[] = [
+  {
+    title: "Freightfate Trucker Songs",
+    description:
+      "The real trucker-song references behind Freight Fate achievements, ordered by Spotify popularity.",
+    id: "3nDfYlTVy4D1jmxrQfelKS",
+    featured: true,
+    embed: false,
+    includeInUpdates: true,
+    publishedAt: "2026-07-31T00:00:00.000Z",
+  },
   {
     title: "Underground Country",
     description: "A playlist for underground country discoveries and favorites.",

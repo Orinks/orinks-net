@@ -16,6 +16,19 @@
       }
     },
     {
+      "id": "2026-07-31-freight-fate-trucker-songs",
+      "date": "2026-07-31",
+      "project": "Freight Fate",
+      "title": "Freight Fate achievement songs now have a Spotify playlist",
+      "body": [
+        "Freightfate Trucker Songs gathers the real songs referenced by Freight Fate achievements and orders the matched Spotify recordings by popularity."
+      ],
+      "link": {
+        "href": "/playlists",
+        "label": "Open the Playlists page for Freight Fate trucker songs"
+      }
+    },
+    {
       "id": "2026-07-30-contact-form",
       "date": "2026-07-30",
       "project": "Site",
