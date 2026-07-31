@@ -88,7 +88,7 @@ describe("parseSharePayload / composeMastodonStatus", () => {
     expect(status).toContain("1003 miles, on time");
     expect(status).toContain("Reached driver level 3 on arrival.");
     expect(status).toContain("Earned the Long Haul achievement.");
-    expect(status.endsWith("#FreightFate")).toBe(true);
+    expect(status.endsWith("#FreightFateRuns")).toBe(true);
     expect(status.length).toBeLessThanOrEqual(MASTODON_STATUS_LIMIT);
   });
 
@@ -102,7 +102,7 @@ describe("parseSharePayload / composeMastodonStatus", () => {
     if (!parsed.ok) return;
     const status = composeMastodonStatus(parsed.payload);
     expect(status).not.toContain("@");
-    expect(status.indexOf("#")).toBe(status.indexOf("#FreightFate"));
+    expect(status.indexOf("#")).toBe(status.indexOf("#FreightFateRuns"));
   });
 
   test("refuses reason-free (routine) deliveries and junk shapes", () => {
@@ -125,7 +125,15 @@ describe("parseSharePayload / composeMastodonStatus", () => {
     if (!parsed.ok) return;
     const status = composeMastodonStatus(parsed.payload);
     expect(status.length).toBeLessThanOrEqual(MASTODON_STATUS_LIMIT);
-    expect(status.endsWith("#FreightFate")).toBe(true);
+    expect(status.endsWith("#FreightFateRuns")).toBe(true);
+  });
+
+  test("the post never carries the bare #FreightFate player tag", () => {
+    const parsed = parseSharePayload(NOTABLE_PAYLOAD);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const status = composeMastodonStatus(parsed.payload);
+    expect(status).not.toMatch(/#FreightFate(?!Runs)/);
   });
 });
 

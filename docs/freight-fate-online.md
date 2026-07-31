@@ -173,7 +173,9 @@ logic lives in `convex/freightFateMastodon.ts`.
   on-time) plus `reasons` — new achievements, a level, a perfect-streak milestone.
   Reason-free (routine) payloads are refused; `composeMastodonStatus` builds
   the post text server-side, strips `@`/`#` from every fact, clamps to 500
-  characters, and appends `#FreightFate`. Rate limit: scope `mastodon-share`,
+  characters, and appends `#FreightFateRuns` — automated posts stay off the
+  bare `#FreightFate` tag so players muting the bot do not lose the human
+  conversation. Rate limit: scope `mastodon-share`,
   6 per minute per driver. Duplicates are caught by the link row's
   `lastEventId` and by the instance-side `Idempotency-Key`.
 - **Status (game):** `GET /api/freight-fate/mastodon/status?driverId=...`

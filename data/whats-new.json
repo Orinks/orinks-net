@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-31-freight-fate-mastodon-hashtag",
+      "date": "2026-07-31",
+      "project": "Freight Fate",
+      "title": "Delivery posts moved to their own hashtag",
+      "body": [
+        "Freight Fate's automatic delivery posts now carry the FreightFateRuns hashtag instead of FreightFate. Players use the FreightFate tag to share their own thoughts and feedback about the game, and anyone who had muted it to keep the automatic posts out of their timeline was losing those conversations too. The two are separate now: FreightFate is for people talking, FreightFateRuns is for the game posting.",
+        "You do not need to change anything. If you muted the FreightFate hashtag because of the delivery posts, you can unmute it and mute FreightFateRuns instead. If you were following along with other drivers' deliveries, follow the FreightFateRuns tag to keep seeing them. Posts you already made stay where they are."
+      ],
+      "link": {
+        "href": "/freight-fate/online/mastodon",
+        "label": "Link Mastodon to Freight Fate"
+      }
+    },
+    {
       "id": "2026-07-30-contact-form",
       "date": "2026-07-30",
       "project": "Site",

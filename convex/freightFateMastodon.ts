@@ -191,7 +191,10 @@ export function composeMastodonStatus(payload: MastodonSharePayload): string {
       sentences.push(`That makes ${reason.count} perfect deliveries in a row.`);
     }
   }
-  const tag = "#FreightFate";
+  // Deliberately not #FreightFate: that tag belongs to players talking about
+  // the game, and anyone who muted it to hide these automated posts was losing
+  // the human conversation with them. Auto-posts get their own tag to follow.
+  const tag = "#FreightFateRuns";
   let body = sentences.join(" ");
   const room = MASTODON_STATUS_LIMIT - tag.length - 2;
   if (body.length > room) {
