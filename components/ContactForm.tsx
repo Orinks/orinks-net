@@ -17,7 +17,7 @@ type TurnstileApi = {
     container: HTMLElement,
     options: {
       callback: (token: string) => void;
-      "error-callback": () => void;
+      "error-callback": (code?: string) => void;
       "expired-callback": () => void;
       sitekey: string;
       size: "compact" | "flexible" | "normal";
@@ -97,6 +97,10 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
 
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaBroken, setCaptchaBroken] = useState(false);
+  // Cloudflare hands the reason to error-callback. Surfacing it turns "it
+  // doesn't work" into a specific, lookup-able fault — 110200 is a hostname
+  // that is not on the widget, 110100 a bad sitekey, 300xxx a network fault.
+  const [captchaErrorCode, setCaptchaErrorCode] = useState("");
 
   const baseId = useId();
   const fieldId = (field: ContactField) => `${baseId}-${field}`;
@@ -128,9 +132,11 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
             // summary sits there telling them to do what they just did.
             setFormError((current) => (current === CAPTCHA_REQUIRED_MESSAGE ? "" : current));
           },
-          "error-callback": () => {
+          "error-callback": (code?: string) => {
             setCaptchaToken("");
             setCaptchaBroken(true);
+            setCaptchaErrorCode(code ?? "");
+            console.error(`Turnstile error-callback: ${code ?? "(no code given)"}`);
           },
           // Tokens die after five minutes, which a long message can outlast.
           "expired-callback": () => setCaptchaToken(""),
@@ -399,6 +405,7 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
           {captchaBroken ? (
             <p className="mt-3 font-semibold text-red-900">
               The human check could not load. Please email orin8722@gmail.com instead.
+              {captchaErrorCode ? ` (Cloudflare error ${captchaErrorCode}.)` : null}
             </p>
           ) : null}
         </div>
