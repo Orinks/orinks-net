@@ -390,18 +390,12 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
           );
         })}
 
-        <div
-          className="rounded-lg border border-line bg-white p-5"
-          id={captchaGroupId}
-          tabIndex={-1}
-        >
-          <h2 className="text-xl font-bold text-ink">Human check</h2>
-          <p className="mt-2 text-slate-700">
-            Required, and it keeps spam out of the inbox. Select the &ldquo;Verify you are
-            human&rdquo; checkbox below. There is no picture puzzle and no audio challenge &mdash;
-            the checkbox is the whole thing.
-          </p>
-          <div className="mt-4 overflow-x-auto" ref={captchaRef} />
+        {/* The widget labels itself, so there is no heading or prose here.
+            The role and label exist only so the error summary has a focus
+            target that announces something when it jumps here — aria-label on
+            a role-less div is not reliably exposed. */}
+        <div aria-label="Human check" id={captchaGroupId} role="group" tabIndex={-1}>
+          <div className="overflow-x-auto" ref={captchaRef} />
           {captchaBroken ? (
             <p className="mt-3 font-semibold text-red-900">
               The human check could not load. Please email orin8722@gmail.com instead.
