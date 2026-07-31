@@ -2,6 +2,21 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-07-30-contact-form",
+      "date": "2026-07-30",
+      "project": "Site",
+      "title": "The contact page now has a working form",
+      "body": [
+        "After a long stretch of saying \"under construction\", the contact page has a real form. Fill in your name, email address, subject and message, confirm the human check, and it lands in the inbox. Replies go straight back to the address you gave, so a normal reply reaches you.",
+        "The human check is Cloudflare Turnstile rather than the usual \"I'm not a robot\" box from Google. That choice was deliberate: Turnstile never falls back to a picture puzzle or an audio challenge, both of which routinely lock screen reader users out of contact forms entirely. Selecting one checkbox is the whole task.",
+        "If something goes wrong, the form says exactly what and why. Problems are collected at the top of the form, keyboard focus moves there so a screen reader reads them immediately, and each one takes you to the field that needs fixing. Nothing you have typed is thrown away."
+      ],
+      "link": {
+        "href": "/contact",
+        "label": "Open the contact page and send a message"
+      }
+    },
+    {
       "id": "2026-07-22-freight-fate-mastodon-sharing",
       "date": "2026-07-22",
       "project": "Freight Fate",
