@@ -10,10 +10,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <PageHeader
-        title="Contact"
-        intro="Questions, bug reports, and notes about any of the projects here are all welcome. Fill in the form and it lands in my inbox; replies go straight back to the address you give."
-      />
+      <PageHeader title="Contact" />
       {/* Not wrapped in <Section>: its `prose` styles would fight the form's
           own spacing and label typography. */}
       <section className="py-8">

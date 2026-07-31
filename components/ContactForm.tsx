@@ -260,8 +260,7 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
       >
         <h2 className="text-2xl font-bold text-ink">Your message was sent</h2>
         <p className="mt-3 text-slate-700">
-          Thank you for writing. A reply will go to {values.email}. If you do not hear back within a
-          few days, email orin8722@gmail.com directly in case the message went astray.
+          Thank you for writing. A reply will go to {values.email}.
         </p>
         <p className="mt-3">
           <a className="font-semibold text-action underline hover:no-underline" href="/contact">
@@ -419,14 +418,6 @@ export function ContactForm({ siteKey }: { siteKey: string }) {
             {status === "submitting" ? "Sending..." : "Send message"}
           </button>
         </div>
-
-        <p className="text-slate-700">
-          Would rather not use a form? Email{" "}
-          <a className="font-semibold text-action underline" href="mailto:orin8722@gmail.com">
-            orin8722@gmail.com
-          </a>{" "}
-          directly.
-        </p>
       </div>
 
       {/* Only the in-flight state lives here. The finished states move focus
