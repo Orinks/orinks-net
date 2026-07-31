@@ -334,9 +334,11 @@ function MastodonLink() {
         <p className="text-slate-800">
           Only notable deliveries: runs that earned you an achievement, a driver level, or a perfect
           streak milestone. Each post is a short public summary, like the cargo, the cities, and
-          what you earned, and always carries the #FreightFate hashtag so followers can filter it.
-          Routine deliveries are never posted, and posting only happens while Share notable
-          deliveries to Mastodon is turned on in the game.
+          what you earned, and always carries the #FreightFateRuns hashtag so followers can filter
+          it. That is a separate tag from #FreightFate, which players use to talk about the game, so
+          anyone who mutes the delivery posts still sees the conversation. Routine deliveries are
+          never posted, and posting only happens while Share notable deliveries to Mastodon is
+          turned on in the game.
         </p>
         <p className="text-slate-800">
           Freight Fate asks your server for permission to post, plus permission to read your
