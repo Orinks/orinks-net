@@ -21,23 +21,24 @@ function PlaylistEmbed({ playlist }: { playlist: Playlist }) {
         <h2 className="text-xl font-bold text-ink">{playlist.title}</h2>
         <p className="mt-2 leading-7 text-slate-700">{playlist.description}</p>
         <a
-          aria-label={`Open ${playlist.title} on Spotify`}
           className="mt-3 inline-block font-semibold text-action hover:text-action-dark"
           href={playlistUrl(playlist.id)}
         >
-          Open on Spotify
+          Open {playlist.title} on Spotify
         </a>
       </div>
-      <iframe
-        aria-hidden="true"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        allowFullScreen
-        className="h-[152px] w-full rounded-lg border-0"
-        loading="lazy"
-        src={embedUrl(playlist.id)}
-        tabIndex={-1}
-        title={`${playlist.title} Spotify playlist`}
-      />
+      {playlist.embed !== false ? (
+        <iframe
+          aria-hidden="true"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          allowFullScreen
+          className="h-[152px] w-full rounded-lg border-0"
+          loading="lazy"
+          src={embedUrl(playlist.id)}
+          tabIndex={-1}
+          title={`${playlist.title} Spotify playlist`}
+        />
+      ) : null}
     </article>
   );
 }
@@ -58,11 +59,11 @@ export default function PlaylistsPage() {
         intro="Songs recently added to the Spotify playlists shared on this page."
       />
 
-      <section className="grid gap-5 py-8 lg:grid-cols-2">
+      <div className="grid gap-5 py-8 lg:grid-cols-2">
         {featuredPlaylists.map((playlist) => (
           <PlaylistEmbed key={playlist.id} playlist={playlist} />
         ))}
-      </section>
+      </div>
 
       <section className="border-t border-line py-8">
         <div className="mb-5 max-w-3xl">
@@ -78,11 +79,10 @@ export default function PlaylistsPage() {
               <h3 className="text-lg font-bold text-ink">{playlist.title}</h3>
               <p className="mt-2 leading-7 text-slate-700">{playlist.description}</p>
               <a
-                aria-label={`Open ${playlist.title} on Spotify`}
                 className="mt-3 inline-block font-semibold text-action hover:text-action-dark"
                 href={playlistUrl(playlist.id)}
               >
-                Open on Spotify
+                Open {playlist.title} on Spotify
               </a>
             </article>
           ))}
