@@ -9,6 +9,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Generated clip filenames are a hash of voice + model + settings + text, so
+  // a given URL's bytes can never change — regenerating audio writes a new name
+  // and a new manifest. That makes them safe to pin forever, which matters:
+  // without this they default to must-revalidate, so every replay of every line
+  // is a fresh conditional request. manifest.json is deliberately left out — it
+  // is the mutable pointer that has to be re-read to discover the new hashes.
+  async headers() {
+    return [
+      {
+        source: "/audio/trivia/:kind(barks|questions|story|music|stings)/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
