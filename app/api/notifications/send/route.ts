@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import webPush from "web-push";
-import { githubReleasesCacheTag } from "@/lib/github";
+import { githubReleasesCacheTag, githubRenderedMarkdownCacheTag } from "@/lib/github";
 import { listBuildSubscriptions, removeBuildSubscription } from "@/lib/notifications";
 
 export const runtime = "nodejs";
@@ -45,7 +45,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A product is required." }, { status: 400 });
   }
 
+  // A new build brings release notes we have never rendered, so purge both the
+  // release list and the rendered-notes cache. Without the second one a stale
+  // or failed render outlived the release it belonged to.
   revalidateTag(githubReleasesCacheTag);
+  revalidateTag(githubRenderedMarkdownCacheTag);
 
   if (!configureWebPush()) {
     return NextResponse.json({ error: "Web Push is not configured." }, { status: 503 });

@@ -63,11 +63,34 @@ function rebaseNoteHeadings(html: string, minimumLevel: 4 | 5) {
   });
 }
 
-function Notes({ release, headingLevel }: { release: GitHubRelease; headingLevel: 4 | 5 }) {
-  const body = release.body_html || release.body;
-
-  if (!body?.trim()) {
+function Notes({
+  release,
+  headingLevel,
+  title,
+}: {
+  release: GitHubRelease;
+  headingLevel: 4 | 5;
+  title: string;
+}) {
+  if (!(release.body_html || release.body)?.trim()) {
     return null;
+  }
+
+  // Rendering failed for this request. Dumping the raw markdown here used to
+  // leave screen reader users with no headings or lists, literal "##" and "-"
+  // read aloud, and dead link text, so point at the properly marked up notes
+  // instead. Kept outside <details> so the failure is not hidden behind a
+  // disclosure that promises notes it cannot show.
+  if (!release.body_html) {
+    return (
+      <p className="mt-5 text-sm leading-6 text-slate-700">
+        These release notes could not be formatted right now.{" "}
+        <a className="font-semibold text-action underline" href={release.html_url}>
+          {title} release notes on GitHub
+        </a>
+        .
+      </p>
+    );
   }
 
   return (
@@ -75,16 +98,10 @@ function Notes({ release, headingLevel }: { release: GitHubRelease; headingLevel
       <summary className="cursor-pointer list-none font-semibold text-ink [&::-webkit-details-marker]:hidden">
         Release notes
       </summary>
-      {release.body_html ? (
-        <div
-          className="prose mt-4 max-w-none text-sm leading-6 text-slate-700"
-          dangerouslySetInnerHTML={{ __html: rebaseNoteHeadings(release.body_html, headingLevel) }}
-        />
-      ) : (
-        <pre className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
-          {body}
-        </pre>
-      )}
+      <div
+        className="prose mt-4 max-w-none text-sm leading-6 text-slate-700"
+        dangerouslySetInnerHTML={{ __html: rebaseNoteHeadings(release.body_html, headingLevel) }}
+      />
     </details>
   );
 }
@@ -139,7 +156,7 @@ export async function ReleaseDownloads({
                 View full release
               </ButtonLink>
             </div>
-            <Notes headingLevel={4} release={stable} />
+            <Notes headingLevel={4} release={stable} title={releaseTitle(stable)} />
           </article>
         ) : (
           <p>No stable release was found on GitHub.</p>
@@ -164,7 +181,11 @@ export async function ReleaseDownloads({
                     Full {singularPrereleaseLabel}: {prereleaseTitle(release, singularPrereleaseLabel)}
                   </a>
                 </p>
-                <Notes headingLevel={5} release={release} />
+                <Notes
+                  headingLevel={5}
+                  release={release}
+                  title={prereleaseTitle(release, singularPrereleaseLabel)}
+                />
               </article>
             ))}
           </div>
