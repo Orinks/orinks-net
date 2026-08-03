@@ -56,6 +56,13 @@ describe("build notification cache invalidation", () => {
     expect(mocks.listBuildSubscriptions).toHaveBeenCalledWith("Freight Fate");
   });
 
+  test("also drops rendered release notes so a new build is not shown with stale ones", async () => {
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.revalidateTag).toHaveBeenCalledWith("github-rendered-markdown");
+  });
+
   test("does not invalidate the cache for unauthorized requests", async () => {
     const response = await POST(request("wrong-token"));
 

@@ -70,6 +70,8 @@ const getCachedReleases = unstable_cache(
   { revalidate: 60, tags: [githubReleasesCacheTag] },
 );
 
+export const githubRenderedMarkdownCacheTag = "github-rendered-markdown";
+
 const getCachedRenderedMarkdown = unstable_cache(
   async (body: string, repo: string) => {
     const response = await fetch("https://api.github.com/markdown", {
@@ -87,13 +89,17 @@ const getCachedRenderedMarkdown = unstable_cache(
     });
 
     if (!response.ok) {
-      return null;
+      // Throw rather than return null. unstable_cache stores whatever this
+      // resolves to, so returning null here pinned a failed render -- and the
+      // raw-markdown fallback with it -- for a full day. Throwing leaves the
+      // cache empty so the next request retries.
+      throw new Error(`GitHub markdown request failed for ${repo}: ${response.status}`);
     }
 
     return response.text();
   },
-  ["github-rendered-markdown"],
-  { revalidate: 86_400 },
+  [githubRenderedMarkdownCacheTag],
+  { revalidate: 86_400, tags: [githubRenderedMarkdownCacheTag] },
 );
 
 export async function renderMarkdown(body: string | null, repo: string) {
@@ -101,7 +107,13 @@ export async function renderMarkdown(body: string | null, repo: string) {
     return null;
   }
 
-  return getCachedRenderedMarkdown(body, repo);
+  try {
+    return await getCachedRenderedMarkdown(body, repo);
+  } catch (error) {
+    // Degrade to the "read them on GitHub" fallback for this request only.
+    console.error("Unable to render release notes markdown", error);
+    return null;
+  }
 }
 
 export async function getReleases(repo: string): Promise<GitHubRelease[]> {
