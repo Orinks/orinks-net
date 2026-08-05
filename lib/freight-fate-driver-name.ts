@@ -24,6 +24,28 @@ export const LETTERS_ERROR: NameError = {
   message: "Driver names must include at least three letters. Choose a different name.",
 };
 
+export const LENGTH_ERROR: NameError = {
+  kind: "length",
+  message: "Enter a driver name of 3 to 48 characters.",
+};
+
+// Client-side pre-flight for a trimmed driver name: 3-48 characters,
+// including at least three \p{L} letters. Mirrors the server's rules
+// (provisionDriver / claimActivation) so the common case gets instant
+// feedback instead of a round trip. Every page that collects a driver name
+// calls this rather than retyping the thresholds -- the wording was
+// centralised here for exactly this reason, and two hand-copied predicates
+// that read identically today can still drift apart later.
+export function validateDriverName(trimmed: string): NameError | null {
+  if (trimmed.length < 3 || trimmed.length > 48) {
+    return LENGTH_ERROR;
+  }
+  if ((trimmed.match(/\p{L}/gu) ?? []).length < 3) {
+    return LETTERS_ERROR;
+  }
+  return null;
+}
+
 const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
 
 export const BLOCKED_ERROR: NameError = {

@@ -10,13 +10,13 @@ import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
-  LETTERS_ERROR,
   NAME_HINT_PREFIX,
   NAME_HINT_SUFFIX,
   NAME_RULES_HREF,
   NAME_RULES_LINK_TEXT,
   TAKEN_ERROR,
   nameRejectionForReason,
+  validateDriverName,
   type NameError,
 } from "@/lib/freight-fate-driver-name";
 
@@ -237,14 +237,11 @@ function DriverSetup() {
     }
 
     const trimmed = name.trim();
-    if (trimmed.length < 3 || trimmed.length > 48) {
-      showNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
-      return;
-    }
-    // Mirrors the server's minimum-letters rule so the common case gets
-    // instant feedback instead of a round-trip rejection.
-    if ((trimmed.match(/\p{L}/gu) ?? []).length < 3) {
-      showNameError(LETTERS_ERROR);
+    // Shared with the activation page's inline name field so the two
+    // thresholds cannot drift apart the way two hand-copied checks could.
+    const rejection = validateDriverName(trimmed);
+    if (rejection) {
+      showNameError(rejection);
       return;
     }
 

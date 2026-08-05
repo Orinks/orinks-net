@@ -302,6 +302,56 @@ describe("ActivateGate", () => {
     expect(screen.queryByLabelText(/driver name/i)).toBeNull();
     expect(screen.getAllByRole("textbox")).toHaveLength(2);
   });
+
+  // Fix round 1, finding 1: once the driver query resolves, ActivateGate's
+  // own accountStatus div and ActivateClient's busy-status div are BOTH
+  // mounted with role="status" at the same time. Today that is safe only
+  // because the two are never non-empty together -- nothing enforced that.
+  // This drives a real submit through an unresolved claim promise so the
+  // busy announcement is live at the same moment accountStatus is mounted,
+  // and checks the actual invariant requirement 9 exists to protect: at
+  // most one role="status" element carries text at any moment, across idle,
+  // busy, and post-resolve.
+  test("at most one role=status element has non-empty text at a time, across idle, busy, and resolved", async () => {
+    store.driver = null; // Resolved before mount: shape B, accountStatus already "".
+    let resolveClaim: (value: { ok: true }) => void = () => {};
+    store.claim = vi.fn(
+      () =>
+        new Promise<{ ok: true }>((resolve) => {
+          resolveClaim = resolve;
+        }),
+    );
+    render(<ActivateGate initialCode="WKQR-3468" />);
+
+    function nonEmptyStatusCount() {
+      return screen
+        .getAllByRole("status")
+        .filter((element) => (element.textContent ?? "").trim().length > 0).length;
+    }
+
+    // Idle: the driver query has already resolved, so both ActivateGate's
+    // accountStatus div and ActivateClient's busy-status div are mounted --
+    // and both are empty.
+    expect(screen.getAllByRole("status").length).toBeGreaterThanOrEqual(2);
+    expect(nonEmptyStatusCount()).toBe(0);
+
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    // Busy: ActivateClient's status div now carries "Setting up and
+    // connecting…" while ActivateGate's accountStatus div is still mounted
+    // alongside it (empty, since the driver query already settled). Two
+    // role="status" elements exist at once here -- the invariant is that
+    // only one of them ever has text.
+    await waitFor(() => expect(nonEmptyStatusCount()).toBe(1));
+
+    resolveClaim({ ok: true });
+    await screen.findByRole("heading", { name: /connected/i });
+
+    // Resolved: the success panel is its own role="status" region: still at
+    // most one non-empty status element in the tree.
+    expect(nonEmptyStatusCount()).toBeLessThanOrEqual(1);
+  });
 });
 
 // a11y requirements 10-16: the three-field shape rendered by ActivateClient

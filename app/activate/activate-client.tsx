@@ -8,13 +8,13 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 import {
-  LETTERS_ERROR,
   NAME_HINT_PREFIX,
   NAME_HINT_SUFFIX,
   NAME_RULES_HREF,
   NAME_RULES_LINK_TEXT,
   TAKEN_ERROR,
   nameRejectionForReason,
+  validateDriverName,
   type NameError,
 } from "@/lib/freight-fate-driver-name";
 
@@ -145,17 +145,15 @@ export default function ActivateClient({
 
     // Name pre-checks run client-side before any network call, so a locally
     // invalid name can never collide with a code error in one round trip --
-    // mirrors DriverSetup's handleSubmit exactly (same thresholds, same
-    // LETTERS_ERROR).
+    // the same shared predicate DriverSetup's handleSubmit calls, so the two
+    // pages cannot drift apart on thresholds the way two hand-copied
+    // versions could.
     let trimmedName = "";
     if (needsDriver) {
       trimmedName = name.trim();
-      if (trimmedName.length < 3 || trimmedName.length > 48) {
-        showNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
-        return;
-      }
-      if ((trimmedName.match(/\p{L}/gu) ?? []).length < 3) {
-        showNameError(LETTERS_ERROR);
+      const rejection = validateDriverName(trimmedName);
+      if (rejection) {
+        showNameError(rejection);
         return;
       }
     }
@@ -245,8 +243,13 @@ export default function ActivateClient({
           noValidate
           onSubmit={onSubmit}
         >
+          {/* Distinct from the page's H1 ("Activate Freight Fate" in
+              app/activate/page.tsx's PageHeader) in both shapes -- a heading
+              that repeats the page title verbatim is indistinguishable from
+              it in a screen reader's heading list, the duplicate-heading
+              defect fixed earlier in this page's history. */}
           <h2 className="text-2xl font-bold text-ink">
-            {needsDriver ? "Create your driver and activate Freight Fate" : "Activate Freight Fate"}
+            {needsDriver ? "Create your driver and activate Freight Fate" : "Connect this computer"}
           </h2>
           {needsDriver ? (
             <p className="text-slate-800">
