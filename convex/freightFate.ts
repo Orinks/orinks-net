@@ -428,7 +428,7 @@ export const provisionDriver = mutation({
 // The Clerk-authenticated driver row, or null. The computer-list functions
 // below authenticate by account, never by driver token: only the owner can
 // see or manage their computers.
-async function driverForIdentity(ctx: QueryCtx) {
+export async function driverForIdentity(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     return null;

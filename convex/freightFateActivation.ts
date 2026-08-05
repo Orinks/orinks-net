@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
+import { driverForIdentity, MAX_DEVICE_TOKENS } from "./freightFate";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -117,5 +118,63 @@ export const startActivation = mutation({
     });
 
     return { deviceCode, userCode, expiresAt };
+  },
+});
+
+export const claimActivation = mutation({
+  args: { userCode: v.string(), label: v.optional(v.string()), now: v.number() },
+  handler: async (ctx, args) => {
+    const driver = await driverForIdentity(ctx);
+    if (!driver) {
+      // Two different failures the page words differently: signed out, versus
+      // signed in with no driver set up yet.
+      const identity = await ctx.auth.getUserIdentity();
+      throw new ConvexError({ code: identity ? ("no_driver" as const) : ("not_signed_in" as const) });
+    }
+
+    // Guessing is the attack this stops: a signed-in caller hammering codes
+    // until one lands. Keyed by account, since that is what a claim needs.
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "activation_claim",
+      driverId: driver.driverId,
+      now: args.now,
+      limit: ACTIVATION_CLAIM_LIMIT,
+    });
+
+    if (!allowed) {
+      throw new ConvexError({ code: "rate_limited" as const });
+    }
+
+    const code = normalizeUserCode(args.userCode);
+    const row = code
+      ? await ctx.db
+          .query("freightFateActivations")
+          .withIndex("by_user_code", (q) => q.eq("userCode", code))
+          .unique()
+      : null;
+
+    // Unknown, already claimed, and expired are one error on purpose: telling
+    // a stranger which of those a code is would let them probe for live ones.
+    if (!row || row.status !== "pending" || row.expiresAt <= args.now) {
+      throw new ConvexError({ code: "unknown_code" as const });
+    }
+
+    const devices = await ctx.db
+      .query("freightFateDeviceTokens")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+      .collect();
+    // Checked here rather than at redeem so the player learns about the cap
+    // while they are still looking at a browser that can explain it.
+    if (devices.length >= MAX_DEVICE_TOKENS) {
+      throw new ConvexError({ code: "too_many_computers" as const, limit: MAX_DEVICE_TOKENS });
+    }
+
+    await ctx.db.patch(row._id, {
+      status: "claimed",
+      driverId: driver.driverId,
+      label: args.label,
+    });
+
+    return { ok: true as const };
   },
 });
