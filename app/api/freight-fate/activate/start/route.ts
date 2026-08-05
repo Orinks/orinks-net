@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ConvexError } from "convex/values";
 import { startFreightFateActivation } from "@/lib/freight-fate-online";
 
 export const runtime = "nodejs";
@@ -18,8 +19,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "unavailable" }, { status: 503 });
     }
     return NextResponse.json(started);
-  } catch {
-    // The only expected throw here is the rate limiter.
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  } catch (error) {
+    // startActivation throws ConvexError({ code: "rate_limited" }) when the
+    // caller is over budget, but also ConvexError({ code: "activation_unavailable" })
+    // when user-code minting exhausts its retries, and a network or Convex
+    // outage throws something else again. Only the rate limiter is the
+    // game's fault; everything else means the service is down, which the
+    // game should back off from differently than "you are rate limited."
+    const data = error instanceof ConvexError ? (error.data as { code?: string } | undefined) : undefined;
+    if (data?.code === "rate_limited") {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }
