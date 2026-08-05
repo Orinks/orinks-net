@@ -308,6 +308,23 @@ export default defineSchema({
   })
     .index("by_driver_id", ["driverId"])
     .index("by_driver_token", ["driverId", "tokenHash"]),
+  // A pending activation: the game holds the device code, the player confirms
+  // the short user code on /activate. Deliberately has no lastPolledAt --
+  // a write per poll is the one thing here that would move database I/O, so
+  // polling reads and never writes.
+  freightFateActivations: defineTable({
+    deviceCodeHash: v.string(),
+    userCode: v.string(),
+    status: v.union(v.literal("pending"), v.literal("claimed")),
+    // Set when the signed-in player claims the code.
+    driverId: v.optional(v.string()),
+    label: v.optional(v.string()),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_device_code", ["deviceCodeHash"])
+    .index("by_user_code", ["userCode"])
+    .index("by_expires_at", ["expiresAt"]),
   // Live "who's on duty" board: one row per driver holding only the latest
   // heartbeat. Rows older than the board TTL are treated as offline and
   // pruned on the next write; no history is kept by design.
