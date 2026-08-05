@@ -122,11 +122,13 @@ describe("claimActivation", () => {
       async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect(),
     );
 
-    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+    const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
       label: "Studio desktop",
       now: NOW + 5_000,
     });
+
+    expect(result).toEqual({ ok: true });
 
     const row = await t.run(
       async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
@@ -145,12 +147,11 @@ describe("claimActivation", () => {
   test("refuses an unknown code", async () => {
     const t = setup();
     await driverFor(t, SUBJECT);
-    await expect(
-      t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
-        userCode: "WKQR3468",
-        now: NOW,
-      }),
-    ).rejects.toThrow();
+    const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: "WKQR3468",
+      now: NOW,
+    });
+    expect(result).toEqual({ ok: false, code: "unknown_code" });
   });
 
   test("refuses an expired code", async () => {
@@ -160,12 +161,11 @@ describe("claimActivation", () => {
       clientKey: "1.2.3.4",
       now: NOW,
     });
-    await expect(
-      t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
-        userCode: started.userCode,
-        now: NOW + 11 * 60_000,
-      }),
-    ).rejects.toThrow();
+    const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      now: NOW + 11 * 60_000,
+    });
+    expect(result).toEqual({ ok: false, code: "unknown_code" });
   });
 
   test("refuses when nobody is signed in", async () => {
@@ -174,12 +174,11 @@ describe("claimActivation", () => {
       clientKey: "1.2.3.4",
       now: NOW,
     });
-    await expect(
-      t.mutation(api.freightFateActivation.claimActivation, {
-        userCode: started.userCode,
-        now: NOW,
-      }),
-    ).rejects.toThrow();
+    const result = await t.mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      now: NOW,
+    });
+    expect(result).toEqual({ ok: false, code: "not_signed_in" });
   });
 
   test("guessing codes is rate limited per account", async () => {
@@ -189,23 +188,21 @@ describe("claimActivation", () => {
     // Every one of these fails as unknown_code; the point is that the limiter
     // stops the attempts rather than the codes being wrong.
     for (let i = 0; i < 10; i++) {
-      await expect(
-        signedIn.mutation(api.freightFateActivation.claimActivation, {
-          userCode: "WKQR3468",
-          now: NOW,
-        }),
-      ).rejects.toThrow();
+      const result = await signedIn.mutation(api.freightFateActivation.claimActivation, {
+        userCode: "WKQR3468",
+        now: NOW,
+      });
+      expect(result).toEqual({ ok: false, code: "unknown_code" });
     }
     const started = await t.mutation(api.freightFateActivation.startActivation, {
       clientKey: "1.2.3.4",
       now: NOW,
     });
     // Even a correct code is refused once the budget is spent.
-    await expect(
-      signedIn.mutation(api.freightFateActivation.claimActivation, {
-        userCode: started.userCode,
-        now: NOW,
-      }),
-    ).rejects.toThrow();
+    const result = await signedIn.mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      now: NOW,
+    });
+    expect(result).toEqual({ ok: false, code: "rate_limited" });
   });
 });

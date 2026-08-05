@@ -129,7 +129,10 @@ export const claimActivation = mutation({
       // Two different failures the page words differently: signed out, versus
       // signed in with no driver set up yet.
       const identity = await ctx.auth.getUserIdentity();
-      throw new ConvexError({ code: identity ? ("no_driver" as const) : ("not_signed_in" as const) });
+      return {
+        ok: false as const,
+        code: identity ? ("no_driver" as const) : ("not_signed_in" as const),
+      };
     }
 
     // Guessing is the attack this stops: a signed-in caller hammering codes
@@ -142,7 +145,7 @@ export const claimActivation = mutation({
     });
 
     if (!allowed) {
-      throw new ConvexError({ code: "rate_limited" as const });
+      return { ok: false as const, code: "rate_limited" as const };
     }
 
     const code = normalizeUserCode(args.userCode);
@@ -156,7 +159,7 @@ export const claimActivation = mutation({
     // Unknown, already claimed, and expired are one error on purpose: telling
     // a stranger which of those a code is would let them probe for live ones.
     if (!row || row.status !== "pending" || row.expiresAt <= args.now) {
-      throw new ConvexError({ code: "unknown_code" as const });
+      return { ok: false as const, code: "unknown_code" as const };
     }
 
     const devices = await ctx.db
@@ -166,7 +169,7 @@ export const claimActivation = mutation({
     // Checked here rather than at redeem so the player learns about the cap
     // while they are still looking at a browser that can explain it.
     if (devices.length >= MAX_DEVICE_TOKENS) {
-      throw new ConvexError({ code: "too_many_computers" as const, limit: MAX_DEVICE_TOKENS });
+      return { ok: false as const, code: "too_many_computers" as const };
     }
 
     await ctx.db.patch(row._id, {
