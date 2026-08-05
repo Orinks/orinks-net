@@ -226,6 +226,32 @@ export const redeemActivation = mutation({
     if (!driver) {
       return null;
     }
+
+    // The cap is checked again here, not just at claim. Claims are checked
+    // against a count that none of them has yet changed, so a driver with
+    // nine computers can start five activations, confirm all five, and mint
+    // past the cap on the way out. Minting is the only place the count
+    // actually moves, so it is the only place the cap can hold.
+    //
+    // Over the cap answers null, which the route turns into the same 410 the
+    // game already handles as "that code is done, start again." A distinct
+    // status would tell the player a truer story, but the game that reads
+    // this contract lives in another repository and cannot be taught a new
+    // one, so an honest word here would land as an unhandled response --
+    // worse for the player than a wrong-but-understood one. The claim-time
+    // check above is what actually explains the cap, in the browser, before
+    // the player ever gets here; this path is only reachable by racing
+    // claims, and the row is deleted so "expired" becomes true rather than a
+    // lie the next poll would repeat.
+    const devices = await ctx.db
+      .query("freightFateDeviceTokens")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId!))
+      .collect();
+    if (devices.length >= MAX_DEVICE_TOKENS) {
+      await ctx.db.delete(row._id);
+      return null;
+    }
+
     const token = await mintDeviceTokenRow(ctx, row.driverId, row.label, args.now);
     await ctx.db.delete(row._id);
     // displayName goes back so the game can say who it connected as; that

@@ -12,7 +12,7 @@ import {
   normalizeUserCode,
   hashDeviceCode,
 } from "./freightFateActivation";
-import type { MutationCtx } from "./_generated/server";
+import { MAX_DEVICE_TOKENS } from "./freightFate";
 
 describe("activation codes", () => {
   test("the alphabet excludes every mishearable character", () => {
@@ -206,6 +206,101 @@ describe("claimActivation", () => {
       now: NOW,
     });
     expect(result).toEqual({ ok: false, code: "rate_limited" });
+  });
+});
+
+/** Device rows straight into the table: this is prior state, not the thing
+ * under test, and going through the activation flow for each would spend the
+ * per-account claim budget the tests below need. */
+async function seedComputers(t: ReturnType<typeof setup>, driverId: string, count: number) {
+  await t.run(async (ctx) => {
+    for (let i = 0; i < count; i += 1) {
+      await ctx.db.insert("freightFateDeviceTokens", {
+        driverId,
+        tokenHash: `seeded-token-hash-${i}`,
+        label: `PC ${i + 1}`,
+        createdAt: NOW,
+      });
+    }
+  });
+}
+
+describe("the computer cap", () => {
+  test("a claim at the cap is refused, in the browser, with a reason", async () => {
+    const t = setup();
+    const { driverId } = await driverFor(t, SUBJECT);
+    await seedComputers(t, driverId, MAX_DEVICE_TOKENS);
+
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const result = await t
+      .withIdentity({ subject: SUBJECT })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        now: NOW,
+      });
+
+    // The player is standing at a browser that can explain this, so this is
+    // where the cap gets a name rather than a shrug.
+    expect(result).toEqual({ ok: false, code: "too_many_computers" });
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect()),
+    ).toHaveLength(MAX_DEVICE_TOKENS);
+  });
+
+  test("five activations started at nine computers still cannot mint an eleventh", async () => {
+    const t = setup();
+    const { driverId } = await driverFor(t, SUBJECT);
+    await seedComputers(t, driverId, MAX_DEVICE_TOKENS - 1);
+
+    // Every claim sees nine computers, because none of them has minted yet:
+    // claiming binds a code to a driver and nothing more. Checking the cap
+    // only at claim therefore waves all five through, and the driver ends up
+    // with fourteen tokens.
+    const started = [];
+    for (let i = 0; i < 5; i += 1) {
+      const activation = await t.mutation(api.freightFateActivation.startActivation, {
+        clientKey: `10.0.0.${i}`,
+        now: NOW,
+      });
+      const claim = await t
+        .withIdentity({ subject: SUBJECT })
+        .mutation(api.freightFateActivation.claimActivation, {
+          userCode: activation.userCode,
+          label: `Extra ${i}`,
+          now: NOW,
+        });
+      expect(claim).toEqual({ ok: true });
+      started.push(activation);
+    }
+
+    const redeemed = [];
+    for (const activation of started) {
+      redeemed.push(
+        await t.mutation(api.freightFateActivation.redeemActivation, {
+          deviceCodeHash: await hashDeviceCode(activation.deviceCode),
+          now: NOW,
+        }),
+      );
+    }
+
+    // Exactly one of the five gets the last free slot; the rest are refused
+    // at the only place the count actually moves.
+    expect(redeemed.filter((result) => result !== null)).toHaveLength(1);
+    expect(redeemed.filter((result) => result === null)).toHaveLength(4);
+
+    const devices = await t.run(
+      async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect(),
+    );
+    expect(devices).toHaveLength(MAX_DEVICE_TOKENS);
+
+    // The refused rows are gone, so a later poll is told "expired" and means
+    // it, rather than being told "ready" and refused again.
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("freightFateActivations").collect()),
+    ).toHaveLength(0);
   });
 });
 
