@@ -15,8 +15,21 @@ import {
 // mocks them for DriverSetup -- ActivateClient (the plain component every
 // other test in this file renders directly) never touches these hooks, so
 // mocking them at module scope does not change its behavior.
+//
+// Read this before trusting these tests about requirement 9: mocking
+// convex/react wholesale replaces the real provider, so nothing in this file
+// exercises ConvexProviderWithClerk's actual timing -- that it calls
+// setAuth only once Clerk resolves, so a query subscribed on mount runs
+// unauthenticated first and getMyDriver answers null before any real answer
+// exists. That is a browser-only behaviour and it is why ActivateGate skips
+// the query until useConvexAuth reports isAuthenticated. What the mock below
+// CAN pin is the wiring: "skip" is honoured the way the real useQuery
+// honours it, and store.authenticated drives it. A regression that reached
+// for the query before authentication would still pass every test here if
+// the mock returned the driver regardless of args -- hence the skip handling.
 const store = vi.hoisted(() => ({
   driver: null as unknown,
+  authenticated: true,
   claim: vi.fn(),
   listeners: new Set<() => void>(),
 }));
@@ -33,7 +46,11 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("convex/react", async () => {
   const { useEffect, useState } = await import("react");
   return {
-    useQuery: () => {
+    useConvexAuth: () => ({
+      isAuthenticated: store.authenticated,
+      isLoading: !store.authenticated,
+    }),
+    useQuery: (_query: unknown, args: unknown) => {
       const [, bump] = useState(0);
       useEffect(() => {
         const listener = () => bump((count) => count + 1);
@@ -42,7 +59,10 @@ vi.mock("convex/react", async () => {
           store.listeners.delete(listener);
         };
       }, []);
-      return store.driver;
+      // The real useQuery returns undefined for a skipped query -- it never
+      // subscribes at all. Mirrored here so a component that stopped
+      // skipping would visibly change behaviour in these tests.
+      return args === "skip" ? undefined : store.driver;
     },
     useMutation: () => store.claim,
   };
@@ -53,6 +73,7 @@ import ActivateClient, { ActivateGate } from "./activate-client";
 
 beforeEach(() => {
   store.driver = null;
+  store.authenticated = true;
   store.claim = vi.fn();
   store.listeners.clear();
 });
@@ -292,6 +313,35 @@ describe("ActivateGate", () => {
     // else first is the point of the gate.
     expect(screen.getByLabelText(/driver name/i)).toBeInTheDocument();
     expect(screen.getAllByRole("textbox")).toHaveLength(3);
+  });
+
+  // Requirement 9, the browser case: Clerk reporting signed-in is not the
+  // same as Convex holding a token. Until useConvexAuth reports
+  // isAuthenticated, the query must be skipped -- an unauthenticated run of
+  // getMyDriver answers null, and rendering on that would paint the
+  // three-field shape for a returning player who has a driver, then swap to
+  // two fields when the authenticated answer landed. Here the driver exists
+  // the whole time; the point is that nothing renders until the answer is
+  // an authenticated one, and that the field count goes 0 -> 2, never
+  // 0 -> 3 -> 2.
+  test("renders nothing until Convex is authenticated, even though Clerk already reports signed in", async () => {
+    store.authenticated = false;
+    store.driver = { driverId: "road-star-1234", displayName: "Road Star" };
+    render(<ActivateGate initialCode="" />);
+
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+    const region = screen.getByRole("region", { name: /freight fate activation/i });
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(/checking your driver/i);
+    expect(region.contains(status)).toBe(true);
+
+    await act(async () => {
+      store.authenticated = true;
+      notify();
+    });
+
+    expect(screen.queryByLabelText(/driver name/i)).toBeNull();
+    expect(screen.getAllByRole("textbox")).toHaveLength(2);
   });
 
   test("renders the two-field shape once the driver query resolves to an existing driver", async () => {

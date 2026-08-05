@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
@@ -51,11 +51,19 @@ type ClaimFn = (input: {
 // name_rejected are field errors on the driver-name input (handled
 // separately in onSubmit via TAKEN_ERROR / nameRejectionForReason, the same
 // wording the setup page uses), not generic alert text, so they are
-// deliberately absent here.
-const MESSAGES: Partial<Record<string, string>> = {
+// deliberately absent here. Keyed by ClaimFailureCode rather than string so
+// a mistyped key is a compile error rather than a silent fallback message.
+const MESSAGES: Partial<Record<ClaimFailureCode, string>> = {
   unknown_code:
     "That code was not recognised, or it has expired. Codes last ten minutes. Start setup again in Freight Fate to get a new one.",
   not_signed_in: "Sign in first, then enter your code again.",
+  // Kept as a defensive fallback, not as a case this page routinely
+  // produces: ActivateGate resolves driver state before rendering anything,
+  // so an account with no driver always gets the three-field shape and
+  // always sends a name, and the server only answers no_driver when no name
+  // arrived. It survives a stale answer in a long-open tab (the driver
+  // disappeared after the gate resolved), and in that state the advice below
+  // is still the recovery that works.
   no_driver: "Set up your driver on the Freight Fate setup page first, then come back here.",
   too_many_computers:
     "You have connected the maximum number of computers. Remove one on the setup page, then try again.",
@@ -389,12 +397,26 @@ export default function ActivateClient({
 // `claim` that calls the real Convex mutation with now: Date.now().
 export function ActivateGate({ initialCode }: { initialCode: string }) {
   const { isLoaded, isSignedIn, user } = useUser();
+  // Clerk knowing the user is signed in is not the same as Convex having
+  // been handed a token: ConvexProviderWithClerk only calls setAuth once
+  // Clerk resolves, so a query subscribed on mount runs unauthenticated and
+  // getMyDriver answers null -- indistinguishable from "this account has no
+  // driver". Rendering on that answer would paint the three-field shape for
+  // a returning player and then swap to two fields when the authenticated
+  // re-run lands, which is exactly the field-count change after first paint
+  // requirement 9 forbids. Skipping until isAuthenticated means the only
+  // null this component ever sees is an authenticated one.
+  const { isAuthenticated } = useConvexAuth();
   // Same query DriverSetup uses. No fetchQuery-with-Clerk-token pattern
   // exists elsewhere in this codebase (checked: nothing in app/ resolves
   // Convex data server-side via a Clerk token the way page.tsx resolves
   // ?code=), so this client-side gate is the floor the a11y requirement
   // calls for, not a corner cut.
-  const myDriver = useQuery(api.freightFate.getMyDriver, {});
+  const myDriver = useQuery(api.freightFate.getMyDriver, isAuthenticated ? {} : "skip");
+  // A skipped query and a pending one are the same thing to this page: the
+  // driver question has no authenticated answer yet, so neither shape may
+  // render.
+  const driverResolved = isAuthenticated && myDriver !== undefined;
   const claimActivation = useMutation(api.freightFateActivation.claimActivation);
   const claim = useCallback<ClaimFn>(
     (input) => claimActivation({ ...input, now: Date.now() }),
@@ -407,7 +429,7 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
     ? "Loading your account…"
     : !isSignedIn
       ? "Sign in required."
-      : myDriver === undefined
+      : !driverResolved
         ? "Checking your driver…"
         : "";
 
@@ -454,7 +476,7 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
       ) : (
         <div aria-label="Freight Fate activation" ref={regionRef} role="region" tabIndex={-1}>
           {statusDiv}
-          {myDriver === undefined ? (
+          {!driverResolved ? (
             <p className="text-slate-800">Checking your driver…</p>
           ) : (
             <ActivateClient
