@@ -266,11 +266,22 @@ export const claimActivation = mutation({
       });
     }
 
+    // `now` here is the browser's clock (the /activate page sends
+    // Date.now()), so it is not something to write into a deadline
+    // unchecked: the sweep is the only thing that ever collects this table,
+    // and a row stamped far enough ahead would simply never be collected.
+    // Clamping against the server-stamped createdAt keeps the late-claim fix
+    // -- a claim at T+9:59 still gets its full collection window -- while
+    // bounding what any caller can write to one TTL plus one collection
+    // window after the row was actually created.
     await ctx.db.patch(row._id, {
       status: "claimed",
       driverId,
       label: args.label,
-      expiresAt: args.now + ACTIVATION_COLLECTION_MS,
+      expiresAt: Math.min(
+        args.now + ACTIVATION_COLLECTION_MS,
+        row.createdAt + ACTIVATION_TTL_MS + ACTIVATION_COLLECTION_MS,
+      ),
     });
 
     return { ok: true as const };

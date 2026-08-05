@@ -293,6 +293,53 @@ describe("claimActivation", () => {
     expect(drivers[0].displayName).not.toBe("Someone Else");
   });
 
+  test("refuses a code that has already been claimed, and leaves its binding alone", async () => {
+    const t = setup();
+    const { driverId } = await driverFor(t, SUBJECT);
+    await t.withIdentity({ subject: "user_2eavesdrop" }).mutation(api.freightFate.provisionDriver, {
+      displayName: "Not Your Driver",
+      visibility: "public",
+      now: NOW,
+    });
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      label: "Studio desktop",
+      now: NOW,
+    });
+
+    // Unknown, expired and already-claimed are one answer on purpose: a
+    // second claimant learns nothing about which of those it hit.
+    const second = await t
+      .withIdentity({ subject: "user_2eavesdrop" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        label: "Somewhere else",
+        now: NOW + 60_000,
+      });
+    expect(second).toEqual({ ok: false, code: "unknown_code" });
+
+    const row = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+    // Still bound to whoever claimed it first, with the same label.
+    expect(row.driverId).toBe(driverId);
+    expect(row.label).toBe("Studio desktop");
+    // And the deadline did not move: because the patch is gated on
+    // status === "pending", repeated claims cannot be used to keep pushing
+    // the collection window out and hold the row alive indefinitely.
+    expect(row.expiresAt).toBe(NOW + 2 * 60_000);
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: await hashDeviceCode(started.deviceCode),
+        now: NOW + 2 * 60_000 + 1,
+      }),
+    ).toBe("expired");
+  });
+
   test("still refuses when there is no driver and no name", async () => {
     const t = setup();
     const started = await t.mutation(api.freightFateActivation.startActivation, {
@@ -604,6 +651,72 @@ describe("claiming resets the collection window", () => {
       now: wellPast,
     });
     expect(redeemed?.token).toMatch(/^ffd_[0-9a-f]{64}$/);
+  });
+
+  // `now` on claimActivation is the browser's clock -- the /activate page
+  // sends Date.now() -- and sweepExpiredActivations is the only thing that
+  // ever collects this table, so a row stamped far enough ahead would never
+  // be collected at all. The written deadline is therefore clamped against
+  // the server-stamped createdAt.
+  test("a browser clock cannot stamp the deadline past the server-bounded ceiling", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    // Widening the row's own window is what makes a far-future `now`
+    // survive the expiry check at all; without it the claim is simply
+    // refused (the test below). This is the state the clamp has to hold in.
+    await t.run(async (ctx) => {
+      const row = (await ctx.db.query("freightFateActivations").collect())[0];
+      await ctx.db.patch(row._id, { expiresAt: NOW + 365 * 24 * 60 * 60_000 });
+    });
+
+    const result = await t
+      .withIdentity({ subject: SUBJECT })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        now: NOW + 300 * 24 * 60 * 60_000,
+      });
+    expect(result).toEqual({ ok: true });
+
+    const row = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+    // One TTL plus one collection window after the row was really created,
+    // whatever clock the claim arrived with.
+    expect(row.expiresAt).toBe(NOW + 10 * 60_000 + 2 * 60_000);
+
+    // Which means the sweep still collects it, on the server's clock.
+    await t.mutation(internal.freightFateActivation.sweepExpiredActivations, {
+      now: NOW + 13 * 60_000,
+    });
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("freightFateActivations").collect()),
+    ).toHaveLength(0);
+  });
+
+  test("a future-dated claim on a live row is refused and moves no deadline", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const result = await t
+      .withIdentity({ subject: SUBJECT })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        now: NOW + 365 * 24 * 60 * 60_000,
+      });
+    expect(result).toEqual({ ok: false, code: "unknown_code" });
+
+    const row = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+    expect(row.status).toBe("pending");
+    expect(row.expiresAt).toBe(NOW + 10 * 60_000);
   });
 
   test("the collection window is not unlimited", async () => {
