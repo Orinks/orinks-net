@@ -38,10 +38,22 @@ describe("ActivateClient", () => {
   // changes. A live region must already be in the tree before its content
   // changes, or the change is missed (the brief's `{error ? <p role="alert">
   // : null}` draft was flagged as a defect for exactly this reason).
-  test("mounts the error alert on first render, before any submit, with empty text", () => {
-    render(<ActivateClient claim={vi.fn()} initialCode="" />);
+  test("mounts the error alert once, before any submit, and never remounts it once an error appears", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "unknown_code" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" />);
+
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: /connect/i }));
+    await waitFor(() => expect(alert.textContent).not.toBe(""));
+
+    // Reference equality, not just a passing query: if the element were ever
+    // conditionally mounted (the brief's `{error ? <p role="alert"> : null}`
+    // draft), React would tear down and recreate this node, so the captured
+    // reference above would be stale by the time the query below runs. Same
+    // node proves it was already in the tree before its text changed.
+    expect(screen.getByRole("alert")).toBe(alert);
   });
 
   // a11y requirement 2: success moves focus to a tabIndex={-1} heading via a
@@ -154,6 +166,13 @@ describe("ActivateClient", () => {
     expect(confirmation).not.toHaveAttribute("role", "alert");
     expect(confirmation.closest('[role="status"]')).toBeNull();
     expect(confirmation.closest('[role="alert"]')).toBeNull();
+
+    // The whole point of requirement 7 is "before the field" -- a
+    // confirmation a reader reaches after the field is useless, since they
+    // have already typed by the time they hear it. DOCUMENT_POSITION_FOLLOWING
+    // means the field comes after the confirmation in document order.
+    const field = screen.getByLabelText(/activation code/i);
+    expect(confirmation.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   // a11y requirement 8: one plain text input, tied to persistent hint text

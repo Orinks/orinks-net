@@ -131,9 +131,9 @@ export default function ActivateClient({
 
       {done ? (
         <div className="max-w-xl space-y-3 rounded border border-line bg-white p-5" role="status">
-          <h1 className={`text-2xl font-bold text-ink ${focusRing}`} ref={successHeadingRef} tabIndex={-1}>
+          <h2 className={`text-2xl font-bold text-ink ${focusRing}`} ref={successHeadingRef} tabIndex={-1}>
             Computer connected
-          </h1>
+          </h2>
           <p className="text-slate-800">
             You can return to Freight Fate. It will say when it is connected.
           </p>
@@ -144,7 +144,7 @@ export default function ActivateClient({
           noValidate
           onSubmit={onSubmit}
         >
-          <h1 className="text-2xl font-bold text-ink">Activate Freight Fate</h1>
+          <h2 className="text-2xl font-bold text-ink">Activate Freight Fate</h2>
           <p className="text-slate-800">
             Enter the activation code Freight Fate is showing on this computer.
           </p>
@@ -270,7 +270,7 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
           <AccountControls />
         </Section>
       ) : (
-        <div aria-label="Activate Freight Fate" ref={regionRef} role="region" tabIndex={-1}>
+        <div aria-label="Freight Fate activation" ref={regionRef} role="region" tabIndex={-1}>
           <ActivateClient claim={claim} initialCode={initialCode} />
         </div>
       )}
