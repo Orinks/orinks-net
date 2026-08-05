@@ -9,6 +9,7 @@ import {
   formatUserCode,
   mintUserCode,
   normalizeUserCode,
+  hashDeviceCode,
 } from "./freightFateActivation";
 import type { MutationCtx } from "./_generated/server";
 
@@ -204,5 +205,153 @@ describe("claimActivation", () => {
       now: NOW,
     });
     expect(result).toEqual({ ok: false, code: "rate_limited" });
+  });
+});
+
+describe("checkActivation / redeemActivation", () => {
+  async function startAndClaim(t: ReturnType<typeof setup>) {
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      label: "Studio desktop",
+      now: NOW,
+    });
+    return started;
+  }
+
+  test("reads pending before the player confirms, and writes nothing", async () => {
+    const t = setup();
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const hash = await hashDeviceCode(started.deviceCode);
+    const before = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: hash,
+        now: NOW + 1_000,
+      }),
+    ).toBe("pending");
+
+    const after = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+    expect(after).toEqual(before);
+  });
+
+  test("redeem mints exactly one token and consumes the row", async () => {
+    const t = setup();
+    const started = await startAndClaim(t);
+    const hash = await hashDeviceCode(started.deviceCode);
+
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, { deviceCodeHash: hash, now: NOW }),
+    ).toBe("ready");
+
+    const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: hash,
+      now: NOW,
+    });
+    expect(redeemed?.token).toMatch(/^ffd_[0-9a-f]{64}$/);
+    expect(redeemed?.driverId).toBeTruthy();
+
+    const devices = await t.run(
+      async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect(),
+    );
+    expect(devices.filter((d) => d.label === "Studio desktop")).toHaveLength(1);
+
+    const rows = await t.run(
+      async (ctx) => await ctx.db.query("freightFateActivations").collect(),
+    );
+    expect(rows).toHaveLength(0);
+  });
+
+  test("a second redeem gets nothing", async () => {
+    const t = setup();
+    const started = await startAndClaim(t);
+    const hash = await hashDeviceCode(started.deviceCode);
+    await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: hash,
+      now: NOW,
+    });
+    expect(
+      await t.mutation(api.freightFateActivation.redeemActivation, {
+        deviceCodeHash: hash,
+        now: NOW,
+      }),
+    ).toBeNull();
+  });
+
+  test("a wrong device code never sees another player's activation", async () => {
+    const t = setup();
+    await startAndClaim(t);
+    const wrong = await hashDeviceCode("f".repeat(64));
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: wrong,
+        now: NOW,
+      }),
+    ).toBe("expired");
+    expect(
+      await t.mutation(api.freightFateActivation.redeemActivation, {
+        deviceCodeHash: wrong,
+        now: NOW,
+      }),
+    ).toBeNull();
+  });
+
+  test("an expired activation is never redeemable", async () => {
+    const t = setup();
+    const started = await startAndClaim(t);
+    const hash = await hashDeviceCode(started.deviceCode);
+    const late = NOW + 11 * 60_000;
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: hash,
+        now: late,
+      }),
+    ).toBe("expired");
+    expect(
+      await t.mutation(api.freightFateActivation.redeemActivation, {
+        deviceCodeHash: hash,
+        now: late,
+      }),
+    ).toBeNull();
+  });
+
+  test("a code claimed by someone else hands back that driver's name", async () => {
+    const t = setup();
+    // The eavesdropper, not the player, claims the code.
+    await t.withIdentity({ subject: "user_2eavesdrop" }).mutation(api.freightFate.provisionDriver, {
+      displayName: "Not Your Driver",
+      visibility: "public",
+      now: NOW,
+    });
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    await t
+      .withIdentity({ subject: "user_2eavesdrop" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        now: NOW,
+      });
+
+    const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: await hashDeviceCode(started.deviceCode),
+      now: NOW,
+    });
+    // Documented behaviour, not a bug: the token belongs to whoever claimed.
+    // The game speaks this name so the player hears that it is wrong.
+    expect(redeemed?.displayName).toBe("Not Your Driver");
   });
 });

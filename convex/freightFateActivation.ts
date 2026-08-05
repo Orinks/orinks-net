@@ -1,7 +1,7 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import { driverForIdentity, MAX_DEVICE_TOKENS } from "./freightFate";
+import { driverForIdentity, MAX_DEVICE_TOKENS, mintDeviceTokenRow } from "./freightFate";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -179,5 +179,54 @@ export const claimActivation = mutation({
     });
 
     return { ok: true as const };
+  },
+});
+
+// The waiting poll. A query, not a mutation, and it writes nothing: this runs
+// every few seconds for up to ten minutes per setup, so it is the one call
+// here whose cost is worth designing around.
+export const checkActivation = query({
+  args: { deviceCodeHash: v.string(), now: v.number() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("freightFateActivations")
+      .withIndex("by_device_code", (q) => q.eq("deviceCodeHash", args.deviceCodeHash))
+      .unique();
+    // A missing row and an expired one are the same answer: the game's
+    // recovery is identical either way, and it has already been consumed in
+    // the successful case.
+    if (!row || row.expiresAt <= args.now) {
+      return "expired" as const;
+    }
+    return row.status === "claimed" ? ("ready" as const) : ("pending" as const);
+  },
+});
+
+// The only call that mints. Minting here rather than at claim is what keeps a
+// plain token out of the database: it exists for exactly one response, and
+// the row is deleted in the same transaction so it cannot be minted twice.
+export const redeemActivation = mutation({
+  args: { deviceCodeHash: v.string(), now: v.number() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("freightFateActivations")
+      .withIndex("by_device_code", (q) => q.eq("deviceCodeHash", args.deviceCodeHash))
+      .unique();
+    if (!row || row.status !== "claimed" || !row.driverId || row.expiresAt <= args.now) {
+      return null;
+    }
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId!))
+      .unique();
+    if (!driver) {
+      return null;
+    }
+    const token = await mintDeviceTokenRow(ctx, row.driverId, row.label, args.now);
+    await ctx.db.delete(row._id);
+    // displayName goes back so the game can say who it connected as; that
+    // spoken name is the only thing standing between a claimed-by-a-stranger
+    // code and a player who never notices.
+    return { driverId: row.driverId, token, displayName: driver.displayName };
   },
 });

@@ -136,7 +136,7 @@ export async function stampDeviceTokenUse(
   }
 }
 
-async function mintDeviceTokenRow(
+export async function mintDeviceTokenRow(
   ctx: MutationCtx,
   driverId: string,
   label: string | undefined,
