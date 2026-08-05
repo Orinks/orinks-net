@@ -202,7 +202,11 @@ export default function ActivateClient({
     }
   }
 
-  const describedBy = `${errorId} ${hintId}`;
+  // The format hint only helps someone typing the code. When the game handed
+  // it over in the URL there is nothing to type, so the hint would just be
+  // read out on every focus of a field nobody edits.
+  const showHint = !initialCode;
+  const describedBy = [errorId, showHint ? hintId : null].filter(Boolean).join(" ");
   const nameDescribedBy =
     [nameError ? nameErrorId : null, nameHintId].filter(Boolean).join(" ") || undefined;
   const busyLabel = needsDriver ? "Setting up and connecting…" : "Connecting…";
@@ -306,13 +310,16 @@ export default function ActivateClient({
               type="text"
               value={code}
             />
-            {/* Format facts live in persistent hint text tied via
-                aria-describedby, not a placeholder -- placeholders vanish on
-                input and are not reliably announced. */}
-            <p className="text-sm text-slate-600" id={hintId}>
-              Eight letters and numbers, for example WKQR-3468. The dash is optional, and it does
-              not matter whether you use upper or lower case.
-            </p>
+            {/* Format facts live in hint text tied via aria-describedby, not
+                a placeholder -- placeholders vanish on input and are not
+                reliably announced. Shown only when there is something to
+                type; see showHint. */}
+            {showHint ? (
+              <p className="text-sm text-slate-600" id={hintId}>
+                Eight letters and numbers, for example WKQR-3468. The dash is optional, and it does
+                not matter whether you use upper or lower case.
+              </p>
+            ) : null}
           </div>
 
           {needsDriver ? (

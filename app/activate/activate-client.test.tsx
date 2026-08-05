@@ -273,6 +273,20 @@ describe("ActivateClient", () => {
     expect(field.getAttribute("inputmode")).not.toBe("tel");
   });
 
+  // The hint only helps someone typing. When the game handed the code over in
+  // the URL there is nothing to type, so it must not be read out on every
+  // focus of a field nobody edits.
+  test("drops the format hint when the code arrived pre-filled", () => {
+    render(<ActivateClient claim={vi.fn()} initialCode="WKQR-3468" />);
+    const field = screen.getByLabelText(/activation code/i);
+    const alert = screen.getByRole("alert");
+
+    expect(screen.queryByText(/the dash is optional/i)).not.toBeInTheDocument();
+    const describedBy = (field.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
+    // The error region stays wired up; only the hint goes.
+    expect(describedBy).toEqual([alert.id]);
+  });
+
   test("never renders the code field as a segmented one-character-per-box control", () => {
     render(<ActivateClient claim={vi.fn()} initialCode="" />);
     expect(screen.getAllByLabelText(/activation code/i)).toHaveLength(1);
