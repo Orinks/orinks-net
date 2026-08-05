@@ -1387,3 +1387,53 @@ Clerk's development instance is in test mode: sign in with `you+clerk_test@examp
 4. Poll again; confirm `ready` with a `driver_id` and an `ffd_` token.
 5. Poll a third time; confirm `410 expired`.
 6. Confirm the computer appears in the setup page's list under the name given.
+
+---
+
+## Before this ships
+
+Execution is complete and the final whole-branch review passed. These are the
+things that survived it and still need a human.
+
+### Hard ship blocker
+
+**Manual screen reader pass on `/activate`** — NVDA with Firefox, and
+VoiceOver with Safari. jsdom proved the live regions exist before their
+content changes and that focus lands where intended; it cannot prove either
+is actually spoken, and this page is the only web step in an otherwise
+entirely audio experience.
+
+Listen specifically for a **double announcement on success**. The success
+panel is itself a pre-populated `role="status"` mounted in a single render —
+the same atomic-mount shape as the defect this page was corrected for. It is
+probably masked by the explicit focus move to the success heading, but that
+overlap between a focus announcement and a live-region announcement of the
+same block is exactly where NVDA and VoiceOver disagree.
+
+### Decision owed, not code
+
+**The poll endpoint is unauthenticated, uncached and unmetered.** One indexed
+Convex read per request with no bound at any layer. `consumeFreightFateWrite`
+cannot be used from a query by design, so the limiter cannot live in the
+handler. A scripted or loop-buggy client is unmetered against the database
+I/O budget that is this project's tight constraint. The fix is a Vercel
+firewall rule on `/api/freight-fate/activate/poll`, which is a decision to
+take rather than code to write.
+
+### Carry to the game repository
+
+A malformed `device_code` on poll returns **400 `bad_request`**, not 410
+`expired`. The game must not treat it as a timed-out code and loop; it means
+the stored secret is corrupt and setup should start over.
+
+An over-cap redeem returns **410 `expired`** rather than a distinct status,
+deliberately — an unknown status would reach the game as an unhandled
+response mid-setup. The player learns the real reason (`too_many_computers`)
+at claim time in the browser, where it can be explained.
+
+### Accepted as-is
+
+Modulo bias in `mintUserCode` (~11% skew across 13 of 27 symbols, irrelevant
+against a ten-per-minute claim limit and a ten-minute window); the
+collision-retry path having no test that forces a collision; and a stale
+comment above `armedId`/`signingOutId` in `setup-client.tsx`.
