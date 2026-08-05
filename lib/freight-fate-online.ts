@@ -428,3 +428,59 @@ export async function setFreightFateProfileSharing(input: {
     now: Date.now(),
   });
 }
+
+// Poll spacing the game starts from; it backs off from here on its own.
+export const FREIGHT_FATE_ACTIVATION_INTERVAL_S = 3;
+
+export async function startFreightFateActivation(input: { clientKey: string; siteOrigin: string }) {
+  const client = getConvexClient();
+  if (!client) {
+    return null;
+  }
+  const started = await client.mutation(anyApi.freightFateActivation.startActivation, {
+    clientKey: input.clientKey.slice(0, 64),
+    now: Date.now(),
+  });
+  const formatted = `${started.userCode.slice(0, 4)}-${started.userCode.slice(4)}`;
+  const verificationUri = `${input.siteOrigin}/activate`;
+  return {
+    device_code: started.deviceCode,
+    user_code: formatted,
+    verification_uri: verificationUri,
+    verification_uri_complete: `${verificationUri}?code=${formatted}`,
+    expires_in: Math.max(0, Math.round((started.expiresAt - Date.now()) / 1000)),
+    interval: FREIGHT_FATE_ACTIVATION_INTERVAL_S,
+  };
+}
+
+export async function pollFreightFateActivation(input: { deviceCode: string }) {
+  const client = getConvexClient();
+  if (!client) {
+    return null;
+  }
+  // Hashed here, on the server, so the stored value and the polled value are
+  // produced by the same helper the game never sees.
+  const deviceCodeHash = hashFreightFateToken(input.deviceCode);
+  const status = await client.query(anyApi.freightFateActivation.checkActivation, {
+    deviceCodeHash,
+    now: Date.now(),
+  });
+  if (status !== "ready") {
+    return { status } as const;
+  }
+  const redeemed = await client.mutation(anyApi.freightFateActivation.redeemActivation, {
+    deviceCodeHash,
+    now: Date.now(),
+  });
+  // Lost a race with another poll holding the same secret: the row is gone
+  // and the token went to that caller. Expired is the honest answer.
+  if (!redeemed) {
+    return { status: "expired" } as const;
+  }
+  return {
+    status: "ready",
+    driverId: redeemed.driverId,
+    token: redeemed.token,
+    displayName: redeemed.displayName,
+  } as const;
+}
