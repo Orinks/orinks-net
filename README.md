@@ -33,6 +33,10 @@ Vercel is connected to the GitHub repository and creates deployments automatical
 - `dev` and pull requests deploy as previews.
 - GitHub Actions runs lint, typecheck, and build validation only.
 
+Note what that does and does not isolate. `CONVEX_DEPLOY_KEY` is a *production* deploy key and it is scoped to Preview (dev), so a push to `dev` deploys Convex functions to the production deployment. The site is a preview; the backend it deploys is production. Schema changes reach live data from `dev`, not from `main`.
+
+A branch that changes the Convex schema should therefore run against its own isolated backend: give that branch's Preview environment a Convex **preview** deploy key and leave `CONVEX_URL` and `NEXT_PUBLIC_CONVEX_URL` unset for it, so `npx convex deploy` creates a fresh per-branch deployment instead. See `.env.example` for the full setup, including the Clerk development-instance keys such a branch also needs.
+
 Convex production deployments need `CONVEX_DEPLOY_KEY` configured in Vercel or the build pipeline. The Vercel build command should run Convex before the Next.js build so the Convex functions are deployed with the site:
 
 ```powershell
