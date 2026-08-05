@@ -9,6 +9,13 @@ export const ACTIVATION_ALPHABET = "ABCDEFGHJKMNPQRTUVWXY346789";
 export const ACTIVATION_CODE_LENGTH = 8;
 export const ACTIVATION_TTL_MS = 10 * 60_000;
 
+// Once claimed, the row is bound to a driver and only the holder of the
+// device code can collect it, so the ten-minute guessing window has served
+// its purpose. Restart a short one for collection instead: without this, a
+// claim made near the original deadline strands itself -- the player is told
+// "Computer connected" while the game's next poll finds an expired row.
+export const ACTIVATION_COLLECTION_MS = 2 * 60_000;
+
 // Codes are short because a player hears them; the ten-minute window and the
 // fact that claiming one grants nothing on its own are what keep them safe.
 export function mintUserCode() {
@@ -180,6 +187,7 @@ export const claimActivation = mutation({
       status: "claimed",
       driverId: driver.driverId,
       label: args.label,
+      expiresAt: args.now + ACTIVATION_COLLECTION_MS,
     });
 
     return { ok: true as const };

@@ -473,3 +473,56 @@ describe("sweepExpiredActivations", () => {
     expect(rows[0].userCode).toBe(live.userCode);
   });
 });
+
+describe("claiming resets the collection window", () => {
+  test("claiming near the deadline still leaves time to collect", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    // Claim with four seconds left on the original ten-minute window: the
+    // exact shape of the preview run where a real claim stranded itself.
+    const late = NOW + 10 * 60_000 - 4_000;
+    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      now: late,
+    });
+
+    const hash = await hashDeviceCode(started.deviceCode);
+    // A poll a minute after the ORIGINAL deadline must still succeed.
+    const wellPast = NOW + 11 * 60_000;
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: hash,
+        now: wellPast,
+      }),
+    ).toBe("ready");
+    const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: hash,
+      now: wellPast,
+    });
+    expect(redeemed?.token).toMatch(/^ffd_[0-9a-f]{64}$/);
+  });
+
+  test("the collection window is not unlimited", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      now: NOW,
+    });
+    const hash = await hashDeviceCode(started.deviceCode);
+    expect(
+      await t.query(api.freightFateActivation.checkActivation, {
+        deviceCodeHash: hash,
+        now: NOW + 3 * 60_000,
+      }),
+    ).toBe("expired");
+  });
+});
