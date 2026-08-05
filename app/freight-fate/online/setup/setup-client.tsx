@@ -161,10 +161,6 @@ function DriverSetup() {
   // below watches for myDriver to catch up.
   const justCreatedDriverRef = useRef(false);
 
-  // The computer list's own action state. Deliberately separate from the
-  // driver form's pendingAction: sharing one flag would disable and relabel
-  // unrelated buttons across the page (a11y review).
-
   // Two-click confirm: the armed button's row id (or "rotate-all"). Never
   // auto-reset on a timer — readers take their time (WCAG 2.2.1); reset on
   // blur or Escape, and announce the reset so a silent disarm cannot trick
@@ -269,14 +265,19 @@ function DriverSetup() {
     announcePolite(editing ? "Saving changes." : "Setting up your driver.");
 
     try {
-      const result = await provision({
+      await provision({
         displayName: trimmed,
         visibility: profileSharing ? "public" : "private",
         expandedSharingConsent: profileSharing,
         rotateToken: false,
         now: Date.now(),
       });
-      if (result.token) {
+      // Created versus edited is decided by what was on screen when the
+      // player pressed Save, not by anything in the response. It used to be
+      // read off a minted token, which meant a server that stopped minting
+      // silently stopped moving focus to the computer list — a change a
+      // sighted reviewer would never notice.
+      if (!editing) {
         justCreatedDriverRef.current = true;
         announcePolite(
           `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${CONNECT_INSTRUCTIONS}.`,
@@ -342,10 +343,11 @@ function DriverSetup() {
     setPendingAction("rotate");
     announcePolite("Signing out all computers.");
     try {
-      // Still mints a fresh device token server-side -- that is what makes
-      // the revocation real (every prior token, including this driver's
-      // legacy one, dies with it) -- but nothing on this page can hand that
-      // token to a computer, so it is never read from the result or shown.
+      // Revokes every token this driver has -- device rows and the legacy
+      // single token alike -- and issues none in their place. The driver is
+      // left with no connected computers, which is exactly what the
+      // announcement below tells the player, and the list re-renders empty
+      // to match.
       await provision({
         displayName: myDriver.displayName,
         visibility: myDriver.sharingEnabled ? "public" : "private",
