@@ -1049,9 +1049,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "unavailable" }, { status: 503 });
     }
     return NextResponse.json(started);
-  } catch {
-    // The only expected throw here is the rate limiter.
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  } catch (thrown) {
+    // Only report a back-off when it really is one. startActivation also
+    // throws activation_unavailable, and any Convex or network failure lands
+    // here too -- reporting those as 429 would tell the game to wait when the
+    // service is simply down.
+    const code = (thrown as { data?: { code?: string } })?.data?.code;
+    if (code === "rate_limited") {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }
 ```
@@ -1067,12 +1074,23 @@ import { pollFreightFateActivation } from "@/lib/freight-fate-online";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Parsing and validation get their own try, so a client mistake is the only
+  // thing that can produce a 400. A failure inside pollFreightFateActivation
+  // is ours, not the caller's, and telling a game in another repository that
+  // its request was malformed sends its maintainers hunting a bug they do not
+  // have.
+  let deviceCode = "";
   try {
     const body = (await request.json()) as { device_code?: unknown };
-    const deviceCode = typeof body.device_code === "string" ? body.device_code : "";
-    if (!/^[0-9a-f]{64}$/.test(deviceCode)) {
-      return NextResponse.json({ status: "expired" }, { status: 410 });
-    }
+    deviceCode = typeof body.device_code === "string" ? body.device_code : "";
+  } catch {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+  if (!/^[0-9a-f]{64}$/.test(deviceCode)) {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+
+  try {
     const result = await pollFreightFateActivation({ deviceCode });
     if (!result) {
       return NextResponse.json({ error: "unavailable" }, { status: 503 });
@@ -1090,7 +1108,7 @@ export async function POST(request: Request) {
       display_name: result.displayName,
     });
   } catch {
-    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }
 ```
@@ -1320,7 +1338,12 @@ git commit -m "feat(activation): the /activate page players confirm their code o
 
 Run: `grep -n "clipboard\|Copy\|token" app/freight-fate/online/setup/setup-client.tsx`
 
-Remove the UI that displays a freshly minted token and the buttons that copy it or the Driver ID. Keep the computer list, its add and remove controls, and the legacy-token entry — those still manage real state.
+Remove the UI that displays a freshly minted token and the buttons that copy it or the Driver ID. Keep the computer list, the per-computer remove control, and the legacy-token entry — those still manage real state.
+
+**Correction, found during implementation.** An earlier draft of this step said to keep the *add* control too. That is wrong: "Add computer and get its token" and the token display are the same feature. With the display gone, the button mints a device token nobody can retrieve, burns one of the player's ten computer slots on a dead row, and its own label promises a token that never appears.
+
+- **Remove the "Add computer" control entirely.** With activation codes a player adds a computer *by activating it from that computer*, so there is nothing useful a website button can do. Replace it with a line pointing at that flow: open Freight Fate on the computer you want to add, choose "Set up this computer with orinks.net", and enter its code at `orinks.net/activate`.
+- **Keep "Sign out all computers" but stop minting from it, and reword it.** Revoking everything is still the panic switch it always was; it just must not promise "and get a new token". Say what happens next instead — every computer needs activating again.
 
 - [ ] **Step 2: Update the tests**
 
