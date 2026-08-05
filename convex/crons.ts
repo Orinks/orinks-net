@@ -25,4 +25,14 @@ crons.interval(
   {},
 );
 
+// Activation rows live ten minutes and are deleted the moment they are
+// redeemed, so all this sweeps is codes nobody finished. Hourly is plenty
+// against a ten-minute life, and the pass is batched.
+crons.interval(
+  "drop expired Freight Fate activations",
+  { hours: 1 },
+  internal.freightFateActivation.sweepExpiredActivations,
+  {},
+);
+
 export default crons;

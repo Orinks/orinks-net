@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { driverForIdentity, MAX_DEVICE_TOKENS, mintDeviceTokenRow } from "./freightFate";
@@ -74,6 +74,10 @@ export const ACTIVATION_START_LIMIT = 10;
 // A player types one code, maybe twice after a mishearing. Ten a minute is
 // generous for them and useless for guessing 27^8 possibilities.
 export const ACTIVATION_CLAIM_LIMIT = 10;
+
+// Batched so one pass cannot blow up if a flood of starts ever ages out at
+// once; the hourly cron picks up whatever is left over.
+export const ACTIVATION_SWEEP_BATCH = 200;
 
 export const startActivation = mutation({
   args: { clientKey: v.string(), now: v.number() },
@@ -228,5 +232,23 @@ export const redeemActivation = mutation({
     // spoken name is the only thing standing between a claimed-by-a-stranger
     // code and a player who never notices.
     return { driverId: row.driverId, token, displayName: driver.displayName };
+  },
+});
+
+// Sweep deleted in batches because a cron has no caller to take a clock from, so
+// the server clock is the only clock available and correct here — this is a
+// deliberate documented exception to the no-Date.now() rule.
+export const sweepExpiredActivations = internalMutation({
+  args: { now: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = args.now ?? Date.now();
+    const expired = await ctx.db
+      .query("freightFateActivations")
+      .withIndex("by_expires_at", (q) => q.lte("expiresAt", now))
+      .take(ACTIVATION_SWEEP_BATCH);
+    for (const row of expired) {
+      await ctx.db.delete(row._id);
+    }
+    return { deleted: expired.length };
   },
 });

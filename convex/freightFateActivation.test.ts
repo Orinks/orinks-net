@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import {
   ACTIVATION_ALPHABET,
   ACTIVATION_CODE_LENGTH,
@@ -353,5 +354,27 @@ describe("checkActivation / redeemActivation", () => {
     // Documented behaviour, not a bug: the token belongs to whoever claimed.
     // The game speaks this name so the player hears that it is wrong.
     expect(redeemed?.displayName).toBe("Not Your Driver");
+  });
+});
+
+describe("sweepExpiredActivations", () => {
+  test("drops expired rows and leaves live ones", async () => {
+    const t = setup();
+    const live = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.1.1.1",
+      now: NOW,
+    });
+    await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "2.2.2.2",
+      now: NOW - 20 * 60_000,
+    });
+
+    await t.mutation(internal.freightFateActivation.sweepExpiredActivations, { now: NOW });
+
+    const rows = await t.run(
+      async (ctx) => await ctx.db.query("freightFateActivations").collect(),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].userCode).toBe(live.userCode);
   });
 });
