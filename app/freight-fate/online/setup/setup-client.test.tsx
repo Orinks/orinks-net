@@ -78,3 +78,13 @@ test("driver readiness announces only on the first resolved query state", () => 
   expect(shouldAnnounceDriverReady(false, null)).toBe(true);
   expect(shouldAnnounceDriverReady(true, { displayName: "Updated after save" })).toBe(false);
 });
+
+test("does not display a driver token or a Driver ID, and has no copy buttons", () => {
+  const html = renderToStaticMarkup(<FreightFateSetupClient />);
+  // A real device token always starts with this prefix (see
+  // convex/freightFate.ts); none should ever land in markup.
+  expect(html).not.toMatch(/ffd_/);
+  expect(html).not.toContain("road-star-1234");
+  expect(html).not.toContain("Driver ID");
+  expect(html).not.toContain("Copy");
+});

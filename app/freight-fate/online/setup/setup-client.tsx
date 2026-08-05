@@ -18,14 +18,17 @@ export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unk
 // instead of message; every other kind renders message verbatim.
 type NameError = { kind: "length" | "letters" | "blocked" | "taken"; message: string };
 type PendingAction = "save" | "rotate" | null;
-type CopyStatus = {
-  area: "issued-driver-id" | "issued-token" | "driver";
-  kind: "success" | "error";
-  message: string;
-};
 
 const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
 const RULES_LINK_TEXT = "driver naming rules";
+
+// The one place that explains how a computer actually connects now: no
+// values are copied here. Reused verbatim everywhere the page used to point
+// at the removed copy-paste panel, so the instruction reads the same way
+// every time (a screen reader user should not have to re-parse a reworded
+// synonym for the same step).
+const CONNECT_INSTRUCTIONS =
+  'open Freight Fate, choose "Set up this computer with orinks.net," and enter the code it gives you at orinks.net/activate';
 
 const LETTERS_ERROR: NameError = {
   kind: "letters",
@@ -103,7 +106,7 @@ export function FreightFateSetupClient() {
       <Section title="Sign in to continue">
         <p>
           Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account — to
-          set up your driver identity and get a posting token for the game.
+          set up your driver identity, then connect Freight Fate to it from the game.
         </p>
         <AccountControls />
       </Section>
@@ -151,15 +154,13 @@ function DriverSetup() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [saveError, setSaveError] = useState("");
   const [rotateError, setRotateError] = useState("");
-  // Carries BOTH values from the provision result: the reactive getMyDriver
-  // query can lag the mutation, so myDriver may still be null at the moment
-  // the panel renders and focus arrives (a11y review: an empty ID field
-  // would be copied as nothing). label names the computer this token was
-  // minted for — the panel is shared state, so it must say which one.
-  const [issued, setIssued] = useState<{ token: string; driverId: string; label: string | null } | null>(null);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus | null>(null);
   const [initialized, setInitialized] = useState(false);
   const driverReadyAnnounced = useRef(false);
+  // Set right before a provision call that mints a brand-new driver (never
+  // for an edit of an existing one). The reactive getMyDriver query lags the
+  // mutation, so this cannot just check myDriver at focus time — the effect
+  // below watches for myDriver to catch up.
+  const justCreatedDriverRef = useRef(false);
 
   // The computer list's own action state. Deliberately separate from the
   // driver form's pendingAction: sharing one flag would disable and relabel
@@ -207,7 +208,6 @@ function DriverSetup() {
   }, [announcePolite, myDriver]);
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const tokenHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Prefill once the driver query resolves: from the existing driver when
   // editing, otherwise from the Clerk handle (WCAG 3.3.7 Redundant Entry).
@@ -225,28 +225,16 @@ function DriverSetup() {
     setInitialized(true);
   }, [initialized, myDriver, user]);
 
-  // Bring the reader to the connect panel the moment it is revealed.
+  // A brand-new driver reveals the computer list for the first time; bring
+  // the reader there the moment it mounts. The reactive query
+  // can lag the mutation (see justCreatedDriverRef above), so this waits for
+  // myDriver itself to become truthy rather than firing right after submit.
   useEffect(() => {
-    if (issued) {
-      tokenHeadingRef.current?.focus();
+    if (justCreatedDriverRef.current && myDriver) {
+      justCreatedDriverRef.current = false;
+      computersHeadingRef.current?.focus();
     }
-  }, [issued]);
-
-  const copyText = useCallback(
-    async (value: string, label: string, area: CopyStatus["area"]) => {
-      try {
-        await navigator.clipboard.writeText(value);
-        const message = `${label} copied to clipboard.`;
-        setCopyStatus({ area, kind: "success", message });
-        announcePolite(message);
-      } catch {
-        const message = `Copy failed. Select the ${label} field and press Control C to copy it.`;
-        setCopyStatus({ area, kind: "error", message });
-        announceError(message);
-      }
-    },
-    [announceError, announcePolite],
-  );
+  }, [myDriver]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -294,10 +282,9 @@ function DriverSetup() {
         now: Date.now(),
       });
       if (result.token) {
-        setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId, label: null });
+        justCreatedDriverRef.current = true;
         announcePolite(
-          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${CONNECT_INSTRUCTIONS}.`,
         );
       } else {
         announcePolite(
@@ -368,10 +355,8 @@ function DriverSetup() {
         now: Date.now(),
       });
       if (result.token) {
-        setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId, label: null });
         announcePolite(
-          "Done. Every computer is signed out. The new token is shown below — copy it now; every other computer will need its own new token to reconnect.",
+          `Done. Every computer is signed out. On each one, ${CONNECT_INSTRUCTIONS} to reconnect.`,
         );
       }
     } catch {
@@ -393,14 +378,12 @@ function DriverSetup() {
     setAddError(null);
     announcePolite(`Adding ${label}.`);
     try {
-      const result = await addComputer({
+      await addComputer({
         label: computerName.trim() || undefined,
         now: Date.now(),
       });
-      setCopyStatus(null);
-      setIssued({ token: result.token, driverId: result.driverId, label });
       setComputerName("");
-      announcePolite(`${label} added. Copy its one-time token below.`);
+      announcePolite(`${label} added. On that computer, ${CONNECT_INSTRUCTIONS} to connect it.`);
     } catch (error) {
       const data =
         error instanceof ConvexError
@@ -620,8 +603,8 @@ function DriverSetup() {
 
         <div className="space-y-2 border-t border-line pt-3">
           <p className="text-sm text-slate-600">
-            If a token may have leaked, sign out everything at once: every computer stops posting
-            and you get one fresh token for the computer you are on.
+            If a token may have leaked, sign out everything at once: every computer stops posting,
+            and each one — including this one — will need to reconnect.
           </p>
           <button
             aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
@@ -663,105 +646,6 @@ function DriverSetup() {
         {errorStatus}
       </div>
 
-      {issued ? (
-        <section
-          aria-labelledby="ff-token-heading"
-          className="space-y-3 rounded border border-line bg-white p-5"
-        >
-          <h2
-            className={`text-xl font-bold text-ink ${focusRing}`}
-            id="ff-token-heading"
-            ref={tokenHeadingRef}
-            tabIndex={-1}
-          >
-            Connect Freight Fate
-          </h2>
-          <p className="text-slate-800">
-            {issued.label ? (
-              <>
-                This token is for <strong>{issued.label}</strong>.{" "}
-              </>
-            ) : null}
-            Freight Fate needs two values. In the game, open Online Sharing, then paste your
-            Driver ID first and your token second.
-          </p>
-
-          <div className="space-y-2">
-            <label className="block font-semibold text-ink" htmlFor="ff-token-driver-id">
-              Driver ID
-            </label>
-            <p className="text-sm text-slate-600" id="ff-token-driver-id-hint">
-              Paste this into Freight Fate first. It is not secret.
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                aria-describedby="ff-token-driver-id-hint"
-                autoComplete="off"
-                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                id="ff-token-driver-id"
-                onFocus={(event) => event.currentTarget.select()}
-                readOnly
-                spellCheck={false}
-                type="text"
-                value={issued.driverId}
-              />
-              <button
-                className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                aria-describedby={copyStatus?.area === "issued-driver-id" ? "ff-issued-driver-copy-status" : undefined}
-                onClick={() => copyText(issued.driverId, "Driver ID", "issued-driver-id")}
-                type="button"
-              >
-                Copy Driver ID
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-semibold text-red-800" id="ff-token-desc">
-              Your token is shown once. Copy it into Freight Fate on your PC now — you will not be
-              able to see it again.
-            </p>
-            <label className="block font-semibold text-ink" htmlFor="ff-driver-token">
-              Driver token
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                aria-describedby="ff-token-desc"
-                autoComplete="off"
-                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                id="ff-driver-token"
-                onFocus={(event) => event.currentTarget.select()}
-                readOnly
-                spellCheck={false}
-                type="text"
-                value={issued.token}
-              />
-              <button
-                className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                aria-describedby={copyStatus?.area === "issued-token" ? "ff-issued-token-copy-status" : undefined}
-                onClick={() => copyText(issued.token, "Token", "issued-token")}
-                type="button"
-              >
-                Copy token
-              </button>
-            </div>
-          </div>
-
-          {copyStatus?.area === "issued-driver-id" || copyStatus?.area === "issued-token" ? (
-            <p
-              className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
-              id={
-                copyStatus.area === "issued-driver-id"
-                  ? "ff-issued-driver-copy-status"
-                  : "ff-issued-token-copy-status"
-              }
-            >
-              {copyStatus.message}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
       {myDriver === undefined ? (
         <Section title="Your driver">
           <p>Loading your driver…</p>
@@ -781,8 +665,8 @@ function DriverSetup() {
           >
             <p className="text-slate-800">
               {myDriver
-                ? "Update your driver name or profile sharing. Your Driver ID stays the same; tokens for each of your computers are managed below."
-                : "Create your driver identity. This makes a driver profile and issues a posting token you paste into Freight Fate on your PC."}
+                ? "Update your driver name or profile sharing. Tokens for each of your computers are managed below."
+                : `Create your driver identity. Then, to connect Freight Fate to it, ${CONNECT_INSTRUCTIONS}.`}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
 
@@ -876,44 +760,6 @@ function DriverSetup() {
 
           {myDriver ? (
             <div className="mt-6 space-y-4 rounded border border-line bg-white p-5">
-              <div className="space-y-2">
-                <label className="block font-semibold text-ink" htmlFor="ff-driver-id">
-                  Driver ID
-                </label>
-                <p className="text-sm text-slate-600" id="ff-driver-id-hint">
-                  Paste this into Freight Fate along with your token. It is not secret.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    aria-describedby="ff-driver-id-hint"
-                    autoComplete="off"
-                    className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                    id="ff-driver-id"
-                    onFocus={(event) => event.currentTarget.select()}
-                    readOnly
-                    spellCheck={false}
-                    type="text"
-                    value={myDriver.driverId}
-                  />
-                  <button
-                    className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 ${focusRing}`}
-                    aria-describedby={copyStatus?.area === "driver" ? "ff-driver-copy-status" : undefined}
-                    onClick={() => copyText(myDriver.driverId, "Driver ID", "driver")}
-                    type="button"
-                  >
-                    Copy Driver ID
-                  </button>
-                </div>
-                {copyStatus?.area === "driver" ? (
-                  <p
-                    className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
-                    id="ff-driver-copy-status"
-                  >
-                    {copyStatus.message}
-                  </p>
-                ) : null}
-              </div>
-
               {!myDriver.sharingEnabled ? (
                 <p className="text-slate-700">Profile sharing is off.</p>
               ) : (
