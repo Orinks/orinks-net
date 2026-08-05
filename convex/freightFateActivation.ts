@@ -1,4 +1,6 @@
+import { mutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import { consumeFreightFateWrite } from "./freightFateRateLimit";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -62,3 +64,58 @@ export async function hashDeviceCode(code: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
   return toHex(new Uint8Array(digest));
 }
+
+// Ten starts a minute from one address is far more than a player needs and
+// far less than a script wants. There is no driver yet, so the limiter is
+// keyed by whatever the route can identify the caller by.
+export const ACTIVATION_START_LIMIT = 10;
+
+// A player types one code, maybe twice after a mishearing. Ten a minute is
+// generous for them and useless for guessing 27^8 possibilities.
+export const ACTIVATION_CLAIM_LIMIT = 10;
+
+export const startActivation = mutation({
+  args: { clientKey: v.string(), now: v.number() },
+  handler: async (ctx, args) => {
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "activation_start",
+      driverId: args.clientKey,
+      now: args.now,
+      limit: ACTIVATION_START_LIMIT,
+    });
+
+    if (!allowed) {
+      throw new ConvexError({ code: "rate_limited" as const });
+    }
+
+    // Retry on collision rather than failing: a duplicate among live codes is
+    // rare, and a player should never see an error for one.
+    let userCode = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = mintUserCode();
+      const clash = await ctx.db
+        .query("freightFateActivations")
+        .withIndex("by_user_code", (q) => q.eq("userCode", candidate))
+        .unique();
+      if (!clash) {
+        userCode = candidate;
+        break;
+      }
+    }
+    if (!userCode) {
+      throw new ConvexError({ code: "activation_unavailable" as const });
+    }
+
+    const deviceCode = mintDeviceCode();
+    const expiresAt = args.now + ACTIVATION_TTL_MS;
+    await ctx.db.insert("freightFateActivations", {
+      deviceCodeHash: await hashDeviceCode(deviceCode),
+      userCode,
+      status: "pending",
+      createdAt: args.now,
+      expiresAt,
+    });
+
+    return { deviceCode, userCode, expiresAt };
+  },
+});
