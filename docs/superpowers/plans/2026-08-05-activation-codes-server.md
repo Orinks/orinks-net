@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Repo `orinks-net`, branch `feat/activation-codes`. Do not push to `dev` until the manual pass in the spec passes on the branch preview.
-- Convex mutations take the caller's clock as an explicit `now: v.number()` argument. Follow `provisionDriver` and `addComputer`; do not call `Date.now()` inside a handler.
+- Convex mutations take the caller's clock as an explicit `now: v.number()` argument. Follow `provisionDriver` and `removeComputer`; do not call `Date.now()` inside a handler.
 - Secrets are stored as SHA-256 hex only, never in the clear. Match `hashDriverToken` in `convex/freightFate.ts` byte for byte.
 - Typed failures use `ConvexError({ code: "..." })`, matching `NAME_TAKEN` and `too_many_computers`.
 - Activation code alphabet is exactly `ABCDEFGHJKMNPQRTUVWXY346789` — 27 characters, the alphanumerics minus `O I L S Z 0 1 2 5`.

@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { freightFateSaveSlotName } from "./freight-fate-save-name";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
+import { formatUserCode } from "@/convex/freightFateActivation";
 
 export type FreightFateVisibility = "public" | "private" | "unlisted";
 
@@ -441,7 +442,10 @@ export async function startFreightFateActivation(input: { clientKey: string; sit
     clientKey: input.clientKey.slice(0, 64),
     now: Date.now(),
   });
-  const formatted = `${started.userCode.slice(0, 4)}-${started.userCode.slice(4)}`;
+  // Formatted by the same function the /activate page's parser was built
+  // against, so the dash the game speaks and the dash the page forgives can
+  // never drift apart.
+  const formatted = formatUserCode(started.userCode);
   const verificationUri = `${input.siteOrigin}/activate`;
   return {
     device_code: started.deviceCode,
