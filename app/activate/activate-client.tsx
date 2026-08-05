@@ -271,8 +271,8 @@ export default function ActivateClient({
 
           {initialCode ? (
             <p className="text-slate-800">
-              We received a code from Freight Fate: {initialCode}. Check it matches what the game
-              read to you.
+              We received a code from Freight Fate: {initialCode}. Check it matches the one the game
+              is showing.
             </p>
           ) : null}
 

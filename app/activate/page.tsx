@@ -20,7 +20,7 @@ export default async function ActivatePage({
     <div className="space-y-8">
       <PageHeader
         title="Activate Freight Fate"
-        intro="Confirm the activation code Freight Fate read aloud to connect this computer to your orinks.net account."
+        intro="Confirm the activation code Freight Fate is showing to connect this computer to your orinks.net account."
       />
 
       <FreightFateOnlineProviders>
