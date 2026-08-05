@@ -63,14 +63,25 @@ test("the computer list names every sign-out control and keeps list semantics", 
   expect(html).toContain('aria-label="Sign out the original token"');
   expect(html).toContain("Not used yet.");
   expect(html).toContain("Original token (from before this computer list)");
-  // The add form is a labelled input, not a bare button.
-  expect(html).toContain('<label class="block font-semibold text-ink" for="new-computer-name">');
-  expect(html).toContain("Add computer and get its token");
-  // The full sign-out is present and not pre-armed.
-  expect(html).toContain("Sign out all computers and get a new token");
+  // There is no add-computer form anymore -- a computer is added by
+  // activating it from the game, not from a button on this page.
+  expect(html).not.toContain('for="new-computer-name"');
+  expect(html).toContain("Set up this computer with orinks.net");
+  // The full sign-out is present, plainly labelled, and not pre-armed.
+  expect(html).toContain("Sign out all computers");
   expect(html).not.toContain("Confirm: sign out all computers");
   // The one-token copy is gone.
   expect(html).not.toContain("Rotate token");
+});
+
+test("no remaining control promises a token", () => {
+  const html = renderToStaticMarkup(<FreightFateSetupClient />);
+  // Both buttons used to promise a token the page would show; neither does
+  // anymore, and nothing on the page ever displays one (see the "does not
+  // display a driver token" test below).
+  expect(html).not.toContain("get its token");
+  expect(html).not.toContain("get a new token");
+  expect(html).not.toContain("Add computer");
 });
 
 test("driver readiness announces only on the first resolved query state", () => {

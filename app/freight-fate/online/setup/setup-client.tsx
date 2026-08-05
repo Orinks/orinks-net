@@ -144,7 +144,6 @@ function DriverSetup() {
   const myDriver = useQuery(api.freightFate.getMyDriver, {});
   const myComputers = useQuery(api.freightFate.getMyComputers, {});
   const provision = useMutation(api.freightFate.provisionDriver);
-  const addComputer = useMutation(api.freightFate.addComputer);
   const removeComputer = useMutation(api.freightFate.removeComputer);
   const { politeStatus, errorStatus, announcePolite, announceError } = useAnnouncer();
 
@@ -165,11 +164,7 @@ function DriverSetup() {
   // The computer list's own action state. Deliberately separate from the
   // driver form's pendingAction: sharing one flag would disable and relabel
   // unrelated buttons across the page (a11y review).
-  const [computerName, setComputerName] = useState("");
-  const [addPending, setAddPending] = useState(false);
-  // Persistent inline error for the add form: live-region text is ephemeral
-  // and cannot be re-read, so the limit error must also exist in the page.
-  const [addError, setAddError] = useState<string | null>(null);
+
   // Two-click confirm: the armed button's row id (or "rotate-all"). Never
   // auto-reset on a timer — readers take their time (WCAG 2.2.1); reset on
   // blur or Escape, and announce the reset so a silent disarm cannot trick
@@ -347,56 +342,26 @@ function DriverSetup() {
     setPendingAction("rotate");
     announcePolite("Signing out all computers.");
     try {
-      const result = await provision({
+      // Still mints a fresh device token server-side -- that is what makes
+      // the revocation real (every prior token, including this driver's
+      // legacy one, dies with it) -- but nothing on this page can hand that
+      // token to a computer, so it is never read from the result or shown.
+      await provision({
         displayName: myDriver.displayName,
         visibility: myDriver.sharingEnabled ? "public" : "private",
         expandedSharingConsent: myDriver.sharingEnabled,
         rotateToken: true,
         now: Date.now(),
       });
-      if (result.token) {
-        announcePolite(
-          `Done. Every computer is signed out. On each one, ${CONNECT_INSTRUCTIONS} to reconnect.`,
-        );
-      }
+      announcePolite(
+        `Done. Every computer is signed out. Each one needs activating again: ${CONNECT_INSTRUCTIONS}.`,
+      );
     } catch {
       const message = "Signing out all computers failed. Nothing changed. Please try again.";
       setRotateError(message);
       announceError(message);
     } finally {
       setPendingAction(null);
-    }
-  }
-
-  async function handleAddComputer(event: React.FormEvent) {
-    event.preventDefault();
-    if (addPending) {
-      return;
-    }
-    const label = computerName.trim() || "My computer";
-    setAddPending(true);
-    setAddError(null);
-    announcePolite(`Adding ${label}.`);
-    try {
-      await addComputer({
-        label: computerName.trim() || undefined,
-        now: Date.now(),
-      });
-      setComputerName("");
-      announcePolite(`${label} added. On that computer, ${CONNECT_INSTRUCTIONS} to connect it.`);
-    } catch (error) {
-      const data =
-        error instanceof ConvexError
-          ? (error.data as { code?: string; limit?: number } | undefined)
-          : undefined;
-      const message =
-        data?.code === "too_many_computers"
-          ? `You have reached the limit of ${data.limit ?? 10} computers. Sign out a computer you no longer use, then try again.`
-          : "Adding the computer failed. Nothing changed. Please try again.";
-      setAddError(message);
-      announceError(message);
-    } finally {
-      setAddPending(false);
     }
   }
 
@@ -451,16 +416,11 @@ function DriverSetup() {
   type MyComputers = typeof myComputers;
 
   function ComputerList(props: {
-    addError: string | null;
-    addPending: boolean;
     armedId: string | null;
-    computerName: string;
     computersHeadingRef: React.RefObject<HTMLHeadingElement | null>;
     myComputers: MyComputers;
-    onAddComputer: (event: React.FormEvent) => void;
     onArmedBlur: (id: string, spokenLabel: string) => void;
     onArmedKeyDown: (event: React.KeyboardEvent, id: string, spokenLabel: string) => void;
-    onComputerName: (value: string) => void;
     onRotateAll: () => void;
     onSignOut: (row: ComputerRow, rows: ComputerRow[]) => void;
     rotateError: string;
@@ -504,16 +464,14 @@ function DriverSetup() {
           Your computers
         </h3>
         <p className="text-sm text-slate-700">
-          Each computer you play on gets its own token. Adding a computer never signs out the
+          Each computer you play on gets its own token. Connecting a new one never signs out the
           others, so your desktop keeps working when you set up a laptop.
         </p>
 
         {computers === undefined ? (
           <p className="text-slate-700">Loading your computers…</p>
         ) : rows.length === 0 ? (
-          <p className="text-slate-700">
-            No computers are connected yet. Add one below to get its token.
-          </p>
+          <p className="text-slate-700">No computers are connected yet.</p>
         ) : (
           // Tailwind's list-style reset strips list semantics in some
           // readers; the explicit role keeps "list, N items" announced.
@@ -564,47 +522,14 @@ function DriverSetup() {
           </ul>
         )}
 
-        <form className="space-y-2" onSubmit={props.onAddComputer}>
-          <label className="block font-semibold text-ink" htmlFor="new-computer-name">
-            Computer name
-          </label>
-          <p className="text-sm text-slate-600" id="new-computer-name-hint">
-            Just for you, to tell your computers apart — for example Desktop or Laptop. Leave it
-            blank for “My computer”.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              aria-describedby={
-                props.addError ? "new-computer-name-hint new-computer-error" : "new-computer-name-hint"
-              }
-              autoComplete="off"
-              className="w-full rounded border border-line-strong px-3 py-2 text-ink"
-              id="new-computer-name"
-              maxLength={64}
-              onChange={(event) => props.onComputerName(event.target.value)}
-              type="text"
-              value={props.computerName}
-            />
-            <button
-              aria-disabled={props.addPending || undefined}
-              className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
-              type="submit"
-            >
-              {props.addPending ? "Adding…" : "Add computer and get its token"}
-            </button>
-          </div>
-          {props.addError ? (
-            <p className="text-sm text-red-700" id="new-computer-error">
-              <span aria-hidden="true">⚠ </span>
-              {props.addError}
-            </p>
-          ) : null}
-        </form>
+        <p className="text-sm text-slate-700">
+          To add a computer, {CONNECT_INSTRUCTIONS}.
+        </p>
 
         <div className="space-y-2 border-t border-line pt-3">
           <p className="text-sm text-slate-600">
             If a token may have leaked, sign out everything at once: every computer stops posting,
-            and each one — including this one — will need to reconnect.
+            and each one — including this one — will need activating again.
           </p>
           <button
             aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
@@ -624,7 +549,7 @@ function DriverSetup() {
               ? "Signing out…"
               : props.armedId === "rotate-all"
                 ? "Confirm: sign out all computers"
-                : "Sign out all computers and get a new token"}
+                : "Sign out all computers"}
           </button>
           {props.rotateError ? (
             <p className="text-sm text-red-700" id="rotate-token-error">
@@ -772,21 +697,17 @@ function DriverSetup() {
               )}
 
               {/* Called directly (not as a JSX element): a component defined
-                  inside DriverSetup would remount every render and drop
-                  keyboard focus out of the computer-name field mid-typing.
-                  Must remain hook-free — this is a conditional direct call,
-                  and rules-of-hooks lint cannot see into it. */}
+                  inside DriverSetup would remount every render, tearing down
+                  rowButtonRefs and dropping keyboard focus out of an armed
+                  "Confirm sign out" button mid-interaction. Must remain
+                  hook-free — this is a conditional direct call, and
+                  rules-of-hooks lint cannot see into it. */}
               {ComputerList({
-                addError,
-                addPending,
                 armedId,
-                computerName,
                 computersHeadingRef,
                 myComputers,
-                onAddComputer: handleAddComputer,
                 onArmedBlur: armedBlur,
                 onArmedKeyDown: armedKeyDown,
-                onComputerName: setComputerName,
                 onRotateAll: handleRotateAll,
                 onSignOut: handleSignOut,
                 rotateError,
