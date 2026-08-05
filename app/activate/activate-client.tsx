@@ -1,11 +1,22 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
+import {
+  LETTERS_ERROR,
+  NAME_HINT_PREFIX,
+  NAME_HINT_SUFFIX,
+  NAME_RULES_HREF,
+  NAME_RULES_LINK_TEXT,
+  TAKEN_ERROR,
+  nameRejectionForReason,
+  type NameError,
+} from "@/lib/freight-fate-driver-name";
 
 type ClaimFailureCode =
   | "not_signed_in"
@@ -16,27 +27,31 @@ type ClaimFailureCode =
   | "name_taken";
 
 // claimActivation can also create a driver in the same transaction when the
-// account has none and a name was supplied. This page never sends a name, so
-// no_driver is the only way that path shows up here -- but the mutation's
-// return type still carries name_taken/name_rejected, so the type has to
-// account for them. The inline-name flow on the setup page is what actually
-// handles those.
+// account has none and a name was supplied. When ActivateGate resolves the
+// account to have no driver yet, ActivateClient renders the three-field
+// shape below and always supplies a name, so name_taken/name_rejected are
+// real, reachable outcomes here -- not just carried for type completeness.
 type ClaimResult =
   | { ok: true }
   | { ok: false; code: ClaimFailureCode }
   | { ok: false; code: "name_rejected"; reason: "blocked" | "needs_letters" };
 
-type ClaimFn = (input: { userCode: string; label?: string }) => Promise<ClaimResult>;
+type ClaimFn = (input: {
+  userCode: string;
+  label?: string;
+  displayName?: string;
+}) => Promise<ClaimResult>;
 
 // claimActivation returns a discriminated result rather than throwing (an
 // earlier design threw a ConvexError, but that rolled back the rate
 // limiter's writes on every rejection). Branch on result.ok / result.code,
 // never on a caught error.
 //
-// Partial, not Record<ClaimFailureCode, string>: name_taken (like
-// name_rejected) can never actually reach this page, since it never sends a
-// name, so it falls through to the generic fallback below rather than
-// needing a dedicated message here.
+// Partial, not Record<ClaimFailureCode, string>: name_taken and
+// name_rejected are field errors on the driver-name input (handled
+// separately in onSubmit via TAKEN_ERROR / nameRejectionForReason, the same
+// wording the setup page uses), not generic alert text, so they are
+// deliberately absent here.
 const MESSAGES: Partial<Record<string, string>> = {
   unknown_code:
     "That code was not recognised, or it has expired. Codes last ten minutes. Start setup again in Freight Fate to get a new one.",
@@ -56,23 +71,37 @@ const focusRing =
 export default function ActivateClient({
   claim,
   initialCode,
+  needsDriver = false,
+  prefillName = "",
 }: {
   claim: ClaimFn;
   initialCode: string;
+  // Set by ActivateGate once getMyDriver resolves to null: the account is
+  // signed in but has no driver, so this renders the three-field shape and
+  // sends displayName on submit. Defaults to false (the two-field shape)
+  // so every existing caller/test is unaffected.
+  needsDriver?: boolean;
+  prefillName?: string;
 }) {
   const codeId = useId();
   const labelFieldId = useId();
   const errorId = useId();
   const hintId = useId();
+  const nameFieldId = useId();
+  const nameHintId = `${nameFieldId}-hint`;
+  const nameErrorId = `${nameFieldId}-error`;
 
   const [code, setCode] = useState(initialCode);
   const [label, setLabel] = useState("");
+  const [name, setName] = useState(prefillName);
+  const [nameError, setNameError] = useState<NameError | null>(null);
   const [error, setError] = useState("");
   const [invalidCode, setInvalidCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
   const codeRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
 
@@ -88,6 +117,21 @@ export default function ActivateClient({
     }
   }, [done]);
 
+  // Shows a rejection on the name field. Moving focus makes the reader
+  // announce label, invalid state, and error text in one pass -- the same
+  // mechanism setup-client.tsx's showNameError uses. But when the submit
+  // came from Enter inside the name field itself, focus() below is a no-op
+  // (it is already focused), so nothing would announce the change; that
+  // case routes the message through the alert live region instead.
+  function showNameError(rejection: NameError) {
+    setNameError(rejection);
+    if (document.activeElement === nameRef.current) {
+      setError(rejection.message);
+    } else {
+      requestAnimationFrame(() => nameRef.current?.focus());
+    }
+  }
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     // Guard clause, not the native `disabled` attribute -- disabling the
@@ -95,13 +139,44 @@ export default function ActivateClient({
     if (busy) {
       return;
     }
-    setBusy(true);
     setError("");
     setInvalidCode(false);
+    setNameError(null);
+
+    // Name pre-checks run client-side before any network call, so a locally
+    // invalid name can never collide with a code error in one round trip --
+    // mirrors DriverSetup's handleSubmit exactly (same thresholds, same
+    // LETTERS_ERROR).
+    let trimmedName = "";
+    if (needsDriver) {
+      trimmedName = name.trim();
+      if (trimmedName.length < 3 || trimmedName.length > 48) {
+        showNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
+        return;
+      }
+      if ((trimmedName.match(/\p{L}/gu) ?? []).length < 3) {
+        showNameError(LETTERS_ERROR);
+        return;
+      }
+    }
+
+    setBusy(true);
     try {
-      const result = await claim({ userCode: code, label: label.trim() || undefined });
+      const result = await claim({
+        userCode: code,
+        label: label.trim() || undefined,
+        ...(needsDriver ? { displayName: trimmedName } : {}),
+      });
       if (result.ok) {
         setDone(true);
+        return;
+      }
+      if (result.code === "name_taken") {
+        showNameError(TAKEN_ERROR);
+        return;
+      }
+      if (result.code === "name_rejected") {
+        showNameError(nameRejectionForReason(result.reason));
         return;
       }
       const message = MESSAGES[result.code] ?? "Something went wrong. Try again in a moment.";
@@ -122,6 +197,12 @@ export default function ActivateClient({
   }
 
   const describedBy = `${errorId} ${hintId}`;
+  const nameDescribedBy =
+    [nameError ? nameErrorId : null, nameHintId].filter(Boolean).join(" ") || undefined;
+  const busyLabel = needsDriver ? "Setting up and connecting…" : "Connecting…";
+  const idleLabel = needsDriver
+    ? "Create driver and connect this computer"
+    : "Connect this computer";
 
   return (
     <>
@@ -146,7 +227,7 @@ export default function ActivateClient({
           role="status" element in the tree at a time -- the success panel
           below becomes the sole status region. */}
       <div aria-atomic="true" className="sr-only" role={done ? undefined : "status"}>
-        {busy ? "Connecting…" : ""}
+        {busy ? busyLabel : ""}
       </div>
 
       {done ? (
@@ -164,7 +245,15 @@ export default function ActivateClient({
           noValidate
           onSubmit={onSubmit}
         >
-          <h2 className="text-2xl font-bold text-ink">Activate Freight Fate</h2>
+          <h2 className="text-2xl font-bold text-ink">
+            {needsDriver ? "Create your driver and activate Freight Fate" : "Activate Freight Fate"}
+          </h2>
+          {needsDriver ? (
+            <p className="text-slate-800">
+              This orinks.net account does not have a Freight Fate driver yet, so this page will
+              also create one.
+            </p>
+          ) : null}
           <p className="text-slate-800">
             Enter the activation code Freight Fate is showing on this computer.
           </p>
@@ -215,6 +304,49 @@ export default function ActivateClient({
             </p>
           </div>
 
+          {needsDriver ? (
+            <div className="space-y-2">
+              <label className="block font-semibold text-ink" htmlFor={nameFieldId}>
+                Driver name{" "}
+                <span aria-hidden="true" className="text-red-700">
+                  *
+                </span>
+              </label>
+              <input
+                aria-describedby={nameDescribedBy}
+                aria-invalid={nameError ? true : undefined}
+                aria-required="true"
+                className="w-full rounded border border-line-strong px-3 py-2 text-ink"
+                id={nameFieldId}
+                maxLength={48}
+                name="displayName"
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (nameError) {
+                    setNameError(null);
+                  }
+                }}
+                ref={nameRef}
+                required
+                type="text"
+                value={name}
+              />
+              {nameError ? (
+                <p className="text-sm text-red-700" id={nameErrorId}>
+                  <span aria-hidden="true">⚠ </span>
+                  {nameError.message}
+                </p>
+              ) : null}
+              <p className="text-sm text-slate-600" id={nameHintId}>
+                {NAME_HINT_PREFIX}{" "}
+                <Link className={focusRing} href={NAME_RULES_HREF}>
+                  {NAME_RULES_LINK_TEXT}
+                </Link>
+                {NAME_HINT_SUFFIX}
+              </p>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             <label className="block font-semibold text-ink" htmlFor={labelFieldId}>
               Name this computer
@@ -241,7 +373,7 @@ export default function ActivateClient({
             className={`rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
             type="submit"
           >
-            {busy ? "Connecting…" : "Connect this computer"}
+            {busy ? busyLabel : idleLabel}
           </button>
         </form>
       )}
@@ -253,7 +385,13 @@ export default function ActivateClient({
 // (copied from FreightFateSetupClient in setup-client.tsx) and passes a
 // `claim` that calls the real Convex mutation with now: Date.now().
 export function ActivateGate({ initialCode }: { initialCode: string }) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+  // Same query DriverSetup uses. No fetchQuery-with-Clerk-token pattern
+  // exists elsewhere in this codebase (checked: nothing in app/ resolves
+  // Convex data server-side via a Clerk token the way page.tsx resolves
+  // ?code=), so this client-side gate is the floor the a11y requirement
+  // calls for, not a corner cut.
+  const myDriver = useQuery(api.freightFate.getMyDriver, {});
   const claimActivation = useMutation(api.freightFateActivation.claimActivation);
   const claim = useCallback<ClaimFn>(
     (input) => claimActivation({ ...input, now: Date.now() }),
@@ -262,7 +400,13 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
 
   const regionRef = useRef<HTMLDivElement>(null);
   const previousSignedIn = useRef(isSignedIn);
-  const accountStatus = !isLoaded ? "Loading your account…" : isSignedIn ? "" : "Sign in required.";
+  const accountStatus = !isLoaded
+    ? "Loading your account…"
+    : !isSignedIn
+      ? "Sign in required."
+      : myDriver === undefined
+        ? "Checking your driver…"
+        : "";
 
   useEffect(() => {
     const justSignedIn = isSignedIn === true && previousSignedIn.current === false;
@@ -272,26 +416,51 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
     }
   }, [isSignedIn]);
 
+  // The single sr-only status announcement, rendered at exactly one of the
+  // three call sites below depending on state -- never two at once. For the
+  // signed-in states it renders inside the region itself (see the third
+  // branch): the sign-in transition above already moves focus to that
+  // region, so a "Checking your driver…" announcement rendered outside it
+  // would sit at a spot the reader's cursor has already left.
+  const statusDiv = (
+    <div aria-atomic="true" className="sr-only" role="status">
+      {accountStatus}
+    </div>
+  );
+
   return (
     <>
-      <div aria-atomic="true" className="sr-only" role="status">
-        {accountStatus}
-      </div>
       {!isLoaded ? (
-        <Section title="Activate Freight Fate">
-          <p>Loading your account…</p>
-        </Section>
+        <>
+          {statusDiv}
+          <Section title="Activate Freight Fate">
+            <p>Loading your account…</p>
+          </Section>
+        </>
       ) : !isSignedIn ? (
-        <Section title="Sign in to continue">
-          <p>
-            Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account —
-            then enter the activation code Freight Fate is showing on this computer.
-          </p>
-          <AccountControls />
-        </Section>
+        <>
+          {statusDiv}
+          <Section title="Sign in to continue">
+            <p>
+              Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account
+              — then enter the activation code Freight Fate is showing on this computer.
+            </p>
+            <AccountControls />
+          </Section>
+        </>
       ) : (
         <div aria-label="Freight Fate activation" ref={regionRef} role="region" tabIndex={-1}>
-          <ActivateClient claim={claim} initialCode={initialCode} />
+          {statusDiv}
+          {myDriver === undefined ? (
+            <p className="text-slate-800">Checking your driver…</p>
+          ) : (
+            <ActivateClient
+              claim={claim}
+              initialCode={initialCode}
+              needsDriver={myDriver === null}
+              prefillName={user?.username ?? user?.firstName ?? ""}
+            />
+          )}
         </div>
       )}
     </>

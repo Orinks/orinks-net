@@ -1,8 +1,61 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, test, vi } from "vitest";
-import ActivateClient from "./activate-client";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  LETTERS_ERROR,
+  NAME_RULES_HREF,
+  NAME_RULES_LINK_TEXT,
+  TAKEN_ERROR,
+} from "@/lib/freight-fate-driver-name";
+
+// requirement 9 needs ActivateGate, the wrapper that queries driver state.
+// It calls useUser/useQuery/useMutation for real, so those modules are
+// mocked here the same way app/freight-fate/online/setup/setup-client.test.tsx
+// mocks them for DriverSetup -- ActivateClient (the plain component every
+// other test in this file renders directly) never touches these hooks, so
+// mocking them at module scope does not change its behavior.
+const store = vi.hoisted(() => ({
+  driver: null as unknown,
+  claim: vi.fn(),
+  listeners: new Set<() => void>(),
+}));
+
+function notify() {
+  for (const listener of store.listeners) {
+    listener();
+  }
+}
+
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({ isLoaded: true, isSignedIn: true, user: { username: "Road Star" } }),
+}));
+vi.mock("convex/react", async () => {
+  const { useEffect, useState } = await import("react");
+  return {
+    useQuery: () => {
+      const [, bump] = useState(0);
+      useEffect(() => {
+        const listener = () => bump((count) => count + 1);
+        store.listeners.add(listener);
+        return () => {
+          store.listeners.delete(listener);
+        };
+      }, []);
+      return store.driver;
+    },
+    useMutation: () => store.claim,
+  };
+});
+vi.mock("@/components/AccountControls", () => ({ AccountControls: () => null }));
+
+import ActivateClient, { ActivateGate } from "./activate-client";
+
+beforeEach(() => {
+  store.driver = null;
+  store.claim = vi.fn();
+  store.listeners.clear();
+});
 
 // Vitest does not run with globals enabled in this repo, so
 // @testing-library/react's auto-cleanup (which detects a global `afterEach`)
@@ -203,5 +256,245 @@ describe("ActivateClient", () => {
     render(<ActivateClient claim={vi.fn()} initialCode="" />);
     expect(screen.getAllByLabelText(/activation code/i)).toHaveLength(1);
     expect(screen.getByLabelText(/activation code/i).tagName).toBe("INPUT");
+  });
+});
+
+// a11y requirement 9: ActivateGate gates rendering on driver state, the same
+// way it already gates on sign-in. Until the getMyDriver query resolves,
+// neither shape (two-field or three-field) may render, and the third
+// sr-only status state ("Checking your driver…") must live inside the same
+// focused region that the sign-in transition already moves focus to.
+describe("ActivateGate", () => {
+  test("renders no fields while the driver query is pending, then exactly one shape once it resolves", async () => {
+    store.driver = undefined; // Convex's "still loading" value.
+    render(<ActivateGate initialCode="" />);
+
+    // Neither shape has rendered: no inputs of any kind exist yet.
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+
+    const region = screen.getByRole("region", { name: /freight fate activation/i });
+    expect(region).toHaveTextContent(/checking your driver/i);
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(/checking your driver/i);
+    // The status announcement must live inside the region that the sign-in
+    // transition already focused, not beside it -- a reader whose cursor
+    // followed that focus move would never reach an announcement rendered
+    // outside it.
+    expect(region.contains(status)).toBe(true);
+
+    await act(async () => {
+      store.driver = null; // Resolved: signed-in account, no driver yet.
+      notify();
+    });
+
+    // Exactly one shape appears -- the three-field shape, since driver
+    // resolved to null -- and the field count never having been anything
+    // else first is the point of the gate.
+    expect(screen.getByLabelText(/driver name/i)).toBeInTheDocument();
+    expect(screen.getAllByRole("textbox")).toHaveLength(3);
+  });
+
+  test("renders the two-field shape once the driver query resolves to an existing driver", async () => {
+    store.driver = { driverId: "road-star-1234", displayName: "Road Star" };
+    render(<ActivateGate initialCode="" />);
+
+    expect(await screen.findByLabelText(/activation code/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/driver name/i)).toBeNull();
+    expect(screen.getAllByRole("textbox")).toHaveLength(2);
+  });
+});
+
+// a11y requirements 10-16: the three-field shape rendered by ActivateClient
+// itself (needsDriver=true), tested the same way as requirements 1-8 above
+// -- an injected `claim`, no Convex/Clerk providers required.
+describe("ActivateClient — three-field shape (needsDriver)", () => {
+  // a11y requirement 10: the shape announces itself in plain reading-order
+  // text before any field, uses its own H2 (not a repeat of the page's H1,
+  // "Activate Freight Fate" from app/activate/page.tsx's PageHeader), places
+  // the driver-name field between the code field and the computer-name
+  // field, and never wraps the three unrelated fields in a <fieldset> --
+  // that would announce a false group boundary.
+  test("announces shape B before the code field, with its own H2 and no fieldset", () => {
+    render(<ActivateClient claim={vi.fn()} initialCode="" needsDriver prefillName="" />);
+
+    const sentence = screen.getByText(/does not have a freight fate driver yet/i);
+    const codeField = screen.getByLabelText(/activation code/i);
+    expect(
+      sentence.compareDocumentPosition(codeField) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const nameField = screen.getByLabelText(/driver name/i);
+    const computerField = screen.getByLabelText(/name this computer/i);
+    expect(
+      codeField.compareDocumentPosition(nameField) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      nameField.compareDocumentPosition(computerField) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    expect(screen.queryByRole("group")).toBeNull();
+
+    const heading = screen.getByRole("heading", { name: /create your driver/i });
+    expect(heading.textContent).not.toBe("Activate Freight Fate");
+  });
+
+  // a11y requirement 11: the name field reuses setup-client's rules from the
+  // shared lib/freight-fate-driver-name module rather than reimplementing
+  // them, is prefilled from the Clerk username (WCAG 3.3.7), and is never
+  // autofocused.
+  test("rejects a name with fewer than three letters locally, before any network call", async () => {
+    const claim = vi.fn();
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "a12" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    expect(await screen.findByText(LETTERS_ERROR.message)).toBeInTheDocument();
+    expect(claim).not.toHaveBeenCalled();
+  });
+
+  test("a name-taken rejection from the server renders wording identical to the setup page", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "name_taken" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    expect(await screen.findByText(TAKEN_ERROR.message)).toBeInTheDocument();
+  });
+
+  test("prefills the driver name from the Clerk username and does not autofocus it", () => {
+    render(<ActivateClient claim={vi.fn()} initialCode="" needsDriver prefillName="Road Star" />);
+    expect(screen.getByLabelText(/driver name/i)).toHaveValue("Road Star");
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  test("the driver-name field carries the same maxLength, required marking, and rules link as setup", () => {
+    render(<ActivateClient claim={vi.fn()} initialCode="" needsDriver prefillName="" />);
+    const field = screen.getByLabelText(/driver name/i);
+    expect(field).toHaveAttribute("maxlength", "48");
+    expect(field).toHaveAttribute("aria-required", "true");
+
+    const label = screen.getByText(/driver name/i, { selector: "label" });
+    expect(label).toHaveTextContent("*");
+
+    const link = screen.getByRole("link", { name: NAME_RULES_LINK_TEXT });
+    expect(link).toHaveAttribute("href", NAME_RULES_HREF);
+  });
+
+  // a11y requirement 12: one problem at a time. A name rejection focuses
+  // only the name field; a code rejection focuses only the code field;
+  // submitting from inside the name field cannot move focus there (it is
+  // already there), so that case must announce through the live region
+  // instead -- the same already-focused fallback showNameError uses on the
+  // setup page.
+  test("a name rejection focuses only the name field, leaving the code field untouched", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "name_taken" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    const nameField = screen.getByLabelText(/driver name/i);
+    await waitFor(() => expect(nameField).toHaveFocus());
+    expect(nameField).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/activation code/i)).not.toHaveAttribute("aria-invalid");
+  });
+
+  test("a code rejection focuses only the code field, leaving the name field untouched", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "unknown_code" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    const codeField = screen.getByLabelText(/activation code/i);
+    await waitFor(() => expect(codeField).toHaveFocus());
+    expect(codeField).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/driver name/i)).not.toHaveAttribute("aria-invalid");
+  });
+
+  test("submitting from inside the name field keeps focus there and routes the message to the live region", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "name_taken" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    const nameField = screen.getByLabelText(/driver name/i);
+    fireEvent.change(nameField, { target: { value: "Road Star" } });
+    nameField.focus();
+    fireEvent.submit(nameField.closest("form")!);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(TAKEN_ERROR.message));
+    expect(nameField).toHaveFocus();
+  });
+
+  // a11y requirement 13: resolved by architecture (one Convex mutation,
+  // validation before any write) -- pinned here as "never two calls."
+  test("creates the driver and claims the code in a single call, never two", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: true });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    await waitFor(() => expect(claim).toHaveBeenCalledTimes(1));
+    expect(claim).toHaveBeenCalledWith({
+      userCode: "WKQR-3468",
+      label: undefined,
+      displayName: "Road Star",
+    });
+  });
+
+  // a11y requirement 14: the three-field shape's submit button names both
+  // actions, idle and busy, and someone submitting via Enter from the
+  // computer-name field -- who never sees the button -- still hears both
+  // actions through the live region.
+  test("the submit button names both actions, idle and busy, including via Enter from the computer-name field", async () => {
+    let resolveClaim: (value: { ok: true }) => void = () => {};
+    const claim = vi.fn(
+      () =>
+        new Promise<{ ok: true }>((resolve) => {
+          resolveClaim = resolve;
+        }),
+    );
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+
+    const button = screen.getByRole("button", { name: /create driver and connect this computer/i });
+    const computerField = screen.getByLabelText(/name this computer/i);
+    fireEvent.change(computerField, { target: { value: "Laptop" } });
+    fireEvent.submit(computerField.closest("form")!);
+
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent(/setting up and connecting/i);
+    expect(button).toHaveTextContent(/setting up and connecting/i);
+
+    resolveClaim({ ok: true });
+    await screen.findByRole("heading", { name: /connected/i });
+  });
+
+  // a11y requirement 15 (decided): drivers created via /activate default to
+  // private/off, and the page never offers a sharing consent decision on a
+  // first-run page nobody chose to land on.
+  test("never renders a profile-sharing control, and the claim call carries no visibility field", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: true });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" needsDriver prefillName="" />);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    // The hint text legitimately mentions profile sharing (reused verbatim
+    // from NAME_HINT_SUFFIX, per requirement 11) -- what must not exist is
+    // the setup page's own checkbox and its "Profile sharing" legend.
+    expect(document.querySelector("legend")).toBeNull();
+    expect(document.querySelector("fieldset")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(/driver name/i), { target: { value: "Road Star" } });
+    fireEvent.click(screen.getByRole("button", { name: /create driver/i }));
+
+    await waitFor(() =>
+      expect(claim).toHaveBeenCalledWith({
+        userCode: "WKQR-3468",
+        label: undefined,
+        displayName: "Road Star",
+      }),
+    );
+  });
+
+  // a11y requirement 16: restated -- no autofocus on the new field even when
+  // prefilled, whether or not the code field also arrived prefilled.
+  test("does not autofocus any field, with both the code and the name prefilled", () => {
+    render(<ActivateClient claim={vi.fn()} initialCode="WKQR-3468" needsDriver prefillName="Road Star" />);
+    expect(document.activeElement).toBe(document.body);
   });
 });
