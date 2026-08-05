@@ -7,9 +7,24 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 
-type ClaimFailureCode = "not_signed_in" | "no_driver" | "unknown_code" | "too_many_computers" | "rate_limited";
+type ClaimFailureCode =
+  | "not_signed_in"
+  | "no_driver"
+  | "unknown_code"
+  | "too_many_computers"
+  | "rate_limited"
+  | "name_taken";
 
-type ClaimResult = { ok: true } | { ok: false; code: ClaimFailureCode };
+// claimActivation can also create a driver in the same transaction when the
+// account has none and a name was supplied. This page never sends a name, so
+// no_driver is the only way that path shows up here -- but the mutation's
+// return type still carries name_taken/name_rejected, so the type has to
+// account for them. The inline-name flow on the setup page is what actually
+// handles those.
+type ClaimResult =
+  | { ok: true }
+  | { ok: false; code: ClaimFailureCode }
+  | { ok: false; code: "name_rejected"; reason: "blocked" | "needs_letters" };
 
 type ClaimFn = (input: { userCode: string; label?: string }) => Promise<ClaimResult>;
 
@@ -17,7 +32,12 @@ type ClaimFn = (input: { userCode: string; label?: string }) => Promise<ClaimRes
 // earlier design threw a ConvexError, but that rolled back the rate
 // limiter's writes on every rejection). Branch on result.ok / result.code,
 // never on a caught error.
-const MESSAGES: Record<ClaimFailureCode, string> = {
+//
+// Partial, not Record<ClaimFailureCode, string>: name_taken (like
+// name_rejected) can never actually reach this page, since it never sends a
+// name, so it falls through to the generic fallback below rather than
+// needing a dedicated message here.
+const MESSAGES: Partial<Record<string, string>> = {
   unknown_code:
     "That code was not recognised, or it has expired. Codes last ten minutes. Start setup again in Freight Fate to get a new one.",
   not_signed_in: "Sign in first, then enter your code again.",

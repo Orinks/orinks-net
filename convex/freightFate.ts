@@ -168,7 +168,7 @@ export function driverIdFromName(displayName: string) {
   return `${base}-${toHex(suffix)}`.slice(0, 64);
 }
 
-function normalizeDisplayName(value: string) {
+export function normalizeDisplayName(value: string) {
   return value.trim().replace(/\s+/g, " ").slice(0, 48) || "Freight Fate Driver";
 }
 
@@ -177,7 +177,7 @@ function normalizeDisplayName(value: string) {
 // names are already whitespace-normalized (above), so a case-insensitive
 // compare is the whole rule. The drivers table is small and provisioning is
 // rare, so a scan beats maintaining a normalized index column.
-async function displayNameTaken(ctx: QueryCtx, displayName: string, exceptSubject: string) {
+export async function displayNameTaken(ctx: QueryCtx, displayName: string, exceptSubject: string) {
   const key = displayName.toLowerCase();
   const drivers = await ctx.db.query("freightFateDrivers").collect();
   return drivers.some(

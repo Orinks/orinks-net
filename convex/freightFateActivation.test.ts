@@ -207,6 +207,106 @@ describe("claimActivation", () => {
     });
     expect(result).toEqual({ ok: false, code: "rate_limited" });
   });
+
+  test("creates the driver and claims in one step", async () => {
+    const t = setup();
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const result = await t
+      .withIdentity({ subject: "user_2brandnew" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        displayName: "Road Star",
+        label: "Studio desktop",
+        now: NOW,
+      });
+    expect(result).toEqual({ ok: true });
+
+    const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
+    expect(drivers).toHaveLength(1);
+    expect(drivers[0].displayName).toBe("Road Star");
+    // A first-run page is the wrong place to ask for a public-sharing
+    // decision, so a driver made here starts private.
+    expect(drivers[0].visibility).toBe("private");
+
+    const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: await hashDeviceCode(started.deviceCode),
+      now: NOW,
+    });
+    expect(redeemed?.displayName).toBe("Road Star");
+  });
+
+  test("a rejected name creates nothing at all", async () => {
+    const t = setup();
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const result = await t
+      .withIdentity({ subject: "user_2brandnew" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        displayName: "1234",
+        now: NOW,
+      });
+    expect(result.ok).toBe(false);
+
+    // The whole point of one transaction: a failure leaves no half-made state.
+    const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
+    expect(drivers).toHaveLength(0);
+    const row = await t.run(
+      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
+    );
+    expect(row.status).toBe("pending");
+  });
+
+  test("a bad code creates nothing even when the name is fine", async () => {
+    const t = setup();
+    const result = await t
+      .withIdentity({ subject: "user_2brandnew" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: "WKQR3468",
+        displayName: "Road Star",
+        now: NOW,
+      });
+    expect(result).toEqual({ ok: false, code: "unknown_code" });
+    const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
+    expect(drivers).toHaveLength(0);
+  });
+
+  test("an existing driver ignores a supplied name", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      displayName: "Someone Else",
+      now: NOW,
+    });
+    const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
+    expect(drivers).toHaveLength(1);
+    expect(drivers[0].displayName).not.toBe("Someone Else");
+  });
+
+  test("still refuses when there is no driver and no name", async () => {
+    const t = setup();
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      now: NOW,
+    });
+    const result = await t
+      .withIdentity({ subject: "user_2brandnew" })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        now: NOW,
+      });
+    expect(result).toEqual({ ok: false, code: "no_driver" });
+  });
 });
 
 /** Device rows straight into the table: this is prior state, not the thing

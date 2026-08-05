@@ -1,7 +1,14 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import { driverForIdentity, MAX_DEVICE_TOKENS, mintDeviceTokenRow } from "./freightFate";
+import {
+  displayNameTaken,
+  driverIdFromName,
+  MAX_DEVICE_TOKENS,
+  mintDeviceTokenRow,
+  normalizeDisplayName,
+} from "./freightFate";
+import { screenDisplayName } from "./moderation";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -133,32 +140,58 @@ export const startActivation = mutation({
 });
 
 export const claimActivation = mutation({
-  args: { userCode: v.string(), label: v.optional(v.string()), now: v.number() },
+  args: {
+    userCode: v.string(),
+    label: v.optional(v.string()),
+    // A first-run player has no driver yet: if the account has none and this
+    // is supplied, claiming also creates it in the same transaction. An
+    // account that already has a driver never has it renamed by this -- a
+    // page nobody chose to land on is the wrong place for that to happen as
+    // a side effect.
+    displayName: v.optional(v.string()),
+    now: v.number(),
+  },
   handler: async (ctx, args) => {
-    const driver = await driverForIdentity(ctx);
-    if (!driver) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       // Two different failures the page words differently: signed out, versus
       // signed in with no driver set up yet.
-      const identity = await ctx.auth.getUserIdentity();
-      return {
-        ok: false as const,
-        code: identity ? ("no_driver" as const) : ("not_signed_in" as const),
-      };
+      return { ok: false as const, code: "not_signed_in" as const };
     }
 
-    // Guessing is the attack this stops: a signed-in caller hammering codes
-    // until one lands. Keyed by account, since that is what a claim needs.
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
+      .unique();
+
+    // No driver and nothing to create one from: the page's signal to show
+    // the name field, not a guess worth spending rate-limit budget on.
+    if (!driver && !args.displayName) {
+      return { ok: false as const, code: "no_driver" as const };
+    }
+
+    // Ordering below is the whole point of doing this in one mutation:
+    // every read and check happens before any write, so a validation
+    // failure -- returned, never thrown -- can never leave a half-created
+    // driver or a claimed row behind. Convex mutations are serializable
+    // transactions, which is what makes that guarantee free.
+
+    // 1. Rate limit. Guessing is the attack this stops: a caller hammering
+    // codes until one lands. Keyed by driver id when there is one; a
+    // brand-new account has none yet, so the Clerk subject stands in.
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "activation_claim",
-      driverId: driver.driverId,
+      driverId: driver ? driver.driverId : identity.subject,
       now: args.now,
       limit: ACTIVATION_CLAIM_LIMIT,
     });
-
     if (!allowed) {
       return { ok: false as const, code: "rate_limited" as const };
     }
 
+    // 2. Code lookup. Unknown, already claimed, and expired are one error on
+    // purpose: telling a stranger which of those a code is would let them
+    // probe for live ones.
     const code = normalizeUserCode(args.userCode);
     const row = code
       ? await ctx.db
@@ -166,26 +199,76 @@ export const claimActivation = mutation({
           .withIndex("by_user_code", (q) => q.eq("userCode", code))
           .unique()
       : null;
-
-    // Unknown, already claimed, and expired are one error on purpose: telling
-    // a stranger which of those a code is would let them probe for live ones.
     if (!row || row.status !== "pending" || row.expiresAt <= args.now) {
       return { ok: false as const, code: "unknown_code" as const };
     }
 
-    const devices = await ctx.db
-      .query("freightFateDeviceTokens")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
-      .collect();
-    // Checked here rather than at redeem so the player learns about the cap
-    // while they are still looking at a browser that can explain it.
-    if (devices.length >= MAX_DEVICE_TOKENS) {
+    // 3. Device cap. Checked here rather than at redeem so the player learns
+    // about the cap while they are still looking at a browser that can
+    // explain it. A brand-new driver has no computers yet, so this can only
+    // ever trip for an account that already has one.
+    const deviceCount = driver
+      ? (
+          await ctx.db
+            .query("freightFateDeviceTokens")
+            .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+            .collect()
+        ).length
+      : 0;
+    if (deviceCount >= MAX_DEVICE_TOKENS) {
       return { ok: false as const, code: "too_many_computers" as const };
+    }
+
+    // 4. Name screening -- only when there is a driver to create. An
+    // existing driver ignores a supplied name entirely: renaming someone's
+    // driver is not a side effect activating a computer should ever have.
+    let displayName: string | null = null;
+    if (!driver) {
+      displayName = normalizeDisplayName(args.displayName!);
+      const verdict = screenDisplayName(displayName);
+      if (!verdict.ok) {
+        return { ok: false as const, code: "name_rejected" as const, reason: verdict.reason };
+      }
+      if (await displayNameTaken(ctx, displayName, identity.subject)) {
+        return { ok: false as const, code: "name_taken" as const };
+      }
+    }
+
+    // Everything above is validation. From here on, only writes -- and only
+    // because every check that could fail has already run.
+
+    let driverId: string;
+    if (driver) {
+      driverId = driver.driverId;
+    } else {
+      // Mirrors provisionDriver's brand-new-driver insert. Visibility starts
+      // private: a public-sharing consent decision does not belong on a
+      // first-run page someone did not choose to land on.
+      let candidateId = driverIdFromName(displayName!);
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const clash = await ctx.db
+          .query("freightFateDrivers")
+          .withIndex("by_driver_id", (q) => q.eq("driverId", candidateId))
+          .unique();
+        if (!clash) {
+          break;
+        }
+        candidateId = driverIdFromName(displayName!);
+      }
+      driverId = candidateId;
+      await ctx.db.insert("freightFateDrivers", {
+        driverId,
+        displayName: displayName!,
+        visibility: "private",
+        authSubject: identity.subject,
+        createdAt: args.now,
+        updatedAt: args.now,
+      });
     }
 
     await ctx.db.patch(row._id, {
       status: "claimed",
-      driverId: driver.driverId,
+      driverId,
       label: args.label,
       expiresAt: args.now + ACTIVATION_COLLECTION_MS,
     });

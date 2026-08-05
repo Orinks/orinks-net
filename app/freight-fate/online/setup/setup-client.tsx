@@ -9,18 +9,22 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import {
+  LETTERS_ERROR,
+  NAME_HINT_PREFIX,
+  NAME_HINT_SUFFIX,
+  NAME_RULES_HREF,
+  NAME_RULES_LINK_TEXT,
+  TAKEN_ERROR,
+  nameRejectionForReason,
+  type NameError,
+} from "@/lib/freight-fate-driver-name";
 
 export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unknown | undefined) {
   return !alreadyAnnounced && driver !== undefined;
 }
 
-// kind picks the inline rendering: "blocked" renders PREFIX + the rules link
-// instead of message; every other kind renders message verbatim.
-type NameError = { kind: "length" | "letters" | "blocked" | "taken"; message: string };
 type PendingAction = "save" | "rotate" | null;
-
-const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
-const RULES_LINK_TEXT = "driver naming rules";
 
 // The one place that explains how a computer actually connects now: no
 // values are copied here. Reused verbatim everywhere the page used to point
@@ -29,11 +33,6 @@ const RULES_LINK_TEXT = "driver naming rules";
 // synonym for the same step).
 const CONNECT_INSTRUCTIONS =
   'open Freight Fate, choose "Set up this computer with orinks.net," and enter the code it gives you at orinks.net/activate';
-
-const LETTERS_ERROR: NameError = {
-  kind: "letters",
-  message: "Driver names must include at least three letters. Choose a different name.",
-};
 
 // provisionDriver throws ConvexError({ code: "name_taken" }) when another
 // account already uses the name, and ConvexError({ code: "name_rejected",
@@ -45,21 +44,12 @@ function nameRejection(error: unknown): NameError | null {
   }
   const data = error.data as { code?: string; reason?: string } | undefined;
   if (data?.code === "name_taken") {
-    return {
-      kind: "taken",
-      message: "That driver name is already taken. Choose a different name.",
-    };
+    return TAKEN_ERROR;
   }
   if (data?.code !== "name_rejected") {
     return null;
   }
-  if (data.reason === "needs_letters") {
-    return LETTERS_ERROR;
-  }
-  return {
-    kind: "blocked",
-    message: `${BLOCKED_MESSAGE_PREFIX}${RULES_LINK_TEXT}.`,
-  };
+  return nameRejectionForReason(data.reason as "blocked" | "needs_letters" | undefined);
 }
 
 const focusRing =
@@ -630,11 +620,11 @@ function DriverSetup() {
                 </p>
               ) : null}
               <p className="text-sm text-slate-600" id="displayName-hint">
-                3 to 48 characters, including at least three letters. Names must follow the{" "}
-                <Link className={focusRing} href="/freight-fate/online/rules">
-                  driver naming rules
+                {NAME_HINT_PREFIX}{" "}
+                <Link className={focusRing} href={NAME_RULES_HREF}>
+                  {NAME_RULES_LINK_TEXT}
                 </Link>
-                . Your driver name is public while Profile sharing is on.
+                {NAME_HINT_SUFFIX}
               </p>
             </div>
 
