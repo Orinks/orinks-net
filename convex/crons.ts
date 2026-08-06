@@ -25,4 +25,16 @@ crons.interval(
   {},
 );
 
+// Activation rows live ten minutes unclaimed, and a claim restarts a
+// two-minute collection window, so the longest-lived row is one claimed at
+// the last second: about twelve minutes. They are deleted the moment they
+// are redeemed, so all this sweeps is codes nobody finished. Hourly is
+// plenty against a twelve-minute ceiling, and the pass is batched.
+crons.interval(
+  "drop expired Freight Fate activations",
+  { hours: 1 },
+  internal.freightFateActivation.sweepExpiredActivations,
+  {},
+);
+
 export default crons;

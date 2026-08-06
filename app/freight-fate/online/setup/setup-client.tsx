@@ -9,28 +9,30 @@ import { AccountControls } from "@/components/AccountControls";
 import { Section } from "@/components/Section";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import {
+  NAME_HINT_PREFIX,
+  NAME_HINT_SUFFIX,
+  NAME_RULES_HREF,
+  NAME_RULES_LINK_TEXT,
+  TAKEN_ERROR,
+  nameRejectionForReason,
+  validateDriverName,
+  type NameError,
+} from "@/lib/freight-fate-driver-name";
 
 export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unknown | undefined) {
   return !alreadyAnnounced && driver !== undefined;
 }
 
-// kind picks the inline rendering: "blocked" renders PREFIX + the rules link
-// instead of message; every other kind renders message verbatim.
-type NameError = { kind: "length" | "letters" | "blocked" | "taken"; message: string };
 type PendingAction = "save" | "rotate" | null;
-type CopyStatus = {
-  area: "issued-driver-id" | "issued-token" | "driver";
-  kind: "success" | "error";
-  message: string;
-};
 
-const BLOCKED_MESSAGE_PREFIX = "That name isn't allowed. Choose a different name, or check the ";
-const RULES_LINK_TEXT = "driver naming rules";
-
-const LETTERS_ERROR: NameError = {
-  kind: "letters",
-  message: "Driver names must include at least three letters. Choose a different name.",
-};
+// The one place that explains how a computer actually connects now: no
+// values are copied here. Reused verbatim everywhere the page used to point
+// at the removed copy-paste panel, so the instruction reads the same way
+// every time (a screen reader user should not have to re-parse a reworded
+// synonym for the same step).
+const CONNECT_INSTRUCTIONS =
+  'open Freight Fate, choose "Set up this computer with orinks.net," and enter the code it gives you at orinks.net/activate';
 
 // provisionDriver throws ConvexError({ code: "name_taken" }) when another
 // account already uses the name, and ConvexError({ code: "name_rejected",
@@ -42,21 +44,12 @@ function nameRejection(error: unknown): NameError | null {
   }
   const data = error.data as { code?: string; reason?: string } | undefined;
   if (data?.code === "name_taken") {
-    return {
-      kind: "taken",
-      message: "That driver name is already taken. Choose a different name.",
-    };
+    return TAKEN_ERROR;
   }
   if (data?.code !== "name_rejected") {
     return null;
   }
-  if (data.reason === "needs_letters") {
-    return LETTERS_ERROR;
-  }
-  return {
-    kind: "blocked",
-    message: `${BLOCKED_MESSAGE_PREFIX}${RULES_LINK_TEXT}.`,
-  };
+  return nameRejectionForReason(data.reason as "blocked" | "needs_letters" | undefined);
 }
 
 const focusRing =
@@ -103,7 +96,7 @@ export function FreightFateSetupClient() {
       <Section title="Sign in to continue">
         <p>
           Freight Fate drivers are linked to orinks.net accounts. Sign in — or create an account — to
-          set up your driver identity and get a posting token for the game.
+          set up your driver identity, then connect Freight Fate to it from the game.
         </p>
         <AccountControls />
       </Section>
@@ -141,7 +134,6 @@ function DriverSetup() {
   const myDriver = useQuery(api.freightFate.getMyDriver, {});
   const myComputers = useQuery(api.freightFate.getMyComputers, {});
   const provision = useMutation(api.freightFate.provisionDriver);
-  const addComputer = useMutation(api.freightFate.addComputer);
   const removeComputer = useMutation(api.freightFate.removeComputer);
   const { politeStatus, errorStatus, announcePolite, announceError } = useAnnouncer();
 
@@ -151,24 +143,14 @@ function DriverSetup() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [saveError, setSaveError] = useState("");
   const [rotateError, setRotateError] = useState("");
-  // Carries BOTH values from the provision result: the reactive getMyDriver
-  // query can lag the mutation, so myDriver may still be null at the moment
-  // the panel renders and focus arrives (a11y review: an empty ID field
-  // would be copied as nothing). label names the computer this token was
-  // minted for — the panel is shared state, so it must say which one.
-  const [issued, setIssued] = useState<{ token: string; driverId: string; label: string | null } | null>(null);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus | null>(null);
   const [initialized, setInitialized] = useState(false);
   const driverReadyAnnounced = useRef(false);
+  // Set right before a provision call that mints a brand-new driver (never
+  // for an edit of an existing one). The reactive getMyDriver query lags the
+  // mutation, so this cannot just check myDriver at focus time — the effect
+  // below watches for myDriver to catch up.
+  const justCreatedDriverRef = useRef(false);
 
-  // The computer list's own action state. Deliberately separate from the
-  // driver form's pendingAction: sharing one flag would disable and relabel
-  // unrelated buttons across the page (a11y review).
-  const [computerName, setComputerName] = useState("");
-  const [addPending, setAddPending] = useState(false);
-  // Persistent inline error for the add form: live-region text is ephemeral
-  // and cannot be re-read, so the limit error must also exist in the page.
-  const [addError, setAddError] = useState<string | null>(null);
   // Two-click confirm: the armed button's row id (or "rotate-all"). Never
   // auto-reset on a timer — readers take their time (WCAG 2.2.1); reset on
   // blur or Escape, and announce the reset so a silent disarm cannot trick
@@ -207,7 +189,6 @@ function DriverSetup() {
   }, [announcePolite, myDriver]);
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const tokenHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Prefill once the driver query resolves: from the existing driver when
   // editing, otherwise from the Clerk handle (WCAG 3.3.7 Redundant Entry).
@@ -225,28 +206,16 @@ function DriverSetup() {
     setInitialized(true);
   }, [initialized, myDriver, user]);
 
-  // Bring the reader to the connect panel the moment it is revealed.
+  // A brand-new driver reveals the computer list for the first time; bring
+  // the reader there the moment it mounts. The reactive query
+  // can lag the mutation (see justCreatedDriverRef above), so this waits for
+  // myDriver itself to become truthy rather than firing right after submit.
   useEffect(() => {
-    if (issued) {
-      tokenHeadingRef.current?.focus();
+    if (justCreatedDriverRef.current && myDriver) {
+      justCreatedDriverRef.current = false;
+      computersHeadingRef.current?.focus();
     }
-  }, [issued]);
-
-  const copyText = useCallback(
-    async (value: string, label: string, area: CopyStatus["area"]) => {
-      try {
-        await navigator.clipboard.writeText(value);
-        const message = `${label} copied to clipboard.`;
-        setCopyStatus({ area, kind: "success", message });
-        announcePolite(message);
-      } catch {
-        const message = `Copy failed. Select the ${label} field and press Control C to copy it.`;
-        setCopyStatus({ area, kind: "error", message });
-        announceError(message);
-      }
-    },
-    [announceError, announcePolite],
-  );
+  }, [myDriver]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -268,14 +237,11 @@ function DriverSetup() {
     }
 
     const trimmed = name.trim();
-    if (trimmed.length < 3 || trimmed.length > 48) {
-      showNameError({ kind: "length", message: "Enter a driver name of 3 to 48 characters." });
-      return;
-    }
-    // Mirrors the server's minimum-letters rule so the common case gets
-    // instant feedback instead of a round-trip rejection.
-    if ((trimmed.match(/\p{L}/gu) ?? []).length < 3) {
-      showNameError(LETTERS_ERROR);
+    // Shared with the activation page's inline name field so the two
+    // thresholds cannot drift apart the way two hand-copied checks could.
+    const rejection = validateDriverName(trimmed);
+    if (rejection) {
+      showNameError(rejection);
       return;
     }
 
@@ -286,18 +252,22 @@ function DriverSetup() {
     announcePolite(editing ? "Saving changes." : "Setting up your driver.");
 
     try {
-      const result = await provision({
+      await provision({
         displayName: trimmed,
         visibility: profileSharing ? "public" : "private",
         expandedSharingConsent: profileSharing,
         rotateToken: false,
         now: Date.now(),
       });
-      if (result.token) {
-        setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId, label: null });
+      // Created versus edited is decided by what was on screen when the
+      // player pressed Save, not by anything in the response. It used to be
+      // read off a minted token, which meant a server that stopped minting
+      // silently stopped moving focus to the computer list — a change a
+      // sighted reviewer would never notice.
+      if (!editing) {
+        justCreatedDriverRef.current = true;
         announcePolite(
-          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. Copy your Driver ID and one-time token below.`,
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${CONNECT_INSTRUCTIONS}.`,
         );
       } else {
         announcePolite(
@@ -360,60 +330,27 @@ function DriverSetup() {
     setPendingAction("rotate");
     announcePolite("Signing out all computers.");
     try {
-      const result = await provision({
+      // Revokes every token this driver has -- device rows and the legacy
+      // single token alike -- and issues none in their place. The driver is
+      // left with no connected computers, which is exactly what the
+      // announcement below tells the player, and the list re-renders empty
+      // to match.
+      await provision({
         displayName: myDriver.displayName,
         visibility: myDriver.sharingEnabled ? "public" : "private",
         expandedSharingConsent: myDriver.sharingEnabled,
         rotateToken: true,
         now: Date.now(),
       });
-      if (result.token) {
-        setCopyStatus(null);
-        setIssued({ token: result.token, driverId: result.driverId, label: null });
-        announcePolite(
-          "Done. Every computer is signed out. The new token is shown below — copy it now; every other computer will need its own new token to reconnect.",
-        );
-      }
+      announcePolite(
+        `Done. Every computer is signed out. Each one needs activating again: ${CONNECT_INSTRUCTIONS}.`,
+      );
     } catch {
       const message = "Signing out all computers failed. Nothing changed. Please try again.";
       setRotateError(message);
       announceError(message);
     } finally {
       setPendingAction(null);
-    }
-  }
-
-  async function handleAddComputer(event: React.FormEvent) {
-    event.preventDefault();
-    if (addPending) {
-      return;
-    }
-    const label = computerName.trim() || "My computer";
-    setAddPending(true);
-    setAddError(null);
-    announcePolite(`Adding ${label}.`);
-    try {
-      const result = await addComputer({
-        label: computerName.trim() || undefined,
-        now: Date.now(),
-      });
-      setCopyStatus(null);
-      setIssued({ token: result.token, driverId: result.driverId, label });
-      setComputerName("");
-      announcePolite(`${label} added. Copy its one-time token below.`);
-    } catch (error) {
-      const data =
-        error instanceof ConvexError
-          ? (error.data as { code?: string; limit?: number } | undefined)
-          : undefined;
-      const message =
-        data?.code === "too_many_computers"
-          ? `You have reached the limit of ${data.limit ?? 10} computers. Sign out a computer you no longer use, then try again.`
-          : "Adding the computer failed. Nothing changed. Please try again.";
-      setAddError(message);
-      announceError(message);
-    } finally {
-      setAddPending(false);
     }
   }
 
@@ -468,16 +405,11 @@ function DriverSetup() {
   type MyComputers = typeof myComputers;
 
   function ComputerList(props: {
-    addError: string | null;
-    addPending: boolean;
     armedId: string | null;
-    computerName: string;
     computersHeadingRef: React.RefObject<HTMLHeadingElement | null>;
     myComputers: MyComputers;
-    onAddComputer: (event: React.FormEvent) => void;
     onArmedBlur: (id: string, spokenLabel: string) => void;
     onArmedKeyDown: (event: React.KeyboardEvent, id: string, spokenLabel: string) => void;
-    onComputerName: (value: string) => void;
     onRotateAll: () => void;
     onSignOut: (row: ComputerRow, rows: ComputerRow[]) => void;
     rotateError: string;
@@ -521,16 +453,14 @@ function DriverSetup() {
           Your computers
         </h3>
         <p className="text-sm text-slate-700">
-          Each computer you play on gets its own token. Adding a computer never signs out the
+          Each computer you play on gets its own token. Connecting a new one never signs out the
           others, so your desktop keeps working when you set up a laptop.
         </p>
 
         {computers === undefined ? (
           <p className="text-slate-700">Loading your computers…</p>
         ) : rows.length === 0 ? (
-          <p className="text-slate-700">
-            No computers are connected yet. Add one below to get its token.
-          </p>
+          <p className="text-slate-700">No computers are connected yet.</p>
         ) : (
           // Tailwind's list-style reset strips list semantics in some
           // readers; the explicit role keeps "list, N items" announced.
@@ -581,47 +511,14 @@ function DriverSetup() {
           </ul>
         )}
 
-        <form className="space-y-2" onSubmit={props.onAddComputer}>
-          <label className="block font-semibold text-ink" htmlFor="new-computer-name">
-            Computer name
-          </label>
-          <p className="text-sm text-slate-600" id="new-computer-name-hint">
-            Just for you, to tell your computers apart — for example Desktop or Laptop. Leave it
-            blank for “My computer”.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              aria-describedby={
-                props.addError ? "new-computer-name-hint new-computer-error" : "new-computer-name-hint"
-              }
-              autoComplete="off"
-              className="w-full rounded border border-line-strong px-3 py-2 text-ink"
-              id="new-computer-name"
-              maxLength={64}
-              onChange={(event) => props.onComputerName(event.target.value)}
-              type="text"
-              value={props.computerName}
-            />
-            <button
-              aria-disabled={props.addPending || undefined}
-              className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
-              type="submit"
-            >
-              {props.addPending ? "Adding…" : "Add computer and get its token"}
-            </button>
-          </div>
-          {props.addError ? (
-            <p className="text-sm text-red-700" id="new-computer-error">
-              <span aria-hidden="true">⚠ </span>
-              {props.addError}
-            </p>
-          ) : null}
-        </form>
+        <p className="text-sm text-slate-700">
+          To add a computer, {CONNECT_INSTRUCTIONS}.
+        </p>
 
         <div className="space-y-2 border-t border-line pt-3">
           <p className="text-sm text-slate-600">
-            If a token may have leaked, sign out everything at once: every computer stops posting
-            and you get one fresh token for the computer you are on.
+            If a token may have leaked, sign out everything at once: every computer stops posting,
+            and each one — including this one — will need activating again.
           </p>
           <button
             aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
@@ -641,7 +538,7 @@ function DriverSetup() {
               ? "Signing out…"
               : props.armedId === "rotate-all"
                 ? "Confirm: sign out all computers"
-                : "Sign out all computers and get a new token"}
+                : "Sign out all computers"}
           </button>
           {props.rotateError ? (
             <p className="text-sm text-red-700" id="rotate-token-error">
@@ -663,105 +560,6 @@ function DriverSetup() {
         {errorStatus}
       </div>
 
-      {issued ? (
-        <section
-          aria-labelledby="ff-token-heading"
-          className="space-y-3 rounded border border-line bg-white p-5"
-        >
-          <h2
-            className={`text-xl font-bold text-ink ${focusRing}`}
-            id="ff-token-heading"
-            ref={tokenHeadingRef}
-            tabIndex={-1}
-          >
-            Connect Freight Fate
-          </h2>
-          <p className="text-slate-800">
-            {issued.label ? (
-              <>
-                This token is for <strong>{issued.label}</strong>.{" "}
-              </>
-            ) : null}
-            Freight Fate needs two values. In the game, open Online Sharing, then paste your
-            Driver ID first and your token second.
-          </p>
-
-          <div className="space-y-2">
-            <label className="block font-semibold text-ink" htmlFor="ff-token-driver-id">
-              Driver ID
-            </label>
-            <p className="text-sm text-slate-600" id="ff-token-driver-id-hint">
-              Paste this into Freight Fate first. It is not secret.
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                aria-describedby="ff-token-driver-id-hint"
-                autoComplete="off"
-                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                id="ff-token-driver-id"
-                onFocus={(event) => event.currentTarget.select()}
-                readOnly
-                spellCheck={false}
-                type="text"
-                value={issued.driverId}
-              />
-              <button
-                className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                aria-describedby={copyStatus?.area === "issued-driver-id" ? "ff-issued-driver-copy-status" : undefined}
-                onClick={() => copyText(issued.driverId, "Driver ID", "issued-driver-id")}
-                type="button"
-              >
-                Copy Driver ID
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-semibold text-red-800" id="ff-token-desc">
-              Your token is shown once. Copy it into Freight Fate on your PC now — you will not be
-              able to see it again.
-            </p>
-            <label className="block font-semibold text-ink" htmlFor="ff-driver-token">
-              Driver token
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                aria-describedby="ff-token-desc"
-                autoComplete="off"
-                className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                id="ff-driver-token"
-                onFocus={(event) => event.currentTarget.select()}
-                readOnly
-                spellCheck={false}
-                type="text"
-                value={issued.token}
-              />
-              <button
-                className={`shrink-0 rounded bg-action px-4 py-2 font-semibold text-white hover:bg-action-dark ${focusRing}`}
-                aria-describedby={copyStatus?.area === "issued-token" ? "ff-issued-token-copy-status" : undefined}
-                onClick={() => copyText(issued.token, "Token", "issued-token")}
-                type="button"
-              >
-                Copy token
-              </button>
-            </div>
-          </div>
-
-          {copyStatus?.area === "issued-driver-id" || copyStatus?.area === "issued-token" ? (
-            <p
-              className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
-              id={
-                copyStatus.area === "issued-driver-id"
-                  ? "ff-issued-driver-copy-status"
-                  : "ff-issued-token-copy-status"
-              }
-            >
-              {copyStatus.message}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
       {myDriver === undefined ? (
         <Section title="Your driver">
           <p>Loading your driver…</p>
@@ -781,8 +579,8 @@ function DriverSetup() {
           >
             <p className="text-slate-800">
               {myDriver
-                ? "Update your driver name or profile sharing. Your Driver ID stays the same; tokens for each of your computers are managed below."
-                : "Create your driver identity. This makes a driver profile and issues a posting token you paste into Freight Fate on your PC."}
+                ? "Update your driver name or profile sharing. Tokens for each of your computers are managed below."
+                : `Create your driver identity. Then, to connect Freight Fate to it, ${CONNECT_INSTRUCTIONS}.`}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
 
@@ -819,11 +617,11 @@ function DriverSetup() {
                 </p>
               ) : null}
               <p className="text-sm text-slate-600" id="displayName-hint">
-                3 to 48 characters, including at least three letters. Names must follow the{" "}
-                <Link className={focusRing} href="/freight-fate/online/rules">
-                  driver naming rules
+                {NAME_HINT_PREFIX}{" "}
+                <Link className={focusRing} href={NAME_RULES_HREF}>
+                  {NAME_RULES_LINK_TEXT}
                 </Link>
-                . Your driver name is public while Profile sharing is on.
+                {NAME_HINT_SUFFIX}
               </p>
             </div>
 
@@ -876,44 +674,6 @@ function DriverSetup() {
 
           {myDriver ? (
             <div className="mt-6 space-y-4 rounded border border-line bg-white p-5">
-              <div className="space-y-2">
-                <label className="block font-semibold text-ink" htmlFor="ff-driver-id">
-                  Driver ID
-                </label>
-                <p className="text-sm text-slate-600" id="ff-driver-id-hint">
-                  Paste this into Freight Fate along with your token. It is not secret.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    aria-describedby="ff-driver-id-hint"
-                    autoComplete="off"
-                    className="w-full rounded border border-line-strong px-3 py-2 font-mono text-ink"
-                    id="ff-driver-id"
-                    onFocus={(event) => event.currentTarget.select()}
-                    readOnly
-                    spellCheck={false}
-                    type="text"
-                    value={myDriver.driverId}
-                  />
-                  <button
-                    className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 ${focusRing}`}
-                    aria-describedby={copyStatus?.area === "driver" ? "ff-driver-copy-status" : undefined}
-                    onClick={() => copyText(myDriver.driverId, "Driver ID", "driver")}
-                    type="button"
-                  >
-                    Copy Driver ID
-                  </button>
-                </div>
-                {copyStatus?.area === "driver" ? (
-                  <p
-                    className={copyStatus.kind === "error" ? "text-sm text-red-700" : "text-sm text-slate-700"}
-                    id="ff-driver-copy-status"
-                  >
-                    {copyStatus.message}
-                  </p>
-                ) : null}
-              </div>
-
               {!myDriver.sharingEnabled ? (
                 <p className="text-slate-700">Profile sharing is off.</p>
               ) : (
@@ -926,21 +686,17 @@ function DriverSetup() {
               )}
 
               {/* Called directly (not as a JSX element): a component defined
-                  inside DriverSetup would remount every render and drop
-                  keyboard focus out of the computer-name field mid-typing.
-                  Must remain hook-free — this is a conditional direct call,
-                  and rules-of-hooks lint cannot see into it. */}
+                  inside DriverSetup would remount every render, tearing down
+                  rowButtonRefs and dropping keyboard focus out of an armed
+                  "Confirm sign out" button mid-interaction. Must remain
+                  hook-free — this is a conditional direct call, and
+                  rules-of-hooks lint cannot see into it. */}
               {ComputerList({
-                addError,
-                addPending,
                 armedId,
-                computerName,
                 computersHeadingRef,
                 myComputers,
-                onAddComputer: handleAddComputer,
                 onArmedBlur: armedBlur,
                 onArmedKeyDown: armedKeyDown,
-                onComputerName: setComputerName,
                 onRotateAll: handleRotateAll,
                 onSignOut: handleSignOut,
                 rotateError,

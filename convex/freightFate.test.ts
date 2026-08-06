@@ -7,7 +7,6 @@ import { api, internal } from "./_generated/api";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
-  MAX_DEVICE_TOKENS,
   MAX_DRIVER_EVENTS,
   PRESENCE_WRITE_LIMIT,
   SHARING_CONSENT_VERSION,
@@ -43,6 +42,51 @@ function normalizeDriverId(value: string) {
     .slice(0, 64);
 }
 
+// provisionDriver does not mint tokens: a computer gets one only by
+// activating itself from the game. Tests that need a working token connect
+// one the way a player does -- start, confirm the code while signed in,
+// redeem. Redeeming is what mints, so this also keeps the tests below honest
+// about where a token can come from.
+async function connectComputer(
+  t: ReturnType<typeof setup>,
+  subject: string,
+  label: string,
+  now: number,
+) {
+  const started = await t.mutation(api.freightFateActivation.startActivation, {
+    clientKey: `${subject}:${label}`,
+    now,
+  });
+  await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
+    userCode: started.userCode,
+    label,
+    now,
+  });
+  const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+    deviceCodeHash: await sha256Hex(started.deviceCode),
+    now,
+  });
+  return redeemed!.token;
+}
+
+/** A driver plus one connected computer. */
+async function provisionWithComputer(
+  t: ReturnType<typeof setup>,
+  subject: string,
+  args: {
+    displayName: string;
+    visibility: "public" | "private" | "unlisted";
+    expandedSharingConsent?: boolean;
+    now: number;
+  },
+  label = "My computer",
+) {
+  const { driverId } = await t
+    .withIdentity({ subject })
+    .mutation(api.freightFate.provisionDriver, args);
+  return { driverId, token: await connectComputer(t, subject, label, args.now) };
+}
+
 const SUBJECT = "user_2abcDEF";
 const OTHER = "user_2zzzZZZ";
 
@@ -59,7 +103,7 @@ describe("provisionDriver / getMyDriver", () => {
     expect(await t.query(api.freightFate.getMyDriver, {})).toBeNull();
   });
 
-  test("provisions a driver keyed to the account and returns a one-time token", async () => {
+  test("provisions a driver keyed to the account, with no computer connected yet", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
@@ -71,8 +115,15 @@ describe("provisionDriver / getMyDriver", () => {
     });
 
     expect(result.rotated).toBe(false);
-    expect(typeof result.token).toBe("string");
-    expect(result.token!.length).toBeGreaterThanOrEqual(24);
+    // Nothing is minted here. A token issued at sign-up could not be handed
+    // to the computer that needs it, so it would only ever be a phantom row
+    // in the player's computer list -- "My computer, not used yet," held by
+    // no computer at all.
+    expect(result).not.toHaveProperty("token");
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect()),
+    ).toHaveLength(0);
+    expect((await as.query(api.freightFate.getMyComputers, {}))!.computers).toHaveLength(0);
     // The public slug is already canonical, so the game echoing it back and the
     // REST route re-normalizing it yields the same id.
     expect(normalizeDriverId(result.driverId)).toBe(result.driverId);
@@ -83,7 +134,7 @@ describe("provisionDriver / getMyDriver", () => {
     expect(mine!.displayName).toBe("Rig Hauler"); // whitespace normalized
     expect(mine!.visibility).toBe("private");
     expect(mine!.sharingEnabled).toBe(false);
-    expect(mine!.hasToken).toBe(true);
+    expect(mine!.hasToken).toBe(false);
     expect(mine).not.toHaveProperty("token"); // the plaintext token never leaks
 
     // A different account cannot see this driver.
@@ -93,10 +144,9 @@ describe("provisionDriver / getMyDriver", () => {
 
   test("issued token authenticates the game's presence path; wrong token is rejected", async () => {
     const t = setup();
-    const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       expandedSharingConsent: true,
@@ -107,7 +157,7 @@ describe("provisionDriver / getMyDriver", () => {
     // with hashFreightFateToken and calls updatePresence. Simulate that path.
     const ok = await t.mutation(api.freightFate.updatePresence, {
       driverId: normalizeDriverId(driverId),
-      driverTokenHash: await sha256Hex(token!),
+      driverTokenHash: await sha256Hex(token),
       activity: "Hauling reefer to Denver",
       detail: "I-70 westbound",
       now,
@@ -134,12 +184,12 @@ describe("provisionDriver / getMyDriver", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
     });
-    const driverTokenHash = await sha256Hex(token!);
+    const driverTokenHash = await sha256Hex(token);
     const driverRow = async () =>
       (await t.run(async (ctx) =>
         ctx.db
@@ -207,13 +257,13 @@ describe("provisionDriver / getMyDriver", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       expandedSharingConsent: true,
       now,
     });
-    const driverTokenHash = await sha256Hex(token!);
+    const driverTokenHash = await sha256Hex(token);
 
     // On the board, in the feed, and profile visible while unflagged.
     await t.mutation(api.freightFate.updatePresence, {
@@ -283,7 +333,8 @@ describe("provisionDriver / getMyDriver", () => {
       visibility: "private",
       now,
     });
-    expect(typeof ok.token).toBe("string");
+    expect(ok.driverId).toBeTruthy();
+    expect(ok.rotated).toBe(false);
 
     // Renaming onto the taken name is rejected too...
     await expect(
@@ -312,12 +363,12 @@ describe("provisionDriver / getMyDriver", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
     });
-    const driverTokenHash = await sha256Hex(token!);
+    const driverTokenHash = await sha256Hex(token);
 
     for (let i = 0; i < PRESENCE_WRITE_LIMIT; i += 1) {
       const result = await t.mutation(api.freightFate.updatePresence, {
@@ -381,13 +432,13 @@ describe("provisionDriver / getMyDriver", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       expandedSharingConsent: true,
       now,
     });
-    const driverTokenHash = await sha256Hex(token!);
+    const driverTokenHash = await sha256Hex(token);
 
     const future = await t.mutation(api.freightFate.recordDriverEvent, {
       driverId,
@@ -441,7 +492,7 @@ describe("provisionDriver / getMyDriver", () => {
     });
     expect(await t.query(api.freightFate.getDriverProfile, { driverId: privateDriver.driverId })).toBeNull();
 
-    const unlistedDriver = await other.mutation(api.freightFate.provisionDriver, {
+    const unlistedDriver = await provisionWithComputer(t, OTHER, {
       displayName: "Link Hauler",
       visibility: "unlisted",
       expandedSharingConsent: true,
@@ -449,7 +500,7 @@ describe("provisionDriver / getMyDriver", () => {
     });
     const posted = await t.mutation(api.freightFate.recordDriverEvent, {
       driverId: unlistedDriver.driverId,
-      driverTokenHash: await sha256Hex(unlistedDriver.token!),
+      driverTokenHash: await sha256Hex(unlistedDriver.token),
       eventId: "delivery",
       eventType: "delivery",
       summary: "Delivered canned goods to Chicago",
@@ -463,25 +514,25 @@ describe("provisionDriver / getMyDriver", () => {
     expect(profile?.events).toHaveLength(1);
   });
 
-  test("re-provision edits the profile in place; token only changes when rotated", async () => {
+  test("re-provision edits the profile in place; only a rotate touches tokens", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const first = await as.mutation(api.freightFate.provisionDriver, {
+    const first = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
     });
 
-    // Saving a profile edit without rotating keeps the same id and token.
+    // Saving a profile edit without rotating keeps the same id, and leaves
+    // the connected computer alone.
     const edit = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Night Hauler",
       visibility: "private",
       now: now + 1,
     });
     expect(edit.driverId).toBe(first.driverId);
-    expect(edit.token).toBeNull();
     expect(edit.rotated).toBe(false);
 
     const mine = await as.query(api.freightFate.getMyDriver, {});
@@ -490,14 +541,15 @@ describe("provisionDriver / getMyDriver", () => {
 
     const stillOk = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(first.token!),
+      driverTokenHash: await sha256Hex(first.token),
       activity: "a",
       detail: "b",
       now: now + 2,
     });
     expect(stillOk.ok).toBe(true);
 
-    // Rotating mints a new token and invalidates the old one.
+    // Rotating kills every token and issues none: the panic switch leaves the
+    // driver with no connected computers, each of which must activate again.
     const rotated = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Night Hauler",
       visibility: "private",
@@ -505,21 +557,25 @@ describe("provisionDriver / getMyDriver", () => {
       now: now + 3,
     });
     expect(rotated.rotated).toBe(true);
-    expect(typeof rotated.token).toBe("string");
-    expect(rotated.token).not.toBe(first.token);
+    expect(rotated).not.toHaveProperty("token");
+    expect((await as.query(api.freightFate.getMyComputers, {}))!.computers).toHaveLength(0);
+    expect((await as.query(api.freightFate.getMyDriver, {}))!.hasToken).toBe(false);
 
     const oldFails = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(first.token!),
+      driverTokenHash: await sha256Hex(first.token),
       activity: "a",
       detail: "b",
       now: now + 4,
     });
     expect(oldFails.ok).toBe(false);
 
+    // Activating again is how a computer gets back in -- and that token works.
+    const reconnected = await connectComputer(t, SUBJECT, "Studio desktop", now + 5);
+    expect(reconnected).not.toBe(first.token);
     const newOk = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(rotated.token!),
+      driverTokenHash: await sha256Hex(reconnected),
       activity: "a",
       detail: "b",
       now: now + 5,
@@ -625,13 +681,13 @@ describe("driver name moderation", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       expandedSharingConsent: true,
       now,
     });
-    const driverTokenHash = await sha256Hex(token!);
+    const driverTokenHash = await sha256Hex(token);
 
     await t.mutation(api.freightFate.recordDriverEvent, {
       driverId,
@@ -683,7 +739,7 @@ describe("expanded sharing", () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
-    const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
       displayName: "Legacy Hauler", visibility: "public", now,
     });
     await t.run((ctx) => ctx.db.insert("freightFateProfileSnapshots", {
@@ -699,10 +755,10 @@ describe("expanded sharing", () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
-    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+    const provisioned = await provisionWithComputer(t, SUBJECT, {
       displayName: "Journal Hauler", visibility: "public", expandedSharingConsent: true, now,
     });
-    const auth = { driverId: provisioned.driverId, driverTokenHash: await sha256Hex(provisioned.token!) };
+    const auth = { driverId: provisioned.driverId, driverTokenHash: await sha256Hex(provisioned.token) };
     await t.run((ctx) => ctx.db.insert("freightFateProfileSnapshots", {
       driverId: auth.driverId, version: 1, level: 7, careerTitle: "Long-haul driver",
       lastSavedCity: "Denver, Colorado", deliveries: 22, milesDriven: 8123.4,
@@ -744,10 +800,10 @@ describe("expanded sharing", () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
-    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+    const provisioned = await provisionWithComputer(t, SUBJECT, {
       displayName: "Privacy Hauler", visibility: "public", expandedSharingConsent: true, now,
     });
-    const driverTokenHash = await sha256Hex(provisioned.token!);
+    const driverTokenHash = await sha256Hex(provisioned.token);
     await t.mutation(api.freightFate.updatePresence, {
       driverId: provisioned.driverId, driverTokenHash,
       activity: "Driving", detail: "Broad activity", now,
@@ -765,11 +821,11 @@ describe("expanded sharing", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
     const minute = 60_000;
-    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+    const provisioned = await provisionWithComputer(t, SUBJECT, {
       displayName: "Parked Hauler", visibility: "public", expandedSharingConsent: true, now,
     });
     const driverId = provisioned.driverId;
-    const driverTokenHash = await sha256Hex(provisioned.token!);
+    const driverTokenHash = await sha256Hex(provisioned.token);
     const beat = (at: number, detail = "parcel freight, 65% there") =>
       t.mutation(api.freightFate.updatePresence, {
         driverId, driverTokenHash,
@@ -805,11 +861,11 @@ describe("expanded sharing", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = 1_800_000_000_000;
     const minute = 60_000;
-    const provisioned = await as.mutation(api.freightFate.provisionDriver, {
+    const provisioned = await provisionWithComputer(t, SUBJECT, {
       displayName: "Legacy Hauler", visibility: "public", expandedSharingConsent: true, now,
     });
     const driverId = provisioned.driverId;
-    const driverTokenHash = await sha256Hex(provisioned.token!);
+    const driverTokenHash = await sha256Hex(provisioned.token);
     // A row written by the deployment before changedAt existed — the driver
     // may already have been parked for a day when the filter ships.
     await t.run(async (ctx) => {
@@ -1000,20 +1056,17 @@ describe("per-computer tokens", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const first = await as.mutation(api.freightFate.provisionDriver, {
+    const first = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       expandedSharingConsent: true,
       now,
     });
-    const laptop = await as.mutation(api.freightFate.addComputer, {
-      label: "Laptop",
-      now: now + 1,
-    });
-    expect(laptop.token).not.toBe(first.token);
+    const laptop = await connectComputer(t, SUBJECT, "Laptop", now + 1);
+    expect(laptop).not.toBe(first.token);
 
     // Both machines heartbeat successfully — neither token retired the other.
-    for (const token of [first.token!, laptop.token]) {
+    for (const token of [first.token, laptop]) {
       const beat = await t.mutation(api.freightFate.updatePresence, {
         driverId: first.driverId,
         driverTokenHash: await sha256Hex(token),
@@ -1034,12 +1087,12 @@ describe("per-computer tokens", () => {
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const first = await as.mutation(api.freightFate.provisionDriver, {
+    const first = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
     });
-    const laptop = await as.mutation(api.freightFate.addComputer, { label: "Laptop", now });
+    const laptop = await connectComputer(t, SUBJECT, "Laptop", now);
     const computers = await as.query(api.freightFate.getMyComputers, {});
     const laptopRow = computers!.computers.find((c) => c.label === "Laptop")!;
 
@@ -1051,7 +1104,7 @@ describe("per-computer tokens", () => {
 
     const laptopFails = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(laptop.token),
+      driverTokenHash: await sha256Hex(laptop),
       activity: "Hauling",
       detail: "",
       now: now + 2,
@@ -1060,7 +1113,7 @@ describe("per-computer tokens", () => {
 
     const firstStillWorks = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(first.token!),
+      driverTokenHash: await sha256Hex(first.token),
       activity: "Hauling",
       detail: "",
       now: now + 3,
@@ -1116,17 +1169,17 @@ describe("per-computer tokens", () => {
     expect(legacyFails).toMatchObject({ ok: false, reason: "unauthorized" });
   });
 
-  test("rotateToken is the full sign-out: every computer dies, one fresh token lives", async () => {
+  test("rotateToken is the full sign-out: every computer dies and none is issued", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const now = Date.now();
 
-    const first = await as.mutation(api.freightFate.provisionDriver, {
+    const first = await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
     });
-    const laptop = await as.mutation(api.freightFate.addComputer, { label: "Laptop", now });
+    const laptop = await connectComputer(t, SUBJECT, "Laptop", now);
 
     const rotated = await as.mutation(api.freightFate.provisionDriver, {
       displayName: "Rig Hauler",
@@ -1136,7 +1189,7 @@ describe("per-computer tokens", () => {
     });
     expect(rotated.rotated).toBe(true);
 
-    for (const dead of [first.token!, laptop.token]) {
+    for (const dead of [first.token, laptop]) {
       const fails = await t.mutation(api.freightFate.updatePresence, {
         driverId: first.driverId,
         driverTokenHash: await sha256Hex(dead),
@@ -1147,9 +1200,15 @@ describe("per-computer tokens", () => {
       expect(fails).toMatchObject({ ok: false, reason: "unauthorized" });
     }
 
+    // The list agrees with what the page tells the player: nothing is
+    // connected, and every computer has to activate again. A fresh token
+    // issued here would have shown one connected computer no computer held.
+    expect((await as.query(api.freightFate.getMyComputers, {}))!.computers).toHaveLength(0);
+
+    const reconnected = await connectComputer(t, SUBJECT, "Studio desktop", now + 3);
     const fresh = await t.mutation(api.freightFate.updatePresence, {
       driverId: first.driverId,
-      driverTokenHash: await sha256Hex(rotated.token!),
+      driverTokenHash: await sha256Hex(reconnected),
       activity: "Hauling",
       detail: "",
       now: now + 3,
@@ -1158,31 +1217,13 @@ describe("per-computer tokens", () => {
     expect((await as.query(api.freightFate.getMyComputers, {}))!.computers).toHaveLength(1);
   });
 
-  test("the computer cap rejects the eleventh token", async () => {
-    const t = setup();
-    const as = t.withIdentity({ subject: SUBJECT });
-    const now = Date.now();
-
-    await as.mutation(api.freightFate.provisionDriver, {
-      displayName: "Rig Hauler",
-      visibility: "public",
-      now,
-    });
-    for (let i = 1; i < MAX_DEVICE_TOKENS; i += 1) {
-      await as.mutation(api.freightFate.addComputer, { label: `PC ${i}`, now });
-    }
-    await expect(
-      as.mutation(api.freightFate.addComputer, { label: "One too many", now }),
-    ).rejects.toThrow(ConvexError);
-  });
-
   test("computer management requires the owning account", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
     const other = t.withIdentity({ subject: OTHER });
     const now = Date.now();
 
-    await as.mutation(api.freightFate.provisionDriver, {
+    await provisionWithComputer(t, SUBJECT, {
       displayName: "Rig Hauler",
       visibility: "public",
       now,
@@ -1192,9 +1233,6 @@ describe("per-computer tokens", () => {
 
     // Another signed-in account cannot see or remove them.
     expect(await other.query(api.freightFate.getMyComputers, {})).toBeNull();
-    await expect(
-      t.mutation(api.freightFate.addComputer, { label: "Sneaky", now }),
-    ).rejects.toThrow();
 
     await other.mutation(api.freightFate.provisionDriver, {
       displayName: "Other Driver",

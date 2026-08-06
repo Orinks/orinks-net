@@ -136,7 +136,7 @@ export async function stampDeviceTokenUse(
   }
 }
 
-async function mintDeviceTokenRow(
+export async function mintDeviceTokenRow(
   ctx: MutationCtx,
   driverId: string,
   label: string | undefined,
@@ -168,7 +168,7 @@ export function driverIdFromName(displayName: string) {
   return `${base}-${toHex(suffix)}`.slice(0, 64);
 }
 
-function normalizeDisplayName(value: string) {
+export function normalizeDisplayName(value: string) {
   return value.trim().replace(/\s+/g, " ").slice(0, 48) || "Freight Fate Driver";
 }
 
@@ -177,7 +177,7 @@ function normalizeDisplayName(value: string) {
 // names are already whitespace-normalized (above), so a case-insensitive
 // compare is the whole rule. The drivers table is small and provisioning is
 // rare, so a scan beats maintaining a normalized index column.
-async function displayNameTaken(ctx: QueryCtx, displayName: string, exceptSubject: string) {
+export async function displayNameTaken(ctx: QueryCtx, displayName: string, exceptSubject: string) {
   const key = displayName.toLowerCase();
   const drivers = await ctx.db.query("freightFateDrivers").collect();
   return drivers.some(
@@ -301,13 +301,17 @@ export const provisionDriver = mutation({
   args: {
     displayName: v.string(),
     visibility,
-    // First provision always mints a token (a device row labeled
-    // deviceLabel). For an existing driver, rotateToken is the panic switch:
-    // it signs out every computer — legacy token and all device rows — and
-    // mints one fresh token. Routine "add a computer" goes through
-    // addComputer instead and touches nothing else.
+    // This mutation never mints a token, on first provision or after a
+    // rotate. A computer only gets one by activating itself
+    // (convex/freightFateActivation.ts), which is also the only path that can
+    // actually deliver a token to the computer that needs it: the setup page
+    // has nowhere to put one. Minting here left every new driver a device row
+    // no computer held.
+    //
+    // rotateToken remains the panic switch: it signs out every computer —
+    // legacy token and all device rows — and leaves the driver with none, so
+    // each computer must activate again.
     rotateToken: v.optional(v.boolean()),
-    deviceLabel: v.optional(v.string()),
     expandedSharingConsent: v.optional(v.boolean()),
     now: v.number(),
   },
@@ -368,11 +372,12 @@ export const provisionDriver = mutation({
         patch.sharingConsentedAt = undefined;
       }
 
-      let token: string | null = null;
-      if (args.rotateToken) {
-        // The full sign-out: every computer's token dies, one fresh one is
-        // issued. This is the "my token leaked" recovery, so it must not
-        // leave any older credential alive.
+      const rotated = args.rotateToken === true;
+      if (rotated) {
+        // The full sign-out: every computer's token dies and none is issued
+        // in its place. This is the "my token leaked" recovery, so it must
+        // not leave any older credential alive — including the legacy
+        // single token. Every computer, this one included, activates again.
         const devices = await ctx.db
           .query("freightFateDeviceTokens")
           .withIndex("by_driver_id", (q) => q.eq("driverId", existing.driverId))
@@ -381,12 +386,11 @@ export const provisionDriver = mutation({
           await ctx.db.delete(device._id);
         }
         patch.driverTokenHash = undefined;
-        token = await mintDeviceTokenRow(ctx, existing.driverId, args.deviceLabel, args.now);
       }
 
       await ctx.db.patch(existing._id, patch);
 
-      return { driverId: existing.driverId, token, rotated: token !== null };
+      return { driverId: existing.driverId, rotated };
     }
 
     if (await displayNameTaken(ctx, displayName, identity.subject)) {
@@ -417,9 +421,9 @@ export const provisionDriver = mutation({
       createdAt: args.now,
       updatedAt: args.now,
     });
-    const token = await mintDeviceTokenRow(ctx, driverId, args.deviceLabel, args.now);
-
-    return { driverId, token, rotated: false };
+    // No token here: the driver exists, and the first computer gets its own
+    // by activating from the game.
+    return { driverId, rotated: false };
   },
 });
 
@@ -428,7 +432,7 @@ export const provisionDriver = mutation({
 // The Clerk-authenticated driver row, or null. The computer-list functions
 // below authenticate by account, never by driver token: only the owner can
 // see or manage their computers.
-async function driverForIdentity(ctx: QueryCtx) {
+export async function driverForIdentity(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     return null;
@@ -465,28 +469,10 @@ export const getMyComputers = query({
   },
 });
 
-export const addComputer = mutation({
-  args: {
-    label: v.optional(v.string()),
-    now: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const driver = await driverForIdentity(ctx);
-    if (!driver) {
-      throw new Error("You must be signed in to add a computer.");
-    }
-    const devices = await ctx.db
-      .query("freightFateDeviceTokens")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
-      .collect();
-    if (devices.length >= MAX_DEVICE_TOKENS) {
-      throw new ConvexError({ code: "too_many_computers" as const, limit: MAX_DEVICE_TOKENS });
-    }
-    const token = await mintDeviceTokenRow(ctx, driver.driverId, args.label, args.now);
-    await ctx.db.patch(driver._id, { updatedAt: args.now });
-    return { driverId: driver.driverId, token };
-  },
-});
+// A computer is added by activating it from the game
+// (convex/freightFateActivation.ts), which is the only path that can hand
+// the new token to the computer that asked for it. There is no browser-side
+// add: a mutation here could only mint a token the page has nowhere to put.
 
 export const removeComputer = mutation({
   args: {

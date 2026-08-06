@@ -27,14 +27,29 @@ async function sha256Hex(input: string) {
 
 const SUBJECT = "user_2abcDEF";
 
+// provisionDriver mints nothing: a token exists only once a computer has
+// activated itself, so this walks that path -- start, confirm, redeem.
 async function provisionedDriver(t: ReturnType<typeof setup>) {
   const as = t.withIdentity({ subject: SUBJECT });
-  const { driverId, token } = await as.mutation(api.freightFate.provisionDriver, {
+  const now = Date.now();
+  const { driverId } = await as.mutation(api.freightFate.provisionDriver, {
     displayName: "Rig Hauler",
     visibility: "public",
-    now: Date.now(),
+    now,
   });
-  return { as, driverId, tokenHash: await sha256Hex(token!) };
+  const started = await t.mutation(api.freightFateActivation.startActivation, {
+    clientKey: SUBJECT,
+    now,
+  });
+  await as.mutation(api.freightFateActivation.claimActivation, {
+    userCode: started.userCode,
+    now,
+  });
+  const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+    deviceCodeHash: await sha256Hex(started.deviceCode),
+    now,
+  });
+  return { as, driverId, tokenHash: await sha256Hex(redeemed!.token) };
 }
 
 function linkFor(driverId: string, overrides: Partial<Record<string, unknown>> = {}) {
