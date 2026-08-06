@@ -46,13 +46,36 @@ function hash(content: ArrayBuffer) {
   return createHash("sha256").update(Buffer.from(content)).digest("hex");
 }
 
+// provisionDriver mints nothing: a computer gets a token only by activating
+// itself from the game, so both helpers below go through that path. The
+// device-code hash is computed with node:crypto here and with Web Crypto
+// inside Convex -- if those two ever disagreed, every one of these would fail.
+async function connectComputer(
+  t: ReturnType<typeof setup>,
+  subject: string,
+  label: string,
+  now = Date.now(),
+) {
+  const started = await t.mutation(api.freightFateActivation.startActivation, {
+    clientKey: `${subject}:${label}`, now,
+  });
+  await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
+    userCode: started.userCode, label, now,
+  });
+  const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
+    deviceCodeHash: createHash("sha256").update(started.deviceCode, "utf8").digest("hex"), now,
+  });
+  return redeemed!.token;
+}
+
 async function provisionedDriver(t: ReturnType<typeof setup>, subject = "user_cloud") {
   const result = await t.withIdentity({ subject }).mutation(api.freightFate.provisionDriver, {
     displayName: `Cloud Hauler ${subject}`, visibility: "private", now: Date.now(),
   });
+  const token = await connectComputer(t, subject, "My computer");
   return {
     driverId: result.driverId,
-    driverTokenHash: createHash("sha256").update(result.token!).digest("hex"),
+    driverTokenHash: createHash("sha256").update(token).digest("hex"),
   };
 }
 
@@ -365,13 +388,10 @@ describe("per-computer tokens", () => {
     const auth = await provisionedDriver(t, subject);
     const as = t.withIdentity({ subject });
 
-    const laptop = await as.mutation(api.freightFate.addComputer, {
-      label: "Laptop",
-      now: Date.now(),
-    });
+    const laptop = await connectComputer(t, subject, "Laptop");
     const laptopAuth = {
       driverId: auth.driverId,
-      driverTokenHash: createHash("sha256").update(laptop.token).digest("hex"),
+      driverTokenHash: createHash("sha256").update(laptop).digest("hex"),
     };
 
     await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
