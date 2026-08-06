@@ -246,7 +246,7 @@ export default function ActivateClient({
             Computer connected
           </h2>
           <p className="text-slate-800">
-            You can return to Freight Fate. It will say when it is connected.
+            You can return to Freight Fate.
           </p>
         </div>
       ) : (
