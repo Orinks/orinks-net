@@ -274,6 +274,21 @@ describe("validated private cloud revisions", () => {
     });
   });
 
+  test("the saves list exposes each backup's save version", async () => {
+    // The 1.9 game labels pre-1.9 backups in its restore menu straight from
+    // this metadata (its cutover gate refuses to restore them), so the list
+    // must keep saying which format each revision holds without the client
+    // downloading anything.
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    const listed = await t.query(api.freightFateSaves.listSaves, auth);
+    expect(listed).toMatchObject({
+      ok: true,
+      saves: [{ saveName: "Road Star", revision: 1, saveVersion: validProfile().version }],
+    });
+  });
+
   test("keeps the first verified slot as the public profile owner", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);

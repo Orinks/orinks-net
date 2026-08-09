@@ -730,6 +730,7 @@
     "active_trip",
     "calendar_offset_days",
     "career",
+    "created_line",
     "current_city",
     "dispatch_board_cache",
     "fatigue",
