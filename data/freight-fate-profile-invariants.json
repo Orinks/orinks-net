@@ -64,6 +64,7 @@
   "careerFields": [
     "deliveries",
     "on_time_deliveries",
+    "purchased_endorsements",
     "reputation",
     "total_earnings",
     "total_miles",
@@ -694,6 +695,42 @@
     "yuma_az_us": "Yuma, Arizona",
     "zanesville_oh_us": "Zanesville, Ohio"
   },
+  "endorsements": {
+    "heavy_haul": {
+      "label": "heavy-haul",
+      "level": 3
+    },
+    "high_value": {
+      "label": "high-value",
+      "level": 4
+    },
+    "refrigerated": {
+      "label": "refrigerated",
+      "level": 2
+    }
+  },
+  "fleetTiers": [
+    {
+      "label": "yard standard",
+      "minLevel": 1
+    },
+    {
+      "label": "regional fleet",
+      "minLevel": 4
+    },
+    {
+      "label": "long-haul fleet",
+      "minLevel": 9
+    },
+    {
+      "label": "premium fleet",
+      "minLevel": 13
+    },
+    {
+      "label": "first pick of the yard",
+      "minLevel": 17
+    }
+  ],
   "levelXp": [
     0,
     1000,
@@ -728,6 +765,7 @@
     "achievement_stats",
     "achievements",
     "active_trip",
+    "business_status",
     "calendar_offset_days",
     "career",
     "created_line",

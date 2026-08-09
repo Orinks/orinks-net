@@ -271,7 +271,43 @@ describe("validated private cloud revisions", () => {
       sourceSaveName: "Road Star",
       sourceRevision: 1,
       validatorVersion: 1,
+      // Pre-1.9 payloads carry no business status: the projection keeps
+      // saying what it always said for them, and no fleet tier applies.
+      employmentStatus: "Owner-operator",
+      lifetimeEarnings: 21_500,
+      badgesEarned: 0,
+      // Level 4 has earned every sponsored endorsement, in unlock order.
+      endorsements: ["refrigerated", "heavy-haul", "high-value"],
     });
+    expect(snapshot?.fleetTier).toBeUndefined();
+  });
+
+  test("projects the 1.9 career fields onto the public snapshot", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const base = validProfile();
+    // A level-2 company driver (xp 1,200) who paid for the high-value course
+    // ahead of its sponsored level: earned refrigerated, bought high-value,
+    // and heavy-haul is still ahead of them. Their tier is the level band's.
+    const payload = Object.assign(base, {
+      business_status: "company_driver",
+      career: Object.assign(base.career, { xp: 1_200, purchased_endorsements: ["high_value"] }),
+      achievements: invariants.achievementIds.slice(0, 2),
+    });
+    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true, revision: 1 });
+    const snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
+    expect(snapshot).toMatchObject({
+      level: 2,
+      employmentStatus: "Company driver",
+      fleetTier: "yard standard",
+      // Lifetime career earnings is the validated running total; the current
+      // money balance is deliberately never stored on this row at all.
+      lifetimeEarnings: 21_500,
+      badgesEarned: 2,
+      endorsements: ["refrigerated", "high-value"],
+    });
+    expect(snapshot).not.toHaveProperty("money");
+    expect(Object.values(snapshot!)).not.toContain(payload.money);
   });
 
   test("the saves list exposes each backup's save version", async () => {

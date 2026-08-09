@@ -438,6 +438,14 @@ export default defineSchema({
     onTimeDeliveries: v.optional(v.number()),
     truckName: v.optional(v.string()),
     employmentStatus: v.optional(v.string()),
+    // 1.9 career projection: lifetime career earnings (never the current
+    // money balance — that is the game's published promise), badges earned
+    // out of the game's catalog, endorsement labels in unlock order, and —
+    // company drivers only — the carrier fleet tier.
+    lifetimeEarnings: v.optional(v.number()),
+    badgesEarned: v.optional(v.number()),
+    endorsements: v.optional(v.array(v.string())),
+    fleetTier: v.optional(v.string()),
     capturedAt: v.number(),
     updatedAt: v.number(),
     sourceSaveName: v.optional(v.string()),
