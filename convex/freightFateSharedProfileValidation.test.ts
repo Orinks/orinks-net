@@ -87,10 +87,45 @@ describe("validateSharedProfile", () => {
       { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
       "invalid_range",
     ],
-    ["unowned truck", { truck: "heavy_hauler" }, "invalid_possession"],
+    ["unknown active truck", { truck: "warp_drive" }, "invalid_possession"],
+    ["unknown owned truck", { owned_trucks: ["rig", "warp_drive"] }, "invalid_possession"],
+    ["duplicate owned truck", { owned_trucks: ["rig", "rig"] }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: false, reason });
+  });
+
+  test("accepts a 1.9 company driver who owns no tractor", () => {
+    // 1.9 rewrote ownership: dispatch hands a company driver a carrier
+    // tractor from the level-band fleet, so a fresh career carries an empty
+    // owned_trucks list and wear records for trucks it never owned. The old
+    // rule demanded everyone own the trainer rig, which silently rejected
+    // every backup the 1.9 test builds uploaded.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "company_driver",
+      owned_trucks: [],
+      truck: "ridgeline_sleeper",
+      truck_conditions: {
+        rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4 },
+        ridgeline_sleeper: { fuel_gal: 80, damage_pct: 1, tire_wear_pct: 2, grime_pct: 9 },
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("accepts a 1.9 owner-operator who bought out the assigned tractor", () => {
+    // The buy-in keeps the tractor dispatch assigned, not the trainer rig,
+    // so owned_trucks need not contain "rig" and the active truck rides in
+    // whatever the driver actually bought.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "leased_owner_operator",
+      owned_trucks: ["ridgeline_sleeper"],
+      truck: "ridgeline_sleeper",
+      truck_conditions: {
+        ridgeline_sleeper: { fuel_gal: 80, damage_pct: 1, tire_wear_pct: 2, grime_pct: 9 },
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
   });
 
   test("rejects money and XP that the recorded career cannot support", () => {

@@ -244,12 +244,20 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     return failure("invalid_range", "A truck's condition is outside its allowed range.");
   }
 
+  // Ownership carries no arithmetic since the 1.9 carrier-fleet model: a
+  // company driver runs a dispatch-assigned tractor and owns nothing until
+  // the owner-operator buy-in, and that buy-in keeps the assigned tractor
+  // rather than the trainer rig. So an empty list is the ordinary career and
+  // no particular key is ever guaranteed. What stays checkable is that every
+  // key names a real tractor, listed once. Whether the driver may hold or
+  // drive one is the game's dispatch model -- like the money rule above,
+  // laundering through the garage is left to offline forensics.
   const truck = typeof payload.truck === "string" ? payload.truck : "";
   const owned = Array.isArray(payload.owned_trucks) ? payload.owned_trucks : [];
-  if (!(truck in TRUCK_PRICES) || owned.length === 0 || owned.length > Object.keys(TRUCK_PRICES).length
+  if (!(truck in TRUCK_PRICES) || owned.length > Object.keys(TRUCK_PRICES).length
     || !owned.every((key) => typeof key === "string" && key in TRUCK_PRICES)
-    || new Set(owned).size !== owned.length || !owned.includes("rig") || !owned.includes(truck)) {
-    return failure("invalid_possession", "The cloud backup has an unknown or unowned truck.");
+    || new Set(owned).size !== owned.length) {
+    return failure("invalid_possession", "The cloud backup has an unknown truck.");
   }
   const upgrades = object(payload.upgrades);
   if (!upgrades || Object.keys(upgrades).some((key) => !(key in UPGRADE_PRICES))) {
