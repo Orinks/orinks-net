@@ -49,6 +49,45 @@ describe("driver profile routes", () => {
     expect(html).not.toContain("does not reveal driver details");
   });
 
+  test("shows 1.9 career data with the money-privacy distinction", async () => {
+    getProfile.mockResolvedValue({
+      ...profile,
+      snapshot: {
+        ...profile.snapshot,
+        lifetimeEarnings: 21_500,
+        badgesEarned: 12,
+        badgeCatalogSize: 172,
+        endorsements: ["refrigerated", "high-value"],
+        fleetTier: "regional fleet",
+        truckName: "midroof runner",
+        employmentStatus: "Company driver",
+      },
+    });
+    const html = renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" }));
+    expect(html).toContain("Lifetime career earnings");
+    expect(html).toContain("21,500 dollars");
+    expect(html).toContain("Badges earned");
+    expect(html).toContain("12 out of 172");
+    expect(html).toContain("refrigerated, high-value");
+    expect(html).toContain("Carrier fleet tier");
+    expect(html).toContain("regional fleet");
+    // A carrier-assigned company driver sees the ontology's spoken noun.
+    expect(html).toContain("Assigned truck");
+    expect(html).not.toContain("Current truck");
+    // The published promise, stated where the number appears: the lifetime
+    // total is public, the current balance never is.
+    expect(html).toContain("is never published");
+  });
+
+  test("keeps pre-1.9 snapshots rendering exactly as before", async () => {
+    const html = renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" }));
+    expect(html).not.toContain("Lifetime career earnings");
+    expect(html).not.toContain("Badges earned");
+    expect(html).not.toContain("Endorsements");
+    expect(html).not.toContain("Carrier fleet tier");
+    expect(html).not.toContain("is never published");
+  });
+
   test("uses a concise empty state when career statistics are unavailable", async () => {
     getProfile.mockResolvedValue({ ...profile, snapshot: null });
     const html = renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" }));

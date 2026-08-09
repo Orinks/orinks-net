@@ -100,10 +100,21 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               <div><dt className="font-semibold">Miles driven</dt><dd>{snapshot.milesDriven.toLocaleString("en-US")}</dd></div>
               <div><dt className="font-semibold">Reputation</dt><dd>{snapshot.reputation} out of 100</dd></div>
               {snapshot.onTimeDeliveries === undefined ? null : <div><dt className="font-semibold">On-time deliveries</dt><dd>{snapshot.onTimeDeliveries}</dd></div>}
-              {snapshot.truckName ? <div><dt className="font-semibold">Current truck</dt><dd>{snapshot.truckName}</dd></div> : null}
+              {snapshot.lifetimeEarnings === undefined ? null : <div><dt className="font-semibold">Lifetime career earnings</dt><dd>{snapshot.lifetimeEarnings.toLocaleString("en-US")} dollars</dd></div>}
+              {snapshot.badgesEarned === undefined ? null : <div><dt className="font-semibold">Badges earned</dt><dd>{snapshot.badgesEarned} out of {snapshot.badgeCatalogSize}</dd></div>}
+              {snapshot.endorsements === undefined ? null : <div><dt className="font-semibold">Endorsements</dt><dd>{snapshot.endorsements.length ? snapshot.endorsements.join(", ") : "None yet"}</dd></div>}
+              {snapshot.fleetTier ? <div><dt className="font-semibold">Carrier fleet tier</dt><dd>{snapshot.fleetTier}</dd></div> : null}
+              {snapshot.truckName ? <div><dt className="font-semibold">{snapshot.fleetTier ? "Assigned truck" : "Current truck"}</dt><dd>{snapshot.truckName}</dd></div> : null}
               {snapshot.employmentStatus ? <div><dt className="font-semibold">Employment status</dt><dd>{snapshot.employmentStatus}</dd></div> : null}
             </dl>
           ) : <p>No career statistics yet.</p>}
+          {snapshot && snapshot.lifetimeEarnings !== undefined ? (
+            <p className="mt-4 text-slate-700">
+              Lifetime career earnings is the running total this career has earned across
+              every settled delivery. A driver&apos;s current money balance is different and
+              is never published: the game shares the lifetime total only.
+            </p>
+          ) : null}
         </section>
       ) : null}
 

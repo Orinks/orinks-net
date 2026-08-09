@@ -82,27 +82,70 @@ function levelForXp(xp: number) {
   return level;
 }
 
+// Owner voice for each 1.9 business status (models/business.py status_label,
+// capitalized for the page). A payload without the field predates the 1.9
+// career arc, where every shared career was an owner-operator — that fallback
+// is exactly what this column always said for them.
+const EMPLOYMENT_LABELS: Record<string, string> = {
+  company_driver: "Company driver",
+  leased_owner_operator: "Leased-on owner-operator",
+  independent_authority: "Own authority",
+};
+
 async function upsertVerifiedSnapshot(
   ctx: MutationCtx,
   args: { driverId: string; saveName: string; revision: number; payload: Record<string, unknown>; now: number; validatorVersion: number },
 ) {
-  const career = args.payload.career as Record<string, number>;
-  const level = levelForXp(career.xp);
+  const career = args.payload.career as Record<string, unknown>;
+  const level = levelForXp(career.xp as number);
   const cityLabels = invariants.cityLabels as Record<string, string>;
   const truckLabels = invariants.truckLabels as Record<string, string>;
   const truck = args.payload.truck as string;
+  const businessStatus = typeof args.payload.business_status === "string"
+    ? args.payload.business_status
+    : null;
+  // A company driver's tier is the highest band their level has reached; the
+  // bands are exported from the game's carrier fleet so a rebalance moves
+  // this projection instead of stranding it. Owner-operators drive their own
+  // iron and carry no tier.
+  const fleetTiers = invariants.fleetTiers as Array<{ minLevel: number; label: string }>;
+  const fleetTier = businessStatus === "company_driver"
+    ? fleetTiers.filter((tier) => level >= tier.minLevel).at(-1)?.label
+    : undefined;
+  // Endorsements are level-earned (the carrier sponsors the course) or
+  // self-paid ahead of that level (career.purchased_endorsements). Both
+  // tables come from the game export; unknown purchased keys are ignored the
+  // same way the game ignores them.
+  const endorsementDefs = invariants.endorsements as Record<string, { level: number; label: string }>;
+  const purchased = Array.isArray(career.purchased_endorsements)
+    ? (career.purchased_endorsements as unknown[])
+    : [];
+  const endorsements = Object.entries(endorsementDefs)
+    .filter(([key, def]) => level >= def.level || purchased.includes(key))
+    .sort(([, a], [, b]) => a.level - b.level)
+    .map(([, def]) => def.label);
   const clean = {
     driverId: args.driverId,
     version: 1,
     level,
     careerTitle: `Level ${level} driver`,
     lastSavedCity: cityLabels[args.payload.current_city as string],
-    deliveries: career.deliveries,
-    milesDriven: Math.round(career.total_miles * 10) / 10,
-    reputation: Math.round(career.reputation * 10) / 10,
-    onTimeDeliveries: career.on_time_deliveries,
+    deliveries: career.deliveries as number,
+    milesDriven: Math.round((career.total_miles as number) * 10) / 10,
+    reputation: Math.round((career.reputation as number) * 10) / 10,
+    onTimeDeliveries: career.on_time_deliveries as number,
     truckName: truckLabels[truck],
-    employmentStatus: "Owner-operator",
+    employmentStatus: (businessStatus && EMPLOYMENT_LABELS[businessStatus]) || "Owner-operator",
+    // Lifetime career earnings — a running total the validator has already
+    // range- and arithmetic-checked. Deliberately NOT the current money
+    // balance: the game promises the balance is never published, and this
+    // projection is the only place career money becomes public.
+    lifetimeEarnings: Math.round(career.total_earnings as number),
+    badgesEarned: Array.isArray(args.payload.achievements)
+      ? (args.payload.achievements as unknown[]).length
+      : 0,
+    endorsements,
+    fleetTier,
     capturedAt: args.now,
     updatedAt: args.now,
     sourceSaveName: args.saveName,

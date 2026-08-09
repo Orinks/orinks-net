@@ -102,6 +102,33 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "impossible_xp" });
   });
 
+  test("accepts the 1.9 created-on line marker without demanding it", () => {
+    // 1.9 careers stamp the release line they were created on into every
+    // save (Freight Fate's created_line field, part of its cutover gate on
+    // careers from earlier lines). The allow-list must accept it before any
+    // 1.9 build ships, or every 1.9 backup fails the schema check -- but it
+    // is never required: every save older builds write predates the marker.
+    expect(validateSharedProfile(
+      { ...validProfile(), created_line: "1.9" },
+      "Road Star",
+    )).toMatchObject({ ok: true });
+    expect(REQUIRED_FIELDS).not.toContain("created_line");
+  });
+
+  test("accepts the 1.9 public-career fields without demanding them", () => {
+    // The public profile projection reads the employment status off the top
+    // level and self-paid endorsement courses out of the career, so both ride
+    // the allow-lists ahead of any 1.9 build shipping — same precedent as
+    // created_line, and same rule: never required, because every save older
+    // builds write predates the whole 1.9 career arc.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "company_driver",
+      career: { ...validProfile().career, purchased_endorsements: ["high_value"] },
+    }, "Road Star")).toMatchObject({ ok: true });
+    expect(REQUIRED_FIELDS).not.toContain("business_status");
+  });
+
   test("accepts a legacy market carrying only the original cargo classes", () => {
     // Careers begun before a cargo-class expansion keep the smaller
     // multiplier set (seen in the wild: 8 of the current 16 classes).

@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
+import invariants from "../data/freight-fate-profile-invariants.json";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -972,6 +973,15 @@ export const getDriverProfile = query({
         milesDriven: snapshot.milesDriven, reputation: snapshot.reputation,
         onTimeDeliveries: snapshot.onTimeDeliveries, truckName: snapshot.truckName,
         employmentStatus: snapshot.employmentStatus, capturedAt: snapshot.capturedAt,
+        // 1.9 career data. lifetimeEarnings is the career's running earnings
+        // total — never the current money balance, which is not stored here
+        // at all. badgeCatalogSize rides along so the page can say "of N"
+        // from the same export that validated the badges.
+        lifetimeEarnings: snapshot.lifetimeEarnings, badgesEarned: snapshot.badgesEarned,
+        badgeCatalogSize: snapshot.badgesEarned === undefined
+          ? undefined
+          : invariants.achievementIds.length,
+        endorsements: snapshot.endorsements, fleetTier: snapshot.fleetTier,
       } : null,
       achievements,
       presence,
