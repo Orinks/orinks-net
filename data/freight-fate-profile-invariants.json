@@ -821,6 +821,10 @@
     "refrigerated": {
       "label": "refrigerated",
       "level": 2
+    },
+    "tank": {
+      "label": "tank vehicle",
+      "level": 16
     }
   },
   "fleetTiers": [
@@ -924,12 +928,14 @@
     "migration_notice_pending",
     "money",
     "name",
+    "out_of_service_events",
     "owned_trailers",
     "owned_trucks",
     "pay_advance",
     "pay_advance_used_for_load",
     "radio_favorites",
     "recent_lanes",
+    "selection_score",
     "start_mode",
     "trailer_programs",
     "truck",
