@@ -302,11 +302,38 @@ export async function getFreightFateMastodonStatus(input: { driverId: string; dr
   });
 }
 
-export async function getFreightFatePublicUpdates(limit = 20, before?: { occurredAt: number; eventId: string }) {
+export const FREIGHT_FATE_UPDATES_SNAPSHOT_TAG = "freight-fate-public-updates";
+
+// How long a page of the public feed may be reused. Unlike the presence board
+// this has no correctness ceiling to stay inside -- the feed is finished
+// deliveries, which nobody acts on and which never stop being true -- so the
+// only question is how stale a page may look. Two minutes reads as live.
+export const FREIGHT_FATE_UPDATES_SNAPSHOT_SECONDS = 120;
+
+async function readFreightFatePublicUpdates(limit: number, before?: { occurredAt: number; eventId: string }) {
   const client = getConvexClient();
   if (!client) return null;
   return client.query(anyApi.freightFate.getPublicUpdates, { limit, ...(before ? { before } : {}) });
 }
+
+/** A page of the public feed, cached per (limit, cursor).
+ *
+ * This is what caps backend reads, the same job the presence snapshot does.
+ * Uncached, every server render read the feed afresh, so cost tracked page
+ * views rather than the number of deliveries actually finishing -- and the
+ * traffic that dominates is a crawler walking the "Older updates" chain in
+ * bursts, not players. Measured 2026-08-11: 17 KB per call, ~170 calls an
+ * hour, two thirds of the whole deployment's database I/O.
+ */
+export const getFreightFatePublicUpdates = unstable_cache(
+  (limit = 20, before?: { occurredAt: number; eventId: string }) =>
+    readFreightFatePublicUpdates(limit, before),
+  [FREIGHT_FATE_UPDATES_SNAPSHOT_TAG],
+  {
+    revalidate: FREIGHT_FATE_UPDATES_SNAPSHOT_SECONDS,
+    tags: [FREIGHT_FATE_UPDATES_SNAPSHOT_TAG],
+  },
+);
 
 export async function postFreightFatePresence(input: {
   driverId: string;
