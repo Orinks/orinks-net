@@ -201,7 +201,14 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (!finite(payload.fatigue, 0, 100)) {
     return failure("invalid_range", "fatigue is outside its allowed range.");
   }
-  if (!finite(payload.money, 0, 100_000_000)
+  // Money is allowed to run negative: a 1.9 driver goes under on a repair bill
+  // or a fine their settlement could not cover, and the game carries that
+  // overdraft as a career state (models/solvency.py) with its own repossession
+  // ladder. Only the ceiling is a cheat check -- see the impossible_money rule
+  // below, which is what money has to trace back to. A floor of zero caught no
+  // cheat and instead refused every backup a driver made while in the red,
+  // silently, since a schema-family rejection is retained nowhere.
+  if (!finite(payload.money, -100_000_000, 100_000_000)
     || !finite(payload.game_hours, 0, 10_000_000)
     || !finite(payload.pay_advance, 0, 1_500)
     || typeof payload.tutorial_done !== "boolean"

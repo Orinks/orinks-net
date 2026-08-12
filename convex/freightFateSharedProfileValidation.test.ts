@@ -128,6 +128,22 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: true });
   });
 
+  // Freight Fate 1.9 makes going under water ordinary: a repair bill or a fine
+  // a settlement could not cover leaves money negative, and models/solvency.py
+  // treats that overdraft as a career state with its own repossession ladder
+  // rather than an error. A floor of zero refused every backup from the moment
+  // a driver went a cent into the red, and refused it silently -- a
+  // schema-family rejection is not retained and consumes no rate-limit row, so
+  // the careers this hid left no server-side trace at all. The ceiling below
+  // is the check that actually catches invented money; a lower bound caught
+  // nothing, because holding less is not a cheat.
+  test("accepts a career that is in debt", () => {
+    for (const money of [-0.01, -2_200, -50_000]) {
+      expect(validateSharedProfile({ ...validProfile(), money }, "Road Star"))
+        .toMatchObject({ ok: true });
+    }
+  });
+
   test("rejects money and XP that the recorded career cannot support", () => {
     expect(validateSharedProfile({ ...validProfile(), money: 1_000_000 }, "Road Star"))
       .toMatchObject({ ok: false, reason: "impossible_money" });
