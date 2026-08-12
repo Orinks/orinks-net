@@ -154,17 +154,66 @@ async function upsertVerifiedSnapshot(
   };
   const existing = await ctx.db.query("freightFateProfileSnapshots")
     .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
+  // A player-designated public career (setPublicSave) decides outright which
+  // slot may project. Without one, the first verified slot owns the
+  // projection until that slot is deleted -- uploading a different career
+  // must not silently replace the driver's chosen public identity. Legacy
+  // rows without an owner are claimed by the first verified upload.
+  const owner = await ctx.db.query("freightFateDrivers")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+  if (owner?.publicSaveName !== undefined) {
+    if (args.saveName !== owner.publicSaveName) return;
+  } else if (existing?.sourceSaveName && existing.sourceSaveName !== args.saveName) {
+    return;
+  }
   if (existing) {
-    // The first verified slot owns the public projection until that slot is
-    // deleted. Uploading a different career must not silently replace the
-    // driver's chosen public identity. Legacy rows without an owner are
-    // claimed by the first verified upload that reaches them.
-    if (existing.sourceSaveName && existing.sourceSaveName !== args.saveName) return;
     await ctx.db.patch(existing._id, clean);
   } else {
     await ctx.db.insert("freightFateProfileSnapshots", clean);
   }
 }
+
+// One career is the driver's public face; the rest are private cloud
+// backups. Chosen from the game's Cloud backup menu. Designating a career
+// other than the current projection's source drops the projection at once --
+// the player just said it is not their public identity -- and the designated
+// career's next accepted backup rebuilds it. null returns to the
+// first-uploader rule above.
+export const setPublicSave = mutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    saveName: v.union(v.string(), v.null()),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { driver, reason } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver) {
+      return { ok: false as const, reason };
+    }
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "public-save", driverId: args.driverId, now: args.now, limit: 12,
+    });
+    if (!allowed) {
+      return { ok: false as const, reason: "rate_limited" as const };
+    }
+    if (args.saveName !== null && (args.saveName.length === 0 || args.saveName.length > 48)) {
+      return { ok: false as const, reason: "invalid_name" as const };
+    }
+    await ctx.db.patch(driver._id, {
+      publicSaveName: args.saveName ?? undefined,
+      updatedAt: args.now,
+    });
+    if (args.saveName !== null) {
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
+      if (snapshot && snapshot.sourceSaveName !== args.saveName) {
+        await ctx.db.delete(snapshot._id);
+      }
+    }
+    return { ok: true as const, publicSaveName: args.saveName };
+  },
+});
 
 export const authorizeSaveAction = internalQuery({
   args: { driverId: v.string(), driverTokenHash: v.string() },
@@ -533,6 +582,9 @@ export const listSaves = query({
 
     return {
       ok: true as const,
+      // Which career fronts the public profile (null = first-uploader rule),
+      // so the game's menu can say it without a second request.
+      publicSaveName: driver.publicSaveName ?? null,
       saves: rows.map((row) => ({
         saveName: row.saveName,
         revision: row.revision,

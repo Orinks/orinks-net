@@ -125,6 +125,14 @@ Legacy unsigned revisions are validated and signed on their first authenticated
 download. The public profile never receives the full backup; its allowlisted
 career details are derived from the most recently accepted revision.
 
+One career fronts the public profile. The player designates it from the
+game's Cloud backup menu (`POST /api/freight-fate/saves/public-career`,
+stored as `publicSaveName` on the driver row); every other career stays a
+private cloud backup and never touches the public projection. Without a
+designation, the first verified slot owns the projection until that slot is
+deleted. Designating a different career deletes the current projection
+immediately, and the designated career's next accepted backup rebuilds it.
+
 The validator allowlists are generated from the game catalogs into
 `data/freight-fate-profile-invariants.json`. From the Freight Fate repository,
 run `uv run python tools/export_profile_integrity_invariants.py

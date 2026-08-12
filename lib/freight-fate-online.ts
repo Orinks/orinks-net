@@ -182,6 +182,25 @@ export async function deleteFreightFateSaveSlot(input: {
   });
 }
 
+export async function setFreightFatePublicSave(input: {
+  driverId: string;
+  driverToken: string;
+  saveName: string | null;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.mutation(anyApi.freightFateSaves.setPublicSave, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    saveName: input.saveName === null ? null : normalizeFreightFateSaveName(input.saveName),
+    now: Date.now(),
+  });
+}
+
 export async function downloadFreightFateSave(input: {
   driverId: string;
   driverToken: string;

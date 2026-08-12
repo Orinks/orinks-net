@@ -287,6 +287,11 @@ export default defineSchema({
     // dashboard after review. Never public.
     integrityFlag: v.optional(v.string()),
     integrityFlaggedAt: v.optional(v.number()),
+    // The save slot whose backups feed the public profile projection, chosen
+    // by the player from the game's Cloud backup menu. Every other career
+    // stays a private cloud backup. Absent = the pre-selection rule: the
+    // first verified upload owns the projection until its slot is deleted.
+    publicSaveName: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
