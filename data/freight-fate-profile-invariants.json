@@ -38,6 +38,7 @@
     "fifteen_states",
     "fifty_deliveries",
     "fifty_thousand_miles",
+    "first_day",
     "first_delivery",
     "first_delivery_drop",
     "first_dispatch",
@@ -821,6 +822,10 @@
     "refrigerated": {
       "label": "refrigerated",
       "level": 2
+    },
+    "tank": {
+      "label": "tank vehicle",
+      "level": 16
     }
   },
   "fleetTiers": [
@@ -910,10 +915,13 @@
     "created_line",
     "current_city",
     "dispatch_board_cache",
+    "driving_record",
     "duty_log",
     "fatigue",
+    "fines_owed",
     "game_hours",
     "hos",
+    "hos_key_notice_left",
     "integrity_modified",
     "integrity_notice_pending",
     "loyalty",
@@ -921,12 +929,14 @@
     "migration_notice_pending",
     "money",
     "name",
+    "out_of_service_events",
     "owned_trailers",
     "owned_trucks",
     "pay_advance",
     "pay_advance_used_for_load",
     "radio_favorites",
     "recent_lanes",
+    "selection_score",
     "start_mode",
     "trailer_programs",
     "truck",
