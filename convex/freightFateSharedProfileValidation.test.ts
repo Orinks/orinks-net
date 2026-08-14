@@ -73,7 +73,6 @@ describe("validateSharedProfile", () => {
   });
 
   test.each([
-    ["unknown top-level field", { debug_money: 99 }, "invalid_schema"],
     ["unknown city", { current_city: "moon_base" }, "invalid_city"],
     // Wear lives per truck now, so the range check has to reach inside the
     // record rather than reading a flat field off the profile.
@@ -82,15 +81,25 @@ describe("validateSharedProfile", () => {
       { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 101, grime_pct: 4 } } },
       "invalid_range",
     ],
-    [
-      "a condition record carrying an unknown field",
-      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
-      "invalid_range",
-    ],
     ["unowned truck", { truck: "heavy_hauler" }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: false, reason });
+  });
+
+  test.each([
+    // Unknown fields are another build line's honest work, not a defect:
+    // the allow-lists are exported from one tree while three lines upload
+    // (owner-approved tolerance, 2026-08-14; issue #97's lesson). Checks
+    // read only the fields they name, so an extra key can reach nothing.
+    ["an unknown top-level field", { debug_money: 99 }],
+    [
+      "a condition record carrying an unknown field",
+      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
+    ],
+  ])("tolerates %s", (_label, override) => {
+    expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
+      .toMatchObject({ ok: true });
   });
 
   test("rejects money and XP that the recorded career cannot support", () => {
@@ -268,9 +277,13 @@ describe("every shipped profile shape still backs up", () => {
     expect(validateSharedProfile(build(), "Road Star")).toMatchObject({ ok: true });
   });
 
-  test("still refuses an invented field on an older shape", () => {
+  test("tolerates an unrecognized field on an older shape too", () => {
+    // Same cross-line tolerance as current shapes: a stable-line save with a
+    // field this export never saw is another build's honest work, and no
+    // check can read it. Ranges and required fields on the older shape stay
+    // as strict as ever (see the version 4 test below).
     expect(validateSharedProfile({ ...stableProfile(), debug_money: 99 }, "Road Star"))
-      .toMatchObject({ ok: false, reason: "invalid_schema" });
+      .toMatchObject({ ok: true });
   });
 
   test("holds a version 4 profile to the same condition ranges", () => {
@@ -310,5 +323,20 @@ describe("per-truck condition fields track the game", () => {
     expect(invariants.truckConditionFields).toContain("fuel_gal");
     expect(invariants.truckConditionFields).toContain("tire_wear_pct");
     expect(invariants.truckConditionFields.length).toBeGreaterThan(0);
+  });
+});
+
+describe("cross-line field tolerance (issue #97, relearned 2026-08-14)", () => {
+  test("a payload carrying fields from another build line still validates", () => {
+    const profile = validProfile();
+    (profile as Record<string, unknown>).dev_line_novel_field = 3;
+    (profile.career as Record<string, unknown>).dev_line_novel_counter = 7;
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("missing required fields still refuse", () => {
+    const profile = validProfile();
+    delete (profile as Record<string, unknown>).career;
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: false });
   });
 });

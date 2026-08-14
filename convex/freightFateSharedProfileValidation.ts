@@ -100,7 +100,20 @@ function integer(value: unknown, min: number, max: number) {
 }
 
 function exactFields(value: JsonObject, allowed: Set<string>) {
-  return Object.keys(value).every((key) => allowed.has(key));
+  // Unknown keys are tolerated, not rejected (owner-approved 2026-08-14).
+  // Three build lines upload here at once (stable, dev nightlies, 1.9
+  // testers) and the allow-lists are exported from ONE game tree, so a
+  // field another line grew reads as "unknown" the day it ships -- issue
+  // #97's lesson, relearned when a dev-nightly career (munchkinbear) was
+  // refused as invalid_schema for fields the 1.9 export had never seen.
+  // Every check reads only the fields it names, and the public profile is
+  // built from known fields alone (canonicalSharedProfile), so an extra
+  // key can never reach a check or a public surface. Required fields,
+  // types, ranges, and arithmetic stay as strict as ever; the `allowed`
+  // sets remain as documentation of the fields the checks may read.
+  void value;
+  void allowed;
+  return true;
 }
 
 function safeJson(value: unknown, depth = 0): boolean {

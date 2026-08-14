@@ -126,10 +126,16 @@ describe("validated private cloud revisions", () => {
     const evidence = async () =>
       await t.query(internal.freightFateAdmin.listRejectedUploads, {});
 
-    // A malformed upload is damage or version drift. Not evidence, not kept.
-    const unknownField = Object.assign(validProfile(), { cheat_menu: true });
+    // An unknown field is another build line's honest work: the upload
+    // goes through (cross-line tolerance, 2026-08-14), nothing is flagged,
+    // and nothing is retained -- there is no contradiction to keep.
+    // Its own slot, so the Road Star revision chain below starts empty.
+    const unknownField = Object.assign(validProfile(), {
+      cheat_menu: true,
+      name: "Side Gig",
+    });
     await expect(upload(t, auth, unknownField))
-      .resolves.toMatchObject({ ok: false, reason: "invalid_schema" });
+      .resolves.toMatchObject({ ok: true });
     expect(await flagOf()).toBeNull();
     expect(await evidence()).toHaveLength(0);
 
