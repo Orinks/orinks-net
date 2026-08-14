@@ -259,9 +259,16 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
 
   const truck = typeof payload.truck === "string" ? payload.truck : "";
   const owned = Array.isArray(payload.owned_trucks) ? payload.owned_trucks : [];
-  if (!(truck in TRUCK_PRICES) || owned.length === 0 || owned.length > Object.keys(TRUCK_PRICES).length
+  // An empty owned list is a starter or carrier-assigned tractor, and which
+  // truck starts a career differs by build line (the dev line's
+  // hand_me_down_sleeper flunked a check that demanded 1.9's "rig" --
+  // 2026-08-14, same cross-line lesson as the field tolerance above). When
+  // a list IS present it must be internally consistent and every entry a
+  // real truck, and the active truck must be catalogued always.
+  if (!(truck in TRUCK_PRICES) || owned.length > Object.keys(TRUCK_PRICES).length
     || !owned.every((key) => typeof key === "string" && key in TRUCK_PRICES)
-    || new Set(owned).size !== owned.length || !owned.includes("rig") || !owned.includes(truck)) {
+    || new Set(owned).size !== owned.length
+    || (owned.length > 0 && !owned.includes(truck))) {
     return failure("invalid_possession", "The cloud backup has an unknown or unowned truck.");
   }
   const upgrades = object(payload.upgrades);
