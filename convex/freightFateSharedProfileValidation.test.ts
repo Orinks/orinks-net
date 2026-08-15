@@ -6,6 +6,7 @@ import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
 import {
   REQUIRED_FIELDS,
   canonicalSharedProfile,
+  knownBadgeCount,
   validateSharedProfile,
 } from "./freightFateSharedProfileValidation";
 
@@ -73,7 +74,7 @@ describe("validateSharedProfile", () => {
   });
 
   test.each([
-    ["unknown city", { current_city: "moon_base" }, "invalid_city"],
+    ["no city at all", { current_city: "" }, "invalid_city"],
     // Wear lives per truck now, so the range check has to reach inside the
     // record rather than reading a flat field off the profile.
     [
@@ -84,9 +85,9 @@ describe("validateSharedProfile", () => {
     // A condition record carrying an unknown field is TOLERATED, not
     // rejected -- it is another build line's honest work (see the tolerance
     // stanza below), so dev's old invalid_range case for it is gone.
-    ["unknown active truck", { truck: "warp_drive" }, "invalid_possession"],
-    ["unknown owned truck", { owned_trucks: ["rig", "warp_drive"] }, "invalid_possession"],
+    ["no truck at all", { truck: "" }, "invalid_possession"],
     ["duplicate owned truck", { owned_trucks: ["rig", "rig"] }, "invalid_possession"],
+    ["an upgrade tier no upgrade could reach", { upgrades: { chrome: 500 } }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: false, reason });
@@ -244,22 +245,54 @@ describe("validateSharedProfile", () => {
     expect(validateSharedProfile(legacy, "Road Star")).toMatchObject({ ok: true });
   });
 
-  test("rejects empty or unknown market multipliers", () => {
+  test("rejects a market with no multipliers or a rewritten band", () => {
     const empty = validProfile();
     empty.market.multipliers = {};
     expect(validateSharedProfile(empty, "Road Star"))
       .toMatchObject({ ok: false, reason: "invalid_market" });
-    const unknown = validProfile();
-    unknown.market.multipliers = { antigravity: 1 };
-    expect(validateSharedProfile(unknown, "Road Star"))
+    const rigged = validProfile();
+    rigged.market.multipliers = { general: 9 };
+    expect(validateSharedProfile(rigged, "Road Star"))
       .toMatchObject({ ok: false, reason: "invalid_market" });
   });
 
-  test("rejects unknown achievements and unsupported save versions", () => {
-    expect(validateSharedProfile({ ...validProfile(), achievements: ["invented"] }, "Road Star"))
-      .toMatchObject({ ok: false, reason: "invalid_achievement" });
+  test("rejects an unsupported save version", () => {
     expect(validateSharedProfile({ ...validProfile(), version: 99 }, "Road Star"))
       .toMatchObject({ ok: false, reason: "unsupported_version" });
+  });
+
+  // Content this server has not been told about is a newer game, not a forged
+  // career: the game ships cities, tractors, cargo classes, and badges on its
+  // own cadence while these lists come from one exported tree. Refusing on
+  // membership meant a content change and a validator deploy had to land the
+  // same day or honest drivers lost Cloud Backup -- which is what `first_day`
+  // did to jessie and Tim on 2026-08-14, on a badge earned in the first
+  // shift. Accepted here, and filtered where it would otherwise be published.
+  test.each([
+    ["a city the export has not caught up to", { current_city: "moon_base_mo_us" }],
+    ["a tractor added after this export", { truck: "warp_drive" }],
+    ["an owned tractor added after this export", { owned_trucks: ["rig", "warp_drive"] }],
+    ["an upgrade this export has never seen", { upgrades: { warp_core: 3 } }],
+    ["a badge awarded by a newer build", { achievements: ["invented"] }],
+  ])("accepts %s", (_label, override) => {
+    expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
+      .toMatchObject({ ok: true });
+  });
+
+  test("a cargo class added after this export is a market, not a forgery", () => {
+    const profile = validProfile();
+    profile.market.multipliers = { ...profile.market.multipliers, antigravity: 1.1 };
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("the public badge tally counts only badges this server can name", () => {
+    // Membership became a publishing question rather than an acceptance one,
+    // so the filtering has to happen somewhere: the tally and the catalog it
+    // is shown against must describe the same set, or a newer game inflates
+    // the number on a public profile.
+    expect(knownBadgeCount([invariants.achievementIds[0], "invented"])).toBe(1);
+    expect(knownBadgeCount(["invented"])).toBe(0);
+    expect(knownBadgeCount("not a list")).toBe(0);
   });
 });
 

@@ -436,7 +436,7 @@ export default defineSchema({
     version: v.number(),
     level: v.number(),
     careerTitle: v.string(),
-    lastSavedCity: v.string(),
+    lastSavedCity: v.optional(v.string()),
     deliveries: v.number(),
     milesDriven: v.number(),
     reputation: v.number(),
