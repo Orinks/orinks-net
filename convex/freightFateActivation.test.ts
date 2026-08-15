@@ -739,3 +739,99 @@ describe("claiming resets the collection window", () => {
     ).toBe("expired");
   });
 });
+
+describe("one computer, one row", () => {
+  const MACHINE = "a1b2c3d4e5f60718293a4b5c6d7e8f90";
+
+  async function connect(
+    t: ReturnType<typeof setup>,
+    { machineKey, label, now }: { machineKey?: string; label: string; now: number },
+  ) {
+    const started = await t.mutation(api.freightFateActivation.startActivation, {
+      clientKey: "1.2.3.4",
+      machineKey,
+      now,
+    });
+    await t
+      .withIdentity({ subject: SUBJECT })
+      .mutation(api.freightFateActivation.claimActivation, {
+        userCode: started.userCode,
+        label,
+        now: now + 1_000,
+      });
+    return await t.mutation(api.freightFateActivation.redeemActivation, {
+      deviceCodeHash: await hashDeviceCode(started.deviceCode),
+      now: now + 2_000,
+    });
+  }
+
+  const devicesOf = (t: ReturnType<typeof setup>) =>
+    t.run(async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect());
+
+  test("connecting the same computer again replaces its row", async () => {
+    // The report this exists for: a tester who unzips a build a week filled a
+    // ten-slot computer list with one PC, because every activation minted
+    // another row (armstrong445, 2026-08-15).
+    const t = setup();
+    await driverFor(t, SUBJECT);
+
+    const first = await connect(t, { machineKey: MACHINE, label: "Studio desktop", now: NOW });
+    const second = await connect(t, { machineKey: MACHINE, label: "Studio desktop", now: NOW + 60_000 });
+
+    const devices = await devicesOf(t);
+    expect(devices).toHaveLength(1);
+    expect(devices[0].machineKey).toBe(MACHINE);
+    // A new sign-in on that computer, so the old token stops working.
+    expect(second?.token).not.toBe(first?.token);
+  });
+
+  test("a different computer still takes its own row", async () => {
+    const t = setup();
+    await driverFor(t, SUBJECT);
+
+    await connect(t, { machineKey: MACHINE, label: "Studio desktop", now: NOW });
+    await connect(t, {
+      machineKey: "ffffffffffffffffffffffffffffffff",
+      label: "Laptop",
+      now: NOW + 60_000,
+    });
+
+    expect(await devicesOf(t)).toHaveLength(2);
+  });
+
+  test("a build that sends no machine key behaves as it always did", async () => {
+    // Older clients must not collapse onto one shared row just because they
+    // are all unlabelled.
+    const t = setup();
+    await driverFor(t, SUBJECT);
+
+    await connect(t, { label: "Studio desktop", now: NOW });
+    await connect(t, { label: "Studio desktop", now: NOW + 60_000 });
+
+    expect(await devicesOf(t)).toHaveLength(2);
+  });
+
+  test("a full list still lets that computer connect again", async () => {
+    // The cap must not lock a player out of the PC they are already on.
+    const t = setup();
+    const driver = await driverFor(t, SUBJECT);
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 9; i++) {
+        await ctx.db.insert("freightFateDeviceTokens", {
+          driverId: driver.driverId,
+          tokenHash: `hash_${i}`,
+          label: `Computer ${i}`,
+          createdAt: NOW,
+        });
+      }
+    });
+
+    await connect(t, { machineKey: MACHINE, label: "Studio desktop", now: NOW });
+    expect(await devicesOf(t)).toHaveLength(10);
+
+    // Tenth slot taken by this PC; connecting it again must still work.
+    const again = await connect(t, { machineKey: MACHINE, label: "Studio desktop", now: NOW + 60_000 });
+    expect(again?.token).toBeTruthy();
+    expect(await devicesOf(t)).toHaveLength(10);
+  });
+});

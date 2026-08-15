@@ -306,6 +306,14 @@ export default defineSchema({
     tokenHash: v.string(),
     // Player-chosen computer name shown only to the owner on the setup page.
     label: v.string(),
+    // Which physical computer this row belongs to, as the game reports it: an
+    // opaque hash, never a hostname, since equality is all it is ever used
+    // for. Activating again from the same computer REPLACES its row instead
+    // of adding one -- without this the cap counted activations, so a tester
+    // who unzips a build a week filled a ten-slot list with one PC
+    // (armstrong445, 2026-08-15). Optional: a game build that does not send
+    // one behaves exactly as before, a fresh row every time.
+    machineKey: v.optional(v.string()),
     createdAt: v.number(),
     // Coarse (see DEVICE_TOKEN_USE_STAMP_MS): "which computer was this again"
     // freshness for the owner, not an audit log.
@@ -324,6 +332,9 @@ export default defineSchema({
     // Set when the signed-in player claims the code.
     driverId: v.optional(v.string()),
     label: v.optional(v.string()),
+    // Supplied by the game when it asks for the code, carried to the device
+    // row when the activation is redeemed. See freightFateDeviceTokens.
+    machineKey: v.optional(v.string()),
     createdAt: v.number(),
     expiresAt: v.number(),
   })
