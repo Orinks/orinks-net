@@ -79,19 +79,24 @@ export const uploadValidatedSave = action({
       // Keep the evidence instead. Real edits are convicted offline against a
       // retained payload (ff-admin/save_forensics.py), which is what caught
       // every confirmed case, and setIntegrityFlag stamps the result by hand.
-      if (validation.reason === "impossible_money" || validation.reason === "impossible_xp") {
-        await ctx.runMutation(anyApi.freightFateSaves.recordRejectedUpload, {
-          driverId: args.driverId,
-          driverTokenHash: args.driverTokenHash,
-          reason: validation.reason,
-          saveName: args.saveName,
-          saveVersion: args.saveVersion,
-          contentHash: args.contentHash,
-          content: args.content,
-          clientVersion: args.clientVersion,
-          now: args.now,
-        });
-      }
+      //
+      // Every refusal family is retained, not just the arithmetic ones.
+      // Schema-family refusals used to vanish without a trace, and four
+      // honest-save bugs in a row (stale badge catalog, cross-line fields,
+      // assigned-tractor possession, start-option money) each had to be
+      // diagnosed blind because the payload that would have named the bug
+      // in seconds was thrown away. Rate limiting already bounds the rows.
+      await ctx.runMutation(anyApi.freightFateSaves.recordRejectedUpload, {
+        driverId: args.driverId,
+        driverTokenHash: args.driverTokenHash,
+        reason: validation.reason,
+        saveName: args.saveName,
+        saveVersion: args.saveVersion,
+        contentHash: args.contentHash,
+        content: args.content,
+        clientVersion: args.clientVersion,
+        now: args.now,
+      });
       return { ok: false, reason: validation.reason };
     }
     if (validation.payload.version !== args.saveVersion) {
