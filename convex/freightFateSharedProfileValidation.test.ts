@@ -107,6 +107,31 @@ describe("validateSharedProfile", () => {
       .toMatchObject({ ok: true });
   });
 
+  test("accepts a career whose unique-value stats outgrew the old 256 cap", () => {
+    // achievement_stats holds add_unique_stat sets that only ever grow and
+    // are never trimmed. The radio badge needs 25 stations; the list keeps
+    // every one. Darren's career reached 256 and every backup after that was
+    // refused as invalid_schema -- a permanent lockout that read like a
+    // corrupt save. cities_delivered is the same shape against 623 cities.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      achievement_stats: {
+        radio_stations_heard: Array.from({ length: 700 }, (_, i) => `station_${i}`),
+        cities_delivered: Object.keys(invariants.cityLabels),
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("still refuses a payload shaped to cost more work than a career can", () => {
+    // The shape guard survives as a work budget: nesting past the depth limit
+    // is refused, so dropping the per-collection counts did not open the door
+    // to a small payload that walks forever.
+    let deep: unknown = 1;
+    for (let i = 0; i < 20; i += 1) deep = [deep];
+    expect(validateSharedProfile({ ...validProfile(), duty_log: deep }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_schema" });
+  });
+
   test("accepts a 1.9 company driver who owns no tractor", () => {
     // 1.9 rewrote ownership: dispatch hands a company driver a carrier
     // tractor from the level-band fleet, so a fresh career carries an empty

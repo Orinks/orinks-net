@@ -123,19 +123,39 @@ function exactFields(value: JsonObject, allowed: Set<string>) {
   return true;
 }
 
-function safeJson(value: unknown, depth = 0): boolean {
+// Total values this walk will look at before giving up. The document reaching
+// here is already bounded -- the action gunzips with maxOutputLength set to
+// MAX_SHARED_PROFILE_BYTES, so nothing larger than a quarter megabyte of JSON
+// can be presented -- so this only has to stop a small payload from being
+// shaped to cost a lot (deep nesting, a million empty arrays). It is a work
+// budget, not a statement about how much career a driver may have.
+const MAX_JSON_NODES = 200_000;
+
+// This used to cap every array at 256 entries and every object at 128 keys,
+// which read as a safety rule and behaved as a career length limit. The game
+// keeps unique-value sets in achievement_stats that only ever grow --
+// radio_stations_heard, cities_delivered -- through add_unique_stat, and
+// nothing trims them. A driver who heard a 257th station could never back up
+// again: the badge needed 25, the list kept all of them, and the refusal came
+// back as "invalid_schema", so it read as a corrupt save rather than a wall.
+// Darren hit it at exactly 256 and was refused 27 times in one morning; with
+// 623 cities in the world, cities_delivered was the same cliff further out.
+// Shape is not evidence of anything, and the byte cap above already bounds the
+// work, so what stays is depth (stack safety), string length, and a node
+// budget -- none of which a real career can grow into.
+function safeJson(value: unknown, depth = 0, budget = { left: MAX_JSON_NODES }): boolean {
   if (depth > 12) return false;
+  if ((budget.left -= 1) < 0) return false;
   if (value === null || typeof value === "boolean") return true;
   if (typeof value === "string") return value.length <= 4096;
   if (typeof value === "number") return Number.isFinite(value);
   if (Array.isArray(value)) {
-    return value.length <= 256 && value.every((item) => safeJson(item, depth + 1));
+    return value.every((item) => safeJson(item, depth + 1, budget));
   }
   const record = object(value);
   if (!record) return false;
-  const entries = Object.entries(record);
-  return entries.length <= 128 && entries.every(
-    ([key, item]) => key.length <= 128 && safeJson(item, depth + 1),
+  return Object.entries(record).every(
+    ([key, item]) => key.length <= 128 && safeJson(item, depth + 1, budget),
   );
 }
 
