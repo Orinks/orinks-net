@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   LETTERS_ERROR,
@@ -211,6 +211,47 @@ describe("ActivateClient", () => {
     await waitFor(() => expect(alert).toHaveFocus());
 
     expect(screen.getByLabelText(/activation code/i)).not.toHaveAttribute("aria-invalid");
+  });
+
+  // The setup page's buttons say "Sign out" and have never said "Remove",
+  // so an instruction to remove a computer sends a screen reader user
+  // searching that page for a word that is not on it (armstrong445, 2026-08-15).
+  test("the computer cap names the control the setup page actually has", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "too_many_computers" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" />);
+    fireEvent.click(screen.getByRole("button", { name: /connect/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/sign out/i);
+    expect(alert).not.toHaveTextContent(/remove/i);
+  });
+
+  // The fix for this failure lives on another page, and focus is already on
+  // the alert -- so the link out of it is the next Tab stop, not a hunt.
+  test("the computer cap links to the setup page from inside the alert", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "too_many_computers" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" />);
+    fireEvent.click(screen.getByRole("button", { name: /connect/i }));
+
+    const alert = await screen.findByRole("alert");
+    const link = within(alert).getByRole("link", { name: /your computers/i });
+    expect(link).toHaveAttribute("href", "/freight-fate/online/setup");
+  });
+
+  // The alert is sr-only until something goes wrong, and sr-only is
+  // clip-based: an always-mounted link inside it would be an invisible tab
+  // stop sitting ahead of the code field on every clean page load.
+  test("the alert holds no link until a failure puts one there", async () => {
+    const claim = vi.fn().mockResolvedValue({ ok: false, code: "unknown_code" });
+    render(<ActivateClient claim={claim} initialCode="WKQR-3468" />);
+
+    const alert = screen.getByRole("alert");
+    expect(within(alert).queryByRole("link")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /connect/i }));
+    await waitFor(() => expect(alert.textContent).not.toBe(""));
+    // A wrong code is fixed on this page, so it gets no link either.
+    expect(within(alert).queryByRole("link")).toBeNull();
   });
 
   test("a rate-limited claim gets its own message", async () => {
