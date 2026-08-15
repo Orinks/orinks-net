@@ -61,7 +61,11 @@ vi.mock("convex/react", async () => {
 });
 vi.mock("@/components/AccountControls", () => ({ AccountControls: () => null }));
 
-import { FreightFateSetupClient, shouldAnnounceDriverReady } from "./setup-client";
+import {
+  connectInstructions,
+  FreightFateSetupClient,
+  shouldAnnounceDriverReady,
+} from "./setup-client";
 
 beforeEach(() => {
   store.driver = DRIVER;
@@ -128,6 +132,27 @@ test("no remaining control promises a token", () => {
   expect(html).not.toContain("get its token");
   expect(html).not.toContain("get a new token");
   expect(html).not.toContain("Add computer");
+});
+
+// The same site answers on orinks.net and on dev.orinks.net (the staging
+// deployment the 1.9 game builds talk to), and the address was hardcoded, so
+// staging told players to enter their code on a host that never minted it.
+test("the connect instruction names the host serving the page", () => {
+  expect(connectInstructions("dev.orinks.net")).toContain("dev.orinks.net/activate");
+  expect(connectInstructions("orinks.net")).toContain("orinks.net/activate");
+});
+
+// The regression guard that matters: the quoted words are the game's own
+// menu item, which is "Set up this computer with orinks.net" in every build
+// including the staging-pointed ones. Interpolating the host there would
+// name a menu item that does not exist -- unfindable for someone arrowing
+// the menu by its spoken label.
+test("the quoted menu item keeps the game's own name on every host", () => {
+  for (const host of ["orinks.net", "dev.orinks.net", "localhost:3000"]) {
+    expect(connectInstructions(host)).toContain(
+      'choose "Set up this computer with orinks.net,"',
+    );
+  }
 });
 
 test("driver readiness announces only on the first resolved query state", () => {
