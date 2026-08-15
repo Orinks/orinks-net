@@ -66,20 +66,47 @@ const HOS_EVENT_FIELDS = new Set([
   "status", "minutes", "drive_before", "duty_before", "since_break_before", "source",
 ]);
 const DUTY_STATUSES = new Set(["driving", "on_duty_not_driving", "off_duty", "sleeper_berth"]);
-const CITY_SLUGS = new Set(Object.keys(invariants.cityLabels));
+// The catalogs below stopped being acceptance gates on 2026-08-15 and became
+// publishing filters. Membership decides what a public profile may say about
+// a career, never whether the career may be backed up -- an unknown id is a
+// build this server has not been told about, and the driver keeps their save
+// either way. See the notes at each check for the refusals this replaced.
 const ACHIEVEMENT_IDS = new Set(invariants.achievementIds);
-const MARKET_KEYS = new Set(invariants.marketCargoKeys);
-const TRUCK_PRICES = invariants.truckPrices as Record<string, number>;
-const UPGRADE_PRICES = invariants.upgradePrices as Record<string, number[]>;
+
+// Badges the public tally may count. Ids this server cannot name are carried
+// in the backup and left out of the number, so the catalog and the tally
+// always describe the same set and a newer game can never inflate it.
+export function knownBadgeCount(achievements: unknown): number {
+  return Array.isArray(achievements)
+    ? achievements.filter((id) => typeof id === "string" && ACHIEVEMENT_IDS.has(id)).length
+    : 0;
+}
 // Economy terms behind the two arithmetic checks, exported from the game for
 // the same reason the field lists are: a copy kept here goes stale on the next
 // balance pass and starts rejecting honest backups.
 const STARTING_MONEY = invariants.startingMoney as number;
+// The richest career start the game offers. The money ceiling has to credit
+// this, not STARTING_MONEY: the owner-operator start opens with 18,000
+// dollars, and a ceiling built on the company-driver 5,000 rejected every
+// honest owner-operator backup as impossible_money until earnings outgrew
+// the gap (munchkinbear, 2026-08-14). Falls back to STARTING_MONEY for an
+// invariants file exported before the key existed.
+const STARTING_MONEY_MAX = (invariants.startingMoneyMax as number | undefined) ?? STARTING_MONEY;
 const XP_PER_MILE_MAX = invariants.xpPerMileMax as number;
 const XP_FLAT_PER_DELIVERY = invariants.xpFlatPerDelivery as number;
 // Absorbs rounding drift between a total accumulated per delivery and the same
 // total recomputed once here. Cents, not dollars -- it is not a cheat budget.
 const ARITHMETIC_SLACK = 1;
+// Ceilings for the collections whose membership is no longer an acceptance
+// question. They exist so a payload cannot be padded without limit, and they
+// sit far above anything the game can produce: the catalog is 173 badges, the
+// fleet 35 tractors, the deepest upgrade a handful of tiers. Deliberately not
+// derived from the export -- a ceiling that tracks today's catalog is the
+// same lockstep trap in a smaller form, and it is the arithmetic rules, not
+// these, that decide whether a career is honest.
+const MAX_ACHIEVEMENTS = 512;
+const MAX_OWNED_TRUCKS = 128;
+const MAX_UPGRADE_TIER = 64;
 
 function failure(reason: string, message: string): SharedProfileValidation {
   return { ok: false, reason, message };
@@ -100,22 +127,55 @@ function integer(value: unknown, min: number, max: number) {
 }
 
 function exactFields(value: JsonObject, allowed: Set<string>) {
-  return Object.keys(value).every((key) => allowed.has(key));
+  // Unknown keys are tolerated, not rejected (owner-approved 2026-08-14).
+  // Three build lines upload here at once (stable, dev nightlies, 1.9
+  // testers) and the allow-lists are exported from ONE game tree, so a
+  // field another line grew reads as "unknown" the day it ships -- issue
+  // #97's lesson, relearned when a dev-nightly career (munchkinbear) was
+  // refused as invalid_schema for fields the 1.9 export had never seen.
+  // Every check reads only the fields it names, and the public profile is
+  // built from known fields alone (canonicalSharedProfile), so an extra
+  // key can never reach a check or a public surface. Required fields,
+  // types, ranges, and arithmetic stay as strict as ever; the `allowed`
+  // sets remain as documentation of the fields the checks may read.
+  void value;
+  void allowed;
+  return true;
 }
 
-function safeJson(value: unknown, depth = 0): boolean {
+// Total values this walk will look at before giving up. The document reaching
+// here is already bounded -- the action gunzips with maxOutputLength set to
+// MAX_SHARED_PROFILE_BYTES, so nothing larger than a quarter megabyte of JSON
+// can be presented -- so this only has to stop a small payload from being
+// shaped to cost a lot (deep nesting, a million empty arrays). It is a work
+// budget, not a statement about how much career a driver may have.
+const MAX_JSON_NODES = 200_000;
+
+// This used to cap every array at 256 entries and every object at 128 keys,
+// which read as a safety rule and behaved as a career length limit. The game
+// keeps unique-value sets in achievement_stats that only ever grow --
+// radio_stations_heard, cities_delivered -- through add_unique_stat, and
+// nothing trims them. A driver who heard a 257th station could never back up
+// again: the badge needed 25, the list kept all of them, and the refusal came
+// back as "invalid_schema", so it read as a corrupt save rather than a wall.
+// Darren hit it at exactly 256 and was refused 27 times in one morning; with
+// 623 cities in the world, cities_delivered was the same cliff further out.
+// Shape is not evidence of anything, and the byte cap above already bounds the
+// work, so what stays is depth (stack safety), string length, and a node
+// budget -- none of which a real career can grow into.
+function safeJson(value: unknown, depth = 0, budget = { left: MAX_JSON_NODES }): boolean {
   if (depth > 12) return false;
+  if ((budget.left -= 1) < 0) return false;
   if (value === null || typeof value === "boolean") return true;
   if (typeof value === "string") return value.length <= 4096;
   if (typeof value === "number") return Number.isFinite(value);
   if (Array.isArray(value)) {
-    return value.length <= 256 && value.every((item) => safeJson(item, depth + 1));
+    return value.every((item) => safeJson(item, depth + 1, budget));
   }
   const record = object(value);
   if (!record) return false;
-  const entries = Object.entries(record);
-  return entries.length <= 128 && entries.every(
-    ([key, item]) => key.length <= 128 && safeJson(item, depth + 1),
+  return Object.entries(record).every(
+    ([key, item]) => key.length <= 128 && safeJson(item, depth + 1, budget),
   );
 }
 
@@ -195,8 +255,15 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     || payload.name.length > 48 || normalizedName !== saveName) {
     return failure("invalid_name", "The cloud backup name does not match its save slot.");
   }
-  if (!CITY_SLUGS.has(payload.current_city as string)) {
-    return failure("invalid_city", "The cloud backup is not in a known Freight Fate city.");
+  // A city this server has never heard of is a map the game shipped ahead of
+  // the export, not a forged career -- and the projection already handles it:
+  // an unknown slug simply has no label to publish. Demanding membership made
+  // "your build is newer than the server" arrive as "your save is invalid",
+  // and a new corridor could not ship without a validator deploy on the same
+  // day. What is left is that it looks like a slug at all.
+  if (typeof payload.current_city !== "string" || payload.current_city.trim().length === 0
+    || payload.current_city.length > 64) {
+    return failure("invalid_city", "The cloud backup has no city recorded.");
   }
   if (!finite(payload.fatigue, 0, 100)) {
     return failure("invalid_range", "fatigue is outside its allowed range.");
@@ -255,25 +322,32 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // company driver runs a dispatch-assigned tractor and owns nothing until
   // the owner-operator buy-in, and that buy-in keeps the assigned tractor
   // rather than the trainer rig. So an empty list is the ordinary career and
-  // no particular key is ever guaranteed. What stays checkable is that every
-  // key names a real tractor, listed once. Whether the driver may hold or
+  // no particular key is ever guaranteed. Whether the driver may hold or
   // drive one is the game's dispatch model -- like the money rule above,
   // laundering through the garage is left to offline forensics.
+  //
+  // The keys are no longer required to name a tractor this server knows. A
+  // truck added to the fleet in a nightly is a key the export has not caught
+  // up to yet, and refusing it locked every driver who was handed one out of
+  // Cloud Backup until the two trees were redeployed together. The public
+  // projection reads truckLabels, so an unknown key publishes no truck name
+  // and reaches nothing. What is still checked is the shape: strings, no
+  // duplicates, and a list no longer than a garage could plausibly hold.
   const truck = typeof payload.truck === "string" ? payload.truck : "";
   const owned = Array.isArray(payload.owned_trucks) ? payload.owned_trucks : [];
-  if (!(truck in TRUCK_PRICES) || owned.length > Object.keys(TRUCK_PRICES).length
-    || !owned.every((key) => typeof key === "string" && key in TRUCK_PRICES)
+  if (truck.length === 0 || truck.length > 64 || owned.length > MAX_OWNED_TRUCKS
+    || !owned.every((key) => typeof key === "string" && key.length > 0 && key.length <= 64)
     || new Set(owned).size !== owned.length) {
-    return failure("invalid_possession", "The cloud backup has an unknown truck.");
+    return failure("invalid_possession", "The cloud backup has no truck recorded.");
   }
+  // Same reasoning for upgrades. The tier ceiling now bounds the number
+  // rather than indexing a per-upgrade price table, so an upgrade that grows
+  // a tier -- or one this export has never seen -- is not a refusal.
   const upgrades = object(payload.upgrades);
-  if (!upgrades || Object.keys(upgrades).some((key) => !(key in UPGRADE_PRICES))) {
-    return failure("invalid_possession", "The cloud backup has an unknown upgrade.");
-  }
-  for (const [key, tier] of Object.entries(upgrades)) {
-    if (!integer(tier, 1, UPGRADE_PRICES[key].length)) {
-      return failure("invalid_possession", "The cloud backup has an unavailable upgrade tier.");
-    }
+  if (!upgrades || Object.entries(upgrades).some(
+    ([key, tier]) => key.length > 64 || !integer(tier, 1, MAX_UPGRADE_TIER),
+  )) {
+    return failure("invalid_possession", "The cloud backup has an unavailable upgrade tier.");
   }
 
   const career = object(payload.career);
@@ -309,7 +383,7 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // through the garage is left to offline forensics, which is what has
   // actually caught every real edit so far.
   if ((payload.money as number)
-    > STARTING_MONEY + (career.total_earnings as number)
+    > STARTING_MONEY_MAX + (career.total_earnings as number)
       + (payload.pay_advance as number) + ARITHMETIC_SLACK) {
     return failure("impossible_money", "The cloud backup money exceeds what the career has earned.");
   }
@@ -323,20 +397,32 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     // Careers begun before a cargo-class expansion carry multipliers only
     // for the classes that existed then; any non-empty subset of the
     // current classes is a legitimate market.
+    // A class added after this export is the same story as a new city: the
+    // key is unknown to the server, not invented by the driver. The band
+    // below is what actually says the market was not rewritten.
     || Object.keys(multipliers).length === 0
-    || Object.keys(multipliers).some((key) => !MARKET_KEYS.has(key))
     || Object.values(multipliers).some((entry) => !finite(entry, 0.8, 1.3))) {
     return failure("invalid_market", "The cloud backup freight market is not valid.");
   }
   if (!validateHos(payload.hos)) {
     return failure("invalid_hos", "The cloud backup duty clock is not valid.");
   }
+  // Badges are the sharpest case of the same rule. The catalog grows every
+  // build, and the id list is exported from one tree, so the day the game
+  // awards a badge the server has not been told about, every career holding
+  // it stops backing up -- which is exactly what `first_day` did on
+  // 2026-08-14 to jessie and to Tim, on a badge nearly every new career earns
+  // in its first shift. Membership is now a publishing question, not an
+  // acceptance one: knownBadgeCount below counts only ids this server can
+  // name, so an unknown badge is carried in the backup and left out of the
+  // public tally. Shape is still checked -- strings, no duplicates, a count
+  // no catalog could reach.
   const achievements = Array.isArray(payload.achievements) ? payload.achievements : [];
-  if (!Array.isArray(payload.achievements) || achievements.length > ACHIEVEMENT_IDS.size
-    || achievements.some((id) => typeof id !== "string" || !ACHIEVEMENT_IDS.has(id))
+  if (!Array.isArray(payload.achievements) || achievements.length > MAX_ACHIEVEMENTS
+    || achievements.some((id) => typeof id !== "string" || id.length === 0 || id.length > 64)
     || new Set(achievements).size !== achievements.length
     || !object(payload.achievement_stats)) {
-    return failure("invalid_achievement", "The cloud backup has an unknown achievement record.");
+    return failure("invalid_achievement", "The cloud backup has an unreadable achievement record.");
   }
   if (!(payload.active_trip === null || object(payload.active_trip))
     || !(payload.dispatch_board_cache === null || object(payload.dispatch_board_cache))) {

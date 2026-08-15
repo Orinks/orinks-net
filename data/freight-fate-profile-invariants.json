@@ -38,6 +38,7 @@
     "fifteen_states",
     "fifty_deliveries",
     "fifty_thousand_miles",
+    "first_day",
     "first_delivery",
     "first_delivery_drop",
     "first_dispatch",
@@ -946,6 +947,7 @@
   ],
   "sourceSaveVersion": 11,
   "startingMoney": 5000,
+  "startingMoneyMax": 18000,
   "truckConditionFields": [
     "brake_wear_pct",
     "chain_wear_pct",

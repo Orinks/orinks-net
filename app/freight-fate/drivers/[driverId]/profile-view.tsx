@@ -94,7 +94,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
             <dl className="mt-5 grid gap-4 sm:grid-cols-2">
               <div><dt className="font-semibold">Driver level</dt><dd>{snapshot.level}</dd></div>
               <div><dt className="font-semibold">Career rank</dt><dd>{snapshot.careerTitle}</dd></div>
-              <div><dt className="font-semibold">Last saved location</dt><dd>{snapshot.lastSavedCity}</dd></div>
+              {snapshot.lastSavedCity === undefined ? null : <div><dt className="font-semibold">Last saved location</dt><dd>{snapshot.lastSavedCity}</dd></div>}
               <div><dt className="font-semibold">Backup accepted</dt><dd><Time value={snapshot.capturedAt} /></dd></div>
               <div><dt className="font-semibold">Total deliveries</dt><dd>{snapshot.deliveries.toLocaleString("en-US")}</dd></div>
               <div><dt className="font-semibold">Miles driven</dt><dd>{snapshot.milesDriven.toLocaleString("en-US")}</dd></div>

@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { acceptDriverToken, driverTokenAccepted, stampClientVersion, stampDeviceTokenUse } from "./freightFate";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import { knownBadgeCount } from "./freightFateSharedProfileValidation";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -129,6 +130,11 @@ async function upsertVerifiedSnapshot(
     version: 1,
     level,
     careerTitle: `Level ${level} driver`,
+    // Undefined when the career sits in a city this export has not caught up
+    // to. That is now an accepted backup rather than a refused one, so the
+    // projection has to survive it: the row simply carries no location and
+    // the profile page leaves the line out, the same way it already does for
+    // a truck name it cannot resolve.
     lastSavedCity: cityLabels[args.payload.current_city as string],
     deliveries: career.deliveries as number,
     milesDriven: Math.round((career.total_miles as number) * 10) / 10,
@@ -141,9 +147,7 @@ async function upsertVerifiedSnapshot(
     // balance: the game promises the balance is never published, and this
     // projection is the only place career money becomes public.
     lifetimeEarnings: Math.round(career.total_earnings as number),
-    badgesEarned: Array.isArray(args.payload.achievements)
-      ? (args.payload.achievements as unknown[]).length
-      : 0,
+    badgesEarned: knownBadgeCount(args.payload.achievements),
     endorsements,
     fleetTier,
     capturedAt: args.now,

@@ -6,6 +6,7 @@ import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
 import {
   REQUIRED_FIELDS,
   canonicalSharedProfile,
+  knownBadgeCount,
   validateSharedProfile,
 } from "./freightFateSharedProfileValidation";
 
@@ -73,8 +74,7 @@ describe("validateSharedProfile", () => {
   });
 
   test.each([
-    ["unknown top-level field", { debug_money: 99 }, "invalid_schema"],
-    ["unknown city", { current_city: "moon_base" }, "invalid_city"],
+    ["no city at all", { current_city: "" }, "invalid_city"],
     // Wear lives per truck now, so the range check has to reach inside the
     // record rather than reading a flat field off the profile.
     [
@@ -82,17 +82,55 @@ describe("validateSharedProfile", () => {
       { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 101, grime_pct: 4 } } },
       "invalid_range",
     ],
-    [
-      "a condition record carrying an unknown field",
-      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
-      "invalid_range",
-    ],
-    ["unknown active truck", { truck: "warp_drive" }, "invalid_possession"],
-    ["unknown owned truck", { owned_trucks: ["rig", "warp_drive"] }, "invalid_possession"],
+    // A condition record carrying an unknown field is TOLERATED, not
+    // rejected -- it is another build line's honest work (see the tolerance
+    // stanza below), so dev's old invalid_range case for it is gone.
+    ["no truck at all", { truck: "" }, "invalid_possession"],
     ["duplicate owned truck", { owned_trucks: ["rig", "rig"] }, "invalid_possession"],
+    ["an upgrade tier no upgrade could reach", { upgrades: { chrome: 500 } }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: false, reason });
+  });
+
+  test.each([
+    // Unknown fields are another build line's honest work, not a defect:
+    // the allow-lists are exported from one tree while three lines upload
+    // (owner-approved tolerance, 2026-08-14; issue #97's lesson). Checks
+    // read only the fields they name, so an extra key can reach nothing.
+    ["an unknown top-level field", { debug_money: 99 }],
+    [
+      "a condition record carrying an unknown field",
+      { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4, xp: 1 } } },
+    ],
+  ])("tolerates %s", (_label, override) => {
+    expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
+      .toMatchObject({ ok: true });
+  });
+
+  test("accepts a career whose unique-value stats outgrew the old 256 cap", () => {
+    // achievement_stats holds add_unique_stat sets that only ever grow and
+    // are never trimmed. The radio badge needs 25 stations; the list keeps
+    // every one. Darren's career reached 256 and every backup after that was
+    // refused as invalid_schema -- a permanent lockout that read like a
+    // corrupt save. cities_delivered is the same shape against 623 cities.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      achievement_stats: {
+        radio_stations_heard: Array.from({ length: 700 }, (_, i) => `station_${i}`),
+        cities_delivered: Object.keys(invariants.cityLabels),
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("still refuses a payload shaped to cost more work than a career can", () => {
+    // The shape guard survives as a work budget: nesting past the depth limit
+    // is refused, so dropping the per-collection counts did not open the door
+    // to a small payload that walks forever.
+    let deep: unknown = 1;
+    for (let i = 0; i < 20; i += 1) deep = [deep];
+    expect(validateSharedProfile({ ...validProfile(), duty_log: deep }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_schema" });
   });
 
   test("accepts a 1.9 company driver who owns no tractor", () => {
@@ -153,6 +191,23 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "impossible_xp" });
   });
 
+  test("credits the richest career start, not the company-driver default", () => {
+    // The owner-operator start opens with 18,000 dollars against near-zero
+    // earnings. A ceiling built on the 5,000-dollar company start rejected
+    // every honest fresh owner-operator backup as impossible_money
+    // (munchkinbear's Little Bear, 2026-08-14). One delivery in, the money
+    // is starting cash plus a settlement minus fuel -- entirely honest.
+    const fresh = validProfile();
+    expect(validateSharedProfile({
+      ...fresh,
+      money: 18_561.81,
+      start_mode: "owner_operator",
+      business_status: "leased_owner_operator",
+      career: { ...fresh.career, deliveries: 1, on_time_deliveries: 1, total_miles: 125, total_earnings: 673.92, xp: 402.5 },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+
   test("accepts the 1.9 created-on line marker without demanding it", () => {
     // 1.9 careers stamp the release line they were created on into every
     // save (Freight Fate's created_line field, part of its cutover gate on
@@ -190,22 +245,54 @@ describe("validateSharedProfile", () => {
     expect(validateSharedProfile(legacy, "Road Star")).toMatchObject({ ok: true });
   });
 
-  test("rejects empty or unknown market multipliers", () => {
+  test("rejects a market with no multipliers or a rewritten band", () => {
     const empty = validProfile();
     empty.market.multipliers = {};
     expect(validateSharedProfile(empty, "Road Star"))
       .toMatchObject({ ok: false, reason: "invalid_market" });
-    const unknown = validProfile();
-    unknown.market.multipliers = { antigravity: 1 };
-    expect(validateSharedProfile(unknown, "Road Star"))
+    const rigged = validProfile();
+    rigged.market.multipliers = { general: 9 };
+    expect(validateSharedProfile(rigged, "Road Star"))
       .toMatchObject({ ok: false, reason: "invalid_market" });
   });
 
-  test("rejects unknown achievements and unsupported save versions", () => {
-    expect(validateSharedProfile({ ...validProfile(), achievements: ["invented"] }, "Road Star"))
-      .toMatchObject({ ok: false, reason: "invalid_achievement" });
+  test("rejects an unsupported save version", () => {
     expect(validateSharedProfile({ ...validProfile(), version: 99 }, "Road Star"))
       .toMatchObject({ ok: false, reason: "unsupported_version" });
+  });
+
+  // Content this server has not been told about is a newer game, not a forged
+  // career: the game ships cities, tractors, cargo classes, and badges on its
+  // own cadence while these lists come from one exported tree. Refusing on
+  // membership meant a content change and a validator deploy had to land the
+  // same day or honest drivers lost Cloud Backup -- which is what `first_day`
+  // did to jessie and Tim on 2026-08-14, on a badge earned in the first
+  // shift. Accepted here, and filtered where it would otherwise be published.
+  test.each([
+    ["a city the export has not caught up to", { current_city: "moon_base_mo_us" }],
+    ["a tractor added after this export", { truck: "warp_drive" }],
+    ["an owned tractor added after this export", { owned_trucks: ["rig", "warp_drive"] }],
+    ["an upgrade this export has never seen", { upgrades: { warp_core: 3 } }],
+    ["a badge awarded by a newer build", { achievements: ["invented"] }],
+  ])("accepts %s", (_label, override) => {
+    expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
+      .toMatchObject({ ok: true });
+  });
+
+  test("a cargo class added after this export is a market, not a forgery", () => {
+    const profile = validProfile();
+    profile.market.multipliers = { ...profile.market.multipliers, antigravity: 1.1 };
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("the public badge tally counts only badges this server can name", () => {
+    // Membership became a publishing question rather than an acceptance one,
+    // so the filtering has to happen somewhere: the tally and the catalog it
+    // is shown against must describe the same set, or a newer game inflates
+    // the number on a public profile.
+    expect(knownBadgeCount([invariants.achievementIds[0], "invented"])).toBe(1);
+    expect(knownBadgeCount(["invented"])).toBe(0);
+    expect(knownBadgeCount("not a list")).toBe(0);
   });
 });
 
@@ -319,9 +406,13 @@ describe("every shipped profile shape still backs up", () => {
     expect(validateSharedProfile(build(), "Road Star")).toMatchObject({ ok: true });
   });
 
-  test("still refuses an invented field on an older shape", () => {
+  test("tolerates an unrecognized field on an older shape too", () => {
+    // Same cross-line tolerance as current shapes: a stable-line save with a
+    // field this export never saw is another build's honest work, and no
+    // check can read it. Ranges and required fields on the older shape stay
+    // as strict as ever (see the version 4 test below).
     expect(validateSharedProfile({ ...stableProfile(), debug_money: 99 }, "Road Star"))
-      .toMatchObject({ ok: false, reason: "invalid_schema" });
+      .toMatchObject({ ok: true });
   });
 
   test("holds a version 4 profile to the same condition ranges", () => {
@@ -361,5 +452,20 @@ describe("per-truck condition fields track the game", () => {
     expect(invariants.truckConditionFields).toContain("fuel_gal");
     expect(invariants.truckConditionFields).toContain("tire_wear_pct");
     expect(invariants.truckConditionFields.length).toBeGreaterThan(0);
+  });
+});
+
+describe("cross-line field tolerance (issue #97, relearned 2026-08-14)", () => {
+  test("a payload carrying fields from another build line still validates", () => {
+    const profile = validProfile();
+    (profile as Record<string, unknown>).dev_line_novel_field = 3;
+    (profile.career as Record<string, unknown>).dev_line_novel_counter = 7;
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("missing required fields still refuse", () => {
+    const profile = validProfile();
+    delete (profile as Record<string, unknown>).career;
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: false });
   });
 });
