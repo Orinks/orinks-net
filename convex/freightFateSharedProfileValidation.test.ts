@@ -111,6 +111,32 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "impossible_xp" });
   });
 
+  test("credits the richest career start, not the company-driver default", () => {
+    // The owner-operator start opens with 18,000 dollars against near-zero
+    // earnings. A ceiling built on the 5,000-dollar company start rejected
+    // every honest fresh owner-operator backup as impossible_money
+    // (munchkinbear's Little Bear, 2026-08-14). One delivery in, the money
+    // is starting cash plus a settlement minus fuel -- entirely honest.
+    const fresh = validProfile();
+    expect(validateSharedProfile({
+      ...fresh,
+      money: 18_561.81,
+      start_mode: "owner_operator",
+      business_status: "leased_owner_operator",
+      career: { ...fresh.career, deliveries: 1, on_time_deliveries: 1, total_miles: 125, total_earnings: 673.92, xp: 402.5 },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("accepts an overdraft: negative money is the 1.9 debt line working", () => {
+    // Debt on 1.9 is modelled as money below zero plus carried fines, so an
+    // in-debt career's backup arrives with negative money by design. Only a
+    // nonsense depth is refused.
+    expect(validateSharedProfile({ ...validProfile(), money: -4_250.5 }, "Road Star"))
+      .toMatchObject({ ok: true });
+    expect(validateSharedProfile({ ...validProfile(), money: -2_000_000 }, "Road Star"))
+      .toMatchObject({ ok: false, reason: "invalid_range" });
+  });
+
   test("accepts the 1.9 created-on line marker without demanding it", () => {
     // 1.9 careers stamp the release line they were created on into every
     // save (Freight Fate's created_line field, part of its cutover gate on

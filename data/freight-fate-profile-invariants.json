@@ -947,6 +947,7 @@
   ],
   "sourceSaveVersion": 11,
   "startingMoney": 5000,
+  "startingMoneyMax": 18000,
   "truckConditionFields": [
     "brake_wear_pct",
     "chain_wear_pct",

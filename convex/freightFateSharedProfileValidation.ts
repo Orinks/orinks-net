@@ -75,6 +75,13 @@ const UPGRADE_PRICES = invariants.upgradePrices as Record<string, number[]>;
 // the same reason the field lists are: a copy kept here goes stale on the next
 // balance pass and starts rejecting honest backups.
 const STARTING_MONEY = invariants.startingMoney as number;
+// The richest career start the game offers. The money ceiling has to credit
+// this, not STARTING_MONEY: the owner-operator start opens with 18,000
+// dollars, and a ceiling built on the company-driver 5,000 rejected every
+// honest owner-operator backup as impossible_money until earnings outgrew
+// the gap (munchkinbear, 2026-08-14). Falls back to STARTING_MONEY for an
+// invariants file exported before the key existed.
+const STARTING_MONEY_MAX = (invariants.startingMoneyMax as number | undefined) ?? STARTING_MONEY;
 const XP_PER_MILE_MAX = invariants.xpPerMileMax as number;
 const XP_FLAT_PER_DELIVERY = invariants.xpFlatPerDelivery as number;
 // Absorbs rounding drift between a total accumulated per delivery and the same
@@ -214,7 +221,11 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (!finite(payload.fatigue, 0, 100)) {
     return failure("invalid_range", "fatigue is outside its allowed range.");
   }
-  if (!finite(payload.money, 0, 100_000_000)
+  // Money runs negative on the 1.9 debt line: an overdraft IS the debt, and
+  // charges a settlement could not cover push it below zero by design. The
+  // floor only has to catch nonsense, so it sits far under any real debt
+  // ceiling (which tops out around the value of a tractor).
+  if (!finite(payload.money, -1_000_000, 100_000_000)
     || !finite(payload.game_hours, 0, 10_000_000)
     || !finite(payload.pay_advance, 0, 1_500)
     || typeof payload.tutorial_done !== "boolean"
@@ -314,7 +325,7 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // through the garage is left to offline forensics, which is what has
   // actually caught every real edit so far.
   if ((payload.money as number)
-    > STARTING_MONEY + (career.total_earnings as number)
+    > STARTING_MONEY_MAX + (career.total_earnings as number)
       + (payload.pay_advance as number) + ARITHMETIC_SLACK) {
     return failure("impossible_money", "The cloud backup money exceeds what the career has earned.");
   }
