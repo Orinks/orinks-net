@@ -30,9 +30,25 @@ type PendingAction = "save" | "rotate" | null;
 // values are copied here. Reused verbatim everywhere the page used to point
 // at the removed copy-paste panel, so the instruction reads the same way
 // every time (a screen reader user should not have to re-parse a reworded
-// synonym for the same step).
-const CONNECT_INSTRUCTIONS =
-  'open Freight Fate, choose "Set up this computer with orinks.net," and enter the code it gives you at orinks.net/activate';
+// synonym for the same step) -- which is why this is one function and not a
+// sentence each call site assembles for itself.
+//
+// Only the activate address varies by deployment. The quoted words are the
+// game's OWN menu item, and that item is the literal "Set up this computer
+// with orinks.net" in every build, including the ones pointed at staging --
+// interpolating the host there would name a menu item that does not exist,
+// which is unfindable for someone arrowing the menu by its spoken label.
+export function connectInstructions(activateHost: string) {
+  return (
+    'open Freight Fate, choose "Set up this computer with orinks.net," and ' +
+    `enter the code it gives you at ${activateHost}/activate`
+  );
+}
+
+// What the server render and the first client render both say, so hydration
+// sees one string; the effect in DriverSetup corrects it to whichever host
+// is actually serving the page.
+const DEFAULT_ACTIVATE_HOST = "orinks.net";
 
 // provisionDriver throws ConvexError({ code: "name_taken" }) when another
 // account already uses the name, and ConvexError({ code: "name_rejected",
@@ -144,6 +160,16 @@ function DriverSetup() {
   const [saveError, setSaveError] = useState("");
   const [rotateError, setRotateError] = useState("");
   const [initialized, setInitialized] = useState(false);
+  // The same site answers on more than one host: the 1.9 test builds talk to
+  // dev.orinks.net, where "enter the code at orinks.net/activate" sends the
+  // player to a page their code was never minted on. A plain mount effect,
+  // deliberately -- gating it on the driver query would let an announcement
+  // beat it and speak the wrong address.
+  const [activateHost, setActivateHost] = useState(DEFAULT_ACTIVATE_HOST);
+  useEffect(() => {
+    setActivateHost(window.location.host);
+  }, []);
+  const connectHelp = connectInstructions(activateHost);
   const driverReadyAnnounced = useRef(false);
   // Set right before a provision call that mints a brand-new driver (never
   // for an edit of an existing one). The reactive getMyDriver query lags the
@@ -267,7 +293,7 @@ function DriverSetup() {
       if (!editing) {
         justCreatedDriverRef.current = true;
         announcePolite(
-          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${CONNECT_INSTRUCTIONS}.`,
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${connectHelp}.`,
         );
       } else {
         announcePolite(
@@ -343,7 +369,7 @@ function DriverSetup() {
         now: Date.now(),
       });
       announcePolite(
-        `Done. Every computer is signed out. Each one needs activating again: ${CONNECT_INSTRUCTIONS}.`,
+        `Done. Every computer is signed out. Each one needs activating again: ${connectHelp}.`,
       );
     } catch {
       const message = "Signing out all computers failed. Nothing changed. Please try again.";
@@ -407,6 +433,9 @@ function DriverSetup() {
   function ComputerList(props: {
     armedId: string | null;
     computersHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+    // Passed in, not computed here: this function must stay hook-free (see
+    // the call site), and the host it depends on lives in DriverSetup state.
+    connectHelp: string;
     myComputers: MyComputers;
     onArmedBlur: (id: string, spokenLabel: string) => void;
     onArmedKeyDown: (event: React.KeyboardEvent, id: string, spokenLabel: string) => void;
@@ -512,7 +541,7 @@ function DriverSetup() {
         )}
 
         <p className="text-sm text-slate-700">
-          To add a computer, {CONNECT_INSTRUCTIONS}.
+          To add a computer, {props.connectHelp}.
         </p>
 
         <div className="space-y-2 border-t border-line pt-3">
@@ -580,7 +609,7 @@ function DriverSetup() {
             <p className="text-slate-800">
               {myDriver
                 ? "Update your driver name or profile sharing. Tokens for each of your computers are managed below."
-                : `Create your driver identity. Then, to connect Freight Fate to it, ${CONNECT_INSTRUCTIONS}.`}
+                : `Create your driver identity. Then, to connect Freight Fate to it, ${connectHelp}.`}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
 
@@ -694,6 +723,7 @@ function DriverSetup() {
               {ComputerList({
                 armedId,
                 computersHeadingRef,
+                connectHelp,
                 myComputers,
                 onArmedBlur: armedBlur,
                 onArmedKeyDown: armedKeyDown,
