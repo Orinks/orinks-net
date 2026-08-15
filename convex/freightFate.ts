@@ -142,15 +142,40 @@ export async function mintDeviceTokenRow(
   driverId: string,
   label: string | undefined,
   now: number,
+  machineKey?: string,
 ) {
   const token = mintDriverToken();
   await ctx.db.insert("freightFateDeviceTokens", {
     driverId,
     tokenHash: await hashDriverToken(token),
     label: normalizeDeviceLabel(label),
+    machineKey: normalizeMachineKey(machineKey),
     createdAt: now,
   });
   return token;
+}
+
+// Opaque and bounded: the game sends a hash, and anything that is not a
+// plausible one is dropped rather than stored, so a malformed value can never
+// collide two real computers onto one row.
+export function normalizeMachineKey(value: string | undefined) {
+  const key = (value ?? "").trim().toLowerCase();
+  return /^[a-f0-9]{16,64}$/.test(key) ? key : undefined;
+}
+
+// The driver's existing row for this computer, if the game named one.
+export async function findDeviceRowForMachine(
+  ctx: MutationCtx,
+  driverId: string,
+  machineKey: string | undefined,
+) {
+  const key = normalizeMachineKey(machineKey);
+  if (!key) return null;
+  const rows = await ctx.db
+    .query("freightFateDeviceTokens")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+    .collect();
+  return rows.find((row) => row.machineKey === key) ?? null;
 }
 
 // Produce a public slug already in normalizeFreightFateDriverId's canonical

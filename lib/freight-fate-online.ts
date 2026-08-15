@@ -479,13 +479,21 @@ export async function setFreightFateProfileSharing(input: {
 // Poll spacing the game starts from; it backs off from here on its own.
 export const FREIGHT_FATE_ACTIVATION_INTERVAL_S = 3;
 
-export async function startFreightFateActivation(input: { clientKey: string; siteOrigin: string }) {
+export async function startFreightFateActivation(input: {
+  clientKey: string;
+  siteOrigin: string;
+  // The game's opaque name for the computer connecting. Carried to the device
+  // row so that connecting the same PC again replaces its entry instead of
+  // spending another slot on the ten-computer list.
+  machineKey?: string;
+}) {
   const client = getConvexClient();
   if (!client) {
     return null;
   }
   const started = await client.mutation(anyApi.freightFateActivation.startActivation, {
     clientKey: input.clientKey.slice(0, 64),
+    machineKey: input.machineKey,
     now: Date.now(),
   });
   // Formatted by the same function the /activate page's parser was built
