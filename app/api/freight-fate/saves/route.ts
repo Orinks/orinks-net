@@ -98,6 +98,24 @@ export async function POST(request: Request) {
     }
 
     if (!result.ok) {
+      // Say out loud why a backup was turned away. Only the arithmetic
+      // verdicts keep their payload (freightFateSaves.recordRejectedUpload);
+      // a schema-family rejection is retained nowhere, never reaches
+      // storeValidatedSave, and so consumes no rate-limit row and stamps no
+      // client version -- which left a refused upload indistinguishable from
+      // one that was never sent, and cost days of guessing at exactly that.
+      // The reason code and the slot only; never the payload.
+      console.warn(
+        "freight-fate save upload refused",
+        JSON.stringify({
+          reason: result.reason,
+          driverId,
+          saveName,
+          saveVersion: body.saveVersion,
+          clientVersion: freightFateClientVersion(request) ?? null,
+        }),
+      );
+
       return NextResponse.json(
         {
           error: result.reason,

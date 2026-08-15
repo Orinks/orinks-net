@@ -81,7 +81,12 @@ describe("validateSharedProfile", () => {
       { truck_conditions: { rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 101, grime_pct: 4 } } },
       "invalid_range",
     ],
-    ["unowned truck", { truck: "heavy_hauler" }, "invalid_possession"],
+    // A condition record carrying an unknown field is TOLERATED, not
+    // rejected -- it is another build line's honest work (see the tolerance
+    // stanza below), so dev's old invalid_range case for it is gone.
+    ["unknown active truck", { truck: "warp_drive" }, "invalid_possession"],
+    ["unknown owned truck", { owned_trucks: ["rig", "warp_drive"] }, "invalid_possession"],
+    ["duplicate owned truck", { owned_trucks: ["rig", "rig"] }, "invalid_possession"],
   ])("rejects %s", (_label, override, reason) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: false, reason });
@@ -100,6 +105,55 @@ describe("validateSharedProfile", () => {
   ])("tolerates %s", (_label, override) => {
     expect(validateSharedProfile({ ...validProfile(), ...override }, "Road Star"))
       .toMatchObject({ ok: true });
+  });
+
+  test("accepts a 1.9 company driver who owns no tractor", () => {
+    // 1.9 rewrote ownership: dispatch hands a company driver a carrier
+    // tractor from the level-band fleet, so a fresh career carries an empty
+    // owned_trucks list and wear records for trucks it never owned. The old
+    // rule demanded everyone own the trainer rig, which silently rejected
+    // every backup the 1.9 test builds uploaded.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "company_driver",
+      owned_trucks: [],
+      truck: "ridgeline_sleeper",
+      truck_conditions: {
+        rig: { fuel_gal: 125, damage_pct: 2, tire_wear_pct: 3, grime_pct: 4 },
+        ridgeline_sleeper: { fuel_gal: 80, damage_pct: 1, tire_wear_pct: 2, grime_pct: 9 },
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("accepts a 1.9 owner-operator who bought out the assigned tractor", () => {
+    // The buy-in keeps the tractor dispatch assigned, not the trainer rig,
+    // so owned_trucks need not contain "rig" and the active truck rides in
+    // whatever the driver actually bought.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "leased_owner_operator",
+      owned_trucks: ["ridgeline_sleeper"],
+      truck: "ridgeline_sleeper",
+      truck_conditions: {
+        ridgeline_sleeper: { fuel_gal: 80, damage_pct: 1, tire_wear_pct: 2, grime_pct: 9 },
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  // Freight Fate 1.9 makes going under water ordinary: a repair bill or a fine
+  // a settlement could not cover leaves money negative, and models/solvency.py
+  // treats that overdraft as a career state with its own repossession ladder
+  // rather than an error. A floor of zero refused every backup from the moment
+  // a driver went a cent into the red, and refused it silently -- a
+  // schema-family rejection is not retained and consumes no rate-limit row, so
+  // the careers this hid left no server-side trace at all. The ceiling below
+  // is the check that actually catches invented money; a lower bound caught
+  // nothing, because holding less is not a cheat.
+  test("accepts a career that is in debt", () => {
+    for (const money of [-0.01, -2_200, -50_000]) {
+      expect(validateSharedProfile({ ...validProfile(), money }, "Road Star"))
+        .toMatchObject({ ok: true });
+    }
   });
 
   test("rejects money and XP that the recorded career cannot support", () => {
@@ -127,15 +181,6 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: true });
   });
 
-  test("accepts an overdraft: negative money is the 1.9 debt line working", () => {
-    // Debt on 1.9 is modelled as money below zero plus carried fines, so an
-    // in-debt career's backup arrives with negative money by design. Only a
-    // nonsense depth is refused.
-    expect(validateSharedProfile({ ...validProfile(), money: -4_250.5 }, "Road Star"))
-      .toMatchObject({ ok: true });
-    expect(validateSharedProfile({ ...validProfile(), money: -2_000_000 }, "Road Star"))
-      .toMatchObject({ ok: false, reason: "invalid_range" });
-  });
 
   test("accepts the 1.9 created-on line marker without demanding it", () => {
     // 1.9 careers stamp the release line they were created on into every

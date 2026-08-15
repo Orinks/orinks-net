@@ -386,6 +386,89 @@ describe("validated private cloud revisions", () => {
       .toMatchObject({ sourceSaveName: "Experiment", level: 1, deliveries: 0 });
   });
 
+  test("a designated public career owns the projection over the first uploader", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth);
+
+    const second = validProfile();
+    second.name = "Night Runs";
+    second.career.deliveries = 30;
+    second.career.on_time_deliveries = 28;
+    await expect(upload(t, auth, second)).resolves.toMatchObject({ ok: true, revision: 1 });
+
+    // First-uploader rule still holds before any designation.
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Road Star" });
+
+    // Designating the other career drops the old projection at once: the
+    // player just said this is not their public identity any more.
+    await expect(t.mutation(api.freightFateSaves.setPublicSave, {
+      ...auth, saveName: "Night Runs", now: Date.now(),
+    })).resolves.toMatchObject({ ok: true, publicSaveName: "Night Runs" });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toBeNull();
+
+    // The designated career's next accepted backup rebuilds the projection;
+    // the undesignated one stays a private cloud backup.
+    await expect(upload(t, auth, second, 1)).resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Night Runs", deliveries: 30 });
+    await expect(upload(t, auth, validProfile(), 1)).resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Night Runs", deliveries: 30 });
+  });
+
+  test("re-designating the current public career keeps its projection", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth);
+    await expect(t.mutation(api.freightFateSaves.setPublicSave, {
+      ...auth, saveName: "Road Star", now: Date.now(),
+    })).resolves.toMatchObject({ ok: true, publicSaveName: "Road Star" });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Road Star" });
+  });
+
+  test("clearing the designation returns to the first-uploader rule", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth);
+    await t.mutation(api.freightFateSaves.setPublicSave, {
+      ...auth, saveName: "Night Runs", now: Date.now(),
+    });
+    await expect(t.mutation(api.freightFateSaves.setPublicSave, {
+      ...auth, saveName: null, now: Date.now(),
+    })).resolves.toMatchObject({ ok: true, publicSaveName: null });
+
+    // With no designation, the next verified upload claims the projection.
+    await expect(upload(t, auth, validProfile(), 1)).resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
+      .toMatchObject({ sourceSaveName: "Road Star" });
+  });
+
+  test("designation requires an accepted driver token", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await expect(t.mutation(api.freightFateSaves.setPublicSave, {
+      driverId: auth.driverId, driverTokenHash: "0".repeat(64),
+      saveName: "Road Star", now: Date.now(),
+    })).resolves.toMatchObject({ ok: false, reason: "unauthorized" });
+  });
+
+  test("the saves list names the designated public career", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth);
+    expect(await t.query(api.freightFateSaves.listSaves, auth))
+      .toMatchObject({ ok: true, publicSaveName: null });
+    await t.mutation(api.freightFateSaves.setPublicSave, {
+      ...auth, saveName: "Road Star", now: Date.now(),
+    });
+    expect(await t.query(api.freightFateSaves.listSaves, auth))
+      .toMatchObject({ ok: true, publicSaveName: "Road Star" });
+  });
+
   test("preserves revision conflicts", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);

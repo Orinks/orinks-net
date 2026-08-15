@@ -221,11 +221,14 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   if (!finite(payload.fatigue, 0, 100)) {
     return failure("invalid_range", "fatigue is outside its allowed range.");
   }
-  // Money runs negative on the 1.9 debt line: an overdraft IS the debt, and
-  // charges a settlement could not cover push it below zero by design. The
-  // floor only has to catch nonsense, so it sits far under any real debt
-  // ceiling (which tops out around the value of a tractor).
-  if (!finite(payload.money, -1_000_000, 100_000_000)
+  // Money is allowed to run negative: a 1.9 driver goes under on a repair bill
+  // or a fine their settlement could not cover, and the game carries that
+  // overdraft as a career state (models/solvency.py) with its own repossession
+  // ladder. Only the ceiling is a cheat check -- see the impossible_money rule
+  // below, which is what money has to trace back to. A floor of zero caught no
+  // cheat and instead refused every backup a driver made while in the red,
+  // silently, since a schema-family rejection is retained nowhere.
+  if (!finite(payload.money, -100_000_000, 100_000_000)
     || !finite(payload.game_hours, 0, 10_000_000)
     || !finite(payload.pay_advance, 0, 1_500)
     || typeof payload.tutorial_done !== "boolean"
@@ -268,19 +271,20 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     return failure("invalid_range", "A truck's condition is outside its allowed range.");
   }
 
+  // Ownership carries no arithmetic since the 1.9 carrier-fleet model: a
+  // company driver runs a dispatch-assigned tractor and owns nothing until
+  // the owner-operator buy-in, and that buy-in keeps the assigned tractor
+  // rather than the trainer rig. So an empty list is the ordinary career and
+  // no particular key is ever guaranteed. What stays checkable is that every
+  // key names a real tractor, listed once. Whether the driver may hold or
+  // drive one is the game's dispatch model -- like the money rule above,
+  // laundering through the garage is left to offline forensics.
   const truck = typeof payload.truck === "string" ? payload.truck : "";
   const owned = Array.isArray(payload.owned_trucks) ? payload.owned_trucks : [];
-  // An empty owned list is a starter or carrier-assigned tractor, and which
-  // truck starts a career differs by build line (the dev line's
-  // hand_me_down_sleeper flunked a check that demanded 1.9's "rig" --
-  // 2026-08-14, same cross-line lesson as the field tolerance above). When
-  // a list IS present it must be internally consistent and every entry a
-  // real truck, and the active truck must be catalogued always.
   if (!(truck in TRUCK_PRICES) || owned.length > Object.keys(TRUCK_PRICES).length
     || !owned.every((key) => typeof key === "string" && key in TRUCK_PRICES)
-    || new Set(owned).size !== owned.length
-    || (owned.length > 0 && !owned.includes(truck))) {
-    return failure("invalid_possession", "The cloud backup has an unknown or unowned truck.");
+    || new Set(owned).size !== owned.length) {
+    return failure("invalid_possession", "The cloud backup has an unknown truck.");
   }
   const upgrades = object(payload.upgrades);
   if (!upgrades || Object.keys(upgrades).some((key) => !(key in UPGRADE_PRICES))) {
