@@ -7,17 +7,19 @@ export const metadata = {
   title: "Freight Fate",
 };
 
-// The embedded drivers board is a timestamped snapshot, not a live feed: its
-// "as of" stamp and every "updated N minutes ago" phrase render from the same
-// moment, so they stay true to each other in a cached page.
+// This window governs the still frame the page is BUILT from -- what a
+// crawler indexes, what a reader without JavaScript keeps, and what stays on
+// screen until the browser has hydrated and taken over. Its stamp and every
+// "updated N minutes ago" in it render from one moment, so they stay true to
+// each other in a cached page.
 //
-// This page-level window is only a second layer. What actually caps backend
-// reads is the cached snapshot behind getFreightFatePresenceBoardSnapshot, so
-// when something on this page has to be live -- a CB channel, a convoy roster
-// -- delete this line and let the page render per request. The board keeps its
-// own cache and the backend cost does not move. Do not reach for
-// getFreightFateLivePresenceBoard to render anything here; that is the
-// authoritative read, for deciding, not for showing.
+// It is not what caps backend reads. Two things do that, and both survive
+// this line being deleted: the cached snapshot behind
+// getFreightFatePresenceBoardSnapshot, and the fact that the live
+// subscription underneath takes no arguments, so every visitor watching the
+// drivers list shares one cached execution rather than paying for their own.
+// Do not reach for getFreightFateLivePresenceBoard to render anything here;
+// that is the authoritative read, for deciding, not for showing.
 export const revalidate = 60;
 
 export default function FreightFatePage() {

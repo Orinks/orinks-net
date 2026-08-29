@@ -325,19 +325,56 @@ export default defineSchema({
     .index("by_device_code", ["deviceCodeHash"])
     .index("by_user_code", ["userCode"])
     .index("by_expires_at", ["expiresAt"]),
-  // Live "who's on duty" board: one row per driver holding only the latest
-  // heartbeat. Rows older than the board TTL are treated as offline and
-  // pruned on the next write; no history is kept by design.
+  // What the "who's on duty" board DISPLAYS: one row per driver, holding the
+  // status the board shows and nothing that ticks on its own. No history is
+  // kept by design.
+  //
+  // Browsers subscribe to this table live, so what matters most about it is
+  // what it does NOT contain: the heartbeat clock. A reactive query re-runs
+  // for every subscriber whenever a document it read changes, so a row that
+  // took a write every heartbeat would bill the board at
+  // drivers x beats x viewers whether or not anything a reader could see had
+  // moved. The clock lives in freightFatePresenceBeats instead, which the
+  // live query never reads, and this row is written only when the DISPLAYED
+  // status changes. Do not add a per-beat field here.
   freightFatePresence: defineTable({
     driverId: v.string(),
     activity: v.string(),
     detail: v.string(),
-    updatedAt: v.number(),
-    // When activity/detail last actually changed; updatedAt advances on every
-    // heartbeat, this only on real changes, so the board can hide parked
-    // trucks whose game was left running. Optional: rows written before the
-    // idle filter existed lack it until their next beat stamps a baseline.
+    // When activity/detail last actually changed. This is the only clock the
+    // live board has, and it is what "updated N minutes ago" now measures --
+    // a phrase that used to track the heartbeat and so read "just now"
+    // forever, saying a truck had done something when it had only pinged.
+    // Optional: rows written before the idle filter existed lack it until
+    // their next beat stamps a baseline.
     changedAt: v.optional(v.number()),
+    // Denormalized from freightFateDrivers at heartbeat time so the live
+    // query is one index scan that never opens a driver row. Two reasons, and
+    // the second is the load-bearing one: it keeps a fat driver document off
+    // every re-execution, and it keeps unrelated driver edits (a rename, a
+    // version stamp) from invalidating every subscriber's board.
+    //
+    // `listed` folds together public visibility, current sharing consent and
+    // an unset integrity flag. Absent means "written before this existed" and
+    // is read as NOT listed -- the next heartbeat stamps it, so an opted-in
+    // driver is missing from the live board for at most one beat after
+    // deploy, which is the safe direction to be wrong in.
+    displayName: v.optional(v.string()),
+    listed: v.optional(v.boolean()),
+    // Legacy: the heartbeat clock used to live here. Kept optional so rows
+    // written by the previous deploy still validate; nothing reads it.
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_driver_id", ["driverId"])
+    .index("by_changed", ["changedAt"])
+    .index("by_updated", ["updatedAt"]),
+  // The heartbeat clock, split out of freightFatePresence so that beating
+  // costs nothing on the live board (see the note there). One row per driver,
+  // rewritten every beat, read only by the server's authoritative presence
+  // read and by the sweep that ages dropped drivers off the board.
+  freightFatePresenceBeats: defineTable({
+    driverId: v.string(),
+    updatedAt: v.number(),
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
