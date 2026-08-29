@@ -19,5 +19,8 @@ describe("GET /downloads/music.pak", () => {
     const response = await GET();
 
     expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "The Freight Fate music pack cannot be downloaded right now. Try again later.",
+    });
   });
 });

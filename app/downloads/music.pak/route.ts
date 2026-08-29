@@ -9,7 +9,10 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json(
-      { error: "Music download is temporarily unavailable." },
+      {
+        error:
+          "The Freight Fate music pack cannot be downloaded right now. Try again later.",
+      },
       { status: 503 },
     );
   }
