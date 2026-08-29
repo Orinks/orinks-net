@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ConvexProvider,
-  ConvexReactClient,
-  useConvexConnectionState,
-  useQuery,
-} from "convex/react";
+import { ConvexProvider, ConvexReactClient, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import {
@@ -55,10 +50,6 @@ function countPhrase(count: number) {
  * says the same thing twice.
  */
 const EXPLANATION = "This list updates itself.";
-
-const STOPPED =
-  "This list has stopped updating. The drivers shown were on duty a few " +
-  "minutes ago. This doesn't affect your game or your driver profile.";
 
 /** Said only where the list really is a still frame: before the browser has
  * taken over, and for anyone without JavaScript. A reader has no page-load
@@ -250,7 +241,6 @@ function useAnnouncer() {
 
 function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
   const live = useQuery(api.freightFate.getLivePresenceBoard, {});
-  const connection = useConvexConnectionState();
   const { message, announce } = useAnnouncer();
 
   // Until the browser has hydrated, render exactly what the server sent --
@@ -274,8 +264,15 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
   // `live` stays undefined until the subscription answers, and forever if it
   // never does -- so a backend we cannot reach leaves the server's list on
   // screen instead of blanking it.
+  //
+  // Deliberately NOT paired with a "we lost the connection" line. The only
+  // signal for that is hasEverConnected && !isWebSocketConnected, which is
+  // equally true of an ordinary reconnect -- and the socket takes a visible
+  // moment to come up on a normal page load, so the check fires on refreshes
+  // where nothing is wrong. The reader cannot act on it either: the client
+  // reconnects on its own. A line that is wrong more often than it is right,
+  // about something nobody can do anything about, is worse than no line.
   const connected = mounted && live !== undefined;
-  const stopped = connected && connection.hasEverConnected && !connection.isWebSocketConnected;
 
   const onDuty = useMemo(() => {
     if (!connected) {
@@ -391,17 +388,6 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
     [],
   );
 
-  const toldAboutStop = useRef(false);
-  useEffect(() => {
-    if (stopped && !toldAboutStop.current) {
-      toldAboutStop.current = true;
-      announce(STOPPED);
-    }
-    if (!stopped) {
-      toldAboutStop.current = false;
-    }
-  }, [stopped, announce]);
-
   // A row the listener is standing on is never taken away underneath them.
   // Losing it would drop focus to the top of the document mid-read, and the
   // idle sweep makes that a routine event rather than a rare one: parking on
@@ -431,7 +417,7 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
           a row held open under someone's focus is a courtesy to that reader,
           not a driver. */}
       <p>{countPhrase(onDuty.length)}</p>
-      <p>{connected ? (stopped ? STOPPED : EXPLANATION) : checkedPhrase(initial.asOf)}</p>
+      <p>{connected ? EXPLANATION : checkedPhrase(initial.asOf)}</p>
 
       <DriverRows
         rows={rows}
