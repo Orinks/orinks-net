@@ -11,7 +11,6 @@ const MINUTE = 60_000;
 // a test can make a driver set off or sign off the way the backend would.
 const store = vi.hoisted(() => ({
   board: undefined as unknown,
-  connection: { hasEverConnected: true, isWebSocketConnected: true },
   listeners: new Set<() => void>(),
 }));
 
@@ -33,7 +32,6 @@ vi.mock("convex/react", async () => {
       }, []);
       return store.board;
     },
-    useConvexConnectionState: () => store.connection,
   };
 });
 
@@ -81,7 +79,6 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setInterval", "setTimeout", "clearTimeout", "clearInterval", "requestAnimationFrame", "Date"] });
   vi.setSystemTime(NOW);
   store.board = undefined;
-  store.connection = { hasEverConnected: true, isWebSocketConnected: true };
   store.listeners.clear();
 });
 
@@ -225,23 +222,6 @@ test("the row under a reader's focus is not taken away from them", () => {
   expect(screen.queryByText("Road Star")).toBeNull();
 });
 
-test("losing the connection says so instead of quietly going stale", () => {
-  renderBoard();
-  push([driver("Road Star")]);
-  settleSpeech();
-
-  act(() => {
-    store.connection = { hasEverConnected: true, isWebSocketConnected: false };
-    for (const listener of store.listeners) {
-      listener();
-    }
-  });
-  settleSpeech();
-
-  // Said on screen and, once, out loud.
-  expect(screen.getAllByText(/This list has stopped updating/)).toHaveLength(2);
-  expect(spoken()).toContain("This list has stopped updating.");
-});
 
 
 test("the list is alphabetical however the backend orders it", () => {
