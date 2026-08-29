@@ -1,69 +1,28 @@
-import Link from "next/link";
-import { Section } from "@/components/Section";
-import {
-  getFreightFatePresenceBoardSnapshot,
-  normalizeFreightFateDisplayName,
-} from "@/lib/freight-fate-online";
+import { FreightFateDriversBoardLive } from "@/components/FreightFateDriversBoardLive";
+import { getFreightFatePresenceBoardSnapshot } from "@/lib/freight-fate-online";
 
-const relativeTime = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
-
-function updatedPhrase(updatedAt: number, asOf: number) {
-  const ageMinutes = Math.round((asOf - updatedAt) / 60_000);
-
-  if (ageMinutes < 1) {
-    return "Updated just now.";
-  }
-
-  return `Updated ${relativeTime.format(-ageMinutes, "minute")}.`;
-}
-
-function asOfPhrase(asOf: number) {
-  const stamp = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "America/New_York",
-  }).format(new Date(asOf));
-
-  // The page does not refresh itself, and a screen reader lands on this
-  // section with no page-load cue that the roster is a still frame. Say so,
-  // and give the reader something to do about it.
-  return `Board as of ${stamp} Eastern. Refresh the page to check again.`;
-}
-
-function sentence(text: string) {
-  const trimmed = text.trim();
-
-  if (!trimmed) {
-    return "";
-  }
-
-  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
-}
-
-function comparableSentence(text: string) {
-  return text
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/[.!?]+$/, "")
-    .toLocaleLowerCase("en-US");
-}
-
-/** The "who's on duty" board, embedded on the Freight Fate page.
+/** The "who's on duty" list, embedded on the Freight Fate page.
  *
  * Drivers opt in from the game (browser-confirmed identity, public
- * visibility chosen on the setup page); this component only ever renders
- * broad in-game activity.
+ * visibility chosen on the setup page); this only ever shows broad in-game
+ * activity.
+ *
+ * The server renders the cached snapshot and hands it to the client half,
+ * which keeps it exactly as-is until the browser has hydrated and then
+ * watches the backend for changes. So the still frame is what a crawler
+ * sees, what someone without JavaScript keeps, and what stays on screen if
+ * the subscription never answers -- and nobody gets an empty section while a
+ * socket opens.
  *
  * Three outcomes, deliberately kept apart:
  *
  * - Not configured (no Convex client): the section is omitted entirely. That
  *   is a property of the deployment, not of the request -- on a build without
- *   online presence the board genuinely does not exist, and saying so would be
+ *   online presence the list genuinely does not exist, and saying so would be
  *   noise. The library logs it in production so a bad env var is not invisible.
  * - Unreachable: the heading stays and the paragraph explains. Most readers
  *   here navigate by heading, and a section that silently changes shape
- *   between loads sends them hunting for something that is not there -- worse
- *   now that a snapshot can hold the same state for a minute.
+ *   between loads sends them hunting for something that is not there.
  * - Reachable with nobody driving: its own wording, never the failure wording.
  *   An empty road is real information.
  */
@@ -77,12 +36,12 @@ export async function FreightFateDriversBoard() {
     // so. No live region -- this is server-rendered, present at first paint,
     // and never changes while the page is open.
     return (
-      <Section title="Drivers on duty">
+      <BoardSection>
         <p>
           We can&apos;t show who&apos;s on duty right now. This doesn&apos;t affect your game or
           your driver profile. Check back in a few minutes.
         </p>
-      </Section>
+      </BoardSection>
     );
   }
 
@@ -91,42 +50,29 @@ export async function FreightFateDriversBoard() {
   }
 
   return (
-    <Section title="Drivers on duty">
-      <p>
-        {`${
-          board.drivers.length === 0
-            ? "No drivers are on duty right now."
-            : `${board.drivers.length} ${board.drivers.length === 1 ? "driver is" : "drivers are"} on duty.`
-        } ${asOfPhrase(board.asOf)}`}
-      </p>
+    <BoardSection>
+      <FreightFateDriversBoardLive initial={board} />
+    </BoardSection>
+  );
+}
 
-      {board.drivers.length > 0 ? (
-        <ul>
-          {board.drivers.map((driver) => {
-            const displayName = normalizeFreightFateDisplayName(
-              driver.displayName,
-              "Freight Fate Driver",
-            );
-            const activity = driver.activity.trim();
-            const detail = driver.detail.trim();
-            const status = [
-              sentence(activity),
-              comparableSentence(detail) === comparableSentence(activity) ? "" : sentence(detail),
-              updatedPhrase(driver.updatedAt, board.asOf),
-            ]
-              .filter(Boolean)
-              .join(" ");
-            return (
-              <li key={driver.driverId}>
-                <Link href={`/freight-fate/drivers/${driver.driverId}`}>
-                  {displayName}
-                </Link>
-                {`: ${status}`}
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </Section>
+/** The section, named so it is reachable from the landmarks view.
+ *
+ * Rendered here rather than through the shared Section component, which is a
+ * bare unnamed <section> and so is not exposed as a landmark at all. Every
+ * comparable block on this site (the updates feed, the download list, the
+ * home status panel) names its own section for the same reason, and this is
+ * the one whose contents move on their own.
+ */
+function BoardSection({ children }: { children: React.ReactNode }) {
+  return (
+    <section aria-labelledby="drivers-on-duty-heading" className="py-8">
+      <h2 className="mb-4 text-2xl font-bold text-ink" id="drivers-on-duty-heading">
+        Drivers on duty
+      </h2>
+      <div className="prose prose-slate max-w-none prose-a:text-action prose-a:font-semibold prose-li:my-1">
+        {children}
+      </div>
+    </section>
   );
 }

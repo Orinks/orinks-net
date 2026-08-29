@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-08-29-freight-fate-live-drivers-board",
+      "date": "2026-08-29",
+      "project": "Freight Fate",
+      "title": "The drivers board keeps itself up to date",
+      "body": [
+        "The list of drivers on duty used to be a still picture taken up to a minute earlier, and the only way to see anything newer was to reload the page. It now keeps itself current: when a driver sets off, finishes a run, or signs off for the night, the list changes where you are, with no reload and nothing to press.",
+        "Only the count at the top announces itself, so a reader is told when the number of drivers on duty changes and is left alone the rest of the time. The list is in alphabetical order and stays that way, so a line can be rewritten without the whole list moving under you. There is also a control to pause the updates and hold the list still while you read it, and to start them again when you are done."
+      ],
+      "link": {
+        "href": "/freight-fate",
+        "label": "See which Freight Fate drivers are on duty"
+      }
+    },
+    {
       "id": "2026-07-31-freight-fate-mastodon-hashtag",
       "date": "2026-07-31",
       "project": "Freight Fate",
