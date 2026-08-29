@@ -46,3 +46,7 @@ npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run b
 ```
 
 `vercel.json` wraps this in a check for `CONVEX_DEPLOY_KEY` so a build without one still runs `npm run build` alone.
+
+### Freight Fate music download
+
+Set `FREIGHT_FATE_MUSIC_BLOB_URL` to the public Vercel Blob URL for the Freight Fate music pack. It must use an HTTPS host ending in `.public.blob.vercel-storage.com` and the fixed pathname `/freight-fate/music.pak`.
