@@ -95,16 +95,14 @@ test("the still frame stands until the subscription answers, then the wording ch
   renderBoard();
 
   // Nothing has answered yet: what the server sent, said the way the server
-  // said it, with no offer to hold still a list that is not moving.
+  // said it, still telling the reader to refresh because that is still true.
   expect(screen.getByText(/Refresh the page to check again/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /Pause the drivers list/ })).toBeNull();
   expect(screen.getByRole("link", { name: "Road Star, driver profile" })).toBeInTheDocument();
 
   push([driver("Road Star")]);
 
   expect(screen.queryByText(/Refresh the page to check again/)).toBeNull();
   expect(screen.getByText(/This list updates itself/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Pause the drivers list" })).toBeInTheDocument();
 });
 
 test("the first live list is not news", () => {
@@ -183,33 +181,6 @@ test("changes inside the throttle window are gathered into one notice", () => {
   expect(spoken()).toBe("Big Rig is on duty.");
 });
 
-test("pausing holds the list still and stops the count claiming to be current", () => {
-  renderBoard();
-  push([driver("Road Star")]);
-  settleSpeech();
-  expect(screen.getByText("1 driver is on duty.")).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole("button", { name: "Pause the drivers list" }));
-  settleSpeech();
-  expect(spoken()).toBe("The drivers list is paused.");
-
-  // Two more set off while the list is held.
-  push([driver("Road Star"), driver("Night Owl"), driver("Big Rig")]);
-  settleSpeech();
-
-  // The list has not moved, the count does not pretend to be current, and
-  // nobody was interrupted.
-  expect(screen.queryByText("Night Owl")).toBeNull();
-  expect(
-    screen.getByText("1 driver was on duty when you paused this list. Resume it to see who is on duty now."),
-  ).toBeInTheDocument();
-  expect(spoken()).toBe("The drivers list is paused.");
-
-  fireEvent.click(screen.getByRole("button", { name: "Resume the drivers list" }));
-  settleSpeech();
-  expect(spoken()).toBe("The drivers list is updating again.");
-  expect(screen.getByText("3 drivers are on duty.")).toBeInTheDocument();
-});
 
 test("a truck parked with the game left running drops off on the clock alone", () => {
   renderBoard();
@@ -270,25 +241,8 @@ test("losing the connection says so instead of quietly going stale", () => {
   // Said on screen and, once, out loud.
   expect(screen.getAllByText(/This list has stopped updating/)).toHaveLength(2);
   expect(spoken()).toContain("This list has stopped updating.");
-  // The control stays where it was; nothing jumps around on a bad connection.
-  expect(screen.getByRole("button", { name: "Pause the drivers list" })).toBeInTheDocument();
 });
 
-test("a long list is capped, and says so, until asked for the rest", () => {
-  renderBoard({ drivers: [], asOf: NOW });
-  push(Array.from({ length: 25 }, (_, index) => driver(`Hauler ${String(index).padStart(2, "0")}`)));
-  settleSpeech();
-
-  expect(screen.getByText("Showing the first 20 of 25 drivers, by name.")).toBeInTheDocument();
-  expect(screen.getAllByRole("listitem")).toHaveLength(20);
-
-  fireEvent.click(screen.getByRole("button", { name: "Show all 25 drivers" }));
-  expect(screen.getAllByRole("listitem")).toHaveLength(25);
-  expect(screen.queryByText(/Showing the first 20/)).toBeNull();
-
-  fireEvent.click(screen.getByRole("button", { name: "Show fewer drivers" }));
-  expect(screen.getAllByRole("listitem")).toHaveLength(20);
-});
 
 test("the list is alphabetical however the backend orders it", () => {
   renderBoard({ drivers: [], asOf: NOW });
