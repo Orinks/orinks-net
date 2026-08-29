@@ -5,10 +5,10 @@
       "id": "2026-08-29-freight-fate-live-drivers-board",
       "date": "2026-08-29",
       "project": "Freight Fate",
-      "title": "The drivers board keeps itself up to date",
+      "title": "The list of drivers on duty keeps itself up to date",
       "body": [
         "The list of drivers on duty used to be a still picture taken up to a minute earlier, and the only way to see anything newer was to reload the page. It now keeps itself current: when a driver sets off, finishes a run, or signs off for the night, the list changes where you are, with no reload and nothing to press.",
-        "Only the count at the top announces itself, so a reader is told when the number of drivers on duty changes and is left alone the rest of the time. The list is in alphabetical order and stays that way, so a line can be rewritten without the whole list moving under you. There is also a control to pause the updates and hold the list still while you read it, and to start them again when you are done."
+        "Only the count at the top announces itself, so a reader is told when a driver goes on duty or off duty and is left alone the rest of the time. The list is in alphabetical order and stays that way, so a line can be rewritten without the whole list moving under you."
       ],
       "link": {
         "href": "/freight-fate",
@@ -35,7 +35,7 @@
       "project": "Freight Fate",
       "title": "Freight Fate achievement songs now have a Spotify playlist",
       "body": [
-        "Freightfate Trucker Songs gathers the real songs referenced by Freight Fate achievements and orders the matched Spotify recordings by popularity."
+        "Freightfate Trucker Songs is a Spotify playlist of the real songs behind Freight Fate's achievements, with the best-known recordings first."
       ],
       "link": {
         "href": "/playlists",
@@ -85,8 +85,8 @@
       "project": "Freight Fate",
       "title": "Play Freight Fate from every computer you own",
       "body": [
-        "Each computer you play on now gets its own posting token from the driver setup page, so connecting a laptop no longer signs your desktop out. The setup page lists your computers by the names you give them, shows when each one was added and last played, and lets you sign out any single computer — or all of them at once with one fresh token if you think a token leaked.",
-        "Tokens issued before this change keep working. They appear on the setup page as your original token, and you can retire that token yourself once every computer has one of its own. Cloud saves keep their existing conflict guard, so two computers still cannot silently overwrite each other's progress."
+        "Each computer you play on now connects to your account in its own right, so connecting a laptop no longer signs your desktop out. The driver setup page lists your computers by the names you give them, shows when each was added and last played, and lets you sign out any one of them — or all of them at once, if you think someone else has got in.",
+        "If you connected before this change, that connection keeps working. It shows on the setup page as your original one, and you can retire it yourself once every computer has its own. Two computers still cannot quietly overwrite each other's progress; that protection is unchanged."
       ],
       "link": {
         "href": "/freight-fate/online/setup",
@@ -97,18 +97,20 @@
       "id": "2026-07-13-freight-fate-verified-cloud-backups",
       "date": "2026-07-13",
       "project": "Freight Fate",
-      "title": "Freight Fate cloud backups are now server-verified",
+      "title": "Your cloud backups are checked before they are restored",
       "body": [
-        "Cloud Backup revisions are accepted after orinks.net validates and signs them. Freight Fate verifies the signature before restoring a save."
+        "Every backup is now checked over as it reaches orinks.net and stamped as genuine, and Freight Fate looks for that stamp before it will put anything back over your career. A backup that was damaged or altered on the way is refused instead of loaded.",
+        "There is nothing to switch on, and nothing about backing up or restoring has changed for you."
       ]
     },
     {
       "id": "2026-07-12-freight-fate-road-journals",
       "date": "2026-07-12",
       "project": "Freight Fate",
-      "title": "Freight Fate profiles add road journals and achievements",
+      "title": "Driver profiles get a road journal and an achievements page",
       "body": [
-        "Freight Fate driver profiles now have separate Overview, Road journal, and Achievements pages, plus a driver updates feed."
+        "A public driver profile is three pages now instead of one: an Overview with the career at a glance, a Road journal of the deliveries that driver has shared, and an Achievements page for the badges they have earned.",
+        "There is also a feed of what every sharing driver has been doing lately, so you can read the last few days of everybody's runs in one place."
       ],
       "link": {
         "href": "/freight-fate/updates",
@@ -121,9 +123,9 @@
       "project": "The Midnight Signal",
       "title": "More music, more ways to play the broadcast",
       "body": [
-        "The Midnight Signal's active library now spans 491 officially verified music questions plus 564 questions from the show's established MusicBrainz, OpenTDB, and general-trivia archive. Award Desk, Chart Wire, World Signal, Instrument Detective, Studio Lab, Night Timeline, Archive Clue, Odd One Out, Needle Drop, and Sound Lab rounds give regular and nightly broadcasts a more varied rhythm.",
-        "Needle Drop and Sound Lab rounds use short, licensed Audius streams that play only when you choose Play. Every audio question includes an always-available equivalent text clue, and every answer keeps its verified source, recording credit, and license available until you continue.",
-        "Short station transmissions now connect the formats to Clyde's world: archive fragments, Producer notes, listener messages, chart and award reports, studio investigations, world-signal dispatches, and contemporary Audius discoveries. Their complete text is always visible, they never affect scoring or question order, and nightly callbacks are deterministic for everyone."
+        "The Midnight Signal's question library has grown a great deal, and there are ten kinds of round to meet now: Award Desk, Chart Wire, World Signal, Instrument Detective, Studio Lab, Night Timeline, Archive Clue, Odd One Out, Needle Drop, and Sound Lab. Regular and nightly broadcasts move between them, so a run has far more variety in it.",
+        "Needle Drop and Sound Lab play short music clips, and you only hear one when you choose Play. Every audio question also carries a text clue that is always there, so nothing depends on hearing the clip, and every answer keeps its recording credit and licence on screen until you move on.",
+        "Short station transmissions tie the rounds to Clyde's world: archive fragments, notes from the Producer, listener messages, chart and award reports, studio investigations, and dispatches from far-off signals. Their text is always on screen, they never change your score or which questions you get, and everyone playing a given night hears the same ones."
       ],
       "link": {
         "href": "/midnight-signal",
@@ -134,13 +136,13 @@
       "id": "2026-07-10-pause-off-duty-drivers-board",
       "date": "2026-07-10",
       "project": "Freight Fate",
-      "title": "Pausing now counts as off duty on the drivers board",
+      "title": "Pausing now counts as off duty",
       "body": [
-        "The live drivers board now lists only drivers who are actively hauling. Opening the pause menu takes you off the board just as if you went off duty, and you reappear shortly after you resume driving. A quick pause and resume will not drop you from the list, and Discord presence still shows friends that your game is paused. The change arrives with the next Freight Fate update."
+        "The public list of drivers on duty now shows only drivers who are actually hauling. Opening the pause menu takes you off the list just as going off duty would, and you come back shortly after you start driving again. A quick pause and resume will not drop you, and Discord still shows friends that your game is paused. The change arrives with the next Freight Fate update."
       ],
       "link": {
         "href": "/freight-fate",
-        "label": "See the live drivers board"
+        "label": "See which Freight Fate drivers are on duty"
       }
     },
     {
@@ -162,7 +164,7 @@
       "project": "The Midnight Signal",
       "title": "The Midnight Signal becomes a full roguelite",
       "body": [
-        "Five new systems landed in one night. After every round you now draft a Signal Boost — nine run-changing upgrades, from the Static Filter that removes two wrong choices to Double Broadcast's double-or-nothing round. Every third round a caller rings the studio: The Archivist or The Night Owl poses one hard bonus question, no lives at stake, with a reward of your choosing. Lose your last life and you hit Dead Air — one final question stands between you and sign-off. Streaks now store signal strength you can spend on the Producer's Whisper, and every night's daily broadcast plays under a shared condition, from Flat Rates to the Long Haul.",
+        "Five big additions arrived at once. After every round you now draft a Signal Boost — nine run-changing upgrades, from the Static Filter that removes two wrong choices to Double Broadcast's double-or-nothing round. Every third round a caller rings the studio: The Archivist or The Night Owl poses one hard bonus question, no lives at stake, with a reward of your choosing. Lose your last life and you hit Dead Air — one final question stands between you and sign-off. Streaks now store signal strength you can spend on the Producer's Whisper, and every night's daily broadcast plays under a shared condition, from Flat Rates to the Long Haul.",
         "The nightly broadcast is the headline competition: one attempt per night, identical questions and conditions for every contestant, and a plain-text shareable result when your run ends."
       ],
       "link": {
@@ -189,7 +191,7 @@
       "project": "Freight Fate",
       "title": "Freight Fate online accounts",
       "body": [
-        "Freight Fate's online features now run on the same site-wide account as the rest of the games: one sign-in, one driver profile, and control over whether you appear on the live drivers board."
+        "Freight Fate's online features now use the same orinks.net account as the rest of the games here. One sign-in gives you a driver profile, and you choose whether you appear on the public list of drivers on duty."
       ],
       "link": {
         "href": "/freight-fate",

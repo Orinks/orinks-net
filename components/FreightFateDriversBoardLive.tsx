@@ -20,10 +20,10 @@ const relativeTime = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
 
 /** How often the rendered list re-checks its own clock.
  *
- * Nothing is fetched on this tick. It exists because two things on this list
- * change with time alone and nothing writes to the backend to say so: a
- * driver who parks and goes quiet has to drop off, and every "updated N
- * minutes ago" has to stay true. Both stop while the list is held still.
+ * Nothing is fetched on this tick. It exists because two things here change
+ * with time alone and nothing writes to the backend to say so: a driver who
+ * parks and goes quiet has to drop off, and every "updated N minutes ago" has
+ * to stay true.
  */
 const CLOCK_TICK_MS = 60_000;
 
@@ -32,40 +32,17 @@ const CLOCK_TICK_MS = 60_000;
  * A subscription can deliver several changes a second. Without a floor here,
  * a burst of drivers setting off at once produces overlapping speech, each
  * notice cutting off the one before it and all of them cutting off whatever
- * the listener was actually reading. Anything that happens inside the window
- * is gathered up and said once at the end of it.
+ * the listener was actually reading. Anything inside the window is gathered
+ * up and said once at the end of it.
  */
 const NOTICE_THROTTLE_MS = 10_000;
 
-/** How many rows are shown before the rest are behind a control.
- *
- * A hundred rows is about seven minutes of speech, by the end of which the
- * top of the list has changed -- so it can never be heard in one consistent
- * state. Twenty can.
- */
-const ROWS_SHOWN = 20;
-
-function countSentence(count: number) {
+function countPhrase(count: number) {
   if (count === 0) {
     return "No drivers are on duty right now.";
   }
 
   return `${count} ${count === 1 ? "driver is" : "drivers are"} on duty.`;
-}
-
-/** The count, frozen at the moment the listener stopped the list.
- *
- * Leaving "3 drivers are on duty" on screen while the list is held still
- * would let a true sentence go quietly false, for as long as they leave it
- * paused -- and they would have no way to tell.
- */
-function pausedSentence(count: number) {
-  const who =
-    count === 0
-      ? "No drivers were"
-      : `${count} ${count === 1 ? "driver was" : "drivers were"}`;
-
-  return `${who} on duty when you paused this list. Resume it to see who is on duty now.`;
 }
 
 const EXPLANATION =
@@ -126,11 +103,11 @@ function comparableSentence(text: string) {
 
 /** Alphabetical, always.
  *
- * The backend sends the most recently changed drivers, which is the right
- * hundred to send and the wrong order to read: sorted by recency the list
- * reshuffles under anyone working down it, and a listener loses their place
- * every time a truck somewhere reports a few more percent. By name, an update
- * rewrites one line and moves nothing.
+ * The backend hands over the most recently changed drivers, which is the
+ * right hundred to send and the wrong order to read: sorted by recency the
+ * list reshuffles under anyone working down it, and a screen reader loses its
+ * place every time a truck somewhere reports a few more percent. By name, an
+ * update rewrites one line and moves nothing.
  */
 function byName(drivers: FreightFatePresenceDriver[]) {
   return drivers
@@ -237,7 +214,7 @@ function SnapshotBoard({ board }: { board: FreightFatePresenceBoard }) {
 
   return (
     <>
-      <p>{countSentence(rows.length)}</p>
+      <p>{countPhrase(rows.length)}</p>
       <p>{checkedPhrase(board.asOf)}</p>
       <DriverRows rows={rows} asOf={board.asOf} />
     </>
@@ -275,8 +252,6 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
   // throw the markup away.
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(initial.asOf);
-  const [paused, setPaused] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [focusedDriverId, setFocusedDriverId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -285,12 +260,9 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
   }, []);
 
   useEffect(() => {
-    if (paused) {
-      return;
-    }
     const timer = setInterval(() => setNow(Date.now()), CLOCK_TICK_MS);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, []);
 
   // `live` stays undefined until the subscription answers, and forever if it
   // never does -- so a backend we cannot reach leaves the server's list on
@@ -304,11 +276,6 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
     }
     return byName(live!.drivers.filter((driver) => stillOnDuty(driver, now)));
   }, [connected, initial.drivers, live, now]);
-
-  // Everything the listener can currently see, held still while paused.
-  const [frozen, setFrozen] = useState<{ drivers: FreightFatePresenceDriver[]; asOf: number } | null>(null);
-  const shownDrivers = paused && frozen ? frozen.drivers : onDuty;
-  const shownAsOf = paused && frozen ? frozen.asOf : connected ? now : initial.asOf;
 
   // Drivers outlive the rows they came from, twice over: one who has just
   // left still has to be named in the notice about them leaving, and one the
@@ -346,7 +313,7 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
             ...arrived.map((id) => `${nameOf(id)} is on duty.`),
             ...departed.map((id) => `${nameOf(id)} went off duty.`),
           ].join(" ")
-        : countSentence(onDutyCount.current),
+        : countPhrase(onDutyCount.current),
     );
   }, [announce]);
 
@@ -377,10 +344,8 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
     const previous = previousIds.current;
     previousIds.current = ids;
 
-    // The first live list is the baseline, not news. Nor is anything that
-    // happens while the listener has the list held still -- and on resume
-    // they get the fresh count in front of them rather than a backlog.
-    if (!previous || paused) {
+    // The first live list is the baseline, not news.
+    if (!previous) {
       learn();
       return;
     }
@@ -408,13 +373,16 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
     } else if (flushTimer.current === null) {
       flushTimer.current = setTimeout(flushNotices, wait);
     }
-  }, [onDuty, connected, paused, flushNotices]);
+  }, [onDuty, connected, flushNotices]);
 
-  useEffect(() => () => {
-    if (flushTimer.current !== null) {
-      clearTimeout(flushTimer.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (flushTimer.current !== null) {
+        clearTimeout(flushTimer.current);
+      }
+    },
+    [],
+  );
 
   const toldAboutStop = useRef(false);
   useEffect(() => {
@@ -432,7 +400,7 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
   // idle sweep makes that a routine event rather than a rare one: parking on
   // a row to think about it is exactly what the sweep punishes.
   const rows: Row[] = useMemo(() => {
-    const base = shownDrivers.map((driver) => ({ driver, goneOffDuty: false }));
+    const base = onDuty.map((driver) => ({ driver, goneOffDuty: false }));
     if (!focusedDriverId || base.some((row) => row.driver.driverId === focusedDriverId)) {
       return base;
     }
@@ -440,26 +408,11 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
     if (!held) {
       return base;
     }
-    return byName([...shownDrivers, held]).map((driver) => ({
+    return byName([...onDuty, held]).map((driver) => ({
       driver,
       goneOffDuty: driver.driverId === focusedDriverId,
     }));
-  }, [shownDrivers, focusedDriverId]);
-
-  const capped = rows.length > ROWS_SHOWN && !expanded;
-  const visibleRows = capped ? rows.slice(0, ROWS_SHOWN) : rows;
-
-  function togglePause() {
-    if (paused) {
-      setFrozen(null);
-      setPaused(false);
-      announce("The drivers list is updating again.");
-    } else {
-      setFrozen({ drivers: onDuty, asOf: now });
-      setPaused(true);
-      announce("The drivers list is paused.");
-    }
-  }
+  }, [onDuty, focusedDriverId]);
 
   return (
     <>
@@ -470,40 +423,14 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
       {/* Counted from who is actually on duty, never from the rendered rows:
           a row held open under someone's focus is a courtesy to that reader,
           not a driver. */}
-      {paused ? (
-        <p>{pausedSentence(shownDrivers.length)}</p>
-      ) : (
-        <>
-          <p>{countSentence(shownDrivers.length)}</p>
-          <p>{connected ? (stopped ? STOPPED : EXPLANATION) : checkedPhrase(initial.asOf)}</p>
-        </>
-      )}
+      <p>{countPhrase(onDuty.length)}</p>
+      <p>{connected ? (stopped ? STOPPED : EXPLANATION) : checkedPhrase(initial.asOf)}</p>
 
-      {/* Before the list, deliberately: a control for holding the list still
-          is no use to anyone who has to wade through the list to reach it. */}
-      {connected ? (
-        <p>
-          <button type="button" className="font-semibold text-action underline" onClick={togglePause}>
-            {paused ? "Resume the drivers list" : "Pause the drivers list"}
-          </button>
-        </p>
-      ) : null}
-
-      {capped ? <p>{`Showing the first ${ROWS_SHOWN} of ${rows.length} drivers, by name.`}</p> : null}
-
-      <DriverRows rows={visibleRows} asOf={shownAsOf} onFocusRow={setFocusedDriverId} />
-
-      {rows.length > ROWS_SHOWN ? (
-        <p>
-          <button
-            type="button"
-            className="font-semibold text-action underline"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? "Show fewer drivers" : `Show all ${rows.length} drivers`}
-          </button>
-        </p>
-      ) : null}
+      <DriverRows
+        rows={rows}
+        asOf={connected ? now : initial.asOf}
+        onFocusRow={setFocusedDriverId}
+      />
     </>
   );
 }
