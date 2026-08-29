@@ -45,9 +45,16 @@ function countPhrase(count: number) {
   return `${count} ${count === 1 ? "driver is" : "drivers are"} on duty.`;
 }
 
-const EXPLANATION =
-  "This list updates itself: drivers appear when they go on duty and leave " +
-  "when they stop driving. You don't need to refresh the page.";
+/** The one thing a reader cannot work out for themselves.
+ *
+ * Landing on this page there is no cue whether it is live or a still frame,
+ * and the page it replaced said "Refresh the page to check again" -- so
+ * something has to say which one they have. That is all it has to say.
+ * Spelling out that drivers appear when they go on duty explains a list to
+ * the person already reading its heading, and "you don't need to refresh"
+ * says the same thing twice.
+ */
+const EXPLANATION = "This list updates itself.";
 
 const STOPPED =
   "This list has stopped updating. The drivers shown were on duty a few " +
