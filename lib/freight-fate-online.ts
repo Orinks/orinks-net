@@ -3,6 +3,10 @@ import { unstable_cache } from "next/cache";
 import { freightFateSaveSlotName } from "./freight-fate-save-name";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
+import type {
+  FreightFatePresenceBoard,
+  FreightFatePresenceDriver,
+} from "./freight-fate-presence";
 import { formatUserCode } from "@/convex/freightFateActivation";
 
 export type FreightFateVisibility = "public" | "private" | "unlisted";
@@ -30,13 +34,10 @@ export function normalizeFreightFateDriverId(value: unknown) {
   return driverId;
 }
 
-export function normalizeFreightFateDisplayName(value: unknown, fallback = "Freight Fate Driver") {
-  if (typeof value !== "string") {
-    return fallback;
-  }
-
-  return value.trim().replace(/\s+/g, " ").slice(0, 48) || fallback;
-}
+// Defined in lib/freight-fate-presence.ts so the browser half of the drivers
+// list can use it as well; re-exported here for the server-side callers that
+// have always found it in this module.
+export { normalizeFreightFateDisplayName } from "./freight-fate-presence";
 
 export function normalizeFreightFateVisibility(value: unknown): FreightFateVisibility {
   if (value === "public" || value === "unlisted") {
@@ -379,16 +380,10 @@ export async function postFreightFatePresence(input: {
   });
 }
 
-export type FreightFatePresenceBoard = {
-  drivers: {
-    driverId: string;
-    displayName: string;
-    activity: string;
-    detail: string;
-    updatedAt: number;
-  }[];
-  asOf: number;
-};
+// Defined in lib/freight-fate-presence.ts, which the browser can import and
+// this module cannot be (node:crypto, above). Re-exported here so the
+// server-side callers below keep reading as one module.
+export type { FreightFatePresenceBoard, FreightFatePresenceDriver };
 
 export const FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG = "freight-fate-presence-board";
 

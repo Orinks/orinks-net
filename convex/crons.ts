@@ -37,4 +37,18 @@ crons.interval(
   {},
 );
 
+// Drivers whose game stopped talking to us. Expiry used to ride along on
+// heartbeat writes, which worked while every beat touched the board table;
+// now that a beat usually writes nothing there, a crashed game would sit on
+// the board until somebody else changed status. Every minute against a
+// six-minute window, and a tick with nobody overdue reads one empty index
+// range and writes nothing -- which is the point, because a sweep that wrote
+// every tick would wake every browser watching the board once a minute.
+crons.interval(
+  "drop Freight Fate drivers whose heartbeat stopped",
+  { minutes: 1 },
+  internal.freightFate.sweepStalePresence,
+  {},
+);
+
 export default crons;
