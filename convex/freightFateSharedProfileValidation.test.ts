@@ -235,6 +235,23 @@ describe("validateSharedProfile", () => {
     expect(REQUIRED_FIELDS).not.toContain("business_status");
   });
 
+  test("accepts the credential-ladder career fields without demanding them", () => {
+    // The 2026-08 credential ladder adds two career fields: courses waiting
+    // on their background check, and grants queued for a terminal repeat.
+    // Both ride the exported allow-list; neither is required, because every
+    // save written before the ladder predates them.
+    expect(validateSharedProfile({
+      ...validProfile(),
+      career: {
+        ...validProfile().career,
+        purchased_endorsements: ["doubles_triples"],
+        pending_credentials: [{ key: "hazmat", ready_at_h: 4321.5 }],
+        unacknowledged_grants: ["doubles_triples"],
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+    expect(validateSharedProfile(validProfile(), "Road Star")).toMatchObject({ ok: true });
+  });
+
   test("accepts a legacy market carrying only the original cargo classes", () => {
     // Careers begun before a cargo-class expansion keep the smaller
     // multiplier set (seen in the wild: 8 of the current 16 classes).

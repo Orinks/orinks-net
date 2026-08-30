@@ -113,17 +113,29 @@ async function upsertVerifiedSnapshot(
   const fleetTier = businessStatus === "company_driver"
     ? fleetTiers.filter((tier) => level >= tier.minLevel).at(-1)?.label
     : undefined;
-  // Endorsements are level-earned (the carrier sponsors the course) or
-  // self-paid ahead of that level (career.purchased_endorsements). Both
+  // Credentials are level-earned (the carrier sponsors the course; the row
+  // carries a level) or course-earned (career.purchased_endorsements). A row
+  // with NO level is course-only -- hazmat, the TWIC port card, LCV -- and
+  // must never be derived from level: those exist only when the career
+  // stores them, because a real background check stands behind each. Both
   // tables come from the game export; unknown purchased keys are ignored the
   // same way the game ignores them.
-  const endorsementDefs = invariants.endorsements as Record<string, { level: number; label: string }>;
+  const endorsementDefs = invariants.endorsements as Record<
+    string,
+    { level?: number; label: string; tier?: string }
+  >;
   const purchased = Array.isArray(career.purchased_endorsements)
     ? (career.purchased_endorsements as unknown[])
     : [];
   const endorsements = Object.entries(endorsementDefs)
-    .filter(([key, def]) => level >= def.level || purchased.includes(key))
-    .sort(([, a], [, b]) => a.level - b.level)
+    .filter(([key, def]) =>
+      (typeof def.level === "number" && level >= def.level) || purchased.includes(key))
+    .sort(([, a], [, b]) => {
+      // Sponsored rows in level order, then course-only rows by label.
+      const al = a.level ?? Number.MAX_SAFE_INTEGER;
+      const bl = b.level ?? Number.MAX_SAFE_INTEGER;
+      return al === bl ? a.label.localeCompare(b.label) : al - bl;
+    })
     .map(([, def]) => def.label);
   const clean = {
     driverId: args.driverId,

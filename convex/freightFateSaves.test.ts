@@ -282,8 +282,9 @@ describe("validated private cloud revisions", () => {
       employmentStatus: "Owner-operator",
       lifetimeEarnings: 21_500,
       badgesEarned: 0,
-      // Level 4 has earned every sponsored endorsement, in unlock order.
-      endorsements: ["refrigerated", "heavy-haul", "high-value"],
+      // Level 4 has earned every sponsored certificate, in unlock order
+      // (ties broken by label).
+      endorsements: ["flatbed securement", "refrigerated", "heavy-haul", "high-value"],
     });
     expect(snapshot?.fleetTier).toBeUndefined();
   });
@@ -310,10 +311,45 @@ describe("validated private cloud revisions", () => {
       // money balance is deliberately never stored on this row at all.
       lifetimeEarnings: 21_500,
       badgesEarned: 2,
-      endorsements: ["refrigerated", "high-value"],
+      endorsements: ["flatbed securement", "refrigerated", "high-value"],
     });
     expect(snapshot).not.toHaveProperty("money");
     expect(Object.values(snapshot!)).not.toContain(payload.money);
+  });
+
+  test("course-only credentials are never derived from level", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const base = validProfile();
+    // A top-level career that never took the hazmat or TWIC courses must
+    // not be credited with them -- their export rows carry no level on
+    // purpose, because a federal background check stands behind each.
+    // The stored courses it DID take land after the sponsored rows.
+    const payload = Object.assign(base, {
+      business_status: "company_driver",
+      career: Object.assign(base.career, {
+        xp: 387_000,
+        total_miles: 250_000,
+        deliveries: 900,
+        on_time_deliveries: 900,
+        total_earnings: 2_000_000,
+        purchased_endorsements: ["hazmat", "twic"],
+      }),
+    });
+    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true, revision: 1 });
+    const snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
+    expect(snapshot?.endorsements).toEqual([
+      "flatbed securement",
+      "refrigerated",
+      "heavy-haul",
+      "high-value",
+      "tank vehicle",
+      "hazmat",
+      "TWIC port card",
+    ]);
+    expect(snapshot?.endorsements).not.toContain("LCV");
+    expect(snapshot?.endorsements).not.toContain("doubles");
+    expect(snapshot?.endorsements).not.toContain("manual transmission");
   });
 
   test("the saves list exposes each backup's save version", async () => {
