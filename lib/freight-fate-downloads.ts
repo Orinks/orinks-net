@@ -9,11 +9,11 @@ export function getFreightFateMusicBlobUrl(
   const url = new URL(raw);
   if (
     url.protocol !== "https:" ||
-    !url.hostname.endsWith(".public.blob.vercel-storage.com") ||
-    url.pathname !== "/freight-fate/music.pak"
+    url.hostname !== "crisp-crystal-9a9y.here.now" ||
+    url.pathname !== "/music.pak"
   ) {
     throw new Error(
-      "FREIGHT_FATE_MUSIC_BLOB_URL must name the public Freight Fate music blob",
+      "FREIGHT_FATE_MUSIC_BLOB_URL must name the permanent Freight Fate music file",
     );
   }
 

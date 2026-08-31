@@ -4,9 +4,9 @@ import { GET } from "./route";
 describe("GET /downloads/music.pak", () => {
   afterEach(() => delete process.env.FREIGHT_FATE_MUSIC_BLOB_URL);
 
-  it("redirects the stable path to public Blob storage", async () => {
+  it("redirects the stable path to permanent here.now storage", async () => {
     process.env.FREIGHT_FATE_MUSIC_BLOB_URL =
-      "https://store-id.public.blob.vercel-storage.com/freight-fate/music.pak";
+      "https://crisp-crystal-9a9y.here.now/music.pak";
 
     const response = await GET();
 
