@@ -37,6 +37,10 @@ function validProfile() {
   };
 }
 
+function meaningful(operationId: string, occurredAt: number, reason = "delivery_completed") {
+  return { operationId, occurredAt, reason };
+}
+
 function contentFor(payload: unknown) {
   const bytes = gzipSync(Buffer.from(JSON.stringify(payload), "utf8"));
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
@@ -84,12 +88,16 @@ async function upload(
   auth: { driverId: string; driverTokenHash: string },
   payload = validProfile(),
   parentRevision: number | null = null,
+  meaningfulPlay?: unknown,
+  now = Date.now(),
 ) {
   const content = contentFor(payload);
-  return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, {
+  const request = {
     ...auth, saveName: payload.name, saveVersion: payload.version, parentRevision,
-    contentHash: hash(content), content, summary: "Road Star, level 4", now: Date.now(),
-  });
+    contentHash: hash(content), content, summary: "Road Star, level 4", now,
+    ...(meaningfulPlay === undefined ? {} : { meaningfulPlay }),
+  };
+  return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, request);
 }
 
 beforeEach(() => {
@@ -308,6 +316,321 @@ describe("validated private cloud revisions", () => {
     });
     expect(snapshot).not.toHaveProperty("money");
     expect(Object.values(snapshot!)).not.toContain(payload.money);
+  });
+
+  test.each([
+    ["first career first", ["First", "Second"]],
+    ["second career first", ["Second", "First"]],
+  ])("unions verified career achievements in either upload order without events: %s", async (_label, order) => {
+    const t = setup();
+    const auth = await provisionedDriver(t, `union_${order[0].toLowerCase()}`);
+    const profiles = {
+      First: Object.assign(validProfile(), {
+        name: "First",
+        achievements: ["first_delivery"],
+      }),
+      Second: Object.assign(validProfile(), {
+        name: "Second",
+        achievements: ["first_delivery", "clean_delivery"],
+      }),
+    };
+
+    for (const name of order) {
+      await expect(upload(t, auth, profiles[name as keyof typeof profiles]))
+        .resolves.toMatchObject({ ok: true, revision: 1 });
+    }
+
+    await t.run(async (ctx) => {
+      const rows = await ctx.db.query("freightFateAchievements").collect();
+      expect(rows.map((row) => row.achievementKey).sort())
+        .toEqual(["clean_delivery", "first_delivery"]);
+      expect(rows).toEqual(expect.arrayContaining([
+        expect.objectContaining({ importSource: "verified_save", importedAt: expect.any(Number) }),
+      ]));
+      expect(rows.every((row) => row.earnedAt === undefined)).toBe(true);
+      expect(await ctx.db.query("freightFateDriverEvents").collect()).toEqual([]);
+    });
+
+    for (const saveName of order) {
+      await expect(t.mutation(api.freightFateSaves.deleteSaveSlot, {
+        ...auth, saveName,
+      })).resolves.toMatchObject({ ok: true });
+    }
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateAchievements").collect()).toHaveLength(2);
+    });
+  });
+
+  test("keeps event achievements idempotent after a verified import", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_import_then_event");
+    const now = 1_800_000_000_000;
+    const imported = Object.assign(validProfile(), { achievements: ["first_delivery"] });
+    await expect(upload(t, auth, imported, null, undefined, now))
+      .resolves.toMatchObject({ ok: true });
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now: now + 1 });
+
+    await expect(t.mutation(api.freightFate.publishAchievementEarned, {
+      ...auth,
+      eventId: "achievement-first-delivery",
+      achievementKey: "first_delivery",
+      name: "First Delivery",
+      description: "Completed a first delivery.",
+      earnedAt: now,
+      now: now + 2,
+    })).resolves.toMatchObject({ ok: true, duplicate: true });
+
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateAchievements").collect()).toHaveLength(1);
+      expect(await ctx.db.query("freightFateDriverEvents").collect()).toEqual([]);
+    });
+  });
+
+  test("switches only for a new accepted meaningful operation while sharing is on", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_meaningful_switch");
+    const now = 1_800_000_000_000;
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
+
+    const main = Object.assign(validProfile(), { name: "Main" });
+    await expect(upload(t, auth, main, null, meaningful("op-main", now), now))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    const selected = async () => t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", auth.driverId)).unique();
+      return { publicSaveName: driver?.publicSaveName, snapshot };
+    });
+    expect(await selected()).toMatchObject({
+      publicSaveName: "Main",
+      snapshot: { sourceSaveName: "Main", meaningfulPlayedAt: now },
+    });
+
+    const experiment = Object.assign(validProfile(), { name: "Experiment" });
+    await expect(upload(t, auth, experiment, null, null, now + 1))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    const legacyBrowse = Object.assign(validProfile(), { name: "Legacy Browse" });
+    await expect(upload(t, auth, legacyBrowse, null, undefined, now + 2))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    await expect(upload(t, auth, experiment, 1, meaningful("op-main", now), now + 3))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    const rejected = Object.assign(validProfile(), { name: "Rejected", money: 1_000_000 });
+    await expect(upload(t, auth, rejected, null, meaningful("op-rejected", now + 4), now + 4))
+      .resolves.toMatchObject({ ok: false, reason: "impossible_money" });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: false, now: now + 5 });
+    const privateCareer = Object.assign(validProfile(), { name: "Private Career" });
+    await expect(upload(t, auth, privateCareer, null, meaningful("op-private", now + 6), now + 6))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now: now + 7 });
+    await expect(upload(t, auth, privateCareer, 1, meaningful("op-private", now + 6), now + 8))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
+
+    await expect(upload(t, auth, experiment, 2, meaningful("op-experiment", now + 9), now + 9))
+      .resolves.toMatchObject({ ok: true, revision: 3 });
+    expect(await selected()).toMatchObject({
+      publicSaveName: "Experiment",
+      snapshot: { sourceSaveName: "Experiment", sourceRevision: 3, meaningfulPlayedAt: now + 9 },
+    });
+  });
+
+  test("malformed, conflict, unauthorized, and rate-limited intents cannot switch", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_rejected_intents");
+    const now = 1_800_000_000_000;
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
+    const main = Object.assign(validProfile(), { name: "Main" });
+    await upload(t, auth, main, null, meaningful("op-main", now), now);
+    const candidate = Object.assign(validProfile(), { name: "Candidate" });
+
+    await expect(upload(t, auth, candidate, null, meaningful("bad-reason", now + 1, "loaded"), now + 1))
+      .resolves.toMatchObject({ ok: false, reason: "invalid_meaningful_play" });
+    for (const invalidIntent of [
+      meaningful("op-too-old", now - 90 * 24 * 60 * 60 * 1000 - 1),
+      meaningful("op-too-new", now + 5 * 60 * 1000 + 1),
+      { operationId: "op-fractional", occurredAt: now + 0.5, reason: "drive_started" },
+    ]) {
+      await expect(upload(t, auth, candidate, null, invalidIntent, now))
+        .resolves.toMatchObject({ ok: false, reason: "invalid_meaningful_play" });
+    }
+    await expect(upload(t, auth, candidate, 99, meaningful("op-conflict", now + 2), now + 2))
+      .resolves.toMatchObject({ ok: false, reason: "conflict" });
+    await expect(upload(
+      t,
+      { ...auth, driverTokenHash: "wrong" },
+      candidate,
+      null,
+      meaningful("op-unauthorized", now + 3),
+      now + 3,
+    )).resolves.toMatchObject({ ok: false, reason: "unauthorized" });
+    await t.run(async (ctx) => {
+      const counter = await ctx.db.query("freightFateRateLimits")
+        .withIndex("by_key", (q) => q.eq("key", `save-upload:${auth.driverId}`)).unique();
+      expect(counter).not.toBeNull();
+      await ctx.db.patch(counter!._id, {
+        count: 30,
+        windowStart: now - (now % 60_000),
+        updatedAt: now,
+      });
+    });
+    await expect(upload(t, auth, candidate, null, meaningful("op-rate", now + 4), now + 4))
+      .resolves.toMatchObject({ ok: false, reason: "rate_limited" });
+
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      const operations = await ctx.db.query("freightFateMeaningfulPlayOperations").collect();
+      expect(driver?.publicSaveName).toBe("Main");
+      expect(operations.map((row) => row.operationId)).toEqual(["op-main"]);
+    });
+  });
+
+  test("projects verified company-driver resume facts without valuing the assigned tractor", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_company_resume");
+    const payload = Object.assign(validProfile(), {
+      name: "Company Road",
+      business_status: "company_driver",
+      carrier_key: "northstar",
+      carrier_name: "Client supplied carrier prose",
+      truck: "ridgeline_sleeper",
+      owned_trucks: [],
+      owned_trailers: [],
+      achievement_stats: {
+        damage_free_deliveries: 9,
+        longest_haul_miles: 875.4,
+        cities_delivered: ["chicago_il_us", "denver_co_us", "milwaukee_wi_us"],
+        states_delivered: ["not trusted"],
+        cargo_claims: 1,
+        preventable_equipment_damage: 2,
+      },
+      driving_record: {
+        serious_violations: [100, 200], major_offenses: [220], citations: 3,
+        fines_paid: 2_500, fatigue_events: 1, repossessions: 0, carrier_terminations: 1,
+      },
+    });
+    payload.career.xp = 1_200;
+
+    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true });
+    const snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
+    expect(snapshot).toMatchObject({
+      saveName: "Company Road",
+      businessStatus: "company_driver",
+      employmentStatus: "Company driver",
+      businessIdentity: "Company driver for Northstar Freight Lines",
+      carrierName: "Northstar Freight Lines",
+      level: 2,
+      careerTitle: "New Hire Company Driver",
+      truckName: "ridgeline sleeper",
+      truckIsCarrierAssigned: true,
+      deliveries: 12,
+      onTimeDeliveries: 11,
+      onTimeRate: 91.7,
+      damageFreeDeliveries: 9,
+      damageFreeRate: 75,
+      citiesVisited: 3,
+      statesVisited: 3,
+      longestHaulMiles: 875.4,
+      lifetimeEarnings: 21_500,
+      netWorth: 9_000,
+      netWorthComplete: true,
+      safetyRecord: {
+        citations: 3,
+        seriousViolations: 2,
+        majorOffenses: 1,
+        fatigueEvents: 1,
+        cargoClaims: 1,
+        preventableEquipmentDamage: 2,
+        carrierTerminations: 1,
+        repossessions: 0,
+      },
+    });
+    expect(snapshot).not.toHaveProperty("money");
+    expect(snapshot?.netWorth).not.toBe(payload.money + invariants.truckPrices.ridgeline_sleeper);
+  });
+
+  test("projects owner-operator equipment value and omits an incomplete trailer valuation", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_owner_resume");
+    const payload = Object.assign(validProfile(), {
+      name: "Owner Road",
+      money: 90_000,
+      business_status: "leased_owner_operator",
+      carrier_key: "roadstead_owner_operator",
+      carrier_name: "Client supplied carrier prose",
+      truck: "ridgeline_sleeper",
+      owned_trucks: ["ridgeline_sleeper"],
+      owned_trailers: [],
+      upgrades: { engine_tune: 2 },
+      achievement_stats: {
+        damage_free_deliveries: 88,
+        longest_haul_miles: 1_400,
+        cities_delivered: ["chicago_il_us", "denver_co_us"],
+      },
+      driving_record: {
+        serious_violations: [], major_offenses: [], citations: 0,
+        fines_paid: 0, fatigue_events: 0, repossessions: 1, carrier_terminations: 0,
+      },
+    });
+    Object.assign(payload.career, {
+      xp: 152_000,
+      deliveries: 100,
+      on_time_deliveries: 93,
+      total_miles: 80_000,
+      total_earnings: 750_000,
+    });
+
+    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true });
+    let snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
+    expect(snapshot).toMatchObject({
+      employmentStatus: "Leased-on owner-operator",
+      businessIdentity: "Leased-on owner-operator with Northstar Freight Lines",
+      careerTitle: "Leased-On Owner-Operator",
+      truckIsCarrierAssigned: false,
+      netWorth: 186_000,
+      netWorthComplete: true,
+    });
+
+    const withTrailer = { ...structuredClone(payload), owned_trailers: ["dry_van"] };
+    await expect(upload(t, auth, withTrailer, 1)).resolves.toMatchObject({ ok: true, revision: 2 });
+    snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
+    expect(snapshot).toMatchObject({ netWorthComplete: false, sourceRevision: 2 });
+    expect(snapshot?.netWorth).toBeUndefined();
+  });
+
+  test("keeps omitted meaningful intent and pre-feature profile fields compatible", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t, "user_legacy_profile");
+    const payload = validProfile();
+    payload.achievement_stats = { damage_free_deliveries: 0, longest_haul_miles: 0 };
+    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true, revision: 1 });
+
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots").first();
+      expect(driver?.publicSaveName).toBeUndefined();
+      expect(snapshot).toMatchObject({
+        sourceSaveName: "Road Star",
+        careerTitle: "Level 4 driver",
+        employmentStatus: "Owner-operator",
+      });
+      expect(snapshot?.meaningfulPlayedAt).toBeUndefined();
+      expect(snapshot?.onTimeRate).toBe(91.7);
+      expect(snapshot?.damageFreeRate).toBeUndefined();
+      expect(snapshot?.netWorth).toBeUndefined();
+    });
   });
 
   test("the saves list exposes each backup's save version", async () => {

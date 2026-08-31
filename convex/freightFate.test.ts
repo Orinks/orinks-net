@@ -1048,6 +1048,82 @@ describe("expanded sharing", () => {
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: "badge-driver", limit: 2 });
     expect(profile!.achievements.map((badge) => badge.achievementKey)).toEqual(["c-last", "b-mid"]);
   });
+
+  test("returns the richer allowlisted snapshot and account achievement total", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "resume-driver", displayName: "Resume Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, publicSaveName: "Working Career",
+        createdAt: now, updatedAt: now,
+      });
+      await ctx.db.insert("freightFateProfileSnapshots", {
+        driverId: "resume-driver", version: 1, saveName: "Working Career",
+        businessStatus: "leased_owner_operator",
+        employmentStatus: "Leased-on owner-operator",
+        businessIdentity: "Leased-on owner-operator with Northstar Freight Lines",
+        carrierName: "Northstar Freight Lines", level: 18,
+        careerTitle: "Leased-On Owner-Operator", lastSavedCity: "Chicago, Illinois",
+        truckName: "ridgeline sleeper", truckIsCarrierAssigned: false,
+        deliveries: 100, milesDriven: 80_000, reputation: 92,
+        onTimeDeliveries: 93, onTimeRate: 93,
+        damageFreeDeliveries: 88, damageFreeRate: 88,
+        citiesVisited: 120, statesVisited: 35, longestHaulMiles: 1_400,
+        safetyRecord: {
+          citations: 1, seriousViolations: 0, majorOffenses: 0, fatigueEvents: 0,
+          cargoClaims: 1, preventableEquipmentDamage: 1,
+          carrierTerminations: 0, repossessions: 0,
+        },
+        lifetimeEarnings: 750_000, netWorth: 186_000, netWorthComplete: true,
+        badgesEarned: 1, endorsements: ["Hazmat"],
+        meaningfulPlayedAt: now - 1_000, capturedAt: now, updatedAt: now,
+        sourceSaveName: "Working Career", sourceRevision: 3, validatorVersion: 1,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "clean_delivery",
+        name: "Clean Delivery", description: "Delivered without damage.",
+        earnedAt: now - 2_000, createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "first_delivery",
+        importSource: "verified_save", importedAt: now, createdAt: now,
+      });
+    });
+
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "resume-driver", limit: 3,
+    });
+    expect(profile?.snapshot).toMatchObject({
+      saveName: "Working Career",
+      businessStatus: "leased_owner_operator",
+      employmentStatus: "Leased-on owner-operator",
+      businessIdentity: "Leased-on owner-operator with Northstar Freight Lines",
+      carrierName: "Northstar Freight Lines",
+      careerTitle: "Leased-On Owner-Operator",
+      truckName: "ridgeline sleeper",
+      truckIsCarrierAssigned: false,
+      onTimeRate: 93,
+      damageFreeRate: 88,
+      safetyRecord: { citations: 1, cargoClaims: 1 },
+      citiesVisited: 120,
+      statesVisited: 35,
+      longestHaulMiles: 1_400,
+      lifetimeEarnings: 750_000,
+      netWorth: 186_000,
+      netWorthComplete: true,
+    });
+    expect(profile?.achievementCount).toBe(2);
+    expect(profile?.achievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery"]);
+    expect(profile?.snapshot).not.toHaveProperty("sourceSaveName");
+    for (const privateKey of [
+      "money", "currentCash", "availableCredit", "activeTrip", "fatigue", "hos",
+      "dispatcherStanding",
+    ]) {
+      expect(profile?.snapshot).not.toHaveProperty(privateKey);
+    }
+  });
 });
 
 describe("per-computer tokens", () => {

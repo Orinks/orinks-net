@@ -11,6 +11,7 @@ import {
   SHARED_PROFILE_VALIDATOR_VERSION,
   validateSharedProfile,
 } from "./freightFateSharedProfileValidation";
+import { validateMeaningfulPlay } from "./freightFateMeaningfulPlay";
 
 function signingConfig() {
   const privateKey = process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY;
@@ -57,13 +58,15 @@ export const uploadValidatedSave = action({
     driverId: v.string(), driverTokenHash: v.string(), saveName: v.string(),
     saveVersion: v.number(), parentRevision: v.union(v.number(), v.null()),
     contentHash: v.string(), content: v.bytes(), summary: v.string(),
-    clientVersion: v.optional(v.string()), now: v.number(),
+    clientVersion: v.optional(v.string()), meaningfulPlay: v.optional(v.any()), now: v.number(),
   },
   handler: async (ctx, args): Promise<Record<string, unknown>> => {
     const authorized = await ctx.runQuery(anyApi.freightFateSaves.authorizeSaveAction, {
       driverId: args.driverId, driverTokenHash: args.driverTokenHash,
     });
     if (!authorized) return { ok: false, reason: "unauthorized" };
+    const meaningfulPlay = validateMeaningfulPlay(args.meaningfulPlay, args.now);
+    if (!meaningfulPlay.ok) return { ok: false, reason: "invalid_meaningful_play" };
     const validation = decodeAndValidate(args.content, args.saveName, args.contentHash);
     if (!validation.ok) {
       // The arithmetic reasons used to stamp a sticky integrityFlag here, which
@@ -110,10 +113,12 @@ export const uploadValidatedSave = action({
     }
     const signed = signPayload(validation.payload, args.now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
+    const { meaningfulPlay: _unvalidatedMeaningfulPlay, ...request } = args;
     return ctx.runMutation(anyApi.freightFateSaves.storeValidatedSave, {
-      ...args,
+      ...request,
       ...signed,
       payload: validation.payload,
+      ...(meaningfulPlay.value === undefined ? {} : { meaningfulPlay: meaningfulPlay.value }),
     });
   },
 });

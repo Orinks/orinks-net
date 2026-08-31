@@ -21,6 +21,7 @@ type SaveUploadRequest = {
   contentHash?: unknown;
   content?: unknown;
   summary?: unknown;
+  meaningfulPlay?: unknown;
 };
 
 function bearerToken(request: Request) {
@@ -49,6 +50,7 @@ const FAILURE_STATUS: Record<string, number> = {
   invalid_market: 422,
   invalid_hos: 422,
   invalid_achievement: 422,
+  invalid_meaningful_play: 422,
   unsupported_version: 422,
   signing_unavailable: 503,
   rate_limited: 429,
@@ -90,6 +92,9 @@ export async function POST(request: Request) {
       contentHash: body.contentHash,
       content,
       summary,
+      ...(body.meaningfulPlay !== undefined
+        ? { meaningfulPlay: body.meaningfulPlay }
+        : {}),
       clientVersion: freightFateClientVersion(request),
     });
 

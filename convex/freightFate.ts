@@ -4,7 +4,10 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
-import invariants from "../data/freight-fate-profile-invariants.json";
+import {
+  publicVerifiedSnapshot,
+  recentEarnedAchievements,
+} from "./freightFateProfileProjection";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -938,21 +941,13 @@ export const getDriverProfile = query({
       && (presenceRow.changedAt ?? presenceRow.updatedAt) >= args.now - PRESENCE_IDLE_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
       : null;
-    // Same shape as the events above: earnedAt ties break by achievementKey,
-    // which the index does not order by, so the boundary tie group is read in
-    // full and the rest of the shelf is left on disk.
-    const earned = [];
-    let boundaryEarnedAt: number | null = null;
-    for await (const row of ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver_earned", (q) => q.eq("driverId", args.driverId))
-      .order("desc")) {
-      if (boundaryEarnedAt !== null && row.earnedAt !== boundaryEarnedAt) break;
-      earned.push(row);
-      if (earned.length > limit && boundaryEarnedAt === null) boundaryEarnedAt = row.earnedAt;
-    }
-    const achievements = earned
-      .sort((a, b) => b.earnedAt - a.earnedAt || b.achievementKey.localeCompare(a.achievementKey))
-      .slice(0, limit);
+    // The verified catalog bounds the account set (currently 172 IDs), so a
+    // single indexed read can provide the total and the dated recent shelf.
+    // Imported rows without a trustworthy earned time count toward ownership
+    // but never masquerade as a recently earned public event.
+    const accountAchievements = await ctx.db.query("freightFateAchievements")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).collect();
+    const achievements = recentEarnedAchievements(accountAchievements, limit);
 
     return {
       driver: {
@@ -967,22 +962,8 @@ export const getDriverProfile = query({
       nextBefore: collected.length > limit && events.at(-1) ? {
         occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
       } : null,
-      snapshot: snapshot?.sourceRevision && snapshot.validatorVersion ? {
-        version: snapshot.version, level: snapshot.level, careerTitle: snapshot.careerTitle,
-        lastSavedCity: snapshot.lastSavedCity, deliveries: snapshot.deliveries,
-        milesDriven: snapshot.milesDriven, reputation: snapshot.reputation,
-        onTimeDeliveries: snapshot.onTimeDeliveries, truckName: snapshot.truckName,
-        employmentStatus: snapshot.employmentStatus, capturedAt: snapshot.capturedAt,
-        // 1.9 career data. lifetimeEarnings is the career's running earnings
-        // total — never the current money balance, which is not stored here
-        // at all. badgeCatalogSize rides along so the page can say "of N"
-        // from the same export that validated the badges.
-        lifetimeEarnings: snapshot.lifetimeEarnings, badgesEarned: snapshot.badgesEarned,
-        badgeCatalogSize: snapshot.badgesEarned === undefined
-          ? undefined
-          : invariants.achievementIds.length,
-        endorsements: snapshot.endorsements, fleetTier: snapshot.fleetTier,
-      } : null,
+      snapshot: publicVerifiedSnapshot(snapshot),
+      achievementCount: accountAchievements.length,
       achievements,
       presence,
     };

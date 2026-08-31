@@ -129,6 +129,7 @@ export async function postFreightFateSave(input: {
   contentHash: string;
   content: ArrayBuffer;
   summary: string;
+  meaningfulPlay?: unknown;
   clientVersion?: string;
 }) {
   const client = getConvexClient();
@@ -146,6 +147,9 @@ export async function postFreightFateSave(input: {
     contentHash: input.contentHash,
     content: input.content,
     summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
+    ...(input.meaningfulPlay !== undefined
+      ? { meaningfulPlay: input.meaningfulPlay }
+      : {}),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
     now: Date.now(),
   });

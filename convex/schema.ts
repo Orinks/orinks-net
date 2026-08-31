@@ -273,6 +273,10 @@ export default defineSchema({
     // board consent never implies journal/profile consent.
     sharingConsentVersion: v.optional(v.number()),
     sharingConsentedAt: v.optional(v.number()),
+    // The verified career selected by the most recent accepted meaningful
+    // operation. Optional so existing accounts and old clients keep their
+    // first-verified-slot behavior until the new protocol selects a career.
+    publicSaveName: v.optional(v.string()),
     // The game build this driver last posted from ("v1.8.0",
     // "nightly-20260711", or "source-<version>" for source checkouts),
     // parsed from the game's User-Agent by the REST routes. Never public;
@@ -416,9 +420,14 @@ export default defineSchema({
   freightFateAchievements: defineTable({
     driverId: v.string(),
     achievementKey: v.string(),
-    name: v.string(),
-    description: v.string(),
-    earnedAt: v.number(),
+    // Event-posted achievements carry trusted event time and the legacy
+    // display copy. Verified-save imports deliberately carry neither: the
+    // save proves ownership, but not when the achievement was earned.
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    earnedAt: v.optional(v.number()),
+    importSource: v.optional(v.literal("verified_save")),
+    importedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_driver", ["driverId"])
@@ -426,9 +435,37 @@ export default defineSchema({
     // Same reason as by_driver_occurred above: the profile shows the most
     // recent badges, not the whole shelf.
     .index("by_driver_earned", ["driverId", "earnedAt"]),
+  // Stable operation IDs make meaningful-play selection idempotent even
+  // after the save slot gains later revisions. These rows are account data,
+  // not public events, and never feed the road journal or Mastodon.
+  freightFateMeaningfulPlayOperations: defineTable({
+    driverId: v.string(),
+    operationId: v.string(),
+    saveName: v.string(),
+    occurredAt: v.number(),
+    reason: v.union(
+      v.literal("job_accepted"),
+      v.literal("drive_started"),
+      v.literal("delivery_completed"),
+      v.literal("equipment_changed"),
+      v.literal("business_changed"),
+      v.literal("changed_save"),
+    ),
+    acceptedAt: v.number(),
+  })
+    .index("by_driver_operation", ["driverId", "operationId"])
+    .index("by_driver_save_accepted", ["driverId", "saveName", "acceptedAt"]),
   freightFateProfileSnapshots: defineTable({
     driverId: v.string(),
     version: v.number(),
+    saveName: v.optional(v.string()),
+    businessStatus: v.optional(v.union(
+      v.literal("company_driver"),
+      v.literal("leased_owner_operator"),
+      v.literal("independent_authority"),
+    )),
+    businessIdentity: v.optional(v.string()),
+    carrierName: v.optional(v.string()),
     level: v.number(),
     careerTitle: v.string(),
     lastSavedCity: v.string(),
@@ -436,13 +473,32 @@ export default defineSchema({
     milesDriven: v.number(),
     reputation: v.number(),
     onTimeDeliveries: v.optional(v.number()),
+    onTimeRate: v.optional(v.number()),
+    damageFreeDeliveries: v.optional(v.number()),
+    damageFreeRate: v.optional(v.number()),
     truckName: v.optional(v.string()),
+    truckIsCarrierAssigned: v.optional(v.boolean()),
     employmentStatus: v.optional(v.string()),
     // 1.9 career projection: lifetime career earnings (never the current
     // money balance — that is the game's published promise), badges earned
     // out of the game's catalog, endorsement labels in unlock order, and —
     // company drivers only — the carrier fleet tier.
     lifetimeEarnings: v.optional(v.number()),
+    citiesVisited: v.optional(v.number()),
+    statesVisited: v.optional(v.number()),
+    longestHaulMiles: v.optional(v.number()),
+    safetyRecord: v.optional(v.object({
+      citations: v.number(),
+      seriousViolations: v.number(),
+      majorOffenses: v.number(),
+      fatigueEvents: v.number(),
+      cargoClaims: v.optional(v.number()),
+      preventableEquipmentDamage: v.optional(v.number()),
+      carrierTerminations: v.number(),
+      repossessions: v.number(),
+    })),
+    netWorth: v.optional(v.number()),
+    netWorthComplete: v.optional(v.boolean()),
     badgesEarned: v.optional(v.number()),
     endorsements: v.optional(v.array(v.string())),
     fleetTier: v.optional(v.string()),
@@ -451,6 +507,7 @@ export default defineSchema({
     sourceSaveName: v.optional(v.string()),
     sourceRevision: v.optional(v.number()),
     validatorVersion: v.optional(v.number()),
+    meaningfulPlayedAt: v.optional(v.number()),
     // Reserved server-gated compatibility envelope. Current public queries
     // intentionally never return it until a later activation migration.
     future: v.optional(v.any()),
