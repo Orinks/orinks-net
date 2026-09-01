@@ -313,7 +313,7 @@ describe("validated private cloud revisions", () => {
       lifetimeEarnings: 21_500,
       badgesEarned: 0,
       // Level 4 has earned every sponsored endorsement, in unlock order.
-      endorsements: ["refrigerated", "heavy-haul", "high-value"],
+      endorsements: ["flatbed securement", "refrigerated", "heavy-haul", "high-value"],
     });
     expect(snapshot?.fleetTier).toBeUndefined();
   });
@@ -323,7 +323,7 @@ describe("validated private cloud revisions", () => {
     const auth = await provisionedDriver(t);
     const base = validProfile();
     // A level-2 company driver (xp 1,200) who paid for the high-value course
-    // ahead of its sponsored level: earned refrigerated, bought high-value,
+    // ahead of its sponsored level: earned flatbed and refrigerated, bought high-value,
     // and heavy-haul is still ahead of them. Their tier is the level band's.
     const payload = Object.assign(base, {
       business_status: "company_driver",
@@ -341,7 +341,7 @@ describe("validated private cloud revisions", () => {
       // money balance is deliberately never stored on this row at all.
       lifetimeEarnings: 21_500,
       badgesEarned: 2,
-      endorsements: ["refrigerated", "high-value"],
+      endorsements: ["flatbed securement", "refrigerated", "high-value"],
     });
     expect(snapshot).not.toHaveProperty("money");
     expect(Object.values(snapshot!)).not.toContain(payload.money);

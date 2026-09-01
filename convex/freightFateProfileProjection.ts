@@ -1,6 +1,10 @@
 import type { Doc } from "./_generated/dataModel";
 import invariants from "../data/freight-fate-profile-invariants.json";
-import { FREIGHT_FATE_TRAILER_PRICES } from "./freightFateProfileCatalog";
+import {
+  FREIGHT_FATE_CAREER_TITLES,
+  FREIGHT_FATE_CARRIER_LABELS,
+  FREIGHT_FATE_TRAILER_PRICES,
+} from "./freightFateProfileCatalog";
 
 type JsonObject = Record<string, unknown>;
 
@@ -11,51 +15,6 @@ const EMPLOYMENT_LABELS = {
 } as const;
 
 type BusinessStatus = keyof typeof EMPLOYMENT_LABELS;
-
-// Temporary server-side compatibility catalogs. The matching game export is
-// the source of truth; these are deliberately closed so client prose can
-// never enter a public profile. A follow-up invariant export will replace
-// these copies before the feature reaches staging.
-const CARRIER_LABELS: Record<string, string> = {
-  northstar: "Northstar Freight Lines",
-  great_lakes_training: "Great Lakes Training Transport",
-  prairie_link: "Prairie Link Regional",
-  summit_value: "Summit Value Logistics",
-  roadstead_owner_operator: "Northstar Freight Lines",
-};
-
-const CAREER_TITLES = [
-  "Yard Trainee",
-  "New Hire Company Driver",
-  "Solo Company Driver",
-  "Regional Company Driver",
-  "Regional Regular",
-  "Experienced Company Driver",
-  "Long-Haul Company Driver",
-  "Heavy Freight Driver",
-  "High-Value Company Driver",
-  "Lead Company Driver",
-  "Specialized Company Driver",
-  "Premium Lane Driver",
-  "Carrier Mentor Driver",
-  "Business Prep Driver",
-  "Owner-Operator Candidate",
-  "Leased-On Applicant",
-  "Tractor Buy-In Candidate",
-  "Leased-On Owner-Operator",
-  "Settled Owner-Operator",
-  "Established Owner-Operator",
-  "Authority Prep Candidate",
-  "Direct Freight Prep",
-  "Trailer Strategy Owner",
-  "Authority-Ready Operator",
-  "Independent Authority Operator",
-  "Contract Freight Builder",
-  "Specialized Trailer Operator",
-  "Premium Lane Operator",
-  "Veteran Independent Operator",
-  "Freight Fate Independent",
-] as const;
 
 function roundOne(value: number) {
   return Math.round(value * 10) / 10;
@@ -151,7 +110,7 @@ export function buildVerifiedProfileSnapshot(args: {
     : "Owner-operator";
   const carrierName = businessStatus === "independent_authority"
     ? undefined
-    : CARRIER_LABELS[args.payload.carrier_key as string];
+    : FREIGHT_FATE_CARRIER_LABELS[args.payload.carrier_key as string];
   const businessIdentity = businessStatus === "company_driver" && carrierName
     ? `${employmentStatus} for ${carrierName}`
     : businessStatus === "leased_owner_operator" && carrierName
@@ -176,13 +135,18 @@ export function buildVerifiedProfileSnapshot(args: {
   const fleetTier = businessStatus === "company_driver"
     ? fleetTiers.filter((tier) => level >= tier.minLevel).at(-1)?.label
     : undefined;
-  const endorsementDefs = invariants.endorsements as Record<string, { level: number; label: string }>;
+  const endorsementDefs = invariants.endorsements as Record<
+    string,
+    { level?: number; label: string }
+  >;
   const purchased = Array.isArray(career.purchased_endorsements)
     ? career.purchased_endorsements as unknown[]
     : [];
   const endorsements = Object.entries(endorsementDefs)
-    .filter(([key, def]) => level >= def.level || purchased.includes(key))
-    .sort(([, a], [, b]) => a.level - b.level)
+    .filter(([key, def]) => (def.level !== undefined && level >= def.level)
+      || purchased.includes(key))
+    .sort(([, a], [, b]) => (a.level ?? Number.MAX_SAFE_INTEGER)
+      - (b.level ?? Number.MAX_SAFE_INTEGER))
     .map(([, def]) => def.label);
   const truckLabels = invariants.truckLabels as Record<string, string>;
   const safety = safetyRecord(args.payload);
@@ -196,7 +160,9 @@ export function buildVerifiedProfileSnapshot(args: {
     ...(carrierName ? { carrierName } : {}),
     level,
     careerTitle: businessStatus
-      ? CAREER_TITLES[Math.min(level, CAREER_TITLES.length) - 1]
+      ? FREIGHT_FATE_CAREER_TITLES[
+        Math.min(level, FREIGHT_FATE_CAREER_TITLES.length) - 1
+      ]
       : `Level ${level} driver`,
     lastSavedCity: cityLabels[args.payload.current_city as string],
     deliveries,
