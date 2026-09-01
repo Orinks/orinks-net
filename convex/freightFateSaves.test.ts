@@ -51,6 +51,19 @@ function hash(content: ArrayBuffer) {
   return createHash("sha256").update(Buffer.from(content)).digest("hex");
 }
 
+function profileNamed(name: string) {
+  return { ...validProfile(), name };
+}
+
+async function listedSaveNames(
+  t: ReturnType<typeof setup>,
+  auth: { driverId: string; driverTokenHash: string },
+) {
+  const listed = await t.query(api.freightFateSaves.listSaves, auth);
+  if (!listed.ok) throw new Error(listed.reason ?? "save listing failed");
+  return [...new Set(listed.saves.map((save) => save.saveName))].sort();
+}
+
 // provisionDriver mints nothing: a computer gets a token only by activating
 // itself from the game, so both helpers below go through that path. The
 // device-code hash is computed with node:crypto here and with Web Crypto
@@ -809,6 +822,220 @@ describe("validated private cloud revisions", () => {
     await expect(upload(t, auth, validProfile(), 1)).resolves.toMatchObject({
       ok: true, revision: 2,
     });
+  });
+
+  test("an eleventh career evicts the least recently meaningfully played slot", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    for (let slot = 1; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await expect(upload(
+        t,
+        auth,
+        { ...validProfile(), name: `Career ${slot}` },
+        null,
+        meaningful(`career-${slot}`, Date.now()),
+      ))
+        .resolves.toMatchObject({ ok: true, revision: 1 });
+    }
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(t, auth, { ...validProfile(), name: "Career 11" }))
+      .resolves.toMatchObject({ ok: true, revision: 1, evictedSaveName: "Career 1" });
+
+    const names = await listedSaveNames(t, auth);
+    expect(names).toHaveLength(10);
+    expect(names).not.toContain("Career 1");
+    expect(names).toContain("Career 11");
+  });
+
+  test("never evicts the selected public career", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: Date.now(),
+    });
+    await upload(t, auth, profileNamed("Career 1"), null, meaningful("public-1", Date.now()));
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: false, now: Date.now() + 1,
+    });
+    for (let slot = 2; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await upload(t, auth, profileNamed(`Career ${slot}`), null, meaningful(`public-${slot}`, Date.now()));
+    }
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: Date.now() + 1,
+    });
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(t, auth, profileNamed("Career 11")))
+      .resolves.toMatchObject({ ok: true, evictedSaveName: "Career 2" });
+    expect(await listedSaveNames(t, auth)).toContain("Career 1");
+  });
+
+  test("uses the latest revision time for a legacy slot with no meaningful play", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await upload(t, auth, profileNamed("Legacy"));
+    for (let slot = 2; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await upload(t, auth, profileNamed(`Played ${slot}`), null, meaningful(`played-${slot}`, Date.now()));
+    }
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(t, auth, profileNamed("Incoming")))
+      .resolves.toMatchObject({ ok: true, evictedSaveName: "Legacy" });
+  });
+
+  test("breaks equal retention times by normalized save name", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    for (const name of ["beta", "Alpha"]) {
+      await upload(t, auth, profileNamed(name), null, meaningful(`tie-${name}`, Date.now()));
+    }
+    for (let slot = 3; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await upload(t, auth, profileNamed(`Career ${slot}`), null, meaningful(`tie-${slot}`, Date.now()));
+    }
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(t, auth, profileNamed("Incoming")))
+      .resolves.toMatchObject({ ok: true, evictedSaveName: "Alpha" });
+  });
+
+  test("an existing slot revision neither evicts nor reports a career", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    for (let slot = 1; slot <= 10; slot += 1) {
+      await upload(t, auth, profileNamed(`Career ${slot}`));
+    }
+
+    const result = await upload(t, auth, profileNamed("Career 1"), 1);
+    expect(result).toMatchObject({ ok: true, revision: 2 });
+    expect(result).not.toHaveProperty("evictedSaveName");
+    expect(await listedSaveNames(t, auth)).toHaveLength(10);
+  });
+
+  test("eviction removes the whole slot while retaining account achievements and events", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: Date.now(),
+    });
+    await upload(t, auth, profileNamed("Career 1"), null, meaningful("evict-1", Date.now()));
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: false, now: Date.now() + 1,
+    });
+    await upload(t, auth, profileNamed("Career 1"), 1);
+    for (let slot = 2; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await upload(t, auth, profileNamed(`Career ${slot}`), null, meaningful(`evict-${slot}`, Date.now()));
+    }
+    const evictedContentIds = await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      if (!driver) throw new Error("driver missing");
+      await ctx.db.patch(driver._id, { publicSaveName: undefined });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: auth.driverId, achievementKey: "retained-achievement", createdAt: Date.now(),
+      });
+      await ctx.db.insert("freightFateDriverEvents", {
+        driverId: auth.driverId, eventId: "retained-event", eventType: "test",
+        summary: "Retained account event", occurredAt: Date.now(), createdAt: Date.now(),
+      });
+      return (await ctx.db.query("freightFateSaves")
+        .withIndex("by_slot", (q) => q.eq("driverId", auth.driverId).eq("saveName", "Career 1"))
+        .collect()).map((row) => row.contentId);
+    });
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(t, auth, profileNamed("Incoming")))
+      .resolves.toMatchObject({ ok: true, evictedSaveName: "Career 1" });
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateSaves")
+        .withIndex("by_slot", (q) => q.eq("driverId", auth.driverId).eq("saveName", "Career 1"))
+        .collect()).toHaveLength(0);
+      for (const contentId of evictedContentIds) expect(await ctx.db.get(contentId)).toBeNull();
+      expect(await ctx.db.query("freightFateMeaningfulPlayOperations")
+        .withIndex("by_driver_save_accepted", (q) =>
+          q.eq("driverId", auth.driverId).eq("saveName", "Career 1"),
+        ).collect()).toHaveLength(0);
+      expect(await ctx.db.query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", auth.driverId)).unique()).toBeNull();
+      expect(await ctx.db.query("freightFateAchievements")
+        .withIndex("by_driver_achievement", (q) =>
+          q.eq("driverId", auth.driverId).eq("achievementKey", "retained-achievement"),
+        ).unique()).not.toBeNull();
+      expect(await ctx.db.query("freightFateDriverEvents")
+        .withIndex("by_driver_event", (q) =>
+          q.eq("driverId", auth.driverId).eq("eventId", "retained-event"),
+        ).unique()).not.toBeNull();
+    });
+  });
+
+  test("blocks retention without accepting incoming changes when target content is inconsistent", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    for (let slot = 1; slot <= 10; slot += 1) {
+      vi.setSystemTime(new Date(`2026-08-${String(slot).padStart(2, "0")}T00:00:00Z`));
+      await upload(t, auth, profileNamed(`Career ${slot}`), null, meaningful(`blocked-${slot}`, Date.now()));
+    }
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: Date.now() + 1,
+    });
+    await t.run(async (ctx) => {
+      const oldest = await ctx.db.query("freightFateSaves")
+        .withIndex("by_slot", (q) => q.eq("driverId", auth.driverId).eq("saveName", "Career 1"))
+        .unique();
+      if (!oldest) throw new Error("oldest slot missing");
+      await ctx.db.delete(oldest.contentId);
+    });
+
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+    await expect(upload(
+      t,
+      auth,
+      profileNamed("Incoming"),
+      null,
+      meaningful("blocked-incoming", Date.now()),
+    )).resolves.toMatchObject({ ok: false, reason: "retention_blocked" });
+    expect(await listedSaveNames(t, auth)).toHaveLength(10);
+    expect(await listedSaveNames(t, auth)).not.toContain("Incoming");
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateMeaningfulPlayOperations")
+        .withIndex("by_driver_operation", (q) =>
+          q.eq("driverId", auth.driverId).eq("operationId", "blocked-incoming"),
+        ).unique()).toBeNull();
+      expect(await ctx.db.query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", auth.driverId)).unique()).toBeNull();
+    });
+  });
+
+  test("retrying a successful eleventh upload does not evict another career", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    for (let slot = 1; slot <= 10; slot += 1) {
+      await upload(t, auth, profileNamed(`Career ${slot}`));
+    }
+    await expect(upload(t, auth, profileNamed("Incoming")))
+      .resolves.toMatchObject({ ok: true, revision: 1, evictedSaveName: "Career 1" });
+    const afterSuccess = await listedSaveNames(t, auth);
+
+    await expect(upload(t, auth, profileNamed("Incoming"), null))
+      .resolves.toMatchObject({ ok: false, reason: "conflict", latestRevision: 1 });
+    expect(await listedSaveNames(t, auth)).toEqual(afterSuccess);
   });
 
   test("deleting the accepted source slot also removes its public projection", async () => {

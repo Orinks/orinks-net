@@ -11,6 +11,7 @@ import {
 } from "./freightFate";
 import { buildVerifiedProfileSnapshot } from "./freightFateProfileProjection";
 import { meaningfulPlayValidator } from "./freightFateMeaningfulPlay";
+import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -33,8 +34,9 @@ export const MAX_SAVE_BYTES = 900 * 1024;
 export const KEEP_REVISIONS = 10;
 // Distinct save names per driver. The game caps profiles well below this;
 // the limit only stops a runaway or hostile client from filling the table.
-export const MAX_SLOTS = 20;
+export const MAX_SLOTS = 10;
 export const SAVE_UPLOAD_LIMIT = 30;
+const MAX_RETENTION_OPERATIONS_PER_SLOT = 100;
 
 function toHex(bytes: Uint8Array) {
   let out = "";
@@ -76,6 +78,79 @@ async function latestRevision(ctx: QueryCtx, driverId: string, saveName: string)
     .withIndex("by_slot", (q) => q.eq("driverId", driverId).eq("saveName", saveName))
     .order("desc")
     .first();
+}
+
+function retentionName(saveName: string) {
+  return freightFateSaveSlotName(saveName).normalize("NFKC").toLowerCase();
+}
+
+async function planRetentionEviction(
+  ctx: MutationCtx,
+  args: { driverId: string; incomingSaveName: string; publicSaveName?: string },
+) {
+  // Ten slots times ten retained revisions is the largest healthy account.
+  // One extra row means the invariant is already broken, so a new career
+  // cannot safely decide which complete slot history it would replace.
+  const rows = await ctx.db
+    .query("freightFateSaves")
+    .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+    .take(MAX_SLOTS * KEEP_REVISIONS + 1);
+  if (rows.length > MAX_SLOTS * KEEP_REVISIONS) return null;
+
+  const latestBySave = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const previous = latestBySave.get(row.saveName);
+    if (!previous || row.revision > previous.revision) latestBySave.set(row.saveName, row);
+  }
+  if (latestBySave.size < MAX_SLOTS) return undefined;
+  if (latestBySave.size !== MAX_SLOTS) return null;
+
+  const candidates = [];
+  for (const [saveName, latest] of latestBySave) {
+    if (saveName === args.incomingSaveName || saveName === args.publicSaveName) continue;
+    const meaningful = await ctx.db
+      .query("freightFateMeaningfulPlayOperations")
+      .withIndex("by_driver_save_accepted", (q) =>
+        q.eq("driverId", args.driverId).eq("saveName", saveName),
+      )
+      .order("desc")
+      .first();
+    candidates.push({
+      saveName,
+      rankingTime: meaningful?.acceptedAt ?? latest.createdAt,
+      normalizedName: retentionName(saveName),
+    });
+  }
+  candidates.sort((a, b) =>
+    a.rankingTime - b.rankingTime
+    || (a.normalizedName < b.normalizedName ? -1 : a.normalizedName > b.normalizedName ? 1 : 0)
+    || (a.saveName < b.saveName ? -1 : a.saveName > b.saveName ? 1 : 0),
+  );
+  const selected = candidates[0];
+  if (!selected) return null;
+
+  const saveRows = rows.filter((row) => row.saveName === selected.saveName);
+  for (const row of saveRows) {
+    if (!(await ctx.db.get(row.contentId))) return null;
+  }
+  const operationRows = await ctx.db
+    .query("freightFateMeaningfulPlayOperations")
+    .withIndex("by_driver_save_accepted", (q) =>
+      q.eq("driverId", args.driverId).eq("saveName", selected.saveName),
+    )
+    .take(MAX_RETENTION_OPERATIONS_PER_SLOT + 1);
+  if (operationRows.length > MAX_RETENTION_OPERATIONS_PER_SLOT) return null;
+  const snapshot = await ctx.db
+    .query("freightFateProfileSnapshots")
+    .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+    .unique();
+
+  return {
+    saveName: selected.saveName,
+    saveRows,
+    operationRows,
+    snapshot: snapshot?.sourceSaveName === selected.saveName ? snapshot : undefined,
+  };
 }
 
 async function upsertVerifiedSnapshot(
@@ -294,18 +369,6 @@ export const storeValidatedSave = internalMutation({
 
     const latest = await latestRevision(ctx, args.driverId, args.saveName);
 
-    if (!latest) {
-      // New slot: enforce the per-driver slot cap before creating it.
-      const rows = await ctx.db
-        .query("freightFateSaves")
-        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
-        .collect();
-      const slots = new Set(rows.map((row) => row.saveName));
-      if (slots.size >= MAX_SLOTS) {
-        return { ok: false as const, reason: "too_many_slots" as const };
-      }
-    }
-
     const latestRev = latest?.revision ?? null;
     if (args.parentRevision !== latestRev) {
       return {
@@ -315,6 +378,27 @@ export const storeValidatedSave = internalMutation({
         latestCreatedAt: latest?.createdAt ?? null,
         latestSummary: latest?.summary ?? null,
       };
+    }
+
+    const eviction = latest
+      ? undefined
+      : await planRetentionEviction(ctx, {
+          driverId: args.driverId,
+          incomingSaveName: args.saveName,
+          publicSaveName: driver.publicSaveName,
+        });
+    if (eviction === null) {
+      return { ok: false as const, reason: "retention_blocked" as const };
+    }
+    if (eviction) {
+      for (const row of eviction.saveRows) {
+        await ctx.db.delete(row.contentId);
+        await ctx.db.delete(row._id);
+      }
+      for (const operation of eviction.operationRows) {
+        await ctx.db.delete(operation._id);
+      }
+      if (eviction.snapshot) await ctx.db.delete(eviction.snapshot._id);
     }
 
     const revision = (latest?.revision ?? 0) + 1;
@@ -387,7 +471,11 @@ export const storeValidatedSave = internalMutation({
       }
     }
 
-    return { ok: true as const, revision };
+    return {
+      ok: true as const,
+      revision,
+      ...(eviction ? { evictedSaveName: eviction.saveName } : {}),
+    };
   },
 });
 
