@@ -866,7 +866,8 @@ describe("expanded sharing", () => {
       payload: { version: 1, cargo: "produce", weightPounds: 30000, origin: "Omaha, Nebraska", destination: "Chicago, Illinois", distanceMiles: 470, onTime: true },
     })).toMatchObject({ ok: true, duplicate: false });
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId });
-    expect(profile?.snapshot).toMatchObject({ level: 7, lastSavedCity: "Denver, Colorado", deliveries: 22 });
+    expect(profile?.snapshot).toMatchObject({ level: 7, deliveries: 22 });
+    expect(profile?.snapshot).not.toHaveProperty("lastSavedCity");
     expect(profile?.snapshot).not.toHaveProperty("future");
     const firstPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1 });
     expect(firstPage.updates.map((event) => event.eventId)).toEqual(["delivery-22"]);
@@ -1256,20 +1257,37 @@ describe("expanded sharing", () => {
         badgesEarned: 1, endorsements: ["Hazmat"],
         meaningfulPlayedAt: now - 1_000, capturedAt: now, updatedAt: now,
         sourceSaveName: "Working Career", sourceRevision: 3, validatorVersion: 1,
+        future: {
+          currentCash: "CASH-PRIVATE-9182", availableCredit: "CREDIT-PRIVATE-3817",
+          preciseLocation: "LOCATION-PRIVATE-4921", activeCargo: "CARGO-PRIVATE-7241",
+          customer: "CUSTOMER-PRIVATE-8173", cargoValue: "VALUE-PRIVATE-9127",
+          destination: "DESTINATION-PRIVATE-1278", fatigue: "FATIGUE-PRIVATE-2819",
+          hos: "HOS-PRIVATE-3912", dispatcherStanding: "DISPATCHER-PRIVATE-4812",
+        },
+      });
+      await ctx.db.insert("freightFatePresence", {
+        driverId: "resume-driver", activity: "DESTINATION-PRIVATE-1278",
+        detail: "LOCATION-PRIVATE-4921 CARGO-PRIVATE-7241",
+        updatedAt: now, changedAt: now,
       });
       await ctx.db.insert("freightFateAchievements", {
         driverId: "resume-driver", achievementKey: "clean_delivery",
-        name: "Clean Delivery", description: "Delivered without damage.",
+        name: "POISONED STORED NAME", description: "POISONED STORED DESCRIPTION",
         earnedAt: now - 2_000, createdAt: now,
       });
       await ctx.db.insert("freightFateAchievements", {
         driverId: "resume-driver", achievementKey: "first_delivery",
         importSource: "verified_save", importedAt: now, createdAt: now,
       });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "unknown_poisoned_key",
+        name: "UNKNOWN POISONED NAME", description: "UNKNOWN POISONED DESCRIPTION",
+        earnedAt: now - 1_000, createdAt: now,
+      });
     });
 
     const profile = await t.query(api.freightFate.getDriverProfile, {
-      driverId: "resume-driver", limit: 3,
+      driverId: "resume-driver", limit: 3, now,
     });
     expect(profile?.snapshot).toMatchObject({
       saveName: "Working Career",
@@ -1294,7 +1312,21 @@ describe("expanded sharing", () => {
     });
     expect(profile?.achievementCount).toBe(2);
     expect(profile?.achievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery"]);
+    expect(profile?.achievements).toEqual([
+      expect.objectContaining({ achievementKey: "clean_delivery", label: "Pretty as a Billboard" }),
+    ]);
+    expect(profile?.achievements[0]).not.toHaveProperty("name");
+    expect(profile?.achievements[0]).not.toHaveProperty("description");
+    expect(JSON.stringify(profile)).not.toContain("POISONED");
+    for (const sentinel of [
+      "CASH-PRIVATE-9182", "CREDIT-PRIVATE-3817", "LOCATION-PRIVATE-4921",
+      "CARGO-PRIVATE-7241", "CUSTOMER-PRIVATE-8173", "VALUE-PRIVATE-9127",
+      "DESTINATION-PRIVATE-1278", "FATIGUE-PRIVATE-2819", "HOS-PRIVATE-3912",
+      "DISPATCHER-PRIVATE-4812",
+    ]) expect(JSON.stringify(profile)).not.toContain(sentinel);
     expect(profile?.snapshot).not.toHaveProperty("sourceSaveName");
+    expect(profile?.snapshot).not.toHaveProperty("lastSavedCity");
+    expect(profile?.snapshot?.safetyRecord).not.toHaveProperty("fatigueEvents");
     for (const privateKey of [
       "money", "currentCash", "availableCredit", "activeTrip", "fatigue", "hos",
       "dispatcherStanding",

@@ -1,6 +1,7 @@
 import type { Doc } from "./_generated/dataModel";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import {
+  FREIGHT_FATE_ACHIEVEMENT_LABELS,
   FREIGHT_FATE_CAREER_TITLES,
   FREIGHT_FATE_CARRIER_LABELS,
   FREIGHT_FATE_TRAILER_PRICES,
@@ -210,7 +211,6 @@ export function publicVerifiedSnapshot(
     carrierName: snapshot.carrierName,
     level: snapshot.level,
     careerTitle: snapshot.careerTitle,
-    lastSavedCity: snapshot.lastSavedCity,
     deliveries: snapshot.deliveries,
     milesDriven: snapshot.milesDriven,
     reputation: snapshot.reputation,
@@ -221,7 +221,15 @@ export function publicVerifiedSnapshot(
     citiesVisited: snapshot.citiesVisited,
     statesVisited: snapshot.statesVisited,
     longestHaulMiles: snapshot.longestHaulMiles,
-    safetyRecord: snapshot.safetyRecord,
+    safetyRecord: snapshot.safetyRecord ? {
+      citations: snapshot.safetyRecord.citations,
+      seriousViolations: snapshot.safetyRecord.seriousViolations,
+      majorOffenses: snapshot.safetyRecord.majorOffenses,
+      cargoClaims: snapshot.safetyRecord.cargoClaims,
+      preventableEquipmentDamage: snapshot.safetyRecord.preventableEquipmentDamage,
+      carrierTerminations: snapshot.safetyRecord.carrierTerminations,
+      repossessions: snapshot.safetyRecord.repossessions,
+    } : undefined,
     truckName: snapshot.truckName,
     truckIsCarrierAssigned: snapshot.truckIsCarrierAssigned,
     employmentStatus: snapshot.employmentStatus,
@@ -245,8 +253,14 @@ export function recentEarnedAchievements(
 ) {
   return rows
     .filter((row) => row.earnedAt !== undefined
-      && row.name !== undefined && row.description !== undefined)
+      && FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey] !== undefined)
     .sort((a, b) => b.earnedAt! - a.earnedAt!
       || b.achievementKey.localeCompare(a.achievementKey))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((row) => ({
+      _id: row._id,
+      achievementKey: row.achievementKey,
+      label: FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey],
+      earnedAt: row.earnedAt!,
+    }));
 }

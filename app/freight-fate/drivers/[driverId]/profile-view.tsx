@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, type ReactNode } from "react";
 import Link from "next/link";
 import { FreightFateHashFocus } from "@/components/FreightFateHashFocus";
 import { freightFateEventFragment } from "@/lib/freight-fate-fragments";
@@ -8,7 +8,7 @@ import { getFreightFateDriverProfile, normalizeFreightFateDriverId } from "@/lib
 export type ProfileSection = "overview" | "road-journal" | "achievements";
 export type JournalCursor = { occurredAt: number; eventId: string };
 type Event = { _id: string; eventId: string; eventType: string; summary: string; occurredAt: number };
-type Achievement = { _id: string; name: string; description: string; earnedAt: number };
+type Achievement = { _id: string; achievementKey: string; label: string; earnedAt: number };
 
 function Time({ value }: { value: number }) {
   const visible = new Intl.DateTimeFormat("en-US", {
@@ -22,16 +22,16 @@ function ProfileNav({ driverId, section }: { driverId: string; section: ProfileS
   const links = [
     ["overview", root, "Profile overview"],
     ["road-journal", `${root}/road-journal`, "Road journal"],
-    ["achievements", `${root}/achievements`, "Achievements"],
+    ["achievements", `${root}/achievements`, "Account-wide achievements"],
   ] as const;
   return (
     <nav aria-label="Freight Fate profile sections" className="border-b border-line-strong pb-4">
       <ul className="flex flex-wrap gap-3">
         {links.map(([key, href, label]) => (
-          <li key={key}>
+          <li className="min-w-0" key={key}>
             <Link
               aria-current={section === key ? "page" : undefined}
-              className="inline-block min-h-11 rounded border border-transparent px-3 py-2 font-semibold text-action underline aria-[current=page]:border-line-strong aria-[current=page]:bg-slate-100 aria-[current=page]:text-ink"
+              className="inline-block min-h-11 max-w-full rounded border border-transparent px-3 py-2 font-semibold text-action underline [overflow-wrap:anywhere] aria-[current=page]:border-line-strong aria-[current=page]:bg-slate-100 aria-[current=page]:text-ink"
               href={href}
             >
               {label}
@@ -41,6 +41,44 @@ function ProfileNav({ driverId, section }: { driverId: string; section: ProfileS
       </ul>
     </nav>
   );
+}
+
+function FactList({ facts }: { facts: Array<[label: string, value: ReactNode]> }) {
+  return (
+    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {facts.map(([label, value]) => (
+        <div className="min-w-0" key={label}>
+          <dt className="font-semibold">{label}</dt>
+          <dd className="[overflow-wrap:anywhere]">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function dollars(value: number) {
+  return `${value.toLocaleString("en-US")} dollars`;
+}
+
+function percent(value: number) {
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
+}
+
+function safetySummary(record: {
+  citations: number; seriousViolations: number; majorOffenses: number;
+  cargoClaims?: number; preventableEquipmentDamage?: number;
+  carrierTerminations: number; repossessions: number;
+}) {
+  const parts = [
+    `${record.citations} citations`,
+    `${record.seriousViolations} serious violations`,
+    `${record.majorOffenses} major offenses`,
+    ...(record.cargoClaims === undefined ? [] : [`${record.cargoClaims} cargo claims`]),
+    ...(record.preventableEquipmentDamage === undefined ? [] : [`${record.preventableEquipmentDamage} preventable equipment damage incidents`]),
+    `${record.carrierTerminations} carrier terminations`,
+    `${record.repossessions} repossessions`,
+  ];
+  return parts.join(", ");
 }
 
 // Every one of these pages reads the profile twice: once for the page title
@@ -79,63 +117,86 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
   const { driver, snapshot } = profile;
   const root = `/freight-fate/drivers/${driver.driverId}`;
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8 [overflow-wrap:anywhere]">
       <PageHeader title={driver.displayName} />
       {confirmed ? <p className="rounded border border-line-strong bg-soft-green p-4">Profile sharing is on.</p> : null}
       <ProfileNav driverId={driver.driverId} section={section} />
 
       {section === "overview" ? (
-        <section aria-labelledby="overview-heading" className="py-4">
-          <h2 className="mb-4 text-2xl font-bold text-ink" id="overview-heading">Overview</h2>
-          {profile.presence ? (
-            <p><strong>On duty:</strong> {profile.presence.activity}. {profile.presence.detail} Updated <Time value={profile.presence.updatedAt} />.</p>
-          ) : <p><strong>Status:</strong> Off duty.</p>}
-          {snapshot ? (
-            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div><dt className="font-semibold">Driver level</dt><dd>{snapshot.level}</dd></div>
-              <div><dt className="font-semibold">Career rank</dt><dd>{snapshot.careerTitle}</dd></div>
-              <div><dt className="font-semibold">Last saved location</dt><dd>{snapshot.lastSavedCity}</dd></div>
-              <div><dt className="font-semibold">Backup accepted</dt><dd><Time value={snapshot.capturedAt} /></dd></div>
-              <div><dt className="font-semibold">Total deliveries</dt><dd>{snapshot.deliveries.toLocaleString("en-US")}</dd></div>
-              <div><dt className="font-semibold">Miles driven</dt><dd>{snapshot.milesDriven.toLocaleString("en-US")}</dd></div>
-              <div><dt className="font-semibold">Reputation</dt><dd>{snapshot.reputation} out of 100</dd></div>
-              {snapshot.onTimeDeliveries === undefined ? null : <div><dt className="font-semibold">On-time deliveries</dt><dd>{snapshot.onTimeDeliveries}</dd></div>}
-              {snapshot.lifetimeEarnings === undefined ? null : <div><dt className="font-semibold">Lifetime career earnings</dt><dd>{snapshot.lifetimeEarnings.toLocaleString("en-US")} dollars</dd></div>}
-              {snapshot.badgesEarned === undefined ? null : <div><dt className="font-semibold">Badges earned</dt><dd>{snapshot.badgesEarned} out of {snapshot.badgeCatalogSize}</dd></div>}
-              {snapshot.endorsements === undefined ? null : <div><dt className="font-semibold">Endorsements</dt><dd>{snapshot.endorsements.length ? snapshot.endorsements.join(", ") : "None yet"}</dd></div>}
-              {snapshot.fleetTier ? <div><dt className="font-semibold">Carrier fleet tier</dt><dd>{snapshot.fleetTier}</dd></div> : null}
-              {snapshot.truckName ? <div><dt className="font-semibold">{snapshot.fleetTier ? "Assigned truck" : "Current truck"}</dt><dd>{snapshot.truckName}</dd></div> : null}
-              {snapshot.employmentStatus ? <div><dt className="font-semibold">Employment status</dt><dd>{snapshot.employmentStatus}</dd></div> : null}
-            </dl>
-          ) : <p>No career statistics yet.</p>}
-          {snapshot && snapshot.lifetimeEarnings !== undefined ? (
-            <p className="mt-4 text-slate-700">
-              Lifetime career earnings is the running total this career has earned across
-              every settled delivery. A driver&apos;s current money balance is different and
-              is never published: the game shares the lifetime total only.
-            </p>
-          ) : null}
-        </section>
+        <>
+          <section className="min-w-0 py-4">
+            <h2 className="mb-4 text-2xl font-bold text-ink" id="career-heading">Current career</h2>
+            {snapshot ? <FactList facts={[
+              ...(snapshot.saveName ? [["Career name", snapshot.saveName] as [string, ReactNode]] : []),
+              ...(snapshot.businessIdentity ? [["Employment or business identity", snapshot.businessIdentity] as [string, ReactNode]] : snapshot.employmentStatus ? [["Employment or business identity", snapshot.employmentStatus] as [string, ReactNode]] : []),
+              ...(snapshot.carrierName ? [["Carrier", snapshot.carrierName] as [string, ReactNode]] : []),
+              ["Driver level", snapshot.level.toLocaleString("en-US")],
+              ["Career title", snapshot.careerTitle],
+              ...(snapshot.truckName ? [["Tractor", `${snapshot.truckName}${snapshot.truckIsCarrierAssigned === true ? " (carrier-assigned)" : snapshot.truckIsCarrierAssigned === false ? " (owned)" : ""}`] as [string, ReactNode]] : []),
+              ...(snapshot.fleetTier ? [["Carrier fleet tier", snapshot.fleetTier] as [string, ReactNode]] : []),
+            ]} /> : <p>No current career has been shared yet.</p>}
+            {profile.presence ? <p className="mt-4"><strong>Status:</strong> On duty. Updated <Time value={profile.presence.updatedAt} />.</p> : <p className="mt-4"><strong>Status:</strong> Off duty.</p>}
+          </section>
+
+          <section className="min-w-0 py-4">
+            <h2 className="mb-4 text-2xl font-bold text-ink" id="resume-heading">Current career resume</h2>
+            {snapshot ? <FactList facts={[
+              ["Lifetime deliveries", snapshot.deliveries.toLocaleString("en-US")],
+              ["Lifetime miles", snapshot.milesDriven.toLocaleString("en-US", { maximumFractionDigits: 1 })],
+              ...(snapshot.onTimeRate === undefined ? [] : [["On-time percentage", percent(snapshot.onTimeRate)] as [string, ReactNode]]),
+              ...(snapshot.damageFreeRate === undefined ? [] : [["Damage-free percentage", percent(snapshot.damageFreeRate)] as [string, ReactNode]]),
+              ...(snapshot.safetyRecord ? [["Safety record", safetySummary(snapshot.safetyRecord)] as [string, ReactNode]] : []),
+              ...(snapshot.statesVisited === undefined ? [] : [["States visited", snapshot.statesVisited.toLocaleString("en-US")] as [string, ReactNode]]),
+              ...(snapshot.citiesVisited === undefined ? [] : [["Cities visited", snapshot.citiesVisited.toLocaleString("en-US")] as [string, ReactNode]]),
+              ...(snapshot.longestHaulMiles === undefined ? [] : [["Longest haul", `${snapshot.longestHaulMiles.toLocaleString("en-US", { maximumFractionDigits: 1 })} miles`] as [string, ReactNode]]),
+              ...(snapshot.lifetimeEarnings === undefined ? [] : [["Lifetime career earnings", dollars(snapshot.lifetimeEarnings)] as [string, ReactNode]]),
+              ...(snapshot.netWorth === undefined || snapshot.netWorthComplete !== true ? [] : [["Net worth", dollars(snapshot.netWorth)] as [string, ReactNode]]),
+              ["Reputation", `${snapshot.reputation.toLocaleString("en-US", { maximumFractionDigits: 1 })} out of 100`],
+              ...(snapshot.endorsements === undefined ? [] : [["Endorsements", snapshot.endorsements.length ? snapshot.endorsements.join(", ") : "None yet"] as [string, ReactNode]]),
+            ]} /> : <p>No current career resume has been shared yet.</p>}
+          </section>
+
+          <section className="min-w-0 py-4">
+            <h2 className="mb-4 text-2xl font-bold text-ink" id="account-achievements-heading">Account-wide achievements</h2>
+            {profile.achievementCount ? <>
+              <p>{profile.achievementCount.toLocaleString("en-US")} account-wide achievements.</p>
+              <ul className="mt-4 space-y-3">
+                {profile.achievements.slice(0, 3).map((item: Achievement) => <li className="min-w-0 [overflow-wrap:anywhere]" key={item._id}><strong>{item.label}</strong>. Earned <Time value={item.earnedAt} />.</li>)}
+              </ul>
+              <p className="mt-4"><Link href={`${root}/achievements`}>View all account-wide achievements</Link>.</p>
+            </> : <p>No account-wide achievements yet.</p>}
+          </section>
+
+          <section className="min-w-0 py-4">
+            <h2 className="mb-4 text-2xl font-bold text-ink" id="recent-journal-heading">Road journal</h2>
+            {profile.events.length ? <>
+              <ul className="space-y-4">
+                {profile.events.slice(0, 3).map((event: Event) => <li className="min-w-0 [overflow-wrap:anywhere]" key={event._id}><strong className="capitalize">{event.eventType.replaceAll("_", " ")}</strong>. {event.summary} <Time value={event.occurredAt} />.</li>)}
+              </ul>
+              <p className="mt-4"><Link href={`${root}/road-journal`}>View the full road journal</Link>.</p>
+            </> : <p>No road-journal entries yet.</p>}
+          </section>
+        </>
       ) : null}
 
       {section === "road-journal" ? (
-        <section aria-labelledby="journal-heading" className="py-4">
+        <section className="py-4">
           <FreightFateHashFocus />
           <h2 className="mb-2 text-2xl font-bold text-ink" id="journal-heading">Road journal</h2>
           <p>Newest entries first.</p>
           {profile.events.length ? (
-            <ol className="mt-5 space-y-4">
+            <ul className="mt-5 space-y-4">
               {profile.events.map((event: Event) => {
                 const fragment = freightFateEventFragment(event.eventId);
                 return (
                 <li key={event._id}>
-                  <article aria-labelledby={fragment} className="rounded border border-line-strong p-4">
+                  <article aria-labelledby={fragment} className="min-w-0 rounded border border-line-strong p-4 [overflow-wrap:anywhere]">
                     <h3 className="scroll-mt-6 text-lg font-bold capitalize" id={fragment} tabIndex={-1}>{event.eventType.replaceAll("_", " ")}</h3>
                     <p>{event.summary}</p><p className="text-slate-700"><Time value={event.occurredAt} /></p>
                   </article>
                 </li>);
               })}
-            </ol>
+            </ul>
           ) : <p>No road-journal entries yet.</p>}
           {cursor || profile.nextBefore ? (
           <nav aria-label="Road journal pagination" className="mt-6 flex flex-wrap gap-4">
@@ -149,18 +210,19 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
       ) : null}
 
       {section === "achievements" ? (
-        <section aria-labelledby="achievements-heading" className="py-4">
-          <h2 className="mb-4 text-2xl font-bold text-ink" id="achievements-heading">Achievements</h2>
+        <section className="py-4">
+          <h2 className="mb-4 text-2xl font-bold text-ink" id="achievements-heading">Account-wide achievements</h2>
+          <p className="mb-4">{profile.achievementCount.toLocaleString("en-US")} account-wide achievements.</p>
           {profile.achievements.length ? (
             <ul className="space-y-4">
               {profile.achievements.map((item: Achievement) => (
-                <li className="rounded border border-line-strong p-4" key={item._id}>
-                  <h3 className="text-lg font-bold">{item.name}</h3><p>{item.description}</p>
+                <li className="min-w-0 rounded border border-line-strong p-4 [overflow-wrap:anywhere]" key={item._id}>
+                  <h3 className="text-lg font-bold">{item.label}</h3>
                   <p>Unlocked. Earned <Time value={item.earnedAt} />.</p>
                 </li>
               ))}
             </ul>
-          ) : <p>No achievements yet.</p>}
+          ) : <p>No account-wide achievements yet.</p>}
         </section>
       ) : null}
 

@@ -952,7 +952,7 @@ export const getDriverProfile = query({
     const presence = presenceRow && args.now !== undefined
       && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
       && (presenceRow.changedAt ?? presenceRow.updatedAt) >= args.now - PRESENCE_IDLE_MS
-      ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
+      ? { updatedAt: presenceRow.updatedAt }
       : null;
     const accountAchievements = await readCatalogAchievements(ctx, args.driverId);
     const achievements = recentEarnedAchievements(accountAchievements, limit);
