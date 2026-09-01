@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyStagingRun,
   isTransientConvexFailure,
+  missingStagingCredentials,
 } from "./deploy-freight-fate-staging.mjs";
 
 describe("temporary Freight Fate staging deployment policy", () => {
@@ -41,5 +42,21 @@ describe("temporary Freight Fate staging deployment policy", () => {
       false,
     );
     expect(isTransientConvexFailure("Unauthorized: invalid deploy key")).toBe(false);
+  });
+
+  it("requires the scoped Convex and Vercel CLI credentials", () => {
+    expect(
+      missingStagingCredentials({
+        CONVEX_DEPLOY_KEY: "convex-key",
+        VERCEL_ORG_ID: "team-id",
+        VERCEL_PROJECT_ID: "project-id",
+        VERCEL_TOKEN: "vercel-token",
+      }),
+    ).toEqual([]);
+    expect(missingStagingCredentials({ CONVEX_DEPLOY_KEY: "convex-key" })).toEqual([
+      "VERCEL_TOKEN",
+      "VERCEL_ORG_ID",
+      "VERCEL_PROJECT_ID",
+    ]);
   });
 });

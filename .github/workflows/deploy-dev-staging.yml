@@ -41,5 +41,7 @@ jobs:
         env:
           FREIGHT_FATE_STAGING_ENABLED: "true"
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          VERCEL_DEV_DEPLOY_HOOK: ${{ secrets.VERCEL_DEV_DEPLOY_HOOK }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: node scripts/deploy-freight-fate-staging.mjs

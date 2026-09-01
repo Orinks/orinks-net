@@ -22,6 +22,12 @@ export function isTransientConvexFailure(output) {
   return /(?:HTTP(?: status)?|status(?: code)?)\D*(?:408|5\d\d)\b/i.test(output);
 }
 
+export function missingStagingCredentials(environment) {
+  return ["CONVEX_DEPLOY_KEY", "VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID"].filter(
+    (name) => !environment[name],
+  );
+}
+
 function runConvex(args) {
   return spawnSync("npx", ["convex", "deploy", ...args], {
     encoding: "utf8",
@@ -35,6 +41,14 @@ function printResult(result) {
   if (result.stderr) process.stderr.write(result.stderr);
 }
 
+function runVercel(args) {
+  return spawnSync("npx", ["vercel", ...args, "--token", process.env.VERCEL_TOKEN], {
+    encoding: "utf8",
+    env: process.env,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+}
+
 async function main() {
   const decision = classifyStagingRun({
     enabled: process.env.FREIGHT_FATE_STAGING_ENABLED,
@@ -44,8 +58,9 @@ async function main() {
   console.log(`Staging decision: ${decision.reason}; commit: ${process.env.GITHUB_SHA ?? "unknown"}`);
   if (!decision.deploy) return;
 
-  if (!process.env.CONVEX_DEPLOY_KEY || !process.env.VERCEL_DEV_DEPLOY_HOOK) {
-    throw new Error("Temporary staging is enabled, but its protected credentials are missing");
+  const missingCredentials = missingStagingCredentials(process.env);
+  if (missingCredentials.length > 0) {
+    throw new Error(`Temporary staging credentials are missing: ${missingCredentials.join(", ")}`);
   }
 
   const dryRun = runConvex(["--dry-run", "--typecheck", "enable"]);
@@ -64,9 +79,17 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
   }
 
-  const response = await fetch(process.env.VERCEL_DEV_DEPLOY_HOOK, { method: "POST" });
-  if (!response.ok) throw new Error(`Vercel deploy hook failed with HTTP ${response.status}`);
-  console.log("Convex staging deployment succeeded; Vercel dev deployment requested");
+  const vercelDeployment = runVercel(["deploy", "--yes"]);
+  printResult(vercelDeployment);
+  if (vercelDeployment.status !== 0) throw new Error("Vercel staging deployment failed");
+  const deploymentUrl = `${vercelDeployment.stdout ?? ""}\n${vercelDeployment.stderr ?? ""}`
+    .match(/https:\/\/[^\s]+\.vercel\.app\b/)?.[0];
+  if (!deploymentUrl) throw new Error("Vercel CLI did not return a deployment URL");
+
+  const alias = runVercel(["alias", "set", deploymentUrl, "dev.orinks.net"]);
+  printResult(alias);
+  if (alias.status !== 0) throw new Error("Vercel staging alias assignment failed");
+  console.log(`Staging deployed at ${deploymentUrl} and assigned to dev.orinks.net`);
 }
 
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : "";

@@ -30,10 +30,10 @@ build command. It has two explicit stages:
 2. Trigger the `dev` Vercel deployment against the confirmed Convex URL.
 
 Vercel's automatic Git deployment for `dev` is disabled while this channel is
-active, so it cannot race ahead of the backend stage. GitHub Actions invokes a
-branch-scoped Vercel deploy hook only after Convex succeeds. The hook URL and
-the staging deploy key are repository secrets and are never exposed to preview
-builds.
+active, so it cannot race ahead of the backend stage. GitHub Actions invokes
+the Vercel CLI only after Convex succeeds. Its scoped token, project IDs, and
+the staging deploy key are repository environment secrets and are never exposed
+to preview builds.
 
 The repository owns a deployment wrapper used by that workflow. It identifies
 the Git branch and intended environment before acting, and refuses to deploy
@@ -76,8 +76,8 @@ avoids provisioning a new Convex deployment for every cosmetic preview.
 The 1.9 release checklist includes a required staging teardown:
 
 1. Remove the `dev.orinks.net` Vercel alias.
-2. Remove the `dev`-scoped staging Convex deploy key and staging-only URL
-   variables and the deploy-hook secret.
+2. Remove the `dev`-scoped staging Convex deploy key, staging-only URL
+   variables, and protected Vercel CLI credentials from GitHub.
 3. Disable the staging-only GitHub Actions workflow and remove the temporary
    rule that suppresses Vercel's automatic `dev` deployment.
 4. Restore the normal Vercel Git integration used before 1.9: branches based on
