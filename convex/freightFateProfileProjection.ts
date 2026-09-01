@@ -1,5 +1,6 @@
 import type { Doc } from "./_generated/dataModel";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import { FREIGHT_FATE_TRAILER_PRICES } from "./freightFateProfileCatalog";
 
 type JsonObject = Record<string, unknown>;
 
@@ -66,8 +67,6 @@ export function levelForXp(xp: number) {
   for (let index = 1; index < thresholds.length; index += 1) {
     if (xp >= thresholds[index]) level = index + 1;
   }
-  const extra = xp - thresholds[thresholds.length - 1];
-  if (extra > 0) level = thresholds.length + Math.floor(extra / 1500);
   return level;
 }
 
@@ -106,10 +105,6 @@ function safetyRecord(payload: JsonObject) {
 function netWorthProjection(payload: JsonObject, businessStatus?: BusinessStatus) {
   if (!businessStatus || !Array.isArray(payload.owned_trucks)
     || !Array.isArray(payload.owned_trailers)) return {};
-  // Trailer prices are not present in the compatible invariant export yet.
-  // A partial total would be materially false, so expose completeness and no
-  // number until every verified owned asset can be valued.
-  if (payload.owned_trailers.length > 0) return { netWorthComplete: false };
 
   const truckPrices = invariants.truckPrices as Record<string, number>;
   const activeTruck = payload.truck as string;
@@ -117,6 +112,10 @@ function netWorthProjection(payload: JsonObject, businessStatus?: BusinessStatus
   const ownedTrucks = (payload.owned_trucks as string[])
     .filter((truck) => truck !== assignedTruck);
   let equipmentValue = ownedTrucks.reduce((total, truck) => total + truckPrices[truck], 0);
+  equipmentValue += (payload.owned_trailers as string[]).reduce(
+    (total, trailer) => total + FREIGHT_FATE_TRAILER_PRICES[trailer],
+    0,
+  );
 
   // The save's upgrade tiers belong to the active tractor. Carrier-assigned
   // upgrades are not the player's asset; owned active equipment gets every
@@ -159,8 +158,7 @@ export function buildVerifiedProfileSnapshot(args: {
       ? `${employmentStatus} with ${carrierName}`
       : businessStatus ? employmentStatus : undefined;
   const deliveries = career.deliveries as number;
-  const damageFree = Number.isInteger(stats.damage_free_deliveries)
-    && (stats.damage_free_deliveries as number) > 0
+  const damageFree = deliveries > 0 && Number.isInteger(stats.damage_free_deliveries)
     ? stats.damage_free_deliveries as number
     : undefined;
   const longestHaul = typeof stats.longest_haul_miles === "number"
@@ -270,6 +268,7 @@ export function publicVerifiedSnapshot(
       : invariants.achievementIds.length,
     endorsements: snapshot.endorsements,
     fleetTier: snapshot.fleetTier,
+    meaningfulPlayedAt: snapshot.meaningfulPlayedAt,
     capturedAt: snapshot.capturedAt,
   };
 }

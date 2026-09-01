@@ -8,6 +8,10 @@ import {
   publicVerifiedSnapshot,
   recentEarnedAchievements,
 } from "./freightFateProfileProjection";
+import {
+  FREIGHT_FATE_ACHIEVEMENT_ID_SET,
+} from "./freightFateProfileCatalog";
+import { readCatalogAchievements } from "./freightFateProfileAchievements";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -38,6 +42,13 @@ export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
 export const MAX_DRIVER_EVENTS = 50;
 export const SHARING_CONSENT_VERSION = 3;
+
+export function freightFateProfileSharingEnabled(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return driver.sharingConsentVersion === SHARING_CONSENT_VERSION
+    && driver.visibility === "public";
+}
 
 // --- Account-issued driver identity (Clerk) ---
 //
@@ -258,7 +269,7 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
     return { error: "unauthorized" as const };
   }
-  if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION || driver.visibility !== "public") {
+  if (!freightFateProfileSharingEnabled(driver)) {
     return { error: "sharing_not_enabled" as const };
   }
   return { driver };
@@ -295,8 +306,7 @@ export const getMyDriver = query({
       updatedAt: driver.updatedAt,
       hasToken: driver.driverTokenHash !== undefined || anyDevice !== null,
       needsRename: driver.needsRename === true,
-      sharingEnabled:
-        driver.sharingConsentVersion === SHARING_CONSENT_VERSION && driver.visibility === "public",
+      sharingEnabled: freightFateProfileSharingEnabled(driver),
     };
   },
 });
@@ -540,7 +550,7 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "unauthorized" };
     }
 
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileSharingEnabled(driver)) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
 
@@ -688,8 +698,7 @@ export const getPresenceBoard = query({
         .unique();
       if (
         !driver ||
-        driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+        !freightFateProfileSharingEnabled(driver) ||
         driver.integrityFlag
       ) {
         continue;
@@ -781,6 +790,9 @@ export const publishAchievementEarned = mutation({
       ...args, scope: "driver-event", limit: DRIVER_EVENT_WRITE_LIMIT,
     });
     if ("error" in auth) return { ok: false as const, reason: auth.error };
+    if (!FREIGHT_FATE_ACHIEVEMENT_ID_SET.has(args.achievementKey)) {
+      return { ok: false as const, reason: "invalid_achievement" as const };
+    }
     const existing = await ctx.db.query("freightFateAchievements")
       .withIndex("by_driver_achievement", (q) => q.eq("driverId", args.driverId).eq("achievementKey", args.achievementKey)).unique();
     if (existing) return { ok: true as const, duplicate: true, driverId: args.driverId };
@@ -788,13 +800,13 @@ export const publishAchievementEarned = mutation({
     const name = cleanFact(args.name, 100);
     const description = cleanFact(args.description, 240);
     await ctx.db.insert("freightFateAchievements", {
-      driverId: args.driverId, achievementKey: cleanFact(args.achievementKey, 96),
+      driverId: args.driverId, achievementKey: args.achievementKey,
       name, description, earnedAt, createdAt: args.now,
     });
     await ctx.db.insert("freightFateDriverEvents", {
       driverId: args.driverId, eventId: cleanFact(args.eventId, 96),
       eventType: "achievement_earned", summary: `${name}: ${description}`.slice(0, 280),
-      payloadVersion: 1, payload: { achievementKey: cleanFact(args.achievementKey, 96), name, description },
+      payloadVersion: 1, payload: { achievementKey: args.achievementKey, name, description },
       occurredAt: earnedAt, createdAt: args.now,
     });
     await pruneDriverEvents(ctx, args.driverId);
@@ -858,8 +870,7 @@ export const getPublicUpdates = query({
           .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
         drivers.set(row.driverId, driver);
       }
-      if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+      if (!driver || !freightFateProfileSharingEnabled(driver) ||
           driver.integrityFlag) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
       if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
@@ -888,11 +899,7 @@ export const getDriverProfile = query({
       return null;
     }
 
-    if (driver.visibility === "private") {
-      return null;
-    }
-
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileSharingEnabled(driver)) {
       return null;
     }
 
@@ -941,12 +948,7 @@ export const getDriverProfile = query({
       && (presenceRow.changedAt ?? presenceRow.updatedAt) >= args.now - PRESENCE_IDLE_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
       : null;
-    // The verified catalog bounds the account set (currently 172 IDs), so a
-    // single indexed read can provide the total and the dated recent shelf.
-    // Imported rows without a trustworthy earned time count toward ownership
-    // but never masquerade as a recently earned public event.
-    const accountAchievements = await ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).collect();
+    const accountAchievements = await readCatalogAchievements(ctx, args.driverId);
     const achievements = recentEarnedAchievements(accountAchievements, limit);
 
     return {

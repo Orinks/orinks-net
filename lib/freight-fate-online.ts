@@ -151,7 +151,6 @@ export async function postFreightFateSave(input: {
       ? { meaningfulPlay: input.meaningfulPlay }
       : {}),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
-    now: Date.now(),
   });
 }
 

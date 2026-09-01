@@ -1,5 +1,9 @@
 import invariants from "../data/freight-fate-profile-invariants.json";
 import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
+import {
+  FREIGHT_FATE_ACHIEVEMENT_ID_SET,
+  FREIGHT_FATE_TRAILER_PRICES,
+} from "./freightFateProfileCatalog";
 
 export const SHARED_PROFILE_VALIDATOR_VERSION = 1;
 export const MAX_SHARED_PROFILE_BYTES = 256 * 1024;
@@ -67,7 +71,7 @@ const HOS_EVENT_FIELDS = new Set([
 ]);
 const DUTY_STATUSES = new Set(["driving", "on_duty_not_driving", "off_duty", "sleeper_berth"]);
 const CITY_SLUGS = new Set(Object.keys(invariants.cityLabels));
-const ACHIEVEMENT_IDS = new Set(invariants.achievementIds);
+const ACHIEVEMENT_IDS = FREIGHT_FATE_ACHIEVEMENT_ID_SET;
 const MARKET_KEYS = new Set(invariants.marketCargoKeys);
 const TRUCK_PRICES = invariants.truckPrices as Record<string, number>;
 const UPGRADE_PRICES = invariants.upgradePrices as Record<string, number[]>;
@@ -197,7 +201,7 @@ function validateOptionalProjectionFacts(
     const trailers = payload.owned_trailers;
     if (!Array.isArray(trailers) || trailers.length > 32
       || trailers.some((trailer) => typeof trailer !== "string"
-        || trailer.length === 0 || trailer.length > 64)
+        || !Object.hasOwn(FREIGHT_FATE_TRAILER_PRICES, trailer))
       || new Set(trailers).size !== trailers.length) return false;
   }
   return true;

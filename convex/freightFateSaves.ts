@@ -3,9 +3,9 @@ import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import {
-  SHARING_CONSENT_VERSION,
   acceptDriverToken,
   driverTokenAccepted,
+  freightFateProfileSharingEnabled,
   stampClientVersion,
   stampDeviceTokenUse,
 } from "./freightFate";
@@ -254,9 +254,9 @@ export const storeValidatedSave = internalMutation({
     validatorVersion: v.number(),
     payload: v.any(),
     meaningfulPlay: v.optional(v.union(v.null(), meaningfulPlayValidator)),
-    now: v.number(),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
     const driver = await ctx.db
       .query("freightFateDrivers")
       .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
@@ -269,7 +269,7 @@ export const storeValidatedSave = internalMutation({
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "save-upload",
       driverId: args.driverId,
-      now: args.now,
+      now,
       limit: SAVE_UPLOAD_LIMIT,
     });
     if (!allowed) {
@@ -281,8 +281,8 @@ export const storeValidatedSave = internalMutation({
       return { ok: false as const, reason: "unauthorized" as const };
     }
 
-    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-    await stampDeviceTokenUse(ctx, device, args.now);
+    await stampClientVersion(ctx, driver, args.clientVersion, now);
+    await stampDeviceTokenUse(ctx, device, now);
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
       return { ok: false as const, reason: "too_large" as const };
@@ -335,11 +335,11 @@ export const storeValidatedSave = internalMutation({
       keyId: args.keyId,
       signedAt: args.signedAt,
       validatorVersion: args.validatorVersion,
-      createdAt: args.now,
+      createdAt: now,
     });
 
     const payload = args.payload as Record<string, unknown>;
-    await mergeVerifiedAchievements(ctx, args.driverId, payload, args.now);
+    await mergeVerifiedAchievements(ctx, args.driverId, payload, now);
 
     let acceptedMeaningful = false;
     if (args.meaningfulPlay) {
@@ -354,27 +354,20 @@ export const storeValidatedSave = internalMutation({
           saveName: args.saveName,
           occurredAt: args.meaningfulPlay.occurredAt,
           reason: args.meaningfulPlay.reason,
-          acceptedAt: args.now,
+          acceptedAt: now,
         });
         acceptedMeaningful = true;
       }
     }
 
-    // Undefined is the old-client wire shape and retains the historical
-    // first-verified-slot projection behavior. Null is a feature-aware
-    // upload with no meaningful change. Only a new meaningful operation may
-    // select or refresh a modern public career, and only while sharing is on.
-    if (args.meaningfulPlay === undefined) {
+    // Old clients still store cloud revisions, but omitted intent cannot
+    // create, select, or refresh a public career. Only a new operation may
+    // do that, and only while canonical Profile sharing is enabled.
+    if (acceptedMeaningful && freightFateProfileSharingEnabled(driver)) {
+      await ctx.db.patch(driver._id, { publicSaveName: args.saveName, updatedAt: now });
       await upsertVerifiedSnapshot(ctx, {
         driverId: args.driverId, saveName: args.saveName, revision,
-        payload, now: args.now, validatorVersion: args.validatorVersion,
-      });
-    } else if (acceptedMeaningful
-      && driver.sharingConsentVersion === SHARING_CONSENT_VERSION) {
-      await ctx.db.patch(driver._id, { publicSaveName: args.saveName, updatedAt: args.now });
-      await upsertVerifiedSnapshot(ctx, {
-        driverId: args.driverId, saveName: args.saveName, revision,
-        payload, now: args.now, validatorVersion: args.validatorVersion,
+        payload, now, validatorVersion: args.validatorVersion,
         selection: "meaningful",
       });
     }

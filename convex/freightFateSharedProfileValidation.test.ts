@@ -204,6 +204,23 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: true });
   });
 
+  test("accepts only trailer IDs in the current closed server catalog", () => {
+    for (const trailer of [
+      "dry_van", "reefer", "flatbed", "bulk", "tank", "double_van",
+    ]) {
+      expect(validateSharedProfile({
+        ...validProfile(),
+        owned_trailers: [trailer],
+      }, "Road Star")).toMatchObject({ ok: true });
+    }
+    for (const trailer of ["invented_trailer", "toString"]) {
+      expect(validateSharedProfile({
+        ...validProfile(),
+        owned_trailers: [trailer],
+      }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_achievement" });
+    }
+  });
+
   test("accepts verified city coverage beyond the old generic array cap", () => {
     const profile = validProfile();
     profile.career.deliveries = 257;

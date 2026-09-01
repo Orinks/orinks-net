@@ -4,6 +4,7 @@ import { ConvexError } from "convex/values";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
+import invariants from "../data/freight-fate-profile-invariants.json";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
@@ -892,6 +893,88 @@ describe("expanded sharing", () => {
       .toEqual([]);
   });
 
+  test("rejects achievement event keys outside the exported catalog", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    const provisioned = await provisionWithComputer(t, "achievement-key-user", {
+      displayName: "Catalog Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now,
+    });
+    const auth = {
+      driverId: provisioned.driverId,
+      driverTokenHash: await sha256Hex(provisioned.token),
+    };
+
+    await expect(t.mutation(api.freightFate.publishAchievementEarned, {
+      ...auth,
+      eventId: "achievement-invented",
+      achievementKey: "invented_achievement",
+      name: "Invented",
+      description: "Not in the Freight Fate catalog.",
+      earnedAt: now,
+      now,
+    })).resolves.toMatchObject({ ok: false, reason: "invalid_achievement" });
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateAchievements").collect()).toEqual([]);
+      expect(await ctx.db.query("freightFateDriverEvents").collect()).toEqual([]);
+    });
+  });
+
+  test("counts and returns only catalog achievements from a bounded account set", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "bounded-badges",
+        displayName: "Bounded Badges",
+        visibility: "public",
+        driverTokenHash: "hash",
+        sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      for (let index = 0; index < invariants.achievementIds.length + 25; index += 1) {
+        await ctx.db.insert("freightFateAchievements", {
+          driverId: "bounded-badges",
+          achievementKey: `invalid-${index.toString().padStart(3, "0")}`,
+          name: "Invalid",
+          description: "Historical invalid row",
+          earnedAt: now + index,
+          createdAt: now,
+        });
+      }
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "bounded-badges",
+        achievementKey: "clean_delivery",
+        name: "Clean Delivery",
+        description: "Delivered without damage.",
+        earnedAt: now - 1,
+        createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "bounded-badges",
+        achievementKey: "first_delivery",
+        name: "First Delivery",
+        description: "Completed a first delivery.",
+        earnedAt: now - 2,
+        createdAt: now,
+      });
+    });
+
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "bounded-badges",
+      limit: 20,
+    });
+    expect(profile?.achievementCount).toBe(2);
+    expect(profile?.achievements.map((badge) => badge.achievementKey))
+      .toEqual(["clean_delivery", "first_delivery"]);
+    expect(profile?.achievements.every((badge) =>
+      invariants.achievementIds.includes(badge.achievementKey))).toBe(true);
+  });
+
   test("cursor pagination has no gaps for equal timestamps", async () => {
     const t = setup();
     const now = 1_800_000_000_000;
@@ -1038,7 +1121,12 @@ describe("expanded sharing", () => {
         driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
         sharingConsentedAt: now, createdAt: now, updatedAt: now,
       });
-      for (const [key, earnedAt] of [["b-mid", now], ["a-first", now], ["c-last", now], ["z-older", now - 500]] as const) {
+      for (const [key, earnedAt] of [
+        ["coast_to_coast", now],
+        ["clean_delivery", now],
+        ["first_delivery", now],
+        ["abilene_arrival", now - 500],
+      ] as const) {
         await ctx.db.insert("freightFateAchievements", {
           driverId: "badge-driver", achievementKey: key, name: key,
           description: key, earnedAt, createdAt: now,
@@ -1046,7 +1134,8 @@ describe("expanded sharing", () => {
       }
     });
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: "badge-driver", limit: 2 });
-    expect(profile!.achievements.map((badge) => badge.achievementKey)).toEqual(["c-last", "b-mid"]);
+    expect(profile!.achievements.map((badge) => badge.achievementKey))
+      .toEqual(["first_delivery", "coast_to_coast"]);
   });
 
   test("returns the richer allowlisted snapshot and account achievement total", async () => {
@@ -1113,6 +1202,8 @@ describe("expanded sharing", () => {
       lifetimeEarnings: 750_000,
       netWorth: 186_000,
       netWorthComplete: true,
+      meaningfulPlayedAt: now - 1_000,
+      capturedAt: now,
     });
     expect(profile?.achievementCount).toBe(2);
     expect(profile?.achievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery"]);

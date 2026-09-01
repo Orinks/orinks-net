@@ -58,14 +58,19 @@ export const uploadValidatedSave = action({
     driverId: v.string(), driverTokenHash: v.string(), saveName: v.string(),
     saveVersion: v.number(), parentRevision: v.union(v.number(), v.null()),
     contentHash: v.string(), content: v.bytes(), summary: v.string(),
-    clientVersion: v.optional(v.string()), meaningfulPlay: v.optional(v.any()), now: v.number(),
+    clientVersion: v.optional(v.string()), meaningfulPlay: v.optional(v.any()),
+    // Accepted only for direct callers of the former action contract. It is
+    // intentionally ignored; security-sensitive time always comes from the
+    // Convex runtime clock.
+    now: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<Record<string, unknown>> => {
+    const now = Date.now();
     const authorized = await ctx.runQuery(anyApi.freightFateSaves.authorizeSaveAction, {
       driverId: args.driverId, driverTokenHash: args.driverTokenHash,
     });
     if (!authorized) return { ok: false, reason: "unauthorized" };
-    const meaningfulPlay = validateMeaningfulPlay(args.meaningfulPlay, args.now);
+    const meaningfulPlay = validateMeaningfulPlay(args.meaningfulPlay, now);
     if (!meaningfulPlay.ok) return { ok: false, reason: "invalid_meaningful_play" };
     const validation = decodeAndValidate(args.content, args.saveName, args.contentHash);
     if (!validation.ok) {
@@ -92,7 +97,7 @@ export const uploadValidatedSave = action({
           contentHash: args.contentHash,
           content: args.content,
           clientVersion: args.clientVersion,
-          now: args.now,
+          now,
         });
       }
       return { ok: false, reason: validation.reason };
@@ -111,9 +116,13 @@ export const uploadValidatedSave = action({
         ` (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
       );
     }
-    const signed = signPayload(validation.payload, args.now);
+    const signed = signPayload(validation.payload, now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
-    const { meaningfulPlay: _unvalidatedMeaningfulPlay, ...request } = args;
+    const {
+      meaningfulPlay: _unvalidatedMeaningfulPlay,
+      now: _callerSuppliedNow,
+      ...request
+    } = args;
     return ctx.runMutation(anyApi.freightFateSaves.storeValidatedSave, {
       ...request,
       ...signed,

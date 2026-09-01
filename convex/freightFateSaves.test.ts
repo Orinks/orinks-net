@@ -3,11 +3,12 @@ import { createHash, generateKeyPairSync } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { convexTest } from "convex-test";
 import { anyApi } from "convex/server";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import { REJECTED_UPLOAD_TTL_MS } from "./freightFateSaves";
+import { levelForXp } from "./freightFateProfileProjection";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -100,6 +101,18 @@ async function upload(
   return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, request);
 }
 
+async function uploadMeaningfully(
+  t: ReturnType<typeof setup>,
+  auth: { driverId: string; driverTokenHash: string },
+  payload = validProfile(),
+  parentRevision: number | null = null,
+  operationId = "test-profile-selection",
+) {
+  const now = Date.now();
+  await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
+  return upload(t, auth, payload, parentRevision, meaningful(operationId, now), now);
+}
+
 beforeEach(() => {
   const { privateKey } = generateKeyPairSync("ed25519");
   process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY = privateKey
@@ -108,6 +121,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   delete process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY;
   delete process.env.FREIGHT_FATE_PROFILE_SIGNING_KEY_ID;
 });
@@ -266,7 +280,8 @@ describe("validated private cloud revisions", () => {
   test("stores signature metadata and a server-derived public projection", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
-    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    await expect(uploadMeaningfully(t, auth, validProfile(), null, "projection-signature"))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
     const row = await t.run((ctx) => ctx.db.query("freightFateSaves").first());
     expect(row).toMatchObject({ keyId: "2026-07-test", validatorVersion: 1 });
     expect(row?.sig).toEqual(expect.any(String));
@@ -302,7 +317,8 @@ describe("validated private cloud revisions", () => {
       career: Object.assign(base.career, { xp: 1_200, purchased_endorsements: ["high_value"] }),
       achievements: invariants.achievementIds.slice(0, 2),
     });
-    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true, revision: 1 });
+    await expect(uploadMeaningfully(t, auth, payload, null, "projection-1-9"))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
     const snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
     expect(snapshot).toMatchObject({
       level: 2,
@@ -390,6 +406,7 @@ describe("validated private cloud revisions", () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_meaningful_switch");
     const now = 1_800_000_000_000;
+    vi.useFakeTimers({ toFake: ["Date"], now });
     await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
 
     const main = Object.assign(validProfile(), { name: "Main" });
@@ -417,6 +434,21 @@ describe("validated private cloud revisions", () => {
       .resolves.toMatchObject({ ok: true, revision: 1 });
     expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
 
+    const legacyMain = structuredClone(main);
+    legacyMain.career.reputation = 71;
+    await expect(upload(t, auth, legacyMain, 1, undefined, now + 2))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await selected()).toMatchObject({
+      publicSaveName: "Main",
+      snapshot: {
+        sourceSaveName: "Main",
+        sourceRevision: 1,
+        reputation: 70,
+        meaningfulPlayedAt: now,
+        capturedAt: now,
+      },
+    });
+
     await expect(upload(t, auth, experiment, 1, meaningful("op-main", now), now + 3))
       .resolves.toMatchObject({ ok: true, revision: 2 });
     expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
@@ -437,6 +469,7 @@ describe("validated private cloud revisions", () => {
       .resolves.toMatchObject({ ok: true, revision: 2 });
     expect(await selected()).toMatchObject({ publicSaveName: "Main", snapshot: { sourceSaveName: "Main" } });
 
+    vi.setSystemTime(now + 9);
     await expect(upload(t, auth, experiment, 2, meaningful("op-experiment", now + 9), now + 9))
       .resolves.toMatchObject({ ok: true, revision: 3 });
     expect(await selected()).toMatchObject({
@@ -449,6 +482,7 @@ describe("validated private cloud revisions", () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_rejected_intents");
     const now = 1_800_000_000_000;
+    vi.useFakeTimers({ toFake: ["Date"], now });
     await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
     const main = Object.assign(validProfile(), { name: "Main" });
     await upload(t, auth, main, null, meaningful("op-main", now), now);
@@ -496,6 +530,66 @@ describe("validated private cloud revisions", () => {
     });
   });
 
+  test("uses the server clock for meaningful-play acceptance and timestamps", async () => {
+    const t = setup();
+    const serverNow = 1_800_000_000_000;
+    vi.useFakeTimers({ toFake: ["Date"], now: serverNow });
+    const auth = await provisionedDriver(t, "user_server_clock");
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: serverNow,
+    });
+
+    const callerNow = serverNow + 365 * 24 * 60 * 60_000;
+    await expect(upload(
+      t,
+      auth,
+      Object.assign(validProfile(), { name: "Clock Career" }),
+      null,
+      meaningful("op-server-clock", serverNow),
+      callerNow,
+    )).resolves.toMatchObject({ ok: true, revision: 1 });
+
+    await t.run(async (ctx) => {
+      const save = await ctx.db.query("freightFateSaves").first();
+      const operation = await ctx.db.query("freightFateMeaningfulPlayOperations").first();
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots").first();
+      expect(save).toMatchObject({
+        createdAt: serverNow,
+        signedAt: new Date(serverNow).toISOString(),
+      });
+      expect(operation).toMatchObject({ acceptedAt: serverNow });
+      expect(snapshot).toMatchObject({ capturedAt: serverNow, meaningfulPlayedAt: serverNow });
+    });
+  });
+
+  test("does not select a career for a stale private sharing row", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    vi.useFakeTimers({ toFake: ["Date"], now });
+    const auth = await provisionedDriver(t, "user_stale_private");
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      await ctx.db.patch(driver!._id, { visibility: "private" });
+    });
+
+    await expect(upload(
+      t,
+      auth,
+      Object.assign(validProfile(), { name: "Private Career" }),
+      null,
+      meaningful("op-stale-private", now),
+      now,
+    )).resolves.toMatchObject({ ok: true, revision: 1 });
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      expect(driver?.publicSaveName).toBeUndefined();
+      expect(await ctx.db.query("freightFateProfileSnapshots").first()).toBeNull();
+    });
+  });
+
   test("projects verified company-driver resume facts without valuing the assigned tractor", async () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_company_resume");
@@ -522,7 +616,8 @@ describe("validated private cloud revisions", () => {
     });
     payload.career.xp = 1_200;
 
-    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true });
+    await expect(uploadMeaningfully(t, auth, payload, null, "company-projection"))
+      .resolves.toMatchObject({ ok: true });
     const snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
     expect(snapshot).toMatchObject({
       saveName: "Company Road",
@@ -560,7 +655,7 @@ describe("validated private cloud revisions", () => {
     expect(snapshot?.netWorth).not.toBe(payload.money + invariants.truckPrices.ridgeline_sleeper);
   });
 
-  test("projects owner-operator equipment value and omits an incomplete trailer valuation", async () => {
+  test("projects complete owner-operator truck, upgrade, and trailer value", async () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_owner_resume");
     const payload = Object.assign(validProfile(), {
@@ -591,7 +686,8 @@ describe("validated private cloud revisions", () => {
       total_earnings: 750_000,
     });
 
-    await expect(upload(t, auth, payload)).resolves.toMatchObject({ ok: true });
+    await expect(uploadMeaningfully(t, auth, payload, null, "owner-projection"))
+      .resolves.toMatchObject({ ok: true });
     let snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
     expect(snapshot).toMatchObject({
       employmentStatus: "Leased-on owner-operator",
@@ -603,13 +699,17 @@ describe("validated private cloud revisions", () => {
     });
 
     const withTrailer = { ...structuredClone(payload), owned_trailers: ["dry_van"] };
-    await expect(upload(t, auth, withTrailer, 1)).resolves.toMatchObject({ ok: true, revision: 2 });
+    await expect(uploadMeaningfully(t, auth, withTrailer, 1, "owner-trailer"))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
     snapshot = await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first());
-    expect(snapshot).toMatchObject({ netWorthComplete: false, sourceRevision: 2 });
-    expect(snapshot?.netWorth).toBeUndefined();
+    expect(snapshot).toMatchObject({
+      netWorth: 228_000,
+      netWorthComplete: true,
+      sourceRevision: 2,
+    });
   });
 
-  test("keeps omitted meaningful intent and pre-feature profile fields compatible", async () => {
+  test("keeps omitted meaningful intent upload-compatible without publishing", async () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_legacy_profile");
     const payload = validProfile();
@@ -619,18 +719,37 @@ describe("validated private cloud revisions", () => {
     await t.run(async (ctx) => {
       const driver = await ctx.db.query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
-      const snapshot = await ctx.db.query("freightFateProfileSnapshots").first();
       expect(driver?.publicSaveName).toBeUndefined();
+      expect(await ctx.db.query("freightFateProfileSnapshots").first()).toBeNull();
+    });
+
+    await t.mutation(api.freightFate.setProfileSharing, {
+      ...auth, enabled: true, now: Date.now(),
+    });
+    await expect(upload(
+      t,
+      auth,
+      payload,
+      1,
+      meaningful("op-legacy-projection", Date.now()),
+    )).resolves.toMatchObject({ ok: true, revision: 2 });
+    await t.run(async (ctx) => {
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots").first();
       expect(snapshot).toMatchObject({
         sourceSaveName: "Road Star",
         careerTitle: "Level 4 driver",
         employmentStatus: "Owner-operator",
+        damageFreeDeliveries: 0,
+        damageFreeRate: 0,
       });
-      expect(snapshot?.meaningfulPlayedAt).toBeUndefined();
+      expect(snapshot?.meaningfulPlayedAt).toEqual(expect.any(Number));
       expect(snapshot?.onTimeRate).toBe(91.7);
-      expect(snapshot?.damageFreeRate).toBeUndefined();
       expect(snapshot?.netWorth).toBeUndefined();
     });
+  });
+
+  test("clamps extreme XP to the exported level ladder maximum", () => {
+    expect(levelForXp(Number.MAX_SAFE_INTEGER)).toBe(invariants.levelXp.length);
   });
 
   test("the saves list exposes each backup's save version", async () => {
@@ -648,61 +767,6 @@ describe("validated private cloud revisions", () => {
     });
   });
 
-  test("keeps the first verified slot as the public profile owner", async () => {
-    const t = setup();
-    const auth = await provisionedDriver(t);
-    await upload(t, auth);
-
-    const experiment = validProfile();
-    experiment.name = "Experiment";
-    experiment.money = 0;
-    experiment.career.xp = 0;
-    experiment.career.deliveries = 0;
-    experiment.career.on_time_deliveries = 0;
-    experiment.career.total_miles = 0;
-    experiment.career.total_earnings = 0;
-    await expect(upload(t, auth, experiment))
-      .resolves.toMatchObject({ ok: true, revision: 1 });
-
-    const afterExperiment = await t.run((ctx) => ctx.db
-      .query("freightFateProfileSnapshots").first());
-    expect(afterExperiment).toMatchObject({
-      sourceSaveName: "Road Star",
-      level: 4,
-      deliveries: 12,
-      milesDriven: 4_100,
-    });
-
-    const updatedOwner = validProfile();
-    updatedOwner.career.reputation = 75;
-    await upload(t, auth, updatedOwner, 1);
-
-    const afterOwnerUpdate = await t.run((ctx) => ctx.db
-      .query("freightFateProfileSnapshots").first());
-    expect(afterOwnerUpdate).toMatchObject({
-      sourceSaveName: "Road Star",
-      sourceRevision: 2,
-      reputation: 75,
-    });
-
-    await t.mutation(api.freightFateSaves.deleteSaveSlot, {
-      ...auth, saveName: "Experiment",
-    });
-    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
-      .not.toBeNull();
-
-    await t.mutation(api.freightFateSaves.deleteSaveSlot, {
-      ...auth, saveName: "Road Star",
-    });
-    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
-      .toBeNull();
-
-    await expect(upload(t, auth, experiment))
-      .resolves.toMatchObject({ ok: true, revision: 1 });
-    expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
-      .toMatchObject({ sourceSaveName: "Experiment", level: 1, deliveries: 0 });
-  });
-
   test("preserves revision conflicts", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
@@ -718,7 +782,7 @@ describe("validated private cloud revisions", () => {
   test("deleting the accepted source slot also removes its public projection", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
-    await upload(t, auth);
+    await uploadMeaningfully(t, auth, validProfile(), null, "delete-selected-source");
     expect(await t.run((ctx) => ctx.db.query("freightFateProfileSnapshots").first()))
       .not.toBeNull();
 
