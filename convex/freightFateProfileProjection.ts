@@ -8,6 +8,7 @@ import {
 } from "./freightFateProfileCatalog";
 
 type JsonObject = Record<string, unknown>;
+export type AchievementCursor = { sortAt: number; achievementKey: string };
 
 const EMPLOYMENT_LABELS = {
   company_driver: "Company driver",
@@ -263,4 +264,107 @@ export function recentEarnedAchievements(
       label: FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey],
       earnedAt: row.earnedAt!,
     }));
+}
+
+export function accountAchievementPage(
+  rows: Array<Doc<"freightFateAchievements">>,
+  limit: number,
+  before?: AchievementCursor,
+) {
+  const ordered = rows
+    .filter((row) => FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey] !== undefined)
+    .map((row) => ({
+      _id: row._id,
+      achievementKey: row.achievementKey,
+      label: FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey],
+      ...(row.earnedAt === undefined ? {} : { earnedAt: row.earnedAt }),
+      sortAt: row.earnedAt ?? -1,
+    }))
+    .sort((a, b) => b.sortAt - a.sortAt
+      || b.achievementKey.localeCompare(a.achievementKey));
+  const remaining = before
+    ? ordered.filter((item) => item.sortAt < before.sortAt
+      || (item.sortAt === before.sortAt
+        && item.achievementKey.localeCompare(before.achievementKey) < 0))
+    : ordered;
+  const page = remaining.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    achievements: page.map(({ sortAt: _sortAt, ...item }) => item),
+    nextAchievementBefore: remaining.length > limit && last
+      ? { sortAt: last.sortAt, achievementKey: last.achievementKey }
+      : null,
+  };
+}
+
+export function publicDriverEvent(row: Doc<"freightFateDriverEvents">) {
+  const payload = row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+    ? row.payload as JsonObject
+    : undefined;
+  let eventType: string;
+  let summary: string;
+  switch (row.eventType) {
+    case "delivery_completed": {
+      eventType = "delivery_completed";
+      const miles = typeof payload?.distanceMiles === "number"
+        && Number.isFinite(payload.distanceMiles) && payload.distanceMiles >= 0
+        && payload.distanceMiles <= 10_000
+        ? Math.round(payload.distanceMiles).toLocaleString("en-US")
+        : undefined;
+      summary = miles
+        ? `Completed a delivery covering ${miles} miles${payload?.onTime === true ? " on time" : ""}.`
+        : "Completed a delivery.";
+      break;
+    }
+    case "delivery":
+      eventType = "delivery_completed";
+      summary = "Completed a delivery.";
+      break;
+    case "achievement_earned": {
+      const key = typeof payload?.achievementKey === "string"
+        ? payload.achievementKey
+        : undefined;
+      const label = key ? FREIGHT_FATE_ACHIEVEMENT_LABELS[key] : undefined;
+      if (!label) return null;
+      eventType = "achievement_earned";
+      summary = `Earned ${label}.`;
+      break;
+    }
+    case "career_milestone": {
+      if (payload?.milestoneType === "first_delivery") {
+        eventType = "career_milestone";
+        summary = "Completed a first Freight Fate delivery.";
+      } else if (payload?.milestoneType === "career_level"
+        && Number.isInteger(payload.level) && (payload.level as number) >= 1) {
+        eventType = "career_milestone";
+        summary = `Reached driver level ${Math.min(payload.level as number, 999)}.`;
+      } else return null;
+      break;
+    }
+    case "job_accepted":
+      eventType = "job_accepted";
+      summary = "Accepted a job.";
+      break;
+    case "drive_started":
+      eventType = "drive_started";
+      summary = "Started driving.";
+      break;
+    case "equipment_changed":
+      eventType = "equipment_changed";
+      summary = "Changed equipment.";
+      break;
+    case "business_changed":
+      eventType = "business_changed";
+      summary = "Changed business status.";
+      break;
+    default:
+      return null;
+  }
+  return {
+    _id: row._id,
+    eventId: row.eventId,
+    eventType,
+    summary,
+    occurredAt: row.occurredAt,
+  };
 }

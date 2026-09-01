@@ -8,7 +8,7 @@
       "title": "Driver profiles now follow your current career",
       "body": [
         "Freight Fate driver profiles now show the current career selected by meaningful play, with its career identity, verified lifetime resume, net worth, account-wide achievement total, recent achievements, and road-journal activity. Opening or browsing another career does not change the profile; playing it meaningfully does.",
-        "Profile sharing still controls the whole public profile. Cloud Backup remains private and automatically keeps up to ten careers, while current cash, available credit, precise location, active cargo details, fatigue, hours-of-service state, and dispatcher standing stay private."
+        "Profile sharing still controls the whole public profile. Cloud Backup remains private and automatically keeps up to ten careers, while current cash, available credit, precise location, exact cargo, customer, cargo value and destination, fatigue, exact hours-of-service state, and dispatcher standing stay private."
       ],
       "link": {
         "href": "/freight-fate/online/privacy",

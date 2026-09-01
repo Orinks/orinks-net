@@ -7,8 +7,11 @@ import { getFreightFateDriverProfile, normalizeFreightFateDriverId } from "@/lib
 
 export type ProfileSection = "overview" | "road-journal" | "achievements";
 export type JournalCursor = { occurredAt: number; eventId: string };
+export type AchievementCursor = { sortAt: number; achievementKey: string };
 type Event = { _id: string; eventId: string; eventType: string; summary: string; occurredAt: number };
 type Achievement = { _id: string; achievementKey: string; label: string; earnedAt: number };
+type AccountAchievement = Omit<Achievement, "earnedAt"> & { earnedAt?: number };
+const inlineLinkClass = "font-semibold text-action underline";
 
 function Time({ value }: { value: number }) {
   const visible = new Intl.DateTimeFormat("en-US", {
@@ -64,21 +67,27 @@ function percent(value: number) {
   return `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })}%`;
 }
 
-function safetySummary(record: {
+function SafetyRecord({ record }: { record: {
   citations: number; seriousViolations: number; majorOffenses: number;
   cargoClaims?: number; preventableEquipmentDamage?: number;
   carrierTerminations: number; repossessions: number;
-}) {
+} }) {
+  const counted = (count: number, singular: string, plural = `${singular}s`) =>
+    `${count.toLocaleString("en-US")} ${count === 1 ? singular : plural}`;
   const parts = [
-    `${record.citations} citations`,
-    `${record.seriousViolations} serious violations`,
-    `${record.majorOffenses} major offenses`,
-    ...(record.cargoClaims === undefined ? [] : [`${record.cargoClaims} cargo claims`]),
-    ...(record.preventableEquipmentDamage === undefined ? [] : [`${record.preventableEquipmentDamage} preventable equipment damage incidents`]),
-    `${record.carrierTerminations} carrier terminations`,
-    `${record.repossessions} repossessions`,
+    counted(record.citations, "citation"),
+    counted(record.seriousViolations, "serious violation"),
+    counted(record.majorOffenses, "major offense"),
+    ...(record.cargoClaims === undefined ? [] : [counted(record.cargoClaims, "cargo claim")]),
+    ...(record.preventableEquipmentDamage === undefined ? [] : [counted(record.preventableEquipmentDamage, "preventable equipment damage incident")]),
+    counted(record.carrierTerminations, "carrier termination"),
+    counted(record.repossessions, "repossession"),
   ];
-  return parts.join(", ");
+  return <ul className="space-y-1">{parts.map((part) => <li key={part}>{part}</li>)}</ul>;
+}
+
+function achievementCountText(count: number) {
+  return `${count.toLocaleString("en-US")} account-wide achievement${count === 1 ? "" : "s"}.`;
 }
 
 // Every one of these pages reads the profile twice: once for the page title
@@ -86,9 +95,15 @@ function safetySummary(record: {
 // read, and the title can no longer describe a different snapshot than the
 // page under it. A paginated road journal still reads twice — its title is
 // built without the cursor, so the two calls are genuinely different reads.
-export const safeProfile = cache(async (driverId: string, cursor?: JournalCursor) => {
+export const safeProfile = cache(async (
+  driverId: string,
+  cursor?: JournalCursor,
+  achievementCursor?: AchievementCursor,
+) => {
   try {
-    return await getFreightFateDriverProfile(normalizeFreightFateDriverId(driverId), 20, cursor);
+    return await getFreightFateDriverProfile(
+      normalizeFreightFateDriverId(driverId), 20, cursor, achievementCursor,
+    );
   } catch {
     return null;
   }
@@ -105,14 +120,27 @@ export function parseJournalCursor(value: string | undefined): JournalCursor | u
     : undefined;
 }
 
+export function parseAchievementCursor(value: string | undefined): AchievementCursor | undefined {
+  if (!value) return undefined;
+  const separator = value.indexOf(":");
+  if (separator < 1) return undefined;
+  const sortAt = Number(value.slice(0, separator));
+  const achievementKey = value.slice(separator + 1);
+  return Number.isSafeInteger(sortAt) && sortAt >= -1
+    && achievementKey.length > 0 && achievementKey.length <= 96
+    ? { sortAt, achievementKey }
+    : undefined;
+}
+
 function Unavailable() {
   return <PageHeader title="Freight Fate Profile Unavailable" />;
 }
 
-export async function DriverProfileView({ driverId: raw, section, cursor, confirmed = false }: {
-  driverId: string; section: ProfileSection; cursor?: JournalCursor; confirmed?: boolean;
+export async function DriverProfileView({ driverId: raw, section, cursor, achievementCursor, confirmed = false }: {
+  driverId: string; section: ProfileSection; cursor?: JournalCursor;
+  achievementCursor?: AchievementCursor; confirmed?: boolean;
 }) {
-  const profile = await safeProfile(raw, cursor);
+  const profile = await safeProfile(raw, cursor, achievementCursor);
   if (!profile) return <Unavailable />;
   const { driver, snapshot } = profile;
   const root = `/freight-fate/drivers/${driver.driverId}`;
@@ -145,7 +173,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               ["Lifetime miles", snapshot.milesDriven.toLocaleString("en-US", { maximumFractionDigits: 1 })],
               ...(snapshot.onTimeRate === undefined ? [] : [["On-time percentage", percent(snapshot.onTimeRate)] as [string, ReactNode]]),
               ...(snapshot.damageFreeRate === undefined ? [] : [["Damage-free percentage", percent(snapshot.damageFreeRate)] as [string, ReactNode]]),
-              ...(snapshot.safetyRecord ? [["Safety record", safetySummary(snapshot.safetyRecord)] as [string, ReactNode]] : []),
+              ...(snapshot.safetyRecord ? [["Safety record", <SafetyRecord key="safety-record" record={snapshot.safetyRecord} />] as [string, ReactNode]] : []),
               ...(snapshot.statesVisited === undefined ? [] : [["States visited", snapshot.statesVisited.toLocaleString("en-US")] as [string, ReactNode]]),
               ...(snapshot.citiesVisited === undefined ? [] : [["Cities visited", snapshot.citiesVisited.toLocaleString("en-US")] as [string, ReactNode]]),
               ...(snapshot.longestHaulMiles === undefined ? [] : [["Longest haul", `${snapshot.longestHaulMiles.toLocaleString("en-US", { maximumFractionDigits: 1 })} miles`] as [string, ReactNode]]),
@@ -159,11 +187,11 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
           <section className="min-w-0 py-4">
             <h2 className="mb-4 text-2xl font-bold text-ink" id="account-achievements-heading">Account-wide achievements</h2>
             {profile.achievementCount ? <>
-              <p>{profile.achievementCount.toLocaleString("en-US")} account-wide achievements.</p>
+              <p>{achievementCountText(profile.achievementCount)}</p>
               <ul className="mt-4 space-y-3">
-                {profile.achievements.slice(0, 3).map((item: Achievement) => <li className="min-w-0 [overflow-wrap:anywhere]" key={item._id}><strong>{item.label}</strong>. Earned <Time value={item.earnedAt} />.</li>)}
+                {profile.recentAchievements.map((item: Achievement) => <li className="min-w-0 [overflow-wrap:anywhere]" key={item._id}><strong>{item.label}</strong>. Earned <Time value={item.earnedAt} />.</li>)}
               </ul>
-              <p className="mt-4"><Link href={`${root}/achievements`}>View all account-wide achievements</Link>.</p>
+              <p className="mt-4"><Link className={inlineLinkClass} href={`${root}/achievements`}>View all account-wide achievements</Link>.</p>
             </> : <p>No account-wide achievements yet.</p>}
           </section>
 
@@ -173,7 +201,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
               <ul className="space-y-4">
                 {profile.events.slice(0, 3).map((event: Event) => <li className="min-w-0 [overflow-wrap:anywhere]" key={event._id}><strong className="capitalize">{event.eventType.replaceAll("_", " ")}</strong>. {event.summary} <Time value={event.occurredAt} />.</li>)}
               </ul>
-              <p className="mt-4"><Link href={`${root}/road-journal`}>View the full road journal</Link>.</p>
+              <p className="mt-4"><Link className={inlineLinkClass} href={`${root}/road-journal`}>View the full road journal</Link>.</p>
             </> : <p>No road-journal entries yet.</p>}
           </section>
         </>
@@ -212,17 +240,25 @@ export async function DriverProfileView({ driverId: raw, section, cursor, confir
       {section === "achievements" ? (
         <section className="py-4">
           <h2 className="mb-4 text-2xl font-bold text-ink" id="achievements-heading">Account-wide achievements</h2>
-          <p className="mb-4">{profile.achievementCount.toLocaleString("en-US")} account-wide achievements.</p>
+          <p className="mb-4">{achievementCountText(profile.achievementCount)}</p>
           {profile.achievements.length ? (
             <ul className="space-y-4">
-              {profile.achievements.map((item: Achievement) => (
+              {profile.achievements.map((item: AccountAchievement) => (
                 <li className="min-w-0 rounded border border-line-strong p-4 [overflow-wrap:anywhere]" key={item._id}>
                   <h3 className="text-lg font-bold">{item.label}</h3>
-                  <p>Unlocked. Earned <Time value={item.earnedAt} />.</p>
+                  <p>{item.earnedAt === undefined ? "Unlocked." : <>Unlocked. Earned <Time value={item.earnedAt} />.</>}</p>
                 </li>
               ))}
             </ul>
           ) : <p>No account-wide achievements yet.</p>}
+          {achievementCursor || profile.nextAchievementBefore ? (
+            <nav aria-label="Account-wide achievements pagination" className="mt-6 flex flex-wrap gap-4">
+              {achievementCursor ? <Link className={inlineLinkClass} href={`${root}/achievements`}>Back to newest account-wide achievements</Link> : null}
+              {profile.nextAchievementBefore ? (
+                <Link className={inlineLinkClass} href={`${root}/achievements?before=${encodeURIComponent(`${profile.nextAchievementBefore.sortAt}:${profile.nextAchievementBefore.achievementKey}`)}`}>Older account-wide achievements</Link>
+              ) : null}
+            </nav>
+          ) : null}
         </section>
       ) : null}
 

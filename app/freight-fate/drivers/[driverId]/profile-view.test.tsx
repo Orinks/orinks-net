@@ -8,7 +8,7 @@ vi.mock("@/lib/freight-fate-online", () => ({
   normalizeFreightFateDriverId: (value: string) => value,
 }));
 
-import { DriverProfileView, parseJournalCursor } from "./profile-view";
+import { DriverProfileView, parseAchievementCursor, parseJournalCursor } from "./profile-view";
 
 const privateSentinels = [
   "CASH-PRIVATE-9182", "CREDIT-PRIVATE-3817", "LOCATION-PRIVATE-4921",
@@ -37,10 +37,15 @@ const completeProfile = {
     { _id: "event-old", eventId: "delivery-11", eventType: "level_earned", summary: "Reached level 18.", occurredAt: 1_799_000_000_000 },
   ],
   achievementCount: 4,
+  recentAchievements: [
+    { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: 1_800_000_000_000 },
+    { _id: "achievement-old", achievementKey: "first_delivery", label: "Signed, Sealed, Hauled", earnedAt: 1_799_000_000_000 },
+  ],
   achievements: [
     { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: 1_800_000_000_000 },
     { _id: "achievement-old", achievementKey: "first_delivery", label: "Signed, Sealed, Hauled", earnedAt: 1_799_000_000_000 },
   ],
+  nextAchievementBefore: { sortAt: -1, achievementKey: "first_delivery" },
   nextBefore: { occurredAt: 1_799_000_000_000, eventId: "delivery-11" },
   privateSentinels,
 };
@@ -72,6 +77,13 @@ describe("driver profile routes", () => {
     expect(lists[1].textContent).toContain("Damage-free percentage0%");
     expect(document.body.textContent).not.toContain("Last saved location");
     expect(document.body.textContent).not.toContain("Overview");
+    const safety = Array.from(lists[1].querySelectorAll("div")).find((row) => row.querySelector("dt")?.textContent === "Safety record")!;
+    expect(safety.querySelectorAll(":scope > dd")).toHaveLength(1);
+    expect(safety.querySelectorAll("dd > ul > li")).toHaveLength(7);
+    expect(safety.textContent).toContain("1 citation");
+    expect(safety.textContent).toContain("1 cargo claim");
+    expect(safety.textContent).toContain("1 preventable equipment damage incident");
+    expect(safety.textContent).not.toMatch(/1 citations|1 cargo claims|1 preventable equipment damage incidents/);
   });
 
   test("uses ordinary lists for newest canonical achievements and recent journal activity", async () => {
@@ -86,6 +98,12 @@ describe("driver profile routes", () => {
     expect(document.querySelector('[role="tab"]')).toBeNull();
     expect(document.querySelector(".sr-only")).toBeNull();
     expect(document.querySelector("section[aria-labelledby]")).toBeNull();
+    const overviewLinks = document.querySelectorAll("section a");
+    expect(overviewLinks.length).toBeGreaterThan(0);
+    for (const link of overviewLinks) {
+      expect(link.className).toContain("text-action");
+      expect(link.className).toContain("underline");
+    }
   });
 
   test("omits unavailable legacy facts without inventing values", async () => {
@@ -97,7 +115,7 @@ describe("driver profile routes", () => {
   });
 
   test("keeps no-snapshot and no-achievement profiles useful", async () => {
-    getProfile.mockResolvedValue({ ...completeProfile, snapshot: null, achievementCount: 0, achievements: [] });
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: null, achievementCount: 0, recentAchievements: [], achievements: [], nextAchievementBefore: null });
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
     expect(document.body.textContent).toContain("No current career has been shared yet.");
     expect(document.body.textContent).toContain("No current career resume has been shared yet.");
@@ -109,6 +127,38 @@ describe("driver profile routes", () => {
     const current = document.querySelectorAll('nav[aria-label="Freight Fate profile sections"] a[aria-current="page"]');
     expect(current).toHaveLength(1);
     expect(current[0].getAttribute("href")).toBe(section === "overview" ? "/freight-fate/drivers/road-star-1234" : `/freight-fate/drivers/road-star-1234/${section}`);
+    expect(document.querySelector("h1")?.getAttribute("tabindex")).toBe("-1");
+  });
+
+  test("shows a complete achievement page with undated imports and accessible pagination", async () => {
+    getProfile.mockResolvedValue({
+      ...completeProfile,
+      achievementCount: 2,
+      achievements: [
+        completeProfile.achievements[0],
+        { _id: "imported", achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" },
+      ],
+      nextAchievementBefore: { sortAt: -1, achievementKey: "first_delivery" },
+    });
+    const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "achievements" })));
+    expect(document.body.textContent).toContain("2 account-wide achievements");
+    expect(document.body.textContent).toContain("Signed, Sealed, Hauled");
+    expect(document.body.textContent).not.toContain("Invalid Date");
+    const pagination = document.querySelector('nav[aria-label="Account-wide achievements pagination"]')!;
+    expect(pagination.querySelector("a")?.textContent).toBe("Older account-wide achievements");
+  });
+
+  test("uses singular achievement wording", async () => {
+    getProfile.mockResolvedValue({
+      ...completeProfile, achievementCount: 1,
+      recentAchievements: [completeProfile.recentAchievements[0]],
+      achievements: [completeProfile.achievements[0]], nextAchievementBefore: null,
+    });
+    const overview = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    const shelf = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "achievements" })));
+    expect(overview.body.textContent).toContain("1 account-wide achievement.");
+    expect(shelf.body.textContent).toContain("1 account-wide achievement.");
+    expect(overview.body.textContent).not.toContain("1 account-wide achievements");
   });
 
   test("uses an identical non-leaking unavailable presentation", async () => {
@@ -129,5 +179,11 @@ describe("driver profile routes", () => {
   test("validates opaque journal cursors", () => {
     expect(parseJournalCursor("1800000000000:delivery-12")).toEqual({ occurredAt: 1_800_000_000_000, eventId: "delivery-12" });
     expect(parseJournalCursor("bad")).toBeUndefined();
+  });
+
+  test("validates opaque achievement cursors", () => {
+    expect(parseAchievementCursor("-1:first_delivery")).toEqual({ sortAt: -1, achievementKey: "first_delivery" });
+    expect(parseAchievementCursor("bad")).toBeUndefined();
+    expect(parseAchievementCursor("-2:first_delivery")).toBeUndefined();
   });
 });

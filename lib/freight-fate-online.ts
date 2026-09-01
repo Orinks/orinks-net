@@ -430,7 +430,12 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
   },
 );
 
-export async function getFreightFateDriverProfile(driverId: string, limit = 20, before?: { occurredAt: number; eventId: string }) {
+export async function getFreightFateDriverProfile(
+  driverId: string,
+  limit = 20,
+  before?: { occurredAt: number; eventId: string },
+  achievementBefore?: { sortAt: number; achievementKey: string },
+) {
   const client = getConvexClient();
 
   if (!client) {
@@ -440,7 +445,9 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20, 
   return client.query(anyApi.freightFate.getDriverProfile, {
     driverId: normalizeFreightFateDriverId(driverId),
     limit,
+    achievementLimit: 20,
     ...(before ? { before } : {}),
+    ...(achievementBefore ? { achievementBefore } : {}),
     now: Date.now(),
   });
 }

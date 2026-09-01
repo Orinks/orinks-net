@@ -5,6 +5,8 @@ import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
 import {
+  accountAchievementPage,
+  publicDriverEvent,
   publicVerifiedSnapshot,
   recentEarnedAchievements,
 } from "./freightFateProfileProjection";
@@ -878,7 +880,13 @@ export const getPublicUpdates = query({
       }
       if (!driver || !freightFateProfilePubliclyListed(driver) ||
           driver.integrityFlag) continue;
-      updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      updates.push({
+        ...event,
+        driverId: row.driverId,
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+      });
       if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     updates.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -893,6 +901,8 @@ export const getDriverProfile = query({
     driverId: v.string(),
     limit: v.optional(v.number()),
     before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })),
+    achievementLimit: v.optional(v.number()),
+    achievementBefore: v.optional(v.object({ sortAt: v.number(), achievementKey: v.string() })),
     now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -938,7 +948,9 @@ export const getDriverProfile = query({
       .order("desc")) {
       if (boundaryOccurredAt !== null && row.occurredAt !== boundaryOccurredAt) break;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
-      collected.push(row);
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      collected.push(event);
       if (collected.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     collected.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -955,7 +967,10 @@ export const getDriverProfile = query({
       ? { updatedAt: presenceRow.updatedAt }
       : null;
     const accountAchievements = await readCatalogAchievements(ctx, args.driverId);
-    const achievements = recentEarnedAchievements(accountAchievements, limit);
+    const achievementLimit = Math.min(Math.max(args.achievementLimit ?? 20, 1), 50);
+    const achievementPage = accountAchievementPage(
+      accountAchievements, achievementLimit, args.achievementBefore,
+    );
 
     return {
       driver: {
@@ -972,7 +987,8 @@ export const getDriverProfile = query({
       } : null,
       snapshot: publicVerifiedSnapshot(snapshot),
       achievementCount: accountAchievements.length,
-      achievements,
+      recentAchievements: recentEarnedAchievements(accountAchievements, 3),
+      ...achievementPage,
       presence,
     };
   },

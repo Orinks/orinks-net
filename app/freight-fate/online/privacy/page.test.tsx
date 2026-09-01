@@ -16,6 +16,10 @@ test("explains profile selection, private cloud retention, and operational priva
   expect(copy).toContain("Cloud Backup remains private");
   expect(copy).toContain("up to ten careers");
   expect(copy).toContain("never deletes a career stored on your computer");
-  expect(copy).toContain("Current cash, available credit, precise location, active cargo details, fatigue, hours-of-service state, and dispatcher standing remain private");
+  for (const privateDetail of [
+    "current cash", "available credit", "precise location", "exact cargo",
+    "customer", "cargo value", "destination", "fatigue", "exact hours-of-service state",
+    "dispatcher standing",
+  ]) expect(copy.toLowerCase()).toContain(privateDetail);
   expect(copy.toLowerCase()).not.toMatch(/this is (?:a )?(?:fiction|game)|fictional/);
 });
