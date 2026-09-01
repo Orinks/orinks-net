@@ -19,6 +19,21 @@ export function isTransientConvexFailure(output) {
   return /(?:HTTP(?: status)?|status(?: code)?)\D*(?:408|5\d\d)\b/i.test(output);
 }
 
+export function convexDeployArgs() {
+  return [
+    "convex",
+    "deploy",
+    "--check-build-environment",
+    "disable",
+    "--typecheck",
+    "try",
+    "--cmd-url-env-var-name",
+    "NEXT_PUBLIC_CONVEX_URL",
+    "--cmd",
+    "npm run build",
+  ];
+}
+
 function run(command, args) {
   return spawnSync(command, args, {
     encoding: "utf8",
@@ -46,16 +61,7 @@ async function main() {
   }
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const deployment = run("npx", [
-      "convex",
-      "deploy",
-      "--typecheck",
-      "try",
-      "--cmd-url-env-var-name",
-      "NEXT_PUBLIC_CONVEX_URL",
-      "--cmd",
-      "npm run build",
-    ]);
+    const deployment = run("npx", convexDeployArgs());
     printResult(deployment);
     if (deployment.status === 0) return;
     const output = `${deployment.stdout ?? ""}\n${deployment.stderr ?? ""}`;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   classifyVercelBuild,
+  convexDeployArgs,
   isTransientConvexFailure,
 } from "./deploy-freight-fate-staging.mjs";
 
@@ -30,6 +31,11 @@ describe("temporary Freight Fate staging deployment policy", () => {
       false,
     );
     expect(isTransientConvexFailure("Unauthorized: invalid deploy key")).toBe(false);
+  });
+
+  it("explicitly acknowledges the intentional production-class staging target", () => {
+    expect(convexDeployArgs()).toContain("--check-build-environment");
+    expect(convexDeployArgs()).toContain("disable");
   });
 
 });
