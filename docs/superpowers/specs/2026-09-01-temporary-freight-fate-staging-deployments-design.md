@@ -23,29 +23,25 @@ as failed.
 automatic deployment source. It uses one permanent, production-class Convex
 staging deployment and a branch-scoped deploy key.
 
-The `dev` deployment is coordinated by GitHub Actions, rather than by Vercel's
-build command. It has two explicit stages:
+Vercel's normal Git integration coordinates the `dev` deployment in two stages:
 
 1. Validate and deploy Convex for `dev`.
-2. Trigger the `dev` Vercel deployment against the confirmed Convex URL.
+2. Build the Next.js site against the confirmed Convex URL.
 
-Vercel's automatic Git deployment for `dev` is disabled while this channel is
-active, so it cannot race ahead of the backend stage. GitHub Actions invokes
-the Vercel CLI only after Convex succeeds. Its scoped token, project IDs, and
-the staging deploy key are repository environment secrets and are never exposed
-to preview builds.
+Vercel's automatic Git deployment remains enabled. A deploy key scoped to the
+fixed staging backend is present only in the `dev` branch environment.
 
-The repository owns a deployment wrapper used by that workflow. It identifies
-the Git branch and intended environment before acting, and refuses to deploy
-Convex unless the branch is exactly `dev` and the expected staging
-configuration is present. Vercel's project build command becomes a normal
-Next.js build with no Convex deployment side effect. Other preview branches may
+The repository owns a Vercel build wrapper. It refuses to publish `dev` when
+the expected staging deploy key is missing. On `dev`, Convex deploys first and
+provides the confirmed URL to the Next.js build. Other preview branches run a
+normal frontend build. They may
 read from the existing staging backend for compatible frontend work, but they
 never create, replace, or update a Convex deployment.
 
-Before a staging deployment, CI runs the full site tests, repository TypeScript
-typecheck, lint, and `convex deploy --dry-run --typecheck try`. A real Convex deployment
-may retry a small number of times only for transient HTTP 408 or 5xx failures.
+Before a staging deployment, ordinary CI runs the full site tests, repository
+TypeScript typecheck, and lint. Vercel runs `convex deploy --typecheck try` and
+builds Next.js only after Convex succeeds. The Convex deployment may retry a
+small number of times only for transient HTTP 408 or 5xx failures.
 Schema, type, authorization, configuration, and module-loading failures stop
 immediately.
 
@@ -76,13 +72,12 @@ avoids provisioning a new Convex deployment for every cosmetic preview.
 The 1.9 release checklist includes a required staging teardown:
 
 1. Remove the `dev.orinks.net` Vercel alias.
-2. Remove the `dev`-scoped staging Convex deploy key, staging-only URL
-   variables, and protected Vercel CLI credentials from GitHub.
-3. Disable the staging-only GitHub Actions workflow and remove the temporary
-   rule that suppresses Vercel's automatic `dev` deployment.
-4. Restore the normal Vercel Git integration used before 1.9: branches based on
-   `dev` receive ordinary `orinks.net` project previews with no automatic
-   Convex mutation.
+2. Remove the `dev`-scoped staging Convex deploy key and staging-only URL
+   variables from Vercel.
+3. Change the Vercel build command back to a normal Next.js build and remove
+   the temporary staging wrapper.
+4. Confirm the normal Vercel Git integration continues creating ordinary
+   `orinks.net` project previews from branches based on `dev`.
 5. Confirm ordinary Vercel previews still build from feature branches based on
    `dev` without deploying Convex.
 6. Archive or delete the temporary Convex staging deployment only after its
@@ -98,18 +93,12 @@ separate, explicit action because it destroys data.
 The deploy wrapper uses bounded retries with increasing delay for transport
 timeouts and server errors. It never retries `InvalidModules`, schema rejection,
 type errors, bad credentials, or wrong-target detection. A failed Convex stage
-does not start or promote the Vercel stage.
-
-If Vercel succeeds but alias verification fails, the deployment remains
-available at its generated URL and the pipeline reports the alias failure. It
-does not redeploy Convex.
+does not start the Next.js build.
 
 ## Verification
 
 Automated coverage verifies branch classification, skipped preview mutations,
-hard failure for missing `dev` credentials, retry classification, and the
-post-1.9 disabled mode. CI exercises the wrapper in dry-run mode without
-production credentials.
+hard failure for a missing `dev` deploy key, and retry classification.
 
 Release verification confirms that `dev.orinks.net` serves the expected commit,
 the build log names the expected Convex staging target, and a health/profile

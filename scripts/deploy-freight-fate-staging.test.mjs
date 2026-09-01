@@ -1,38 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  classifyStagingRun,
+  classifyVercelBuild,
   isTransientConvexFailure,
-  missingStagingCredentials,
 } from "./deploy-freight-fate-staging.mjs";
 
 describe("temporary Freight Fate staging deployment policy", () => {
-  it("deploys only an enabled push to dev", () => {
-    expect(
-      classifyStagingRun({
-        enabled: "true",
-        eventName: "push",
-        ref: "refs/heads/dev",
-      }),
-    ).toEqual({ deploy: true, reason: "enabled dev push" });
-
-    expect(
-      classifyStagingRun({
-        enabled: "true",
-        eventName: "push",
-        ref: "refs/heads/feature/profile-copy",
-      }),
-    ).toEqual({ deploy: false, reason: "not the dev branch" });
+  it("deploys the fixed backend only for Vercel's dev branch", () => {
+    expect(classifyVercelBuild({ branch: "dev", hasDeployKey: true })).toEqual({
+      deployBackend: true,
+      reason: "dev uses fixed staging backend",
+    });
+    expect(classifyVercelBuild({ branch: "feature/profile-copy", hasDeployKey: false })).toEqual({
+      deployBackend: false,
+      reason: "ordinary frontend preview",
+    });
   });
 
-  it("stays disabled after the temporary staging period", () => {
-    expect(
-      classifyStagingRun({
-        enabled: "false",
-        eventName: "push",
-        ref: "refs/heads/dev",
-      }),
-    ).toEqual({ deploy: false, reason: "temporary staging is disabled" });
+  it("refuses to publish dev without its fixed backend key", () => {
+    expect(() => classifyVercelBuild({ branch: "dev", hasDeployKey: false })).toThrow(
+      "dev is missing its Convex staging deploy key",
+    );
   });
 
   it("retries transport failures but not invalid application modules", () => {
@@ -44,19 +32,4 @@ describe("temporary Freight Fate staging deployment policy", () => {
     expect(isTransientConvexFailure("Unauthorized: invalid deploy key")).toBe(false);
   });
 
-  it("requires the scoped Convex and Vercel CLI credentials", () => {
-    expect(
-      missingStagingCredentials({
-        CONVEX_DEPLOY_KEY: "convex-key",
-        VERCEL_ORG_ID: "team-id",
-        VERCEL_PROJECT_ID: "project-id",
-        VERCEL_TOKEN: "vercel-token",
-      }),
-    ).toEqual([]);
-    expect(missingStagingCredentials({ CONVEX_DEPLOY_KEY: "convex-key" })).toEqual([
-      "VERCEL_TOKEN",
-      "VERCEL_ORG_ID",
-      "VERCEL_PROJECT_ID",
-    ]);
-  });
 });
