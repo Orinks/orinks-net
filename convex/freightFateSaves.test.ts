@@ -590,6 +590,38 @@ describe("validated private cloud revisions", () => {
     });
   });
 
+  test("selects a meaningful career for a consented unlisted profile", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    vi.useFakeTimers({ toFake: ["Date"], now });
+    const auth = await provisionedDriver(t, "user_unlisted_selection");
+    await t.mutation(api.freightFate.setProfileSharing, { ...auth, enabled: true, now });
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      await ctx.db.patch(driver!._id, { visibility: "unlisted" });
+    });
+
+    await expect(upload(
+      t,
+      auth,
+      Object.assign(validProfile(), { name: "Link Career" }),
+      null,
+      meaningful("op-unlisted", now),
+      now,
+    )).resolves.toMatchObject({ ok: true, revision: 1 });
+    await t.run(async (ctx) => {
+      const driver = await ctx.db.query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", auth.driverId)).unique();
+      expect(driver).toMatchObject({
+        visibility: "unlisted",
+        publicSaveName: "Link Career",
+      });
+      expect(await ctx.db.query("freightFateProfileSnapshots").first())
+        .toMatchObject({ sourceSaveName: "Link Career", meaningfulPlayedAt: now });
+    });
+  });
+
   test("projects verified company-driver resume facts without valuing the assigned tractor", async () => {
     const t = setup();
     const auth = await provisionedDriver(t, "user_company_resume");

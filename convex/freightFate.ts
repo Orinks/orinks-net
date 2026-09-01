@@ -43,11 +43,17 @@ export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
 export const MAX_DRIVER_EVENTS = 50;
 export const SHARING_CONSENT_VERSION = 3;
 
-export function freightFateProfileSharingEnabled(
+export function freightFateProfileLinkVisible(
   driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
 ) {
   return driver.sharingConsentVersion === SHARING_CONSENT_VERSION
-    && driver.visibility === "public";
+    && (driver.visibility === "public" || driver.visibility === "unlisted");
+}
+
+export function freightFateProfilePubliclyListed(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return freightFateProfileLinkVisible(driver) && driver.visibility === "public";
 }
 
 // --- Account-issued driver identity (Clerk) ---
@@ -269,7 +275,7 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
     return { error: "unauthorized" as const };
   }
-  if (!freightFateProfileSharingEnabled(driver)) {
+  if (!freightFateProfileLinkVisible(driver)) {
     return { error: "sharing_not_enabled" as const };
   }
   return { driver };
@@ -306,7 +312,7 @@ export const getMyDriver = query({
       updatedAt: driver.updatedAt,
       hasToken: driver.driverTokenHash !== undefined || anyDevice !== null,
       needsRename: driver.needsRename === true,
-      sharingEnabled: freightFateProfileSharingEnabled(driver),
+      sharingEnabled: freightFateProfileLinkVisible(driver),
     };
   },
 });
@@ -371,7 +377,7 @@ export const provisionDriver = mutation({
         displayName,
         visibility:
           args.expandedSharingConsent === true
-            ? "public"
+            ? args.visibility
             : args.expandedSharingConsent === false
               ? "private"
               : existing.visibility,
@@ -427,7 +433,7 @@ export const provisionDriver = mutation({
     await ctx.db.insert("freightFateDrivers", {
       driverId,
       displayName,
-      visibility: args.expandedSharingConsent ? "public" : "private",
+      visibility: args.expandedSharingConsent ? args.visibility : "private",
       authSubject: identity.subject,
       ...(args.expandedSharingConsent
         ? { sharingConsentVersion: SHARING_CONSENT_VERSION, sharingConsentedAt: args.now }
@@ -550,7 +556,7 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "unauthorized" };
     }
 
-    if (!freightFateProfileSharingEnabled(driver)) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
 
@@ -698,7 +704,7 @@ export const getPresenceBoard = query({
         .unique();
       if (
         !driver ||
-        !freightFateProfileSharingEnabled(driver) ||
+        !freightFateProfilePubliclyListed(driver) ||
         driver.integrityFlag
       ) {
         continue;
@@ -870,7 +876,7 @@ export const getPublicUpdates = query({
           .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
         drivers.set(row.driverId, driver);
       }
-      if (!driver || !freightFateProfileSharingEnabled(driver) ||
+      if (!driver || !freightFateProfilePubliclyListed(driver) ||
           driver.integrityFlag) continue;
       updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
       if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
@@ -899,7 +905,7 @@ export const getDriverProfile = query({
       return null;
     }
 
-    if (!freightFateProfileSharingEnabled(driver)) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return null;
     }
 

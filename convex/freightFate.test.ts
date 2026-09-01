@@ -480,28 +480,39 @@ describe("provisionDriver / getMyDriver", () => {
     expect(Math.max(...stored.map((event) => event.occurredAt))).toBeLessThanOrEqual(now + DRIVER_EVENT_CLOCK_SKEW_MS);
   });
 
-  test("private profiles are not publicly readable but unlisted profiles are link-visible", async () => {
+  test("provisioning preserves consented unlisted visibility", async () => {
     const t = setup();
-    const as = t.withIdentity({ subject: SUBJECT });
     const other = t.withIdentity({ subject: OTHER });
     const now = Date.now();
-
-    const privateDriver = await as.mutation(api.freightFate.provisionDriver, {
-      displayName: "Private Hauler",
-      visibility: "private",
+    const unlisted = await provisionWithComputer(t, OTHER, {
+      displayName: "Link Hauler",
+      visibility: "unlisted",
+      expandedSharingConsent: true,
       now,
     });
-    expect(await t.query(api.freightFate.getDriverProfile, { driverId: privateDriver.driverId })).toBeNull();
+    const mine = await other.query(api.freightFate.getMyDriver, {});
+    expect(mine).toMatchObject({
+      driverId: unlisted.driverId,
+      visibility: "unlisted",
+      sharingEnabled: true,
+    });
+  });
 
+  test("unlisted profiles accept journal events and remain link-visible but unlisted", async () => {
+    const t = setup();
+    const now = Date.now();
     const unlistedDriver = await provisionWithComputer(t, OTHER, {
       displayName: "Link Hauler",
       visibility: "unlisted",
       expandedSharingConsent: true,
       now,
     });
-    const posted = await t.mutation(api.freightFate.recordDriverEvent, {
+    const auth = {
       driverId: unlistedDriver.driverId,
       driverTokenHash: await sha256Hex(unlistedDriver.token),
+    };
+    const posted = await t.mutation(api.freightFate.recordDriverEvent, {
+      ...auth,
       eventId: "delivery",
       eventType: "delivery",
       summary: "Delivered canned goods to Chicago",
@@ -509,10 +520,86 @@ describe("provisionDriver / getMyDriver", () => {
       now,
     });
     expect(posted.ok).toBe(true);
+    await expect(t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth,
+      eventId: "structured-delivery",
+      occurredAt: now,
+      now,
+      payload: {
+        version: 1,
+        cargo: "canned goods",
+        weightPounds: 24_000,
+        origin: "Detroit, Michigan",
+        destination: "Chicago, Illinois",
+        distanceMiles: 284,
+        onTime: true,
+      },
+    })).resolves.toMatchObject({ ok: true, duplicate: false });
 
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: unlistedDriver.driverId });
     expect(profile?.driver.displayName).toBe("Link Hauler");
-    expect(profile?.events).toHaveLength(1);
+    expect(profile?.events).toHaveLength(2);
+
+    await expect(t.mutation(api.freightFate.updatePresence, {
+      ...auth,
+      activity: "Hauling",
+      detail: "Link-only driver",
+      now,
+    })).resolves.toMatchObject({ ok: true });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toEqual([]);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates)
+      .toEqual([]);
+  });
+
+  test("consented private profiles reject journal events and remain hidden from links and listings", async () => {
+    const t = setup();
+    const now = Date.now();
+    const privateDriver = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Private Hauler",
+      visibility: "private",
+      expandedSharingConsent: true,
+      now,
+    });
+    const auth = {
+      driverId: privateDriver.driverId,
+      driverTokenHash: await sha256Hex(privateDriver.token),
+    };
+
+    await expect(t.mutation(api.freightFate.recordDriverEvent, {
+      ...auth,
+      eventId: "private-delivery",
+      eventType: "delivery",
+      summary: "Private delivery",
+      occurredAt: now,
+      now,
+    })).resolves.toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    await expect(t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth,
+      eventId: "private-structured-delivery",
+      occurredAt: now,
+      now,
+      payload: {
+        version: 1,
+        cargo: "private cargo",
+        weightPounds: 12_000,
+        origin: "Detroit, Michigan",
+        destination: "Chicago, Illinois",
+        distanceMiles: 284,
+        onTime: true,
+      },
+    })).resolves.toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    expect(await t.query(api.freightFate.getDriverProfile, {
+      driverId: privateDriver.driverId,
+    })).toBeNull();
+    await expect(t.mutation(api.freightFate.updatePresence, {
+      ...auth,
+      activity: "Hauling",
+      detail: "Private driver",
+      now,
+    })).resolves.toMatchObject({ ok: true });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toEqual([]);
   });
 
   test("re-provision edits the profile in place; only a rotate touches tokens", async () => {

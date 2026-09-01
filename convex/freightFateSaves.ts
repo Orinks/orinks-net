@@ -5,7 +5,7 @@ import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import {
   acceptDriverToken,
   driverTokenAccepted,
-  freightFateProfileSharingEnabled,
+  freightFateProfileLinkVisible,
   stampClientVersion,
   stampDeviceTokenUse,
 } from "./freightFate";
@@ -361,9 +361,9 @@ export const storeValidatedSave = internalMutation({
     }
 
     // Old clients still store cloud revisions, but omitted intent cannot
-    // create, select, or refresh a public career. Only a new operation may
-    // do that, and only while canonical Profile sharing is enabled.
-    if (acceptedMeaningful && freightFateProfileSharingEnabled(driver)) {
+    // create, select, or refresh a shared career. Only a new operation may
+    // do that, and only while the profile remains link-visible.
+    if (acceptedMeaningful && freightFateProfileLinkVisible(driver)) {
       await ctx.db.patch(driver._id, { publicSaveName: args.saveName, updatedAt: now });
       await upsertVerifiedSnapshot(ctx, {
         driverId: args.driverId, saveName: args.saveName, revision,
