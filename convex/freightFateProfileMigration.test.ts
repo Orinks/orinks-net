@@ -85,6 +85,43 @@ async function seedDriver(
   });
 }
 
+async function addRevision(
+  t: ReturnType<typeof setup>,
+  args: {
+    driverId: string;
+    saveName: string;
+    revision: number;
+    achievements: string[];
+    createdAt: number;
+    corrupt?: boolean;
+    storedVersion?: number;
+  },
+) {
+  const payload = profile(args.saveName, args.achievements);
+  const stored = encoded(payload);
+  await t.run(async (ctx) => {
+    const contentId = await ctx.db.insert("freightFateSaveContent", {
+      driverId: args.driverId,
+      content: args.corrupt ? new Uint8Array([4, 5, 6]).buffer : stored.content,
+    });
+    await ctx.db.insert("freightFateSaves", {
+      driverId: args.driverId,
+      saveName: args.saveName,
+      revision: args.revision,
+      saveVersion: args.storedVersion ?? payload.version,
+      contentHash: stored.hash,
+      sizeBytes: stored.content.byteLength,
+      summary: `${args.saveName}, level 4`,
+      contentId,
+      sig: `signature-${args.revision}`,
+      keyId: "2026-08-preview",
+      signedAt: new Date(args.createdAt).toISOString(),
+      validatorVersion: 1,
+      createdAt: args.createdAt,
+    });
+  });
+}
+
 async function runBatch(t: ReturnType<typeof setup>, cursor: string | null = null, limit = 10) {
   return t.action(anyApi.freightFateProfileMigration.runBatch, {
     secret: "test-preview-secret", cursor, limit,
@@ -258,5 +295,76 @@ describe("preview account-profile migration", () => {
     expect(state.achievements).toHaveLength(11);
     expect(state.achievements.some((row) => row.achievementKey === "first_delivery")).toBe(false);
     expect(state.operations).toEqual([]);
+  });
+
+  test("migrates a legitimate legacy account with more than one hundred retained rows", async () => {
+    const t = setup();
+    const careers = Array.from({ length: 11 }, (_, index) => ({
+      name: `Legacy ${index + 1}`,
+      achievements: index === 10 ? ["hundred_grand"] : ["first_delivery"],
+      createdAt: 100 + index * 10,
+    }));
+    await seedDriver(t, "legacy-large", careers);
+    for (const [careerIndex, career] of careers.entries()) {
+      for (let revision = 2; revision <= 10; revision += 1) {
+        await addRevision(t, {
+          driverId: "legacy-large",
+          saveName: career.name,
+          revision,
+          achievements: career.achievements,
+          createdAt: 100 + careerIndex * 10 + revision,
+        });
+      }
+    }
+
+    await expect(runBatch(t)).resolves.toMatchObject({
+      scannedDrivers: 1,
+      scannedCareers: 11,
+      achievementsInserted: 2,
+      fallbackOperationsInserted: 11,
+      skippedDrivers: 0,
+      errors: 0,
+    });
+    const state = await t.run(async (ctx) => ({
+      saves: await ctx.db.query("freightFateSaves")
+        .withIndex("by_driver", (q) => q.eq("driverId", "legacy-large")).collect(),
+      operations: await ctx.db.query("freightFateMeaningfulPlayOperations").collect(),
+    }));
+    expect(state.saves).toHaveLength(110);
+    expect(state.operations).toHaveLength(11);
+  });
+
+  test("falls back to an older valid revision when the newest signed revision is unusable", async () => {
+    const t = setup();
+    await seedDriver(t, "fallbacks", [
+      { name: "Corrupt newest", achievements: ["first_delivery"], createdAt: 100 },
+      { name: "Unknown newest", achievements: ["five_deliveries"], createdAt: 200 },
+    ]);
+    await addRevision(t, {
+      driverId: "fallbacks", saveName: "Corrupt newest", revision: 2,
+      achievements: ["hundred_grand"], createdAt: 300, corrupt: true,
+    });
+    await addRevision(t, {
+      driverId: "fallbacks", saveName: "Unknown newest", revision: 2,
+      achievements: ["big_payday"], createdAt: 400, storedVersion: 999,
+    });
+
+    await expect(runBatch(t)).resolves.toMatchObject({
+      scannedCareers: 2,
+      skippedCareers: 0,
+      achievementsInserted: 2,
+      fallbackOperationsInserted: 2,
+    });
+    const state = await t.run(async (ctx) => ({
+      achievements: await ctx.db.query("freightFateAchievements").collect(),
+      operations: await ctx.db.query("freightFateMeaningfulPlayOperations").collect(),
+    }));
+    expect(state.achievements.map((row) => row.achievementKey).sort()).toEqual([
+      "first_delivery", "five_deliveries",
+    ]);
+    expect(state.operations.map((row) => [row.saveName, row.acceptedAt]).sort()).toEqual([
+      ["Corrupt newest", 100],
+      ["Unknown newest", 200],
+    ]);
   });
 });

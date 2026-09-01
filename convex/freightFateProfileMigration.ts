@@ -90,26 +90,40 @@ export const runBatch = internalAction({
           continue;
         }
         const careers = [];
+        const candidatesByCareer = new Map<string, typeof read.candidates>();
         for (const candidate of read.candidates) {
-          if (!candidate.content
-            || candidate.validatorVersion !== SHARED_PROFILE_VALIDATOR_VERSION) {
+          const candidates = candidatesByCareer.get(candidate.saveName) ?? [];
+          candidates.push(candidate);
+          candidatesByCareer.set(candidate.saveName, candidates);
+        }
+        for (const [saveName, candidates] of candidatesByCareer) {
+          let accepted: { candidate: (typeof candidates)[number]; payload: Record<string, unknown> } | null = null;
+          for (const candidate of candidates) {
+            if (candidate.validatorVersion !== SHARED_PROFILE_VALIDATOR_VERSION) continue;
+            const content = await ctx.runQuery(
+              anyApi.freightFateProfileMigrationData.readCandidateContent,
+              { saveId: candidate.saveId },
+            );
+            if (!content) continue;
+            const payload = decodeVerifiedCareer({ ...candidate, content });
+            if (payload) {
+              accepted = { candidate, payload };
+              break;
+            }
+          }
+          if (!accepted) {
             totals.skippedCareers += 1;
             totals.fallbackOperationsSkipped += 1;
             continue;
           }
-          const payload = decodeVerifiedCareer({ ...candidate, content: candidate.content });
-          if (!payload) {
-            totals.skippedCareers += 1;
-            totals.fallbackOperationsSkipped += 1;
-            continue;
-          }
+          const { candidate, payload } = accepted;
           const canonical = (payload.achievements as string[])
             .filter((key) => FREIGHT_FATE_ACHIEVEMENT_ID_SET.has(key));
           totals.achievementsSkipped += (payload.achievements as string[]).length - canonical.length;
           totals.scannedCareers += 1;
           careers.push({
             saveId: candidate.saveId,
-            saveName: candidate.saveName,
+            saveName,
             revision: candidate.revision,
             contentHash: candidate.contentHash,
             validatorVersion: candidate.validatorVersion,
@@ -119,12 +133,14 @@ export const runBatch = internalAction({
             achievementKeys: canonical,
           });
         }
-        totals.skippedCareers += Math.max(0, read.totalCareers - read.candidates.length);
-        totals.fallbackOperationsSkipped += Math.max(0, read.totalCareers - read.candidates.length);
+        totals.skippedCareers += Math.max(0, read.totalCareers - candidatesByCareer.size);
+        totals.fallbackOperationsSkipped += Math.max(0, read.totalCareers - candidatesByCareer.size);
         if (careers.length === 0) continue;
         const applied = await ctx.runMutation(anyApi.freightFateProfileMigrationData.applyDriverMigration, {
           driverId: driver.driverId,
           migrationNow: Date.now(),
+          observedRevisionCount: read.observedRevisionCount,
+          observedHeads: read.observedHeads,
           careers,
         });
         if (!applied.ok) {

@@ -2,9 +2,13 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { internalMutation, internalQuery } from "./_generated/server";
-import { KEEP_REVISIONS, MAX_SLOTS } from "./freightFateSaves";
+import { KEEP_REVISIONS } from "./freightFateSaves";
 
-const MAX_DRIVER_REVISIONS = MAX_SLOTS * KEEP_REVISIONS;
+// Before rolling ten-career retention, cloud sync accepted up to twenty
+// distinct career slots. Keep that historical ceiling here so a legitimate
+// legacy account can be prepared without turning this into an unbounded scan.
+const MAX_LEGACY_SLOTS = 20;
+const MAX_DRIVER_REVISIONS = MAX_LEGACY_SLOTS * KEEP_REVISIONS;
 const MAX_DUPLICATE_ACHIEVEMENT_ROWS = 10;
 
 export const listDriverBatch = internalQuery({
@@ -21,19 +25,10 @@ export const readVerifiedCareerCandidates = internalQuery({
       .take(MAX_DRIVER_REVISIONS + 1);
     if (rows.length > MAX_DRIVER_REVISIONS) return { ok: false as const, reason: "revision_limit" };
 
-    const latestByCareer = new Map<string, (typeof rows)[number]>();
-    for (const row of rows) {
-      if (!row.sig || !row.keyId || !row.signedAt || !row.validatorVersion) continue;
-      const prior = latestByCareer.get(row.saveName);
-      if (!prior || row.revision > prior.revision) latestByCareer.set(row.saveName, row);
-    }
-
-    const candidates = [];
-    for (const row of [...latestByCareer.values()].sort((a, b) =>
-      a.saveName.localeCompare(b.saveName) || a.revision - b.revision,
-    )) {
-      const content = await ctx.db.get(row.contentId);
-      candidates.push({
+    const candidates = rows
+      .filter((row) => Boolean(row.sig && row.keyId && row.signedAt && row.validatorVersion))
+      .sort((a, b) => a.saveName.localeCompare(b.saveName) || b.revision - a.revision)
+      .map((row) => ({
         saveId: row._id,
         saveName: row.saveName,
         saveVersion: row.saveVersion,
@@ -41,10 +36,34 @@ export const readVerifiedCareerCandidates = internalQuery({
         contentHash: row.contentHash,
         createdAt: row.createdAt,
         validatorVersion: row.validatorVersion,
-        content: content?.content ?? null,
-      });
+      }));
+    const latestByCareer = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      const prior = latestByCareer.get(row.saveName);
+      if (!prior || row.revision > prior.revision) latestByCareer.set(row.saveName, row);
     }
-    return { ok: true as const, totalCareers: new Set(rows.map((row) => row.saveName)).size, candidates };
+    return {
+      ok: true as const,
+      totalCareers: latestByCareer.size,
+      observedRevisionCount: rows.length,
+      observedHeads: [...latestByCareer.values()].map((row) => ({
+        saveId: row._id,
+        saveName: row.saveName,
+        revision: row.revision,
+        contentHash: row.contentHash,
+      })),
+      candidates,
+    };
+  },
+});
+
+export const readCandidateContent = internalQuery({
+  args: { saveId: v.id("freightFateSaves") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.saveId);
+    if (!row) return null;
+    const content = await ctx.db.get(row.contentId);
+    return content?.content ?? null;
   },
 });
 
@@ -59,15 +78,42 @@ const migratedCareerValidator = v.object({
   achievementKeys: v.array(v.string()),
 });
 
+const observedHeadValidator = v.object({
+  saveId: v.id("freightFateSaves"),
+  saveName: v.string(),
+  revision: v.number(),
+  contentHash: v.string(),
+});
+
 export const applyDriverMigration = internalMutation({
   args: {
     driverId: v.string(),
     migrationNow: v.number(),
+    observedRevisionCount: v.number(),
+    observedHeads: v.array(observedHeadValidator),
     careers: v.array(migratedCareerValidator),
   },
   handler: async (ctx, args) => {
     // Recheck every input before the first write. A concurrent upload makes
     // this driver a clean retry instead of mixing two account states.
+    const currentRows = await ctx.db.query("freightFateSaves")
+      .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+      .take(MAX_DRIVER_REVISIONS + 1);
+    if (currentRows.length !== args.observedRevisionCount) {
+      return { ok: false as const, reason: "career_changed" as const };
+    }
+    for (const head of args.observedHeads) {
+      const current = await ctx.db.query("freightFateSaves")
+        .withIndex("by_slot", (q) =>
+          q.eq("driverId", args.driverId).eq("saveName", head.saveName),
+        ).order("desc").first();
+      if (!current
+        || current._id !== head.saveId
+        || current.revision !== head.revision
+        || current.contentHash !== head.contentHash) {
+        return { ok: false as const, reason: "career_changed" as const };
+      }
+    }
     for (const career of args.careers) {
       const row = await ctx.db.get(career.saveId);
       if (!row
