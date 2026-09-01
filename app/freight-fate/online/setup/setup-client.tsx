@@ -25,6 +25,7 @@ export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unk
 }
 
 type PendingAction = "save" | "rotate" | null;
+type DriverVisibility = "public" | "unlisted" | "private";
 
 // The one place that explains how a computer actually connects now: no
 // values are copied here. Reused verbatim everywhere the page used to point
@@ -139,6 +140,11 @@ function DriverSetup() {
 
   const [name, setName] = useState("");
   const [profileSharing, setProfileSharing] = useState(false);
+  // `sharingEnabled` is true for public and unlisted profiles. Keep the
+  // server's exact visibility alongside the checkbox so unrelated saves do
+  // not silently turn an unlisted profile public.
+  const [profileVisibility, setProfileVisibility] = useState<DriverVisibility>("private");
+  const [sharingControlDirty, setSharingControlDirty] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [saveError, setSaveError] = useState("");
@@ -199,9 +205,11 @@ function DriverSetup() {
     if (myDriver) {
       setName(myDriver.displayName);
       setProfileSharing(myDriver.sharingEnabled === true);
+      setProfileVisibility(myDriver.visibility);
     } else {
       setName(user?.username ?? user?.firstName ?? "");
       setProfileSharing(false);
+      setProfileVisibility("private");
     }
     setInitialized(true);
   }, [initialized, myDriver, user]);
@@ -254,11 +262,16 @@ function DriverSetup() {
     try {
       await provision({
         displayName: trimmed,
-        visibility: profileSharing ? "public" : "private",
-        expandedSharingConsent: profileSharing,
+        visibility: profileVisibility,
+        // Omission tells provisionDriver this is an ordinary profile edit;
+        // only a deliberate checkbox change may rewrite visibility/consent.
+        ...(!editing || sharingControlDirty
+          ? { expandedSharingConsent: profileSharing }
+          : {}),
         rotateToken: false,
         now: Date.now(),
       });
+      setSharingControlDirty(false);
       // Created versus edited is decided by what was on screen when the
       // player pressed Save, not by anything in the response. It used to be
       // read off a minted token, which meant a server that stopped minting
@@ -283,6 +296,8 @@ function DriverSetup() {
         showNameError(rejection);
       } else {
         setProfileSharing(myDriver?.sharingEnabled === true);
+        setProfileVisibility(myDriver?.visibility ?? "private");
+        setSharingControlDirty(false);
         const message = "Save failed. Your changes were not applied. Please try again.";
         setSaveError(message);
         announceError(message);
@@ -337,8 +352,7 @@ function DriverSetup() {
       // to match.
       await provision({
         displayName: myDriver.displayName,
-        visibility: myDriver.sharingEnabled ? "public" : "private",
-        expandedSharingConsent: myDriver.sharingEnabled,
+        visibility: myDriver.visibility,
         rotateToken: true,
         now: Date.now(),
       });
@@ -635,7 +649,12 @@ function DriverSetup() {
                     className="mt-1 h-5 w-5 shrink-0"
                     id="profileSharing"
                     name="profileSharing"
-                    onChange={(event) => setProfileSharing(event.target.checked)}
+                    onChange={(event) => {
+                      const enabled = event.target.checked;
+                      setProfileSharing(enabled);
+                      setProfileVisibility(enabled ? "public" : "private");
+                      setSharingControlDirty(true);
+                    }}
                     type="checkbox"
                   />
                   <label className="font-semibold text-ink" htmlFor="profileSharing">

@@ -219,3 +219,72 @@ test("saving an edit to an existing driver leaves focus where the player put it"
 
   expect(screen.getByRole("heading", { name: /your computers/i })).not.toHaveFocus();
 });
+
+test.each([
+  { visibility: "public", sharingEnabled: true },
+  { visibility: "unlisted", sharingEnabled: true },
+  { visibility: "private", sharingEnabled: false },
+] as const)(
+  "an ordinary save preserves $visibility visibility without renewing sharing consent",
+  async ({ visibility, sharingEnabled }) => {
+    store.driver = { ...DRIVER, visibility, sharingEnabled };
+    store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: false });
+    render(<FreightFateSetupClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+    const payload = store.provision.mock.calls[0]![0];
+    expect(payload).toMatchObject({
+      displayName: DRIVER.displayName,
+      visibility,
+      rotateToken: false,
+      now: expect.any(Number),
+    });
+    expect(payload).not.toHaveProperty("expandedSharingConsent");
+  },
+);
+
+test("the explicit sharing control can change an unlisted profile to private", async () => {
+  store.driver = { ...DRIVER, visibility: "unlisted", sharingEnabled: true };
+  store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: false });
+  render(<FreightFateSetupClient />);
+
+  const sharing = screen.getByRole("checkbox", { name: "Profile sharing" });
+  expect(sharing).toBeChecked();
+  fireEvent.click(sharing);
+  fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+  await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+  expect(store.provision).toHaveBeenCalledWith(expect.objectContaining({
+    visibility: "private",
+    expandedSharingConsent: false,
+    rotateToken: false,
+  }));
+});
+
+test.each([
+  { visibility: "public", sharingEnabled: true },
+  { visibility: "unlisted", sharingEnabled: true },
+  { visibility: "private", sharingEnabled: false },
+] as const)(
+  "signing out every computer preserves $visibility visibility without renewing sharing consent",
+  async ({ visibility, sharingEnabled }) => {
+    store.driver = { ...DRIVER, visibility, sharingEnabled };
+    store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: true });
+    render(<FreightFateSetupClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out all computers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm: sign out all computers" }));
+    await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+    const payload = store.provision.mock.calls[0]![0];
+    expect(payload).toMatchObject({
+      displayName: DRIVER.displayName,
+      visibility,
+      rotateToken: true,
+      now: expect.any(Number),
+    });
+    expect(payload).not.toHaveProperty("expandedSharingConsent");
+  },
+);
