@@ -63,7 +63,7 @@ async function main() {
     throw new Error(`Temporary staging credentials are missing: ${missingCredentials.join(", ")}`);
   }
 
-  const dryRun = runConvex(["--dry-run", "--typecheck", "enable"]);
+  const dryRun = runConvex(["--dry-run", "--typecheck", "try"]);
   printResult(dryRun);
   if (dryRun.status !== 0) throw new Error("Convex dry-run validation failed");
 

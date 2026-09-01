@@ -43,8 +43,8 @@ Next.js build with no Convex deployment side effect. Other preview branches may
 read from the existing staging backend for compatible frontend work, but they
 never create, replace, or update a Convex deployment.
 
-Before a staging deployment, CI runs the full site tests, TypeScript typecheck,
-lint, and `convex deploy --dry-run --typecheck enable`. A real Convex deployment
+Before a staging deployment, CI runs the full site tests, repository TypeScript
+typecheck, lint, and `convex deploy --dry-run --typecheck try`. A real Convex deployment
 may retry a small number of times only for transient HTTP 408 or 5xx failures.
 Schema, type, authorization, configuration, and module-loading failures stop
 immediately.
