@@ -252,6 +252,80 @@ describe("validateSharedProfile", () => {
     expect(validateSharedProfile(validProfile(), "Road Star")).toMatchObject({ ok: true });
   });
 
+  test("accepts bounded optional facts used by the richer public projection", () => {
+    expect(validateSharedProfile({
+      ...validProfile(),
+      business_status: "company_driver",
+      carrier_key: "northstar",
+      owned_trailers: [],
+      driving_record: {
+        serious_violations: [20, 40], major_offenses: [80], citations: 3,
+        fines_paid: 1_250, fatigue_events: 1, trust_band_heard: "probation",
+        debt_rung_heard: 0, repossessions: 0, setback_notice_kind: "",
+        setback_notice_lines: [], suspended_until_h: 0, suspension_reason: "",
+        lifetime_disqualified: false, carrier_terminations: 1, notice_pending: false,
+      },
+      achievement_stats: {
+        damage_free_deliveries: 9,
+        longest_haul_miles: 875.4,
+        cities_delivered: ["chicago_il_us", "denver_co_us"],
+        cargo_claims: 1,
+        preventable_equipment_damage: 2,
+        "hint:engine_start:Press E:auto": 3,
+      },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("accepts future trailer IDs for backup while publication filters them", () => {
+    for (const trailer of [
+      "dry_van", "reefer", "flatbed", "bulk", "tank", "double_van",
+    ]) {
+      expect(validateSharedProfile({
+        ...validProfile(),
+        owned_trailers: [trailer],
+      }, "Road Star")).toMatchObject({ ok: true });
+    }
+    for (const trailer of ["invented_trailer", "toString"]) {
+      expect(validateSharedProfile({
+        ...validProfile(),
+        owned_trailers: [trailer],
+      }, "Road Star")).toMatchObject({ ok: true });
+    }
+  });
+
+  test("accepts verified city coverage beyond the old generic array cap", () => {
+    const profile = validProfile();
+    profile.career.deliveries = 257;
+    profile.achievement_stats = {
+      cities_delivered: Object.keys(invariants.cityLabels).slice(0, 257),
+    };
+    expect(validateSharedProfile(profile, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test.each([
+    ["fractional damage-free count", { damage_free_deliveries: 1.5 }],
+    ["damage-free count above deliveries", { damage_free_deliveries: 13 }],
+    ["longest haul above lifetime miles", { longest_haul_miles: 4_101 }],
+    ["duplicate visited city", { cities_delivered: ["chicago_il_us", "chicago_il_us"] }],
+    ["negative cargo claim count", { cargo_claims: -1 }],
+    ["fractional damage incident count", { preventable_equipment_damage: 0.5 }],
+  ])("rejects an unverified richer-profile counter: %s", (_label, achievementStats) => {
+    expect(validateSharedProfile({
+      ...validProfile(),
+      achievement_stats: achievementStats,
+    }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_achievement" });
+  });
+
+  test("rejects malformed safety facts before they can enter a public snapshot", () => {
+    expect(validateSharedProfile({
+      ...validProfile(),
+      driving_record: {
+        serious_violations: [], major_offenses: [], citations: -1,
+        fines_paid: 0, fatigue_events: 0, repossessions: 0, carrier_terminations: 0,
+      },
+    }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
+  });
+
   test("accepts a legacy market carrying only the original cargo classes", () => {
     // Careers begun before a cargo-class expansion keep the smaller
     // multiplier set (seen in the wild: 8 of the current 16 classes).

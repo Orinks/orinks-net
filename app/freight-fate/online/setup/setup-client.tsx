@@ -25,6 +25,7 @@ export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unk
 }
 
 type PendingAction = "save" | "rotate" | null;
+type DriverVisibility = "public" | "unlisted" | "private";
 
 // The one place that explains how a computer actually connects now: no
 // values are copied here. Reused verbatim everywhere the page used to point
@@ -155,6 +156,11 @@ function DriverSetup() {
 
   const [name, setName] = useState("");
   const [profileSharing, setProfileSharing] = useState(false);
+  // `sharingEnabled` is true for public and unlisted profiles. Keep the
+  // server's exact visibility alongside the checkbox so unrelated saves do
+  // not silently turn an unlisted profile public.
+  const [profileVisibility, setProfileVisibility] = useState<DriverVisibility>("private");
+  const [sharingControlDirty, setSharingControlDirty] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [saveError, setSaveError] = useState("");
@@ -225,9 +231,11 @@ function DriverSetup() {
     if (myDriver) {
       setName(myDriver.displayName);
       setProfileSharing(myDriver.sharingEnabled === true);
+      setProfileVisibility(myDriver.visibility);
     } else {
       setName(user?.username ?? user?.firstName ?? "");
       setProfileSharing(false);
+      setProfileVisibility("private");
     }
     setInitialized(true);
   }, [initialized, myDriver, user]);
@@ -280,11 +288,16 @@ function DriverSetup() {
     try {
       await provision({
         displayName: trimmed,
-        visibility: profileSharing ? "public" : "private",
-        expandedSharingConsent: profileSharing,
+        visibility: profileVisibility,
+        // Omission tells provisionDriver this is an ordinary profile edit;
+        // only a deliberate checkbox change may rewrite visibility/consent.
+        ...(!editing || sharingControlDirty
+          ? { expandedSharingConsent: profileSharing }
+          : {}),
         rotateToken: false,
         now: Date.now(),
       });
+      setSharingControlDirty(false);
       // Created versus edited is decided by what was on screen when the
       // player pressed Save, not by anything in the response. It used to be
       // read off a minted token, which meant a server that stopped minting
@@ -309,6 +322,8 @@ function DriverSetup() {
         showNameError(rejection);
       } else {
         setProfileSharing(myDriver?.sharingEnabled === true);
+        setProfileVisibility(myDriver?.visibility ?? "private");
+        setSharingControlDirty(false);
         const message = "Save failed. Your changes were not applied. Please try again.";
         setSaveError(message);
         announceError(message);
@@ -363,8 +378,7 @@ function DriverSetup() {
       // to match.
       await provision({
         displayName: myDriver.displayName,
-        visibility: myDriver.sharingEnabled ? "public" : "private",
-        expandedSharingConsent: myDriver.sharingEnabled,
+        visibility: myDriver.visibility,
         rotateToken: true,
         now: Date.now(),
       });
@@ -382,6 +396,9 @@ function DriverSetup() {
 
   async function handleSignOut(row: ComputerRow, rows: ComputerRow[]) {
     const spokenLabel = row.legacy ? "the original token" : row.label;
+    if (signingOutId === row.id) {
+      return;
+    }
     // Arming is always allowed — a silently dead "Sign out" button on the
     // other rows while one sign-out is in flight would be unexplained to a
     // reader. Only the confirm step waits, and it says so.
@@ -443,6 +460,7 @@ function DriverSetup() {
     onSignOut: (row: ComputerRow, rows: ComputerRow[]) => void;
     rotateError: string;
     rotatePending: boolean;
+    actionsPending: boolean;
     rowButtonRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
     signingOutId: string | null;
   }) {
@@ -524,6 +542,7 @@ function DriverSetup() {
                           : `Sign out ${spokenLabel}`
                     }
                     className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+                    disabled={busy}
                     onBlur={() => props.onArmedBlur(row.id, spokenLabel)}
                     onClick={() => props.onSignOut(row, rows)}
                     onKeyDown={(event) => props.onArmedKeyDown(event, row.id, spokenLabel)}
@@ -551,8 +570,9 @@ function DriverSetup() {
           </p>
           <button
             aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
-            aria-disabled={props.rotatePending || undefined}
+            aria-disabled={props.actionsPending || undefined}
             className={`rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+            disabled={props.actionsPending}
             onBlur={() => props.onArmedBlur("rotate-all", "every computer")}
             onClick={props.onRotateAll}
             onKeyDown={(event) => props.onArmedKeyDown(event, "rotate-all", "every computer")}
@@ -625,6 +645,7 @@ function DriverSetup() {
                 aria-invalid={nameError ? true : undefined}
                 aria-required="true"
                 className="w-full rounded border border-line-strong px-3 py-2 text-ink"
+                disabled={pendingAction === "save"}
                 id="displayName"
                 maxLength={48}
                 name="displayName"
@@ -662,9 +683,15 @@ function DriverSetup() {
                     aria-describedby="profile-sharing-help"
                     checked={profileSharing}
                     className="mt-1 h-5 w-5 shrink-0"
+                    disabled={pendingAction === "save"}
                     id="profileSharing"
                     name="profileSharing"
-                    onChange={(event) => setProfileSharing(event.target.checked)}
+                    onChange={(event) => {
+                      const enabled = event.target.checked;
+                      setProfileSharing(enabled);
+                      setProfileVisibility(enabled ? "public" : "private");
+                      setSharingControlDirty(true);
+                    }}
                     type="checkbox"
                   />
                   <label className="font-semibold text-ink" htmlFor="profileSharing">
@@ -708,7 +735,9 @@ function DriverSetup() {
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>
-                    View your public driver profile
+                    {myDriver.visibility === "unlisted"
+                      ? "View your shared-by-link driver profile"
+                      : "View your public driver profile"}
                   </Link>
                   .
                 </p>
@@ -731,6 +760,7 @@ function DriverSetup() {
                 onSignOut: handleSignOut,
                 rotateError,
                 rotatePending: pendingAction === "rotate",
+                actionsPending: pendingAction !== null,
                 rowButtonRefs,
                 signingOutId,
               })}

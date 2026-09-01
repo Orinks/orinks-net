@@ -21,6 +21,7 @@ type SaveUploadRequest = {
   contentHash?: unknown;
   content?: unknown;
   summary?: unknown;
+  meaningfulPlay?: unknown;
 };
 
 function bearerToken(request: Request) {
@@ -37,6 +38,7 @@ const FAILURE_STATUS: Record<string, number> = {
   conflict: 409,
   too_large: 413,
   too_many_slots: 409,
+  retention_blocked: 409,
   hash_mismatch: 400,
   invalid_schema: 422,
   invalid_name: 422,
@@ -49,6 +51,7 @@ const FAILURE_STATUS: Record<string, number> = {
   invalid_market: 422,
   invalid_hos: 422,
   invalid_achievement: 422,
+  invalid_meaningful_play: 422,
   unsupported_version: 422,
   signing_unavailable: 503,
   rate_limited: 429,
@@ -90,6 +93,9 @@ export async function POST(request: Request) {
       contentHash: body.contentHash,
       content,
       summary,
+      ...(body.meaningfulPlay !== undefined
+        ? { meaningfulPlay: body.meaningfulPlay }
+        : {}),
       clientVersion: freightFateClientVersion(request),
     });
 
@@ -127,7 +133,11 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, revision: result.revision });
+    return NextResponse.json({
+      ok: true,
+      revision: result.revision,
+      ...(result.evictedSaveName ? { evictedSaveName: result.evictedSaveName } : {}),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid save upload.";
 

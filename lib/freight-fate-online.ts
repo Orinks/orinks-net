@@ -130,6 +130,7 @@ export async function postFreightFateSave(input: {
   contentHash: string;
   content: ArrayBuffer;
   summary: string;
+  meaningfulPlay?: unknown;
   clientVersion?: string;
 }) {
   const client = getConvexClient();
@@ -147,8 +148,10 @@ export async function postFreightFateSave(input: {
     contentHash: input.contentHash,
     content: input.content,
     summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
+    ...(input.meaningfulPlay !== undefined
+      ? { meaningfulPlay: input.meaningfulPlay }
+      : {}),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
-    now: Date.now(),
   });
 }
 
@@ -441,7 +444,12 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
   },
 );
 
-export async function getFreightFateDriverProfile(driverId: string, limit = 20, before?: { occurredAt: number; eventId: string }) {
+export async function getFreightFateDriverProfile(
+  driverId: string,
+  limit = 20,
+  before?: { occurredAt: number; eventId: string },
+  achievementBefore?: { sortAt: number; achievementKey: string },
+) {
   const client = getConvexClient();
 
   if (!client) {
@@ -451,7 +459,9 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20, 
   return client.query(anyApi.freightFate.getDriverProfile, {
     driverId: normalizeFreightFateDriverId(driverId),
     limit,
+    achievementLimit: 20,
     ...(before ? { before } : {}),
+    ...(achievementBefore ? { achievementBefore } : {}),
     now: Date.now(),
   });
 }

@@ -4,6 +4,7 @@ import { ConvexError } from "convex/values";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
+import invariants from "../data/freight-fate-profile-invariants.json";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
@@ -479,28 +480,39 @@ describe("provisionDriver / getMyDriver", () => {
     expect(Math.max(...stored.map((event) => event.occurredAt))).toBeLessThanOrEqual(now + DRIVER_EVENT_CLOCK_SKEW_MS);
   });
 
-  test("private profiles are not publicly readable but unlisted profiles are link-visible", async () => {
+  test("provisioning preserves consented unlisted visibility", async () => {
     const t = setup();
-    const as = t.withIdentity({ subject: SUBJECT });
     const other = t.withIdentity({ subject: OTHER });
     const now = Date.now();
-
-    const privateDriver = await as.mutation(api.freightFate.provisionDriver, {
-      displayName: "Private Hauler",
-      visibility: "private",
+    const unlisted = await provisionWithComputer(t, OTHER, {
+      displayName: "Link Hauler",
+      visibility: "unlisted",
+      expandedSharingConsent: true,
       now,
     });
-    expect(await t.query(api.freightFate.getDriverProfile, { driverId: privateDriver.driverId })).toBeNull();
+    const mine = await other.query(api.freightFate.getMyDriver, {});
+    expect(mine).toMatchObject({
+      driverId: unlisted.driverId,
+      visibility: "unlisted",
+      sharingEnabled: true,
+    });
+  });
 
+  test("unlisted profiles accept journal events and remain link-visible but unlisted", async () => {
+    const t = setup();
+    const now = Date.now();
     const unlistedDriver = await provisionWithComputer(t, OTHER, {
       displayName: "Link Hauler",
       visibility: "unlisted",
       expandedSharingConsent: true,
       now,
     });
-    const posted = await t.mutation(api.freightFate.recordDriverEvent, {
+    const auth = {
       driverId: unlistedDriver.driverId,
       driverTokenHash: await sha256Hex(unlistedDriver.token),
+    };
+    const posted = await t.mutation(api.freightFate.recordDriverEvent, {
+      ...auth,
       eventId: "delivery",
       eventType: "delivery",
       summary: "Delivered canned goods to Chicago",
@@ -508,10 +520,86 @@ describe("provisionDriver / getMyDriver", () => {
       now,
     });
     expect(posted.ok).toBe(true);
+    await expect(t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth,
+      eventId: "structured-delivery",
+      occurredAt: now,
+      now,
+      payload: {
+        version: 1,
+        cargo: "canned goods",
+        weightPounds: 24_000,
+        origin: "Detroit, Michigan",
+        destination: "Chicago, Illinois",
+        distanceMiles: 284,
+        onTime: true,
+      },
+    })).resolves.toMatchObject({ ok: true, duplicate: false });
 
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: unlistedDriver.driverId });
     expect(profile?.driver.displayName).toBe("Link Hauler");
-    expect(profile?.events).toHaveLength(1);
+    expect(profile?.events).toHaveLength(2);
+
+    await expect(t.mutation(api.freightFate.updatePresence, {
+      ...auth,
+      activity: "Hauling",
+      detail: "Link-only driver",
+      now,
+    })).resolves.toMatchObject({ ok: true });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toEqual([]);
+    expect((await t.query(api.freightFate.getPublicUpdates, {})).updates)
+      .toEqual([]);
+  });
+
+  test("consented private profiles reject journal events and remain hidden from links and listings", async () => {
+    const t = setup();
+    const now = Date.now();
+    const privateDriver = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Private Hauler",
+      visibility: "private",
+      expandedSharingConsent: true,
+      now,
+    });
+    const auth = {
+      driverId: privateDriver.driverId,
+      driverTokenHash: await sha256Hex(privateDriver.token),
+    };
+
+    await expect(t.mutation(api.freightFate.recordDriverEvent, {
+      ...auth,
+      eventId: "private-delivery",
+      eventType: "delivery",
+      summary: "Private delivery",
+      occurredAt: now,
+      now,
+    })).resolves.toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    await expect(t.mutation(api.freightFate.publishDeliveryCompleted, {
+      ...auth,
+      eventId: "private-structured-delivery",
+      occurredAt: now,
+      now,
+      payload: {
+        version: 1,
+        cargo: "private cargo",
+        weightPounds: 12_000,
+        origin: "Detroit, Michigan",
+        destination: "Chicago, Illinois",
+        distanceMiles: 284,
+        onTime: true,
+      },
+    })).resolves.toMatchObject({ ok: false, reason: "sharing_not_enabled" });
+    expect(await t.query(api.freightFate.getDriverProfile, {
+      driverId: privateDriver.driverId,
+    })).toBeNull();
+    await expect(t.mutation(api.freightFate.updatePresence, {
+      ...auth,
+      activity: "Hauling",
+      detail: "Private driver",
+      now,
+    })).resolves.toMatchObject({ ok: true });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now })).drivers)
+      .toEqual([]);
   });
 
   test("re-provision edits the profile in place; only a rotate touches tokens", async () => {
@@ -742,6 +830,137 @@ describe("driver name moderation", () => {
 });
 
 describe("expanded sharing", () => {
+  test("public event projections replace poisoned client prose and omit unknown events", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "safe-journal-driver", displayName: "Safe Journal", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      for (const [index, event] of [
+        {
+          eventId: "delivery-safe", eventType: "delivery_completed",
+          payloadVersion: 1, payload: {
+            version: 1, cargo: "CARGO-PRIVATE-7241", weightPounds: 42_000,
+            origin: "LOCATION-PRIVATE-4921", destination: "DESTINATION-PRIVATE-1278",
+            customer: "CUSTOMER-PRIVATE-8173", value: "VALUE-PRIVATE-9127",
+            fatigue: "FATIGUE-PRIVATE-2819", hos: "HOS-PRIVATE-3912",
+            dispatcherStanding: "DISPATCHER-PRIVATE-4812", distanceMiles: 875,
+            onTime: true,
+          },
+        },
+        {
+          eventId: "achievement-safe", eventType: "achievement_earned",
+          payloadVersion: 1, payload: {
+            achievementKey: "clean_delivery", name: "POISONED ACHIEVEMENT NAME",
+            description: "POISONED ACHIEVEMENT DESCRIPTION",
+          },
+        },
+        {
+          eventId: "achievement-unknown", eventType: "achievement_earned",
+          payloadVersion: 1, payload: { achievementKey: "unknown_poisoned_key" },
+        },
+        { eventId: "legacy-delivery", eventType: "delivery" },
+        { eventId: "unknown-event", eventType: "private_status" },
+      ].entries()) {
+        await ctx.db.insert("freightFateDriverEvents", {
+          driverId: "safe-journal-driver", ...event,
+          summary: "POISONED SUMMARY CASH-PRIVATE-9182 CREDIT-PRIVATE-3817",
+          occurredAt: now - index, createdAt: now,
+        });
+      }
+    });
+
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "safe-journal-driver", limit: 20,
+    });
+    const feed = await t.query(api.freightFate.getPublicUpdates, { limit: 20 });
+    for (const result of [profile?.events, feed.updates]) {
+      expect(result?.map((event) => [event.eventType, event.summary])).toEqual([
+        ["delivery_completed", "Completed a delivery covering 875 miles on time."],
+        ["achievement_earned", "Earned Pretty as a Billboard."],
+        ["delivery_completed", "Completed a delivery."],
+      ]);
+      const json = JSON.stringify(result);
+      for (const sentinel of [
+        "POISONED", "CASH-PRIVATE-9182", "CREDIT-PRIVATE-3817",
+        "LOCATION-PRIVATE-4921", "CARGO-PRIVATE-7241", "CUSTOMER-PRIVATE-8173",
+        "VALUE-PRIVATE-9127", "DESTINATION-PRIVATE-1278", "FATIGUE-PRIVATE-2819",
+        "HOS-PRIVATE-3912", "DISPATCHER-PRIVATE-4812", "unknown_poisoned_key",
+      ]) expect(json).not.toContain(sentinel);
+      expect(result?.every((event) => !("payload" in event))).toBe(true);
+    }
+
+    const firstProfilePage = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "safe-journal-driver", limit: 2,
+    });
+    expect(firstProfilePage?.events).toHaveLength(2);
+    expect(firstProfilePage?.nextBefore).not.toBeNull();
+    const secondProfilePage = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "safe-journal-driver", limit: 2, before: firstProfilePage!.nextBefore!,
+    });
+    expect(secondProfilePage?.events.map((event) => event.summary)).toEqual([
+      "Completed a delivery.",
+    ]);
+
+    const firstFeedPage = await t.query(api.freightFate.getPublicUpdates, { limit: 2 });
+    expect(firstFeedPage.updates).toHaveLength(2);
+    const secondFeedPage = await t.query(api.freightFate.getPublicUpdates, {
+      limit: 2, before: firstFeedPage.nextBefore!,
+    });
+    expect(secondFeedPage.updates.map((event) => event.summary)).toEqual([
+      "Completed a delivery.",
+    ]);
+  });
+
+  test("paginates every canonical account achievement including imports without dates", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "complete-badge-driver", displayName: "Complete Badge", visibility: "unlisted",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, createdAt: now, updatedAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "complete-badge-driver", achievementKey: "clean_delivery",
+        name: "POISONED", description: "POISONED", earnedAt: now, createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "complete-badge-driver", achievementKey: "first_delivery",
+        importSource: "verified_save", importedAt: now, createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "complete-badge-driver", achievementKey: "coast_to_coast",
+        importSource: "verified_save", importedAt: now - 1, createdAt: now,
+      });
+    });
+
+    const first = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "complete-badge-driver", achievementLimit: 2,
+    });
+    expect(first?.achievementCount).toBe(3);
+    expect(first?.recentAchievements.map((item) => item.achievementKey)).toEqual(["clean_delivery"]);
+    expect(first?.achievements).toEqual([
+      expect.objectContaining({ achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: now }),
+      expect.objectContaining({ achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" }),
+    ]);
+    expect(first?.achievements[1]).not.toHaveProperty("earnedAt");
+    expect(first?.nextAchievementBefore).not.toBeNull();
+
+    const second = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "complete-badge-driver", achievementLimit: 2,
+      achievementBefore: first!.nextAchievementBefore!,
+    });
+    expect(second?.achievements).toEqual([
+      expect.objectContaining({ achievementKey: "coast_to_coast", label: "Coast-to-Coast Hauler" }),
+    ]);
+    expect(second?.nextAchievementBefore).toBeNull();
+    expect([...first!.achievements, ...second!.achievements]).toHaveLength(first!.achievementCount);
+  });
+
   test("legacy consent cannot publish or expose expanded profile data", async () => {
     const t = setup();
     const as = t.withIdentity({ subject: SUBJECT });
@@ -785,7 +1004,8 @@ describe("expanded sharing", () => {
       payload: { version: 1, cargo: "produce", weightPounds: 30000, origin: "Omaha, Nebraska", destination: "Chicago, Illinois", distanceMiles: 470, onTime: true },
     })).toMatchObject({ ok: true, duplicate: false });
     const profile = await t.query(api.freightFate.getDriverProfile, { driverId: provisioned.driverId });
-    expect(profile?.snapshot).toMatchObject({ level: 7, lastSavedCity: "Denver, Colorado", deliveries: 22 });
+    expect(profile?.snapshot).toMatchObject({ level: 7, deliveries: 22 });
+    expect(profile?.snapshot).not.toHaveProperty("lastSavedCity");
     expect(profile?.snapshot).not.toHaveProperty("future");
     const firstPage = await t.query(api.freightFate.getPublicUpdates, { limit: 1 });
     expect(firstPage.updates.map((event) => event.eventId)).toEqual(["delivery-22"]);
@@ -897,6 +1117,88 @@ describe("expanded sharing", () => {
     await beat(now + 33 * minute);
     expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 33 * minute })).drivers)
       .toEqual([]);
+  });
+
+  test("rejects achievement event keys outside the exported catalog", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    const provisioned = await provisionWithComputer(t, "achievement-key-user", {
+      displayName: "Catalog Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now,
+    });
+    const auth = {
+      driverId: provisioned.driverId,
+      driverTokenHash: await sha256Hex(provisioned.token),
+    };
+
+    await expect(t.mutation(api.freightFate.publishAchievementEarned, {
+      ...auth,
+      eventId: "achievement-invented",
+      achievementKey: "invented_achievement",
+      name: "Invented",
+      description: "Not in the Freight Fate catalog.",
+      earnedAt: now,
+      now,
+    })).resolves.toMatchObject({ ok: false, reason: "invalid_achievement" });
+    await t.run(async (ctx) => {
+      expect(await ctx.db.query("freightFateAchievements").collect()).toEqual([]);
+      expect(await ctx.db.query("freightFateDriverEvents").collect()).toEqual([]);
+    });
+  });
+
+  test("counts and returns only catalog achievements from a bounded account set", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "bounded-badges",
+        displayName: "Bounded Badges",
+        visibility: "public",
+        driverTokenHash: "hash",
+        sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      for (let index = 0; index < invariants.achievementIds.length + 25; index += 1) {
+        await ctx.db.insert("freightFateAchievements", {
+          driverId: "bounded-badges",
+          achievementKey: `invalid-${index.toString().padStart(3, "0")}`,
+          name: "Invalid",
+          description: "Historical invalid row",
+          earnedAt: now + index,
+          createdAt: now,
+        });
+      }
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "bounded-badges",
+        achievementKey: "clean_delivery",
+        name: "Clean Delivery",
+        description: "Delivered without damage.",
+        earnedAt: now - 1,
+        createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "bounded-badges",
+        achievementKey: "first_delivery",
+        name: "First Delivery",
+        description: "Completed a first delivery.",
+        earnedAt: now - 2,
+        createdAt: now,
+      });
+    });
+
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "bounded-badges",
+      limit: 20,
+    });
+    expect(profile?.achievementCount).toBe(2);
+    expect(profile?.achievements.map((badge) => badge.achievementKey))
+      .toEqual(["clean_delivery", "first_delivery"]);
+    expect(profile?.achievements.every((badge) =>
+      invariants.achievementIds.includes(badge.achievementKey))).toBe(true);
   });
 
   test("cursor pagination has no gaps for equal timestamps", async () => {
@@ -1045,15 +1347,134 @@ describe("expanded sharing", () => {
         driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
         sharingConsentedAt: now, createdAt: now, updatedAt: now,
       });
-      for (const [key, earnedAt] of [["b-mid", now], ["a-first", now], ["c-last", now], ["z-older", now - 500]] as const) {
+      for (const [key, earnedAt] of [
+        ["coast_to_coast", now],
+        ["clean_delivery", now],
+        ["first_delivery", now],
+        ["abilene_arrival", now - 500],
+      ] as const) {
         await ctx.db.insert("freightFateAchievements", {
           driverId: "badge-driver", achievementKey: key, name: key,
           description: key, earnedAt, createdAt: now,
         });
       }
     });
-    const profile = await t.query(api.freightFate.getDriverProfile, { driverId: "badge-driver", limit: 2 });
-    expect(profile!.achievements.map((badge) => badge.achievementKey)).toEqual(["c-last", "b-mid"]);
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "badge-driver", achievementLimit: 2,
+    });
+    expect(profile!.achievements.map((badge) => badge.achievementKey))
+      .toEqual(["first_delivery", "coast_to_coast"]);
+  });
+
+  test("returns the richer allowlisted snapshot and account achievement total", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "resume-driver", displayName: "Resume Driver", visibility: "public",
+        driverTokenHash: "hash", sharingConsentVersion: SHARING_CONSENT_VERSION,
+        sharingConsentedAt: now, publicSaveName: "Working Career",
+        createdAt: now, updatedAt: now,
+      });
+      await ctx.db.insert("freightFateProfileSnapshots", {
+        driverId: "resume-driver", version: 1, saveName: "Working Career",
+        businessStatus: "leased_owner_operator",
+        employmentStatus: "Leased-on owner-operator",
+        businessIdentity: "Leased-on owner-operator with Northstar Freight Lines",
+        carrierName: "Northstar Freight Lines", level: 18,
+        careerTitle: "Leased-On Owner-Operator", lastSavedCity: "Chicago, Illinois",
+        truckName: "ridgeline sleeper", truckIsCarrierAssigned: false,
+        deliveries: 100, milesDriven: 80_000, reputation: 92,
+        onTimeDeliveries: 93, onTimeRate: 93,
+        damageFreeDeliveries: 88, damageFreeRate: 88,
+        citiesVisited: 120, statesVisited: 35, longestHaulMiles: 1_400,
+        safetyRecord: {
+          citations: 1, seriousViolations: 0, majorOffenses: 0, fatigueEvents: 0,
+          cargoClaims: 1, preventableEquipmentDamage: 1,
+          carrierTerminations: 0, repossessions: 0,
+        },
+        lifetimeEarnings: 750_000, netWorth: 186_000, netWorthComplete: true,
+        badgesEarned: 1, endorsements: ["Hazmat"],
+        meaningfulPlayedAt: now - 1_000, capturedAt: now, updatedAt: now,
+        sourceSaveName: "Working Career", sourceRevision: 3, validatorVersion: 1,
+        future: {
+          currentCash: "CASH-PRIVATE-9182", availableCredit: "CREDIT-PRIVATE-3817",
+          preciseLocation: "LOCATION-PRIVATE-4921", activeCargo: "CARGO-PRIVATE-7241",
+          customer: "CUSTOMER-PRIVATE-8173", cargoValue: "VALUE-PRIVATE-9127",
+          destination: "DESTINATION-PRIVATE-1278", fatigue: "FATIGUE-PRIVATE-2819",
+          hos: "HOS-PRIVATE-3912", dispatcherStanding: "DISPATCHER-PRIVATE-4812",
+        },
+      });
+      await ctx.db.insert("freightFatePresence", {
+        driverId: "resume-driver", activity: "DESTINATION-PRIVATE-1278",
+        detail: "LOCATION-PRIVATE-4921 CARGO-PRIVATE-7241",
+        updatedAt: now, changedAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "clean_delivery",
+        name: "POISONED STORED NAME", description: "POISONED STORED DESCRIPTION",
+        earnedAt: now - 2_000, createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "first_delivery",
+        importSource: "verified_save", importedAt: now, createdAt: now,
+      });
+      await ctx.db.insert("freightFateAchievements", {
+        driverId: "resume-driver", achievementKey: "unknown_poisoned_key",
+        name: "UNKNOWN POISONED NAME", description: "UNKNOWN POISONED DESCRIPTION",
+        earnedAt: now - 1_000, createdAt: now,
+      });
+    });
+
+    const profile = await t.query(api.freightFate.getDriverProfile, {
+      driverId: "resume-driver", limit: 3, now,
+    });
+    expect(profile?.snapshot).toMatchObject({
+      saveName: "Working Career",
+      businessStatus: "leased_owner_operator",
+      employmentStatus: "Leased-on owner-operator",
+      businessIdentity: "Leased-on owner-operator with Northstar Freight Lines",
+      carrierName: "Northstar Freight Lines",
+      careerTitle: "Leased-On Owner-Operator",
+      truckName: "ridgeline sleeper",
+      truckIsCarrierAssigned: false,
+      onTimeRate: 93,
+      damageFreeRate: 88,
+      safetyRecord: { citations: 1, cargoClaims: 1 },
+      citiesVisited: 120,
+      statesVisited: 35,
+      longestHaulMiles: 1_400,
+      lifetimeEarnings: 750_000,
+      netWorth: 186_000,
+      netWorthComplete: true,
+      meaningfulPlayedAt: now - 1_000,
+      capturedAt: now,
+    });
+    expect(profile?.achievementCount).toBe(2);
+    expect(profile?.recentAchievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery"]);
+    expect(profile?.achievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery", "first_delivery"]);
+    expect(profile?.achievements).toEqual([
+      expect.objectContaining({ achievementKey: "clean_delivery", label: "Pretty as a Billboard" }),
+      expect.objectContaining({ achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" }),
+    ]);
+    expect(profile?.achievements[0]).not.toHaveProperty("name");
+    expect(profile?.achievements[0]).not.toHaveProperty("description");
+    expect(JSON.stringify(profile)).not.toContain("POISONED");
+    for (const sentinel of [
+      "CASH-PRIVATE-9182", "CREDIT-PRIVATE-3817", "LOCATION-PRIVATE-4921",
+      "CARGO-PRIVATE-7241", "CUSTOMER-PRIVATE-8173", "VALUE-PRIVATE-9127",
+      "DESTINATION-PRIVATE-1278", "FATIGUE-PRIVATE-2819", "HOS-PRIVATE-3912",
+      "DISPATCHER-PRIVATE-4812",
+    ]) expect(JSON.stringify(profile)).not.toContain(sentinel);
+    expect(profile?.snapshot).not.toHaveProperty("sourceSaveName");
+    expect(profile?.snapshot).not.toHaveProperty("lastSavedCity");
+    expect(profile?.snapshot?.safetyRecord).not.toHaveProperty("fatigueEvents");
+    for (const privateKey of [
+      "money", "currentCash", "availableCredit", "activeTrip", "fatigue", "hos",
+      "dispatcherStanding",
+    ]) {
+      expect(profile?.snapshot).not.toHaveProperty(privateKey);
+    }
   });
 });
 

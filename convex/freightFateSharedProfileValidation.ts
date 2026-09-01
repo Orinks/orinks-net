@@ -228,6 +228,52 @@ function validateHos(value: unknown) {
     || (typeof hos.split_credit_key === "string" && hos.split_credit_key.length <= 4096);
 }
 
+function validateOptionalProjectionFacts(
+  payload: JsonObject,
+  career: JsonObject,
+  achievementStats: JsonObject,
+) {
+  const deliveries = career.deliveries as number;
+  const totalMiles = career.total_miles as number;
+  if ("damage_free_deliveries" in achievementStats
+    && !integer(achievementStats.damage_free_deliveries, 0, deliveries)) return false;
+  if ("longest_haul_miles" in achievementStats
+    && !finite(achievementStats.longest_haul_miles, 0, totalMiles)) return false;
+  if ("cargo_claims" in achievementStats
+    && !integer(achievementStats.cargo_claims, 0, deliveries)) return false;
+  if ("preventable_equipment_damage" in achievementStats
+    && !integer(achievementStats.preventable_equipment_damage, 0, 1_000_000)) return false;
+  if ("cities_delivered" in achievementStats) {
+    const cities = achievementStats.cities_delivered;
+    if (!Array.isArray(cities)
+      || cities.some((city) => typeof city !== "string" || city.length === 0 || city.length > 128)
+      || new Set(cities).size !== cities.length) return false;
+  }
+
+  if ("owned_trailers" in payload) {
+    const trailers = payload.owned_trailers;
+    if (!Array.isArray(trailers) || trailers.length > 32
+      || trailers.some((trailer) => typeof trailer !== "string"
+        || trailer.length === 0 || trailer.length > 128)
+      || new Set(trailers).size !== trailers.length) return false;
+  }
+  return true;
+}
+
+function validateOptionalDrivingRecord(payload: JsonObject) {
+  if (!("driving_record" in payload)) return true;
+  const record = object(payload.driving_record);
+  if (!record) return false;
+  const violationTimes = [record.serious_violations, record.major_offenses];
+  if (violationTimes.some((times) => !Array.isArray(times)
+    || times.some((at) => !finite(at, 0, payload.game_hours as number)))) return false;
+  for (const field of ["citations", "fatigue_events", "repossessions", "carrier_terminations"]) {
+    if (!integer(record[field], 0, 1_000_000)) return false;
+  }
+  return !(("fines_paid" in record && !finite(record.fines_paid, 0, 100_000_000))
+    || ("suspended_until_h" in record && !finite(record.suspended_until_h, 0, 10_000_000)));
+}
+
 export function validateSharedProfile(value: unknown, saveName: string): SharedProfileValidation {
   const payload = object(value);
   if (!payload || !safeJson(payload)) {
@@ -423,6 +469,13 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     || new Set(achievements).size !== achievements.length
     || !object(payload.achievement_stats)) {
     return failure("invalid_achievement", "The cloud backup has an unreadable achievement record.");
+  }
+  const achievementStats = object(payload.achievement_stats)!;
+  if (!validateOptionalProjectionFacts(payload, career, achievementStats)) {
+    return failure("invalid_achievement", "The cloud backup has an unreadable achievement record.");
+  }
+  if (!validateOptionalDrivingRecord(payload)) {
+    return failure("invalid_range", "The cloud backup safety record is outside its allowed range.");
   }
   if (!(payload.active_trip === null || object(payload.active_trip))
     || !(payload.dispatch_board_cache === null || object(payload.dispatch_board_cache))) {

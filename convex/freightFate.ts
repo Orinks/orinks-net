@@ -4,7 +4,16 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
-import invariants from "../data/freight-fate-profile-invariants.json";
+import {
+  accountAchievementPage,
+  publicDriverEvent,
+  publicVerifiedSnapshot,
+  recentEarnedAchievements,
+} from "./freightFateProfileProjection";
+import {
+  FREIGHT_FATE_ACHIEVEMENT_ID_SET,
+} from "./freightFateProfileCatalog";
+import { readCatalogAchievements } from "./freightFateProfileAchievements";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -35,6 +44,19 @@ export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
 export const MAX_DRIVER_EVENTS = 50;
 export const SHARING_CONSENT_VERSION = 3;
+
+export function freightFateProfileLinkVisible(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return driver.sharingConsentVersion === SHARING_CONSENT_VERSION
+    && (driver.visibility === "public" || driver.visibility === "unlisted");
+}
+
+export function freightFateProfilePubliclyListed(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return freightFateProfileLinkVisible(driver) && driver.visibility === "public";
+}
 
 // --- Account-issued driver identity (Clerk) ---
 //
@@ -280,7 +302,7 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
     return { error: "unauthorized" as const };
   }
-  if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION || driver.visibility !== "public") {
+  if (!freightFateProfileLinkVisible(driver)) {
     return { error: "sharing_not_enabled" as const };
   }
   return { driver };
@@ -317,8 +339,7 @@ export const getMyDriver = query({
       updatedAt: driver.updatedAt,
       hasToken: driver.driverTokenHash !== undefined || anyDevice !== null,
       needsRename: driver.needsRename === true,
-      sharingEnabled:
-        driver.sharingConsentVersion === SHARING_CONSENT_VERSION && driver.visibility === "public",
+      sharingEnabled: freightFateProfileLinkVisible(driver),
     };
   },
 });
@@ -383,7 +404,7 @@ export const provisionDriver = mutation({
         displayName,
         visibility:
           args.expandedSharingConsent === true
-            ? "public"
+            ? args.visibility
             : args.expandedSharingConsent === false
               ? "private"
               : existing.visibility,
@@ -439,7 +460,7 @@ export const provisionDriver = mutation({
     await ctx.db.insert("freightFateDrivers", {
       driverId,
       displayName,
-      visibility: args.expandedSharingConsent ? "public" : "private",
+      visibility: args.expandedSharingConsent ? args.visibility : "private",
       authSubject: identity.subject,
       ...(args.expandedSharingConsent
         ? { sharingConsentVersion: SHARING_CONSENT_VERSION, sharingConsentedAt: args.now }
@@ -562,7 +583,7 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "unauthorized" };
     }
 
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
 
@@ -859,8 +880,7 @@ export const getPresenceBoard = query({
         .unique();
       if (
         !driver ||
-        driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+        !freightFateProfilePubliclyListed(driver) ||
         driver.integrityFlag
       ) {
         continue;
@@ -1013,6 +1033,9 @@ export const publishAchievementEarned = mutation({
       ...args, scope: "driver-event", limit: DRIVER_EVENT_WRITE_LIMIT,
     });
     if ("error" in auth) return { ok: false as const, reason: auth.error };
+    if (!FREIGHT_FATE_ACHIEVEMENT_ID_SET.has(args.achievementKey)) {
+      return { ok: false as const, reason: "invalid_achievement" as const };
+    }
     const existing = await ctx.db.query("freightFateAchievements")
       .withIndex("by_driver_achievement", (q) => q.eq("driverId", args.driverId).eq("achievementKey", args.achievementKey)).unique();
     if (existing) return { ok: true as const, duplicate: true, driverId: args.driverId };
@@ -1020,13 +1043,13 @@ export const publishAchievementEarned = mutation({
     const name = cleanFact(args.name, 100);
     const description = cleanFact(args.description, 240);
     await ctx.db.insert("freightFateAchievements", {
-      driverId: args.driverId, achievementKey: cleanFact(args.achievementKey, 96),
+      driverId: args.driverId, achievementKey: args.achievementKey,
       name, description, earnedAt, createdAt: args.now,
     });
     await ctx.db.insert("freightFateDriverEvents", {
       driverId: args.driverId, eventId: cleanFact(args.eventId, 96),
       eventType: "achievement_earned", summary: `${name}: ${description}`.slice(0, 280),
-      payloadVersion: 1, payload: { achievementKey: cleanFact(args.achievementKey, 96), name, description },
+      payloadVersion: 1, payload: { achievementKey: args.achievementKey, name, description },
       occurredAt: earnedAt, createdAt: args.now,
     });
     await pruneDriverEvents(ctx, args.driverId);
@@ -1090,10 +1113,15 @@ export const getPublicUpdates = query({
           .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
         drivers.set(row.driverId, driver);
       }
-      if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+      if (!driver || !freightFateProfilePubliclyListed(driver) ||
           driver.integrityFlag) continue;
-      updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      updates.push({
+        ...event,
+        driverId: row.driverId,
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+      });
       if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     updates.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -1108,6 +1136,8 @@ export const getDriverProfile = query({
     driverId: v.string(),
     limit: v.optional(v.number()),
     before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })),
+    achievementLimit: v.optional(v.number()),
+    achievementBefore: v.optional(v.object({ sortAt: v.number(), achievementKey: v.string() })),
     now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -1120,11 +1150,7 @@ export const getDriverProfile = query({
       return null;
     }
 
-    if (driver.visibility === "private") {
-      return null;
-    }
-
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return null;
     }
 
@@ -1157,7 +1183,9 @@ export const getDriverProfile = query({
       .order("desc")) {
       if (boundaryOccurredAt !== null && row.occurredAt !== boundaryOccurredAt) break;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
-      collected.push(row);
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      collected.push(event);
       if (collected.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     collected.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -1177,21 +1205,11 @@ export const getDriverProfile = query({
       && (presenceRow.changedAt ?? presenceBeat.updatedAt) >= args.now - PRESENCE_IDLE_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceBeat.updatedAt }
       : null;
-    // Same shape as the events above: earnedAt ties break by achievementKey,
-    // which the index does not order by, so the boundary tie group is read in
-    // full and the rest of the shelf is left on disk.
-    const earned = [];
-    let boundaryEarnedAt: number | null = null;
-    for await (const row of ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver_earned", (q) => q.eq("driverId", args.driverId))
-      .order("desc")) {
-      if (boundaryEarnedAt !== null && row.earnedAt !== boundaryEarnedAt) break;
-      earned.push(row);
-      if (earned.length > limit && boundaryEarnedAt === null) boundaryEarnedAt = row.earnedAt;
-    }
-    const achievements = earned
-      .sort((a, b) => b.earnedAt - a.earnedAt || b.achievementKey.localeCompare(a.achievementKey))
-      .slice(0, limit);
+    const accountAchievements = await readCatalogAchievements(ctx, args.driverId);
+    const achievementLimit = Math.min(Math.max(args.achievementLimit ?? 20, 1), 50);
+    const achievementPage = accountAchievementPage(
+      accountAchievements, achievementLimit, args.achievementBefore,
+    );
 
     return {
       driver: {
@@ -1206,23 +1224,10 @@ export const getDriverProfile = query({
       nextBefore: collected.length > limit && events.at(-1) ? {
         occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
       } : null,
-      snapshot: snapshot?.sourceRevision && snapshot.validatorVersion ? {
-        version: snapshot.version, level: snapshot.level, careerTitle: snapshot.careerTitle,
-        lastSavedCity: snapshot.lastSavedCity, deliveries: snapshot.deliveries,
-        milesDriven: snapshot.milesDriven, reputation: snapshot.reputation,
-        onTimeDeliveries: snapshot.onTimeDeliveries, truckName: snapshot.truckName,
-        employmentStatus: snapshot.employmentStatus, capturedAt: snapshot.capturedAt,
-        // 1.9 career data. lifetimeEarnings is the career's running earnings
-        // total — never the current money balance, which is not stored here
-        // at all. badgeCatalogSize rides along so the page can say "of N"
-        // from the same export that validated the badges.
-        lifetimeEarnings: snapshot.lifetimeEarnings, badgesEarned: snapshot.badgesEarned,
-        badgeCatalogSize: snapshot.badgesEarned === undefined
-          ? undefined
-          : invariants.achievementIds.length,
-        endorsements: snapshot.endorsements, fleetTier: snapshot.fleetTier,
-      } : null,
-      achievements,
+      snapshot: publicVerifiedSnapshot(snapshot),
+      achievementCount: accountAchievements.length,
+      recentAchievements: recentEarnedAchievements(accountAchievements, 3),
+      ...achievementPage,
       presence,
     };
   },

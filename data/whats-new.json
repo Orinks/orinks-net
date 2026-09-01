@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-08-31-freight-fate-driver-resumes",
+      "date": "2026-08-31",
+      "project": "Freight Fate",
+      "title": "Driver profiles now follow your current career",
+      "body": [
+        "Freight Fate driver profiles now show the current career selected by meaningful play, with its career identity, verified lifetime resume, net worth, achievement total, recent achievements, and road-journal activity. Opening or browsing another career does not change the profile; playing it meaningfully does.",
+        "Profile sharing still controls the whole public profile. Cloud Backup remains private and automatically keeps up to ten careers, while current cash, available credit, precise location, exact cargo, customer, cargo value and destination, fatigue, exact hours-of-service state, and dispatcher standing stay private."
+      ],
+      "link": {
+        "href": "/freight-fate/online/privacy",
+        "label": "Review Freight Fate profile and backup privacy"
+      }
+    },
+    {
       "id": "2026-08-29-freight-fate-live-drivers-board",
       "date": "2026-08-29",
       "project": "Freight Fate",
