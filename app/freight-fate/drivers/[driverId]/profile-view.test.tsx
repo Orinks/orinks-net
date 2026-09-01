@@ -62,7 +62,7 @@ describe("driver profile routes", () => {
   test("renders the identity-first overview with ordered semantic sections and facts", async () => {
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
     expect(Array.from(document.querySelectorAll("h1"), (heading) => heading.textContent)).toEqual(["Road Star"]);
-    expect(Array.from(document.querySelectorAll("h2"), (heading) => heading.textContent)).toEqual(["Current career", "Current career resume", "Account-wide achievements", "Road journal"]);
+    expect(Array.from(document.querySelectorAll("h2"), (heading) => heading.textContent)).toEqual(["Current career", "Current career resume", "Achievements", "Road journal"]);
     const lists = document.querySelectorAll("dl");
     expect(lists).toHaveLength(2);
     for (const list of lists) for (const row of Array.from(list.children)) {
@@ -71,6 +71,8 @@ describe("driver profile routes", () => {
     }
     expect(lists[0].textContent).toContain("Career nameNorthbound Career");
     expect(lists[0].textContent).toContain("Career titleLeased-On Owner-Operator");
+    expect(lists[0].textContent).toContain("EmploymentLeased-on owner-operator with Northstar Freight Lines");
+    expect(lists[0].textContent).not.toContain("Employment or business identity");
     expect(lists[0].textContent).toContain("TractorRidgeline Sleeper (owned)");
     for (const label of ["Lifetime deliveries", "Lifetime miles", "On-time percentage", "Damage-free percentage", "Safety record", "States visited", "Cities visited", "Longest haul", "Lifetime career earnings", "Net worth"]) expect(lists[1].textContent).toContain(label);
     expect(lists[1].textContent).toContain("On-time percentage0%");
@@ -89,11 +91,26 @@ describe("driver profile routes", () => {
   test("uses ordinary lists for newest canonical achievements and recent journal activity", async () => {
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
     const headings = Array.from(document.querySelectorAll("h2"));
-    const achievements = headings.find((node) => node.textContent === "Account-wide achievements")!.parentElement!;
+    const achievements = headings.find((node) => node.textContent === "Achievements")!.parentElement!;
     const journal = headings.find((node) => node.textContent === "Road journal")!.parentElement!;
-    expect(achievements.textContent).toContain("4 account-wide achievements");
+    expect(achievements.textContent).toContain("4 achievements");
     expect(Array.from(achievements.querySelectorAll("ul > li"), (item) => item.textContent)).toEqual([expect.stringContaining("Pretty as a Billboard"), expect.stringContaining("Signed, Sealed, Hauled")]);
+    const firstAchievement = achievements.querySelector("ul > li")!;
+    expect(Array.from(firstAchievement.children, (child) => [child.tagName, child.textContent])).toEqual([
+      ["H3", "Pretty as a Billboard"],
+      ["P", expect.stringMatching(/^Earned /)],
+    ]);
+    expect(firstAchievement.textContent).not.toContain("Pretty as a Billboard. Earned");
+    expect(firstAchievement.querySelector("time")?.getAttribute("datetime")).toBeTruthy();
     expect(Array.from(journal.querySelectorAll("ul > li"), (item) => item.textContent)).toEqual([expect.stringContaining("Steel delivered safely."), expect.stringContaining("Reached level 18.")]);
+    const firstJournalEntry = journal.querySelector("ul > li")!;
+    expect(Array.from(firstJournalEntry.children, (child) => [child.tagName, child.textContent])).toEqual([
+      ["H3", "delivery completed"],
+      ["P", "Steel delivered safely."],
+      ["P", expect.stringContaining("January")],
+    ]);
+    expect(firstJournalEntry.textContent).not.toContain("delivery completed. Steel delivered safely.");
+    expect(firstJournalEntry.querySelector("time")?.getAttribute("datetime")).toBeTruthy();
     expect(document.querySelector('[role="list"]')).toBeNull();
     expect(document.querySelector('[role="tab"]')).toBeNull();
     expect(document.querySelector(".sr-only")).toBeNull();
@@ -109,7 +126,7 @@ describe("driver profile routes", () => {
   test("omits unavailable legacy facts without inventing values", async () => {
     getProfile.mockResolvedValue({ ...completeProfile, snapshot: { version: 1, level: 4, careerTitle: "Level 4 driver", deliveries: 12, milesDriven: 2_345, reputation: 80, capturedAt: 1_800_000_000_000 } });
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
-    expect(Array.from(document.querySelectorAll("h2"), (node) => node.textContent)).toEqual(["Current career", "Current career resume", "Account-wide achievements", "Road journal"]);
+    expect(Array.from(document.querySelectorAll("h2"), (node) => node.textContent)).toEqual(["Current career", "Current career resume", "Achievements", "Road journal"]);
     expect(document.body.textContent).toContain("Career titleLevel 4 driver");
     expect(document.body.textContent).not.toMatch(/Unknown|undefined|Net worth|Damage-free percentage/);
   });
@@ -119,7 +136,7 @@ describe("driver profile routes", () => {
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
     expect(document.body.textContent).toContain("No current career has been shared yet.");
     expect(document.body.textContent).toContain("No current career resume has been shared yet.");
-    expect(document.body.textContent).toContain("No account-wide achievements yet.");
+    expect(document.body.textContent).toContain("No achievements yet.");
   });
 
   test.each(["overview", "road-journal", "achievements"] as const)("marks only the current %s route", async (section) => {
@@ -141,11 +158,18 @@ describe("driver profile routes", () => {
       nextAchievementBefore: { sortAt: -1, achievementKey: "first_delivery" },
     });
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "achievements" })));
-    expect(document.body.textContent).toContain("2 account-wide achievements");
+    expect(document.body.textContent).toContain("2 achievements");
     expect(document.body.textContent).toContain("Signed, Sealed, Hauled");
     expect(document.body.textContent).not.toContain("Invalid Date");
-    const pagination = document.querySelector('nav[aria-label="Account-wide achievements pagination"]')!;
-    expect(pagination.querySelector("a")?.textContent).toBe("Older account-wide achievements");
+    const pagination = document.querySelector('nav[aria-label="Achievements pagination"]')!;
+    expect(pagination.querySelector("a")?.textContent).toBe("Older achievements");
+  });
+
+  test("uses concise achievement link wording", async () => {
+    const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    const links = Array.from(document.querySelectorAll("a"))
+      .filter((candidate) => candidate.getAttribute("href")?.endsWith("/achievements"));
+    expect(links.map((link) => link.textContent)).toEqual(["Achievements", "View all achievements"]);
   });
 
   test("uses singular achievement wording", async () => {
@@ -156,9 +180,33 @@ describe("driver profile routes", () => {
     });
     const overview = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
     const shelf = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "achievements" })));
-    expect(overview.body.textContent).toContain("1 account-wide achievement.");
-    expect(shelf.body.textContent).toContain("1 account-wide achievement.");
-    expect(overview.body.textContent).not.toContain("1 account-wide achievements");
+    expect(overview.body.textContent).toContain("1 achievement.");
+    expect(shelf.body.textContent).toContain("1 achievement.");
+    expect(overview.body.textContent).not.toContain("1 achievements");
+  });
+
+  test("displays public career statistics as whole numbers", async () => {
+    getProfile.mockResolvedValue({
+      ...completeProfile,
+      snapshot: {
+        ...completeProfile.snapshot!,
+        milesDriven: 68_432.7,
+        onTimeRate: 94.6,
+        damageFreeRate: 89.8,
+        longestHaulMiles: 1_842.4,
+        reputation: 91.6,
+      },
+    });
+    const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    const text = document.body.textContent ?? "";
+    for (const expected of [
+      "Lifetime miles68,433",
+      "On-time percentage95%",
+      "Damage-free percentage90%",
+      "Longest haul1,842 miles",
+      "Reputation92 out of 100",
+    ]) expect(text).toContain(expected);
+    expect(text).not.toMatch(/68,432\.7|94\.6%|89\.8%|1,842\.4 miles|91\.6 out of 100/);
   });
 
   test("uses an identical non-leaking unavailable presentation", async () => {

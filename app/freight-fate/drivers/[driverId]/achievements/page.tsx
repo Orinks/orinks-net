@@ -8,7 +8,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Pick<Props, "params">): Promise<Metadata> {
   const profile = await safeProfile((await params).driverId);
-  return profile ? { title: `Account-wide achievements for ${profile.driver.displayName}` } : { title: "Freight Fate Profile Unavailable" };
+  return profile ? { title: `Achievements for ${profile.driver.displayName}` } : { title: "Freight Fate Profile Unavailable" };
 }
 
 export default async function Page({ params, searchParams }: Props) {
