@@ -135,10 +135,12 @@ immediately, and the designated career's next accepted backup rebuilds it.
 
 The validator allowlists are generated from the game catalogs into
 `data/freight-fate-profile-invariants.json`. From the Freight Fate repository,
-run `uv run python tools/export_profile_integrity_invariants.py
-../orinks-net/data/freight-fate-profile-invariants.json`, then commit both sides
-of the contract in the same change whenever the game adds a city, achievement,
-truck, upgrade, market cargo key, or save-schema version. Gated possessions
+run `cargo run -p ff-core --bin ff-invariants --
+../orinks-net/data/freight-fate-profile-invariants.json` (the Rust exporter;
+the Python one predates the public profile catalogs and no longer emits
+them), then commit both sides of the contract in the same change whenever
+the game adds a city, achievement, truck, upgrade, market cargo key, save
+field, or save-schema version. Gated possessions
 such as Golden Antlers must not be added until the server can validate their
 grant trail.
 
