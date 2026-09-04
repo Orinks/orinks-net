@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { freightFateSaveSlotName } from "./freight-fate-save-name";
+import { FREIGHT_FATE_PROFILE_SUMMARY_EVENTS, freightFateProfileSummary } from "./freight-fate-profile-summary";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
 import type {
@@ -442,6 +443,43 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
     revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
     tags: [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
   },
+);
+
+/** The game's copy of a public profile: the profile page's sections, trimmed
+ * to what a spoken list reads (see `freightFateProfileSummary`), cached for
+ * the same minute the drivers list is.
+ *
+ * Public and unauthenticated like the presence GET, so it gets the same
+ * treatment: a player arrowing down the drivers list and opening one profile
+ * after another costs the backend one read per driver per minute, not one
+ * per Enter. `driverId` is part of the cache key, so pass it normalized --
+ * the route does -- or two spellings of one driver are two cache entries.
+ *
+ * `configured: false` means no backend is wired up at all (the presence
+ * board's null), which is a different answer from a profile that is hidden:
+ * the first is a 503 the game reads as "could not be reached", the second a
+ * 404 it reads as "not public".
+ */
+export const getFreightFateDriverProfileSummary = unstable_cache(
+  async (driverId: string) => {
+    const client = getConvexClient();
+
+    if (!client) {
+      return { configured: false as const, profile: null };
+    }
+
+    const profile = await client.query(anyApi.freightFate.getDriverProfile, {
+      driverId,
+      limit: FREIGHT_FATE_PROFILE_SUMMARY_EVENTS,
+      // The query's floor; the summary reads recentAchievements, not the page.
+      achievementLimit: 1,
+      now: Date.now(),
+    });
+
+    return { configured: true as const, profile: freightFateProfileSummary(profile) };
+  },
+  ["freight-fate-driver-profile-summary"],
+  { revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS },
 );
 
 export async function getFreightFateDriverProfile(
