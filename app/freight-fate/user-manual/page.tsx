@@ -20,11 +20,14 @@ export default async function UserManualPage() {
     <>
       <PageHeader
         title="Freight Fate User Manual"
-        intro="The full Freight Fate manual for installing, driving, managing a career, using accessibility features, and troubleshooting."
+        intro="The development manual covers installation, driving, careers, accessibility, and troubleshooting. For Career 1.9 tester builds, use the separate Career 1.9 manual linked below."
       />
-      <div className="my-6">
+      <div className="my-6 flex flex-wrap gap-4">
         <ButtonLink href={MANUAL_GITHUB_URL} variant="secondary">
-          Open this manual on GitHub
+          Open the Freight Fate development manual on GitHub
+        </ButtonLink>
+        <ButtonLink href="https://github.com/Orinks/Freight-Fate/blob/feat/career-1.9/docs/user-manual.md" variant="secondary">
+          Open the Freight Fate Career 1.9 manual on GitHub
         </ButtonLink>
       </div>
       <Section>
@@ -32,7 +35,7 @@ export default async function UserManualPage() {
           <div dangerouslySetInnerHTML={{ __html: manualHtml }} />
         ) : (
           <p>
-            The manual could not be loaded here right now. Use the GitHub link above to open the
+            The manual could not be loaded here right now. Use the Freight Fate development manual link above to open the
             current Freight Fate user manual.
           </p>
         )}

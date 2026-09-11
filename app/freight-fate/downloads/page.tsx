@@ -18,11 +18,12 @@ export default function FreightFateDownloadsPage() {
       <Section>
         <p>
           Use the stable release for everyday hauling, or choose a preview snapshot when you want
-          the newest features and fixes before they reach a stable release. Both are portable
-          builds for Windows, macOS, and Linux: unzip and run, no installer required.
+          the newest features and fixes before they reach a stable release. Choose the download
+          for your operating system and processor. Career 1.9 supports Windows, Apple Silicon
+          Macs, and Linux on x64 or ARM64. Linux downloads include archives and AppImages.
         </p>
         <p>
-          <a href="/freight-fate">Back to Freight Fate</a>
+          <a href="/freight-fate/user-manual">Read the installation instructions in the user manual</a>
         </p>
       </Section>
       <ReleaseDownloads
