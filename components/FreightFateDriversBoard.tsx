@@ -54,8 +54,7 @@ export async function FreightFateDriversBoard() {
     <BoardSection>
       <FreightFateDriversBoardLive initial={board} />
       <p>
-        <Link href="/freight-fate/drivers">Driver directory</Link>: every driver with a public
-        profile, and when each was last on duty.
+        <Link href="/freight-fate/drivers">Driver directory</Link>
       </p>
     </BoardSection>
   );
