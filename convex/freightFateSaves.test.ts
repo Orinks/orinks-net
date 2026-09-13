@@ -700,6 +700,8 @@ describe("validated private cloud revisions", () => {
       driving_record: {
         serious_violations: [100, 200], major_offenses: [220], citations: 3,
         fines_paid: 2_500, fatigue_events: 1, repossessions: 0, carrier_terminations: 1,
+        // A second major offense: the career is over, and the profile says so.
+        lifetime_disqualified: true,
       },
     });
     payload.career.xp = 1_200;
@@ -713,6 +715,7 @@ describe("validated private cloud revisions", () => {
       employmentStatus: "Company driver",
       businessIdentity: "Company driver for Northstar Freight Lines",
       carrierName: "Northstar Freight Lines",
+      careerEnded: true,
       level: 2,
       careerTitle: "New Hire Company Driver",
       truckName: "ridgeline sleeper",

@@ -161,6 +161,12 @@ export function buildVerifiedProfileSnapshot(args: {
     .map(([, def]) => def.label);
   const truckLabels = invariants.truckLabels as Record<string, string>;
   const safety = safetyRecord(args.payload);
+  // A second major offense disqualifies the CDL for life (49 CFR 383.51),
+  // and the game keeps the career readable rather than deleting it. The
+  // profile says the career is over, and the last verified career stands
+  // behind it -- the way a real disqualification leaves a record, not a gap.
+  const record = args.payload.driving_record as JsonObject | undefined;
+  const careerEnded = record?.lifetime_disqualified === true;
 
   return {
     driverId: args.driverId,
@@ -192,6 +198,7 @@ export function buildVerifiedProfileSnapshot(args: {
     truckName: truckLabels[args.payload.truck as string],
     ...(businessStatus ? { truckIsCarrierAssigned: businessStatus === "company_driver" } : {}),
     employmentStatus,
+    ...(careerEnded ? { careerEnded } : {}),
     ...(safety ? { safetyRecord: safety } : {}),
     lifetimeEarnings: Math.round(career.total_earnings as number),
     ...netWorthProjection(args.payload, businessStatus),
@@ -244,6 +251,7 @@ export function publicVerifiedSnapshot(
     truckName: snapshot.truckName,
     truckIsCarrierAssigned: snapshot.truckIsCarrierAssigned,
     employmentStatus: snapshot.employmentStatus,
+    careerEnded: snapshot.careerEnded,
     lifetimeEarnings: snapshot.lifetimeEarnings,
     netWorth: snapshot.netWorth,
     netWorthComplete: snapshot.netWorthComplete,

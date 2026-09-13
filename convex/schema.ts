@@ -527,6 +527,8 @@ export default defineSchema({
     truckName: v.optional(v.string()),
     truckIsCarrierAssigned: v.optional(v.boolean()),
     employmentStatus: v.optional(v.string()),
+    // The CDL is disqualified for life; the career is readable, not driven.
+    careerEnded: v.optional(v.boolean()),
     // 1.9 career projection: lifetime career earnings (never the current
     // money balance — that is the game's published promise), badges earned
     // out of the game's catalog, endorsement labels in unlock order, and —

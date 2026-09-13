@@ -137,6 +137,19 @@ describe("driver profile routes", () => {
     expect(document.body.textContent).not.toMatch(/Unknown|undefined|Net worth|Damage-free percentage/);
   });
 
+  test("says when the career is over, before the employment it no longer has", async () => {
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: { ...completeProfile.snapshot, careerEnded: true } });
+    const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    const terms = Array.from(document.querySelectorAll("dt"), (node) => node.textContent);
+    expect(terms.indexOf("Career status")).toBeGreaterThan(-1);
+    expect(terms.indexOf("Career status")).toBeLessThan(terms.indexOf("Employment"));
+    expect(document.body.textContent).toContain("Ended. The CDL is disqualified for life");
+    // A working career never carries the row.
+    getProfile.mockResolvedValue(completeProfile);
+    const working = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    expect(Array.from(working.querySelectorAll("dt"), (node) => node.textContent)).not.toContain("Career status");
+  });
+
   test("keeps no-snapshot and no-achievement profiles useful", async () => {
     getProfile.mockResolvedValue({ ...completeProfile, snapshot: null, achievementCount: 0, recentAchievements: [], achievements: [], nextAchievementBefore: null });
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));

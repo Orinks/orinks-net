@@ -175,6 +175,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
             <h2 className="mb-4 text-2xl font-bold text-ink" id="career-heading">Current career</h2>
             {snapshot ? <FactList facts={[
               ...(snapshot.saveName ? [["Career name", snapshot.saveName] as [string, ReactNode]] : []),
+              ...(snapshot.careerEnded ? [["Career status", "Ended. The CDL is disqualified for life; this is the last career on record."] as [string, ReactNode]] : []),
               ...(snapshot.businessIdentity ? [["Employment", snapshot.businessIdentity] as [string, ReactNode]] : snapshot.employmentStatus ? [["Employment", snapshot.employmentStatus] as [string, ReactNode]] : []),
               ...(snapshot.carrierName ? [["Carrier", snapshot.carrierName] as [string, ReactNode]] : []),
               ["Driver level", snapshot.level.toLocaleString("en-US")],
