@@ -270,8 +270,16 @@ function validateOptionalDrivingRecord(payload: JsonObject) {
   for (const field of ["citations", "fatigue_events", "repossessions", "carrier_terminations"]) {
     if (!integer(record[field], 0, 1_000_000)) return false;
   }
+  // Career 1.9 adds the citation times the carrier's review counts and the
+  // hour that review started; both optional, both career hours like the
+  // violation times above.
+  if ("citation_times" in record && (!Array.isArray(record.citation_times)
+    || record.citation_times.some((at) => !finite(at, 0, payload.game_hours as number)))) {
+    return false;
+  }
   return !(("fines_paid" in record && !finite(record.fines_paid, 0, 100_000_000))
-    || ("suspended_until_h" in record && !finite(record.suspended_until_h, 0, 10_000_000)));
+    || ("suspended_until_h" in record && !finite(record.suspended_until_h, 0, 10_000_000))
+    || ("review_started_h" in record && !finite(record.review_started_h, 0, 10_000_000)));
 }
 
 export function validateSharedProfile(value: unknown, saveName: string): SharedProfileValidation {
