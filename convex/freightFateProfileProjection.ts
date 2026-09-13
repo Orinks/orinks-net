@@ -2,6 +2,7 @@ import type { Doc } from "./_generated/dataModel";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import {
   FREIGHT_FATE_ACHIEVEMENT_LABELS,
+  freightFateAchievementDetail,
   FREIGHT_FATE_ACHIEVEMENT_ID_SET,
   FREIGHT_FATE_CAREER_TITLES,
   FREIGHT_FATE_CARRIER_LABELS,
@@ -271,6 +272,7 @@ export function recentEarnedAchievements(
       _id: row._id,
       achievementKey: row.achievementKey,
       label: FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey],
+      ...freightFateAchievementDetail(row.achievementKey),
       earnedAt: row.earnedAt!,
     }));
 }
@@ -286,6 +288,7 @@ export function accountAchievementPage(
       _id: row._id,
       achievementKey: row.achievementKey,
       label: FREIGHT_FATE_ACHIEVEMENT_LABELS[row.achievementKey],
+      ...freightFateAchievementDetail(row.achievementKey),
       ...(row.earnedAt === undefined ? {} : { earnedAt: row.earnedAt }),
       sortAt: row.earnedAt ?? -1,
     }))

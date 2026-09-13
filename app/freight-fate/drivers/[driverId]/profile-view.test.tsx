@@ -38,11 +38,11 @@ const completeProfile = {
   ],
   achievementCount: 4,
   recentAchievements: [
-    { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: 1_800_000_000_000 },
+    { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", description: "Delivered without a scratch on the load.", category: "Out on the Road", earnedAt: 1_800_000_000_000 },
     { _id: "achievement-old", achievementKey: "first_delivery", label: "Signed, Sealed, Hauled", earnedAt: 1_799_000_000_000 },
   ],
   achievements: [
-    { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: 1_800_000_000_000 },
+    { _id: "achievement-new", achievementKey: "clean_delivery", label: "Pretty as a Billboard", description: "Delivered without a scratch on the load.", category: "Out on the Road", earnedAt: 1_800_000_000_000 },
     { _id: "achievement-old", achievementKey: "first_delivery", label: "Signed, Sealed, Hauled", earnedAt: 1_799_000_000_000 },
   ],
   nextAchievementBefore: { sortAt: -1, achievementKey: "first_delivery" },
@@ -98,8 +98,14 @@ describe("driver profile routes", () => {
     const firstAchievement = achievements.querySelector("ul > li")!;
     expect(Array.from(firstAchievement.children, (child) => [child.tagName, child.textContent])).toEqual([
       ["H3", "Pretty as a Billboard"],
+      ["P", "Delivered without a scratch on the load."],
+      ["P", "Category: Out on the Road"],
       ["P", expect.stringMatching(/^Earned /)],
     ]);
+    // An older backend sends the title and time alone, and the item still
+    // reads cleanly without a blank line where the description would go.
+    const secondAchievement = achievements.querySelectorAll("ul > li")[1]!;
+    expect(Array.from(secondAchievement.children, (child) => child.tagName)).toEqual(["H3", "P"]);
     expect(firstAchievement.textContent).not.toContain("Pretty as a Billboard. Earned");
     expect(firstAchievement.querySelector("time")?.getAttribute("datetime")).toBeTruthy();
     expect(Array.from(journal.querySelectorAll("ul > li"), (item) => item.textContent)).toEqual([expect.stringContaining("Steel delivered safely."), expect.stringContaining("Reached level 18.")]);

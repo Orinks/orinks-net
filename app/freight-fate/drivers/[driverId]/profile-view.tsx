@@ -9,7 +9,7 @@ export type ProfileSection = "overview" | "road-journal" | "achievements";
 export type JournalCursor = { occurredAt: number; eventId: string };
 export type AchievementCursor = { sortAt: number; achievementKey: string };
 type Event = { _id: string; eventId: string; eventType: string; summary: string; occurredAt: number };
-type Achievement = { _id: string; achievementKey: string; label: string; earnedAt: number };
+type Achievement = { _id: string; achievementKey: string; label: string; description?: string; category?: string; earnedAt: number };
 type AccountAchievement = Omit<Achievement, "earnedAt"> & { earnedAt?: number };
 const inlineLinkClass = "font-semibold text-action underline";
 
@@ -88,6 +88,21 @@ function SafetyRecord({ record }: { record: {
     counted(record.repossessions, "repossession"),
   ];
   return <ul className="space-y-1">{parts.map((part) => <li key={part}>{part}</li>)}</ul>;
+}
+
+// What the badge was for and the group it sits in, both from the game's own
+// catalog. The description comes first, so a badge reads as name, then what
+// it was for; the labelled category line keeps a bare group title from being
+// heard as a second name. A profile served by an older backend carries
+// neither, and then the item reads as it always did: the title and when it
+// was earned.
+function AchievementDetail({ item }: { item: { description?: string; category?: string } }) {
+  return (
+    <>
+      {item.description ? <p>{item.description}</p> : null}
+      {item.category ? <p className="text-sm text-slate-600"><strong>Category:</strong> {item.category}</p> : null}
+    </>
+  );
 }
 
 function achievementCountText(count: number) {
@@ -192,10 +207,11 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
             <h2 className="mb-4 text-2xl font-bold text-ink" id="account-achievements-heading">Achievements</h2>
             {profile.achievementCount ? <>
               <p>{achievementCountText(profile.achievementCount)}</p>
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-4 space-y-4">
                 {profile.recentAchievements.map((item: Achievement) => (
                   <li className="min-w-0 [overflow-wrap:anywhere]" key={item._id}>
                     <h3 className="font-bold">{item.label}</h3>
+                    <AchievementDetail item={item} />
                     <p>Earned <Time value={item.earnedAt} />.</p>
                   </li>
                 ))}
@@ -261,6 +277,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
               {profile.achievements.map((item: AccountAchievement) => (
                 <li className="min-w-0 rounded border border-line-strong p-4 [overflow-wrap:anywhere]" key={item._id}>
                   <h3 className="text-lg font-bold">{item.label}</h3>
+                  <AchievementDetail item={item} />
                   <p>{item.earnedAt === undefined ? "Unlocked." : <>Unlocked. Earned <Time value={item.earnedAt} />.</>}</p>
                 </li>
               ))}

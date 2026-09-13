@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import { FREIGHT_FATE_ACHIEVEMENT_DETAILS } from "./freightFateProfileCatalog";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
@@ -1458,7 +1459,15 @@ describe("expanded sharing", () => {
       expect.objectContaining({ achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" }),
     ]);
     expect(profile?.achievements[0]).not.toHaveProperty("name");
-    expect(profile?.achievements[0]).not.toHaveProperty("description");
+    // The description is the catalog's, never the stored event copy.
+    expect(profile?.achievements[0]).toMatchObject({
+      description: FREIGHT_FATE_ACHIEVEMENT_DETAILS.clean_delivery.description,
+      category: "Out on the Road",
+    });
+    expect(profile?.recentAchievements[0]).toMatchObject({
+      description: FREIGHT_FATE_ACHIEVEMENT_DETAILS.clean_delivery.description,
+      category: "Out on the Road",
+    });
     expect(JSON.stringify(profile)).not.toContain("POISONED");
     for (const sentinel of [
       "CASH-PRIVATE-9182", "CREDIT-PRIVATE-3817", "LOCATION-PRIVATE-4921",

@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import {
+  FREIGHT_FATE_ACHIEVEMENT_CATEGORIES,
+  FREIGHT_FATE_ACHIEVEMENT_DETAILS,
   FREIGHT_FATE_ACHIEVEMENT_LABELS,
+  freightFateAchievementDetail,
   FREIGHT_FATE_CAREER_TITLES,
   FREIGHT_FATE_CARRIER_LABELS,
   FREIGHT_FATE_TRAILER_CATALOG,
@@ -19,6 +22,19 @@ describe("Freight Fate public profile catalogs", () => {
     expect(FREIGHT_FATE_TRAILER_PRICES.dry_van).toBe(42_000);
     expect(FREIGHT_FATE_ACHIEVEMENT_LABELS.first_delivery)
       .toBe("Signed, Sealed, Hauled");
+    expect(FREIGHT_FATE_ACHIEVEMENT_DETAILS.first_delivery.category).toBe("road");
+    expect(FREIGHT_FATE_ACHIEVEMENT_DETAILS.first_delivery.description.length).toBeGreaterThan(40);
+    expect(FREIGHT_FATE_ACHIEVEMENT_CATEGORIES[0]).toEqual({ key: "road", title: "Out on the Road" });
+    expect(freightFateAchievementDetail("first_delivery")).toEqual({
+      description: FREIGHT_FATE_ACHIEVEMENT_DETAILS.first_delivery.description,
+      category: "Out on the Road",
+    });
+    // Every badge the page can name has a description, in a known group.
+    for (const key of Object.keys(FREIGHT_FATE_ACHIEVEMENT_LABELS)) {
+      expect(freightFateAchievementDetail(key)).toMatchObject({
+        description: expect.stringMatching(/\S/), category: expect.stringMatching(/\S/),
+      });
+    }
 
     expect(FREIGHT_FATE_CAREER_TITLES).toBe(invariants.careerTitles);
     expect(FREIGHT_FATE_CARRIER_LABELS).toBe(invariants.carrierLabels);
@@ -31,5 +47,6 @@ describe("Freight Fate public profile catalogs", () => {
     expect(FREIGHT_FATE_TRAILER_CATALOG.unknown_trailer).toBeUndefined();
     expect(FREIGHT_FATE_TRAILER_PRICES.unknown_trailer).toBeUndefined();
     expect(FREIGHT_FATE_ACHIEVEMENT_LABELS.unknown_badge).toBeUndefined();
+    expect(freightFateAchievementDetail("unknown_badge")).toEqual({});
   });
 });
