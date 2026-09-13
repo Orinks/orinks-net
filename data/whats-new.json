@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-09-13-freight-fate-driver-directory",
+      "date": "2026-09-13",
+      "project": "Freight Fate",
+      "title": "A driver directory of every public profile",
+      "body": [
+        "The Drivers on duty list answers who is out right now. The new driver directory answers who is there at all: every driver with a public profile, drivers on duty first with what they are doing, then everyone else by when they were last on duty, in round figures like three days ago or two weeks ago.",
+        "The directory is a page here on orinks.net, linked under the drivers list, and a screen in the game under Online next to Drivers on duty. Your own last-on-duty time is shown by the same rule as the drivers list: only while your profile is public, and never more precisely than the list already was."
+      ],
+      "link": {
+        "href": "/freight-fate/drivers",
+        "label": "Open the Freight Fate driver directory"
+      }
+    },
+    {
       "id": "2026-08-31-freight-fate-driver-resumes",
       "date": "2026-08-31",
       "project": "Freight Fate",
