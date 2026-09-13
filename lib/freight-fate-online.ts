@@ -5,6 +5,8 @@ import { FREIGHT_FATE_PROFILE_SUMMARY_EVENTS, freightFateProfileSummary } from "
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
 import type {
+  FreightFateDirectoryDriver,
+  FreightFateDriverDirectory,
   FreightFatePresenceBoard,
   FreightFatePresenceDriver,
 } from "./freight-fate-presence";
@@ -387,7 +389,12 @@ export async function postFreightFatePresence(input: {
 // Defined in lib/freight-fate-presence.ts, which the browser can import and
 // this module cannot be (node:crypto, above). Re-exported here so the
 // server-side callers below keep reading as one module.
-export type { FreightFatePresenceBoard, FreightFatePresenceDriver };
+export type {
+  FreightFateDirectoryDriver,
+  FreightFateDriverDirectory,
+  FreightFatePresenceBoard,
+  FreightFatePresenceDriver,
+};
 
 export const FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG = "freight-fate-presence-board";
 
@@ -442,6 +449,36 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
   {
     revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
     tags: [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
+  },
+);
+
+export const FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG = "freight-fate-driver-directory";
+
+/** Every driver with a public profile and when they were last on duty, as a
+ * cached snapshot.
+ *
+ * Same treatment as the board snapshot, for the same reason: the directory
+ * page and the game's directory GET are public and unauthenticated, so this
+ * is what keeps backend reads at one a minute rather than one a viewer. The
+ * whole payload is cached with its `asOf`, so every "last on duty" age is
+ * measured from the moment the list was actually read.
+ *
+ * Returns null when online presence is not configured, like the board.
+ */
+export const getFreightFateDriverDirectorySnapshot = unstable_cache(
+  async (): Promise<FreightFateDriverDirectory | null> => {
+    const client = getConvexClient();
+
+    if (!client) {
+      return null;
+    }
+
+    return client.query(anyApi.freightFate.getDriverDirectory, { now: Date.now() });
+  },
+  [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
+  {
+    revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
+    tags: [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
   },
 );
 

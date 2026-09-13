@@ -291,11 +291,21 @@ export default defineSchema({
     // dashboard after review. Never public.
     integrityFlag: v.optional(v.string()),
     integrityFlaggedAt: v.optional(v.number()),
+    // When this driver last went OFF duty: the last heartbeat the server saw
+    // before the sweep aged them off the board, or the moment the game signed
+    // off. Written once per session end, never per beat, so the driver
+    // directory can say "last on duty three days ago" without the heartbeat
+    // ever touching this row. Absent until the first session ends under this
+    // field; the directory reads that as "not seen on duty yet". Shown only
+    // to the same audience as the on-duty listing (public, consented,
+    // unflagged) -- it is a coarser version of what the board already says.
+    lastOnDutyAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_driver_id", ["driverId"])
-    .index("by_auth_subject", ["authSubject"]),
+    .index("by_auth_subject", ["authSubject"])
+    .index("by_last_on_duty", ["lastOnDutyAt"]),
   // One posting token per computer the player connects, so adding a laptop
   // never retires the desktop's sign-in (Freight Fate issue #64). Tokens
   // exist only as hashes; the plain token is shown once at issuance on the

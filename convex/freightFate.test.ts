@@ -1717,6 +1717,15 @@ describe("live drivers board", () => {
     );
   }
 
+  function driverRow(t: ReturnType<typeof setup>, driverId: string) {
+    return t.run(async (ctx) =>
+      ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+        .unique(),
+    );
+  }
+
   function beatRow(t: ReturnType<typeof setup>, driverId: string) {
     return t.run(async (ctx) =>
       ctx.db
@@ -1979,6 +1988,115 @@ describe("live drivers board", () => {
     const live = await t.query(api.freightFate.getLivePresenceBoard, {});
     expect(live.drivers).toHaveLength(1);
     expect(live.drivers[0].changedAt).toBe(now);
+  });
+
+  test("going off duty stamps the driver row once, with the last moment on duty", async () => {
+    const t = setup();
+    const now = Date.now();
+    const signedOff = await onDuty(t, SUBJECT, "Signed Off", now);
+    const crashed = await onDuty(t, OTHER, "Crashed Out", now);
+    for (const driver of [signedOff, crashed]) {
+      await t.mutation(api.freightFate.updatePresence, {
+        driverId: driver.driverId, driverTokenHash: driver.driverTokenHash,
+        activity: "Driving to Denver", detail: "reefer", now,
+      });
+    }
+
+    // Beating stamps nothing on the driver row: that table must never hear
+    // about presence more than once per session.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: crashed.driverId, driverTokenHash: crashed.driverTokenHash,
+      activity: "Driving to Denver", detail: "reefer", now: now + 2 * minute,
+    });
+    expect((await driverRow(t, crashed.driverId))?.lastOnDutyAt).toBeUndefined();
+
+    // A clean sign-off is dated at the sign-off.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: signedOff.driverId, driverTokenHash: signedOff.driverTokenHash,
+      activity: "", detail: "", now: now + 3 * minute,
+    });
+    expect((await driverRow(t, signedOff.driverId))?.lastOnDutyAt).toBe(now + 3 * minute);
+
+    // A game that just stopped talking is dated at its last beat, not at the
+    // sweep that noticed.
+    await t.mutation(internal.freightFate.sweepStalePresence, { now: now + 9 * minute });
+    expect((await driverRow(t, crashed.driverId))?.lastOnDutyAt).toBe(now + 2 * minute);
+
+    // Signing off twice (the game's shutdown path can) does not move it.
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: signedOff.driverId, driverTokenHash: signedOff.driverTokenHash,
+      activity: "", detail: "", now: now + 20 * minute,
+    });
+    expect((await driverRow(t, signedOff.driverId))?.lastOnDutyAt).toBe(now + 3 * minute);
+  });
+
+  test("the directory lists every public profile: on duty first, then by last on duty, then the unseen", async () => {
+    const t = setup();
+    const now = Date.now();
+    const driving = await onDuty(t, SUBJECT, "Still Driving", now);
+    const recent = await onDuty(t, OTHER, "Recent Hauler", now);
+    const older = await onDuty(t, "user_2older00", "Older Hauler", now);
+    const never = await onDuty(t, "user_2never00", "Never Seen", now);
+    const hidden = await onDuty(t, "user_2hidden0", "Hidden Hauler", now);
+    void never;
+
+    for (const driver of [driving, recent, older, hidden]) {
+      await t.mutation(api.freightFate.updatePresence, {
+        driverId: driver.driverId, driverTokenHash: driver.driverTokenHash,
+        activity: "Driving to Denver", detail: "reefer", now,
+      });
+    }
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: older.driverId, driverTokenHash: older.driverTokenHash,
+      activity: "", detail: "", now: now + minute,
+    });
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: recent.driverId, driverTokenHash: recent.driverTokenHash,
+      activity: "", detail: "", now: now + 5 * minute,
+    });
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: hidden.driverId, driverTokenHash: hidden.driverTokenHash,
+      activity: "", detail: "", now: now + 6 * minute,
+    });
+    // Sharing turned off after a session: off the directory, stamp or not.
+    await t.mutation(api.freightFate.setProfileSharing, {
+      driverId: hidden.driverId, driverTokenHash: hidden.driverTokenHash, enabled: false, now: now + 7 * minute,
+    });
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: driving.driverId, driverTokenHash: driving.driverTokenHash,
+      activity: "Driving to Denver", detail: "reefer, 40% there", now: now + 8 * minute,
+    });
+
+    const at = now + 9 * minute;
+    const directory = await t.query(api.freightFate.getDriverDirectory, { now: at });
+
+    expect(directory.asOf).toBe(at);
+    expect(directory.drivers.map((row) => row.displayName)).toEqual([
+      "Still Driving", "Recent Hauler", "Older Hauler", "Never Seen",
+    ]);
+    expect(directory.drivers[0]).toMatchObject({
+      driverId: driving.driverId, onDuty: true,
+      activity: "Driving to Denver", detail: "reefer, 40% there", changedAt: now + 8 * minute,
+    });
+    expect(directory.drivers[0].lastOnDutyAt).toBeUndefined();
+    expect(directory.drivers[1]).toMatchObject({ onDuty: false, lastOnDutyAt: now + 5 * minute });
+    expect(directory.drivers[1].activity).toBeUndefined();
+    expect(directory.drivers[2]).toMatchObject({ onDuty: false, lastOnDutyAt: now + minute });
+    expect(directory.drivers[3]).toMatchObject({ driverId: never.driverId, onDuty: false });
+    expect(directory.drivers[3].lastOnDutyAt).toBeUndefined();
+
+    // A truck that keeps beating but has not moved in half an hour is off
+    // duty to the directory too, exactly as it is to the board -- and it
+    // keeps whatever stamp its last real session left, none here.
+    const parked = now + 40 * minute;
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: driving.driverId, driverTokenHash: driving.driverTokenHash,
+      activity: "Driving to Denver", detail: "reefer, 40% there", now: parked,
+    });
+    const later = await t.query(api.freightFate.getDriverDirectory, { now: parked });
+    expect(later.drivers.map((row) => [row.displayName, row.onDuty])).toEqual([
+      ["Recent Hauler", false], ["Older Hauler", false], ["Never Seen", false], ["Still Driving", false],
+    ]);
   });
 
   test("the one-off migration carries a live driver's clock across and drops the rest", async () => {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FreightFateDriversBoardLive } from "@/components/FreightFateDriversBoardLive";
 import { getFreightFatePresenceBoardSnapshot } from "@/lib/freight-fate-online";
 
@@ -52,6 +53,10 @@ export async function FreightFateDriversBoard() {
   return (
     <BoardSection>
       <FreightFateDriversBoardLive initial={board} />
+      <p>
+        <Link href="/freight-fate/drivers">Driver directory</Link>: every driver with a public
+        profile, and when each was last on duty.
+      </p>
     </BoardSection>
   );
 }

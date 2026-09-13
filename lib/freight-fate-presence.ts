@@ -70,3 +70,60 @@ export function normalizeFreightFateDisplayName(value: unknown, fallback = "Frei
 export function stillOnDuty(driver: FreightFatePresenceDriver, asOf: number) {
   return driver.changedAt >= asOf - PRESENCE_IDLE_MS;
 }
+
+/** One driver as the directory lists them: everyone with a public profile,
+ * on duty or not.
+ *
+ * `onDuty` is judged by the server against the same windows as the board.
+ * `activity`, `detail` and `changedAt` are present only while on duty;
+ * `lastOnDutyAt` is the last moment the server saw the driver on duty, and is
+ * absent for a driver no session has ended for since the stamp existed.
+ */
+export type FreightFateDirectoryDriver = {
+  driverId: string;
+  displayName: string;
+  onDuty: boolean;
+  activity?: string;
+  detail?: string;
+  changedAt?: number;
+  lastOnDutyAt?: number;
+};
+
+export type FreightFateDriverDirectory = {
+  drivers: FreightFateDirectoryDriver[];
+  /** The moment the snapshot was taken; every age in it is measured from
+   * this, so a cached page stays true to itself. */
+  asOf: number;
+};
+
+const coarseRelative = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
+
+/** "Last on duty three days ago", deliberately coarse.
+ *
+ * The directory says when a driver was last around, not when their game
+ * closed to the minute: a minute-precise stamp on an offline player is a
+ * detail nobody needs and one they did not sign up to publish. Hours inside a
+ * day, days inside two weeks, weeks inside two months, months beyond. Absent
+ * stamps say so rather than guessing.
+ */
+export function lastOnDutyPhrase(lastOnDutyAt: number | undefined, asOf: number) {
+  if (lastOnDutyAt === undefined || !Number.isFinite(lastOnDutyAt)) {
+    return "Not seen on duty yet.";
+  }
+  const ageMs = Math.max(0, asOf - lastOnDutyAt);
+  const hour = 3_600_000;
+  const day = 24 * hour;
+  if (ageMs < hour) {
+    return "Last on duty less than an hour ago.";
+  }
+  if (ageMs < 2 * day) {
+    return `Last on duty ${coarseRelative.format(-Math.floor(ageMs / hour), "hour")}.`;
+  }
+  if (ageMs < 14 * day) {
+    return `Last on duty ${coarseRelative.format(-Math.floor(ageMs / day), "day")}.`;
+  }
+  if (ageMs < 61 * day) {
+    return `Last on duty ${coarseRelative.format(-Math.floor(ageMs / (7 * day)), "week")}.`;
+  }
+  return `Last on duty ${coarseRelative.format(-Math.floor(ageMs / (30 * day)), "month")}.`;
+}

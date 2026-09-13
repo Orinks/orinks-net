@@ -696,6 +696,11 @@ export const updatePresence = mutation({
       }
       if (beat) {
         await ctx.db.delete(beat._id);
+        // Only a driver who was actually on duty went off it. A sign-off
+        // with no beat behind it (a game closing that never got a beat out)
+        // stamps nothing, so the directory never dates a session that was
+        // not seen.
+        await ctx.db.patch(driver._id, { lastOnDutyAt: args.now });
       }
       return { ok: true as const, cleared: true };
     }
@@ -782,6 +787,17 @@ export const sweepStalePresence = internalMutation({
         await ctx.db.delete(row._id);
       }
       await ctx.db.delete(beat._id);
+      // The last beat is the last moment the server can vouch for the driver
+      // being on duty, so that is what the directory dates a session by --
+      // one write on the driver row per session end, which is the only time
+      // the drivers table should hear about presence at all.
+      const driver = await ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (driver && (driver.lastOnDutyAt ?? 0) < beat.updatedAt) {
+        await ctx.db.patch(driver._id, { lastOnDutyAt: beat.updatedAt });
+      }
     }
 
     return { swept: stale.length };
@@ -949,6 +965,94 @@ export const getLivePresenceBoard = query({
           changedAt: row.changedAt as number,
         })),
     };
+  },
+});
+
+// How many drivers the directory lists at most. Read once a minute per
+// site, not per viewer, so this bounds one cached read rather than a
+// subscription; the ceiling exists so a directory of every driver who ever
+// opted in cannot grow into a full-table read.
+export const MAX_DIRECTORY_ROWS = 200;
+
+/** Every driver with a public profile, on duty or not, and when they were
+ * last on duty.
+ *
+ * The drivers list answers "who is out right now"; this answers "who is
+ * there at all, and when did I last miss them". On-duty drivers come first,
+ * judged exactly as getPresenceBoard judges them (a fresh beat, a status
+ * that moved inside the idle window), then everyone else by how recently
+ * they went off duty, then drivers the field has never been stamped for, by
+ * name. Same audience as the board: public, consented, unflagged. The stamp
+ * is the last beat the server saw, so it is never more precise than the
+ * board already was.
+ *
+ * Authoritative and uncached here; the site reads it through a one-minute
+ * snapshot and the game reads that. Never subscribe to it: it takes a clock
+ * and opens driver rows, both of which the live board was built to avoid.
+ */
+export const getDriverDirectory = query({
+  args: {
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Who is on duty right now, by the board's own rules.
+    const onDuty = new Map<string, { activity: string; detail: string; changedAt: number }>();
+    const fresh = await ctx.db
+      .query("freightFatePresenceBeats")
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_TTL_MS))
+      .order("desc")
+      .take(MAX_BOARD_ROWS);
+    for (const beat of fresh) {
+      const row = await ctx.db
+        .query("freightFatePresence")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (!row) {
+        continue;
+      }
+      const changedAt = row.changedAt ?? beat.updatedAt;
+      if (changedAt < args.now - PRESENCE_IDLE_MS) {
+        continue;
+      }
+      onDuty.set(beat.driverId, { activity: row.activity, detail: row.detail, changedAt });
+    }
+
+    // Everyone with a public profile, most recently off duty first. Rows
+    // with no stamp sort first in the index and so come out last here.
+    const candidates = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_last_on_duty")
+      .order("desc")
+      .take(MAX_DIRECTORY_ROWS);
+
+    const drivers = [];
+    for (const driver of candidates) {
+      if (!boardListing(driver).listed) {
+        continue;
+      }
+      const live = onDuty.get(driver.driverId);
+      drivers.push({
+        driverId: driver.driverId,
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+        onDuty: live !== undefined,
+        ...(live ? { activity: live.activity, detail: live.detail, changedAt: live.changedAt } : {}),
+        ...(driver.lastOnDutyAt !== undefined ? { lastOnDutyAt: driver.lastOnDutyAt } : {}),
+      });
+    }
+
+    drivers.sort((a, b) => {
+      if (a.onDuty !== b.onDuty) {
+        return a.onDuty ? -1 : 1;
+      }
+      const aStamp = a.lastOnDutyAt ?? -1;
+      const bStamp = b.lastOnDutyAt ?? -1;
+      if (aStamp !== bStamp) {
+        return bStamp - aStamp;
+      }
+      return a.displayName.localeCompare(b.displayName, "en-US") || a.driverId.localeCompare(b.driverId);
+    });
+
+    return { drivers, asOf: args.now };
   },
 });
 
