@@ -18,8 +18,9 @@ export default function FreightFateDownloadsPage() {
       <Section>
         <p>
           Use the stable release for everyday hauling, or choose a preview snapshot when you want
-          the newest features and fixes before they reach a stable release. Choose the download
-          for your operating system and processor. Career 1.9 supports Windows, Apple Silicon
+          the newest features and fixes before they reach a stable release. Preview snapshots can
+          have rough edges, so back up your careers first. Choose the download for your operating
+          system and processor. Career 1.9 supports Windows, Apple Silicon
           Macs, and Linux on x64 or ARM64. Linux downloads include archives and AppImages.
         </p>
         <p>
