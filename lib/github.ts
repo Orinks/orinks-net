@@ -201,6 +201,41 @@ export async function getRecentCommitActivity(repo: string): Promise<GitHubActiv
     }));
 }
 
+/** Drop the snapshot boilerplate the game's release tool puts above the notes.
+ *
+ * Every Freight Fate snapshot body opens with the same "Preview snapshot for
+ * players..." paragraph and a "Changes since the previous snapshot" (or
+ * "Changes in this snapshot") heading before the first real section. On
+ * GitHub that framing earns its place; on the downloads page the notes
+ * already sit under a "Release notes" disclosure inside the build's own
+ * heading, so the page should open on the first section instead. A body
+ * that does not start with that framing is returned untouched.
+ */
+export function stripSnapshotPreamble(body: string | null) {
+  if (!body) {
+    return body;
+  }
+  const lines = body.replace(/\r\n/g, "\n").split("\n");
+  let index = 0;
+  const skipBlank = () => {
+    while (index < lines.length && !lines[index].trim()) {
+      index += 1;
+    }
+  };
+  skipBlank();
+  if (!/^Preview snapshot for players/i.test(lines[index] ?? "")) {
+    return body;
+  }
+  while (index < lines.length && lines[index].trim()) {
+    index += 1;
+  }
+  skipBlank();
+  if (/^#{1,6}\s+Changes (since the previous|in this) snapshot\s*$/i.test(lines[index] ?? "")) {
+    index += 1;
+  }
+  return lines.slice(index).join("\n").trim();
+}
+
 export async function getReleaseGroups(repo: string) {
   const releases = await getReleases(repo);
   const stable = releases.find(
@@ -214,7 +249,7 @@ export async function getReleaseGroups(repo: string) {
     [stable, ...nightlies].filter((release): release is GitHubRelease => Boolean(release)).map(
       async (release) => ({
         ...release,
-        body_html: await renderMarkdown(release.body, repo),
+        body_html: await renderMarkdown(stripSnapshotPreamble(release.body), repo),
       }),
     ),
   );

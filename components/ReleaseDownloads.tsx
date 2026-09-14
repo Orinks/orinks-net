@@ -95,7 +95,7 @@ function Notes({
 
   return (
     <details className="mt-5 rounded-md border border-line bg-white p-4">
-      <summary className="cursor-pointer list-none font-semibold text-ink [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none font-semibold text-ink [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2">
         Release notes
       </summary>
       <div

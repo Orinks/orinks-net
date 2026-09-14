@@ -18,8 +18,9 @@ export default function FreightFateDownloadsPage() {
       <Section>
         <p>
           Use the stable release for everyday hauling, or choose a preview snapshot when you want
-          the newest features and fixes before they reach a stable release. Both are portable
-          builds for Windows, macOS, and Linux: unzip and run, no installer required.
+          the newest features and fixes before they reach a stable release. Preview snapshots can
+          have rough edges, so back up your careers first. Both are portable builds for Windows,
+          macOS, and Linux: unzip and run, no installer required.
         </p>
         <p>
           <a href="/freight-fate">Back to Freight Fate</a>
