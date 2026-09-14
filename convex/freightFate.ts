@@ -31,14 +31,30 @@ const visibility = v.union(v.literal("public"), v.literal("private"), v.literal(
 export const PRESENCE_TTL_MS = 6 * 60_000;
 
 // A driver whose activity/detail have not changed for this long is idle: a
-// truck parked on the road with the game left running (a paused game already
-// counts as off duty and stops reporting). The row keeps beating, so the TTL
-// never expires it — the public surfaces just stop showing it. New game
-// builds sign themselves off on the same clock (IDLE_SIGNOFF_S in
-// online_presence.py); this filter is what ages older builds off the board.
+// truck parked on the road with the game left running. The row keeps beating,
+// so the TTL never expires it — the public surfaces just stop showing it. New
+// game builds sign themselves off on the same clock (IDLE_SIGNOFF_S in
+// online_presence.rs); this filter is what ages older builds off the board.
 // While actually driving the strings tick every five percent of progress, so
 // half an hour of no change really does mean a parked truck.
 export const PRESENCE_IDLE_MS = 30 * 60_000;
+
+// A paused game sends this activity once and then stops beating: a pause is
+// not the end of a shift, so the driver must not drop off the list (and get
+// called off duty by everyone's duty watch) for a bathroom break -- but a
+// paused game has nothing new to say, so it should not spend a heartbeat
+// every two and a half minutes saying it either. A paused row is therefore
+// judged by the idle window instead of the heartbeat one: it stays on the
+// list for half an hour with no beats at all, then ages off exactly as a
+// parked truck does. Resuming sends a change beat, which re-dates the row.
+// The game's pause menu reports this exact string (PAUSED_ACTIVITY in
+// online_presence.rs); keep the two equal.
+export const PAUSED_ACTIVITY = "Paused";
+
+/** How long a driver's last beat vouches for them, given what it said. */
+function presenceWindowMs(activity: string) {
+  return activity === PAUSED_ACTIVITY ? PRESENCE_IDLE_MS : PRESENCE_TTL_MS;
+}
 export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
@@ -768,21 +784,31 @@ export const updatePresence = mutation({
  * common tick it reads one empty index range and writes nothing at all --
  * which matters, because a sweep that wrote on every tick would wake every
  * subscribed board once a minute for no reason.
+ *
+ * A paused game stops beating on purpose and is owed the idle window, not
+ * the heartbeat one (see PAUSED_ACTIVITY), so its overdue beat is read and
+ * left alone until that window has passed too. That read costs two small
+ * rows a minute per paused driver and writes nothing.
  */
 export const sweepStalePresence = internalMutation({
   args: { now: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const now = args.now ?? Date.now();
-    const stale = await ctx.db
+    const overdue = await ctx.db
       .query("freightFatePresenceBeats")
       .withIndex("by_updated", (q) => q.lt("updatedAt", now - PRESENCE_TTL_MS))
       .take(200);
 
-    for (const beat of stale) {
+    let swept = 0;
+    for (const beat of overdue) {
       const row = await ctx.db
         .query("freightFatePresence")
         .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
         .unique();
+      if (row && beat.updatedAt >= now - presenceWindowMs(row.activity)) {
+        continue;
+      }
+      swept += 1;
       if (row) {
         await ctx.db.delete(row._id);
       }
@@ -800,7 +826,7 @@ export const sweepStalePresence = internalMutation({
       }
     }
 
-    return { swept: stale.length };
+    return { swept };
   },
 });
 
@@ -869,9 +895,13 @@ export const getPresenceBoard = query({
     now: v.number(),
   },
   handler: async (ctx, args) => {
+    // The wider window, because a paused game's last beat vouches for it
+    // that long; a driving game's beat only counts for the heartbeat window,
+    // checked per row below. The sweep clears dead beats a minute after the
+    // heartbeat window, so the extra range holds paused drivers and little else.
     const fresh = await ctx.db
       .query("freightFatePresenceBeats")
-      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_TTL_MS))
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
       .order("desc")
       .take(MAX_BOARD_ROWS);
 
@@ -882,7 +912,7 @@ export const getPresenceBoard = query({
         .query("freightFatePresence")
         .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
         .unique();
-      if (!row) {
+      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
         continue;
       }
       // Still beating but nothing has changed in half an hour: a parked
@@ -999,7 +1029,7 @@ export const getDriverDirectory = query({
     const onDuty = new Map<string, { activity: string; detail: string; changedAt: number }>();
     const fresh = await ctx.db
       .query("freightFatePresenceBeats")
-      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_TTL_MS))
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
       .order("desc")
       .take(MAX_BOARD_ROWS);
     for (const beat of fresh) {
@@ -1007,7 +1037,7 @@ export const getDriverDirectory = query({
         .query("freightFatePresence")
         .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
         .unique();
-      if (!row) {
+      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
         continue;
       }
       const changedAt = row.changedAt ?? beat.updatedAt;
@@ -1305,7 +1335,7 @@ export const getDriverProfile = query({
     // whether anything has happened lately. A parked-and-forgotten truck
     // should not read as "on duty" on the profile page either.
     const presence = presenceRow && presenceBeat && args.now !== undefined
-      && presenceBeat.updatedAt >= args.now - PRESENCE_TTL_MS
+      && presenceBeat.updatedAt >= args.now - presenceWindowMs(presenceRow.activity)
       && (presenceRow.changedAt ?? presenceBeat.updatedAt) >= args.now - PRESENCE_IDLE_MS
       ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceBeat.updatedAt }
       : null;

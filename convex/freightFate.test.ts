@@ -10,6 +10,7 @@ import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
   MAX_DRIVER_EVENTS,
+  PAUSED_ACTIVITY,
   PRESENCE_WRITE_LIMIT,
   SHARING_CONSENT_VERSION,
 } from "./freightFate";
@@ -2028,6 +2029,58 @@ describe("live drivers board", () => {
       activity: "", detail: "", now: now + 20 * minute,
     });
     expect((await driverRow(t, signedOff.driverId))?.lastOnDutyAt).toBe(now + 3 * minute);
+  });
+
+  test("a paused game stays on duty for the idle window without a single beat, then ages off", async () => {
+    const t = setup();
+    const now = Date.now();
+    const { driverId, driverTokenHash } = await onDuty(t, SUBJECT, "Paused Hauler", now);
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "Driving to Denver", detail: "reefer", now,
+    });
+
+    // The pause menu sends this once and then goes quiet.
+    const pausedAt = now + 5 * minute;
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: PAUSED_ACTIVITY, detail: "reefer", now: pausedAt,
+    });
+
+    // Well past the heartbeat window with no beats: still on every surface,
+    // shown as paused, and the sweep leaves the rows alone.
+    const later = pausedAt + 12 * minute;
+    expect(await t.mutation(internal.freightFate.sweepStalePresence, { now: later }))
+      .toEqual({ swept: 0 });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: later })).drivers)
+      .toMatchObject([{ displayName: "Paused Hauler", activity: PAUSED_ACTIVITY }]);
+    expect((await t.query(api.freightFate.getDriverDirectory, { now: later })).drivers)
+      .toMatchObject([{ displayName: "Paused Hauler", onDuty: true }]);
+    expect((await t.query(api.freightFate.getDriverProfile, { driverId, now: later }))?.presence)
+      .toMatchObject({ activity: PAUSED_ACTIVITY });
+    expect((await driverRow(t, driverId))?.lastOnDutyAt).toBeUndefined();
+
+    // Resuming is a change beat like any other: the driver never left.
+    const resumedAt = later + minute;
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: "Driving to Denver", detail: "reefer", now: resumedAt,
+    });
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: resumedAt })).drivers)
+      .toMatchObject([{ activity: "Driving to Denver" }]);
+
+    // Paused again and left for good: half an hour on, the pause ages off
+    // like a parked truck, dated at the pause -- the last moment the server
+    // heard from the game.
+    const pausedAgainAt = resumedAt + minute;
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId, driverTokenHash, activity: PAUSED_ACTIVITY, detail: "reefer", now: pausedAgainAt,
+    });
+    const gone = pausedAgainAt + 31 * minute;
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: gone })).drivers).toEqual([]);
+    expect((await t.query(api.freightFate.getDriverProfile, { driverId, now: gone }))?.presence)
+      .toBeNull();
+    expect(await t.mutation(internal.freightFate.sweepStalePresence, { now: gone }))
+      .toEqual({ swept: 1 });
+    expect(await presenceRow(t, driverId)).toBeNull();
+    expect((await driverRow(t, driverId))?.lastOnDutyAt).toBe(pausedAgainAt);
   });
 
   test("the directory lists every public profile: on duty first, then by last on duty, then the unseen", async () => {
