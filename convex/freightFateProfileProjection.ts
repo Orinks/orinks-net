@@ -184,7 +184,10 @@ export function buildVerifiedProfileSnapshot(args: {
     lastSavedCity: cityLabels[args.payload.current_city as string],
     deliveries,
     milesDriven: roundOne(career.total_miles as number),
-    reputation: roundOne(career.reputation as number),
+    // The game writes career.standing: its reputation less the driving
+    // record still inside the review window, the number the game itself
+    // shows and gates on. Older saves carry only the raw ledger.
+    reputation: roundOne((typeof career.standing === "number" ? career.standing : career.reputation) as number),
     onTimeDeliveries: career.on_time_deliveries as number,
     ...(deliveries > 0
       ? { onTimeRate: roundOne((career.on_time_deliveries as number) * 100 / deliveries) }
