@@ -23,7 +23,7 @@ export async function GET(
 
   const result = await getFreightFateDriverProfileSummary(driverId);
 
-  if (!result.configured) {
+  if (!result || !result.configured) {
     return NextResponse.json({ error: "Freight Fate online profiles are not configured." }, { status: 503 });
   }
 

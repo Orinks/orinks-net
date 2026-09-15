@@ -533,27 +533,41 @@ export function getFreightFateDriverDirectorySnapshot() {
  * the first is a 503 the game reads as "could not be reached", the second a
  * 404 it reads as "not public".
  */
-export const getFreightFateDriverProfileSummary = unstable_cache(
-  async (driverId: string) => {
-    const client = getConvexClient();
+async function getFreightFateLiveDriverProfileSummary(driverId: string) {
+  const client = getConvexClient();
+  const asOf = Date.now();
 
-    if (!client) {
-      return { configured: false as const, profile: null };
-    }
+  if (!client) {
+    return { configured: false as const, profile: null, asOf };
+  }
 
-    const profile = await client.query(anyApi.freightFate.getDriverProfile, {
-      driverId,
-      limit: FREIGHT_FATE_PROFILE_SUMMARY_EVENTS,
-      // The query's floor; the summary reads recentAchievements, not the page.
-      achievementLimit: 1,
-      now: Date.now(),
-    });
+  const profile = await client.query(anyApi.freightFate.getDriverProfile, {
+    driverId,
+    limit: FREIGHT_FATE_PROFILE_SUMMARY_EVENTS,
+    // The query's floor; the summary reads recentAchievements, not the page.
+    achievementLimit: 1,
+    now: asOf,
+  });
 
-    return { configured: true as const, profile: freightFateProfileSummary(profile) };
-  },
+  return { configured: true as const, profile: freightFateProfileSummary(profile), asOf };
+}
+
+const cachedDriverProfileSummary = unstable_cache(
+  getFreightFateLiveDriverProfileSummary,
   ["freight-fate-driver-profile-summary"],
   { revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS },
 );
+
+// Guarded like the two lists: a driver's summary is read far less often than
+// the board, so its cached copy is usually hours old when the next player
+// presses Enter on them, and it said "off duty" about a driver the list just
+// showed driving.
+export function getFreightFateDriverProfileSummary(driverId: string) {
+  return freshSnapshot(
+    () => cachedDriverProfileSummary(driverId),
+    () => getFreightFateLiveDriverProfileSummary(driverId),
+  );
+}
 
 export async function getFreightFateDriverProfile(
   driverId: string,
