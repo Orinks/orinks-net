@@ -443,7 +443,7 @@ export async function getFreightFateLivePresenceBoard(): Promise<FreightFatePres
  * This is what caps backend reads. Without it, read volume tracks page views
  * and API polling rather than the number of people actually driving.
  */
-export const getFreightFatePresenceBoardSnapshot = unstable_cache(
+const cachedPresenceBoardSnapshot = unstable_cache(
   getFreightFateLivePresenceBoard,
   [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
   {
@@ -451,6 +451,36 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
     tags: [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
   },
 );
+
+export function getFreightFatePresenceBoardSnapshot() {
+  return freshSnapshot(cachedPresenceBoardSnapshot, getFreightFateLivePresenceBoard);
+}
+
+// The oldest snapshot a reader may be handed. The cache serves the entry it
+// has to the first request after the minute is up and rebuilds it in the
+// background (stale while revalidating), which is fine while readers keep
+// coming and wrong after a quiet spell: the first player to open the driver
+// directory in a day got the day-old list, with every driver since then
+// "not seen on duty yet", and the game aged those stamps against its own
+// clock. Past this age the reader gets a live read instead; the background
+// rebuild the stale hit already started refreshes the cache for the next one,
+// so a quiet spell costs one extra backend read, not one per reader.
+export const FREIGHT_FATE_SNAPSHOT_MAX_AGE_MS = 3 * FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS * 1000;
+
+/** The cached snapshot while it is recent, a live read once it is not. */
+export async function freshSnapshot<T extends { asOf: number }>(
+  cached: () => Promise<T | null>,
+  live: () => Promise<T | null>,
+  now = Date.now(),
+): Promise<T | null> {
+  const snapshot = await cached();
+
+  if (snapshot && now - snapshot.asOf > FREIGHT_FATE_SNAPSHOT_MAX_AGE_MS) {
+    return live();
+  }
+
+  return snapshot;
+}
 
 export const FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG = "freight-fate-driver-directory";
 
@@ -465,22 +495,28 @@ export const FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG = "freight-fate-driver-director
  *
  * Returns null when online presence is not configured, like the board.
  */
-export const getFreightFateDriverDirectorySnapshot = unstable_cache(
-  async (): Promise<FreightFateDriverDirectory | null> => {
-    const client = getConvexClient();
+async function getFreightFateLiveDriverDirectory(): Promise<FreightFateDriverDirectory | null> {
+  const client = getConvexClient();
 
-    if (!client) {
-      return null;
-    }
+  if (!client) {
+    return null;
+  }
 
-    return client.query(anyApi.freightFate.getDriverDirectory, { now: Date.now() });
-  },
+  return client.query(anyApi.freightFate.getDriverDirectory, { now: Date.now() });
+}
+
+const cachedDriverDirectorySnapshot = unstable_cache(
+  getFreightFateLiveDriverDirectory,
   [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
   {
     revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
     tags: [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
   },
 );
+
+export function getFreightFateDriverDirectorySnapshot() {
+  return freshSnapshot(cachedDriverDirectorySnapshot, getFreightFateLiveDriverDirectory);
+}
 
 /** The game's copy of a public profile: the profile page's sections, trimmed
  * to what a spoken list reads (see `freightFateProfileSummary`), cached for
