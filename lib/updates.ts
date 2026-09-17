@@ -27,7 +27,8 @@ export type UpdateCategory = {
   unavailableMessage?: string;
 };
 
-const featuredRepos = ["AccessiWeather", "PortkeyDrop", "station-scout", "Freight-Fate", "saltwake"];
+// PortkeyDrop is left out: it has a new maintainer, and this feed is Orinks' own activity.
+const featuredRepos = ["AccessiWeather", "station-scout", "Freight-Fate", "saltwake"];
 
 type RecentUpdateOptions = {
   includeCode?: boolean;

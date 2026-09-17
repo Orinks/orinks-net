@@ -14,6 +14,7 @@ export function ProjectLanding({ project }: ProjectLandingProps) {
       <Section>
         <p>{project.summary}</p>
         <p>{project.audience}</p>
+        {project.maintainerNote ? <p>{project.maintainerNote}</p> : null}
         <div className="mt-6 flex flex-wrap gap-3">
           {project.downloadsHref ? <ButtonLink href={project.downloadsHref}>Downloads</ButtonLink> : null}
           {project.manualHref ? (

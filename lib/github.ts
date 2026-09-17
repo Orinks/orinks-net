@@ -51,11 +51,21 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
   return headers;
 };
 
+// Repositories that live under another account. PortkeyDrop was handed to a
+// new maintainer; everything else is still under Orinks.
+const repoOwners: Record<string, string> = {
+  PortkeyDrop: "Nick6489",
+};
+
+export function repoSlug(repo: string) {
+  return `${repoOwners[repo] ?? "Orinks"}/${repo}`;
+}
+
 export const githubReleasesCacheTag = "github-releases";
 
 const getCachedReleases = unstable_cache(
   async (repo: string): Promise<GitHubRelease[]> => {
-    const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/releases?per_page=20`, {
+    const response = await fetch(`https://api.github.com/repos/${repoSlug(repo)}/releases?per_page=20`, {
       headers: githubHeaders(),
       cache: "no-store",
     });
@@ -83,7 +93,7 @@ const getCachedRenderedMarkdown = unstable_cache(
       body: JSON.stringify({
         text: body,
         mode: "gfm",
-        context: `Orinks/${repo}`,
+        context: repoSlug(repo),
       }),
       cache: "no-store",
     });
@@ -159,7 +169,7 @@ function isMeaningfulCommit(message: string) {
 }
 
 async function getBranchCommits(repo: string, branch: string) {
-  const response = await fetch(`https://api.github.com/repos/Orinks/${repo}/commits?sha=${branch}&per_page=10`, {
+  const response = await fetch(`https://api.github.com/repos/${repoSlug(repo)}/commits?sha=${branch}&per_page=10`, {
     headers: githubHeaders(),
     next: { revalidate: 1800 },
   });

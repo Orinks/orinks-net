@@ -95,6 +95,18 @@ describe("GitHub response caching", () => {
     );
   });
 
+  test("reads PortkeyDrop from its new maintainer's account", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    await expect(getReleases("PortkeyDrop")).resolves.toEqual([]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.github.com/repos/Nick6489/PortkeyDrop/releases?per_page=20",
+      expect.anything(),
+    );
+  });
+
   test("caches rendered release notes independently by their arguments", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response("<p>Fixed.</p>", { status: 200 }),

@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/PageHeader";
 import { ReleaseDownloads } from "@/components/ReleaseDownloads";
 import { Section } from "@/components/Section";
+import { portkeyDropMaintainerNote } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,13 @@ export default function PortkeyDropDownloadsPage() {
           distribution, including Fedora, Ubuntu, Arch, and openSUSE. Mark the file executable,
           then run it. The Linux tarball remains available for Ubuntu and Debian systems.
         </p>
+        <p>{portkeyDropMaintainerNote}</p>
         <p>
           <a href="/portkeydrop">Back to PortkeyDrop</a>
         </p>
       </Section>
-      <ReleaseDownloads productName="PortkeyDrop" repo="PortkeyDrop" />
+      {/* PortkeyDrop's release workflow no longer announces builds to this site. */}
+      <ReleaseDownloads buildNotifications={false} productName="PortkeyDrop" repo="PortkeyDrop" />
     </>
   );
 }
