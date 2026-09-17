@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-09-17-portkeydrop-new-maintainer",
+      "date": "2026-09-17",
+      "project": "PortkeyDrop",
+      "title": "PortkeyDrop has a new maintainer",
+      "body": [
+        "PortkeyDrop, the keyboard-first file transfer client that started here, has been handed to Nick6489, who now maintains it and leads its development. The project has moved to Nick6489's account on GitHub, and that is where issues and new releases live from now on.",
+        "The PortkeyDrop page and its downloads stay on orinks.net and read from the new repository, so existing links keep working. Browser build notifications for PortkeyDrop have been retired along with the move."
+      ],
+      "link": {
+        "href": "/portkeydrop",
+        "label": "Visit the PortkeyDrop project page"
+      }
+    },
+    {
       "id": "2026-09-13-freight-fate-driver-directory",
       "date": "2026-09-13",
       "project": "Freight Fate",

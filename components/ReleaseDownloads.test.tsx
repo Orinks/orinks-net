@@ -64,4 +64,33 @@ describe("ReleaseDownloads", () => {
     expect(markup).toContain("<h4>Stable changes</h4><h5>Details</h5>");
     expect(markup).toContain("<h5>Preview changes</h5><h6>Details</h6>");
   });
+
+  test("sends PortkeyDrop's fallback link to its new maintainer's releases", async () => {
+    getReleaseGroupsMock.mockRejectedValue(new Error("GitHub releases request failed: 404"));
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({ productName: "PortkeyDrop", repo: "PortkeyDrop" }),
+    );
+
+    expect(markup).toContain('href="https://github.com/Nick6489/PortkeyDrop/releases"');
+  });
+
+  test("leaves out the build notification signup when a project does not send them", async () => {
+    getReleaseGroupsMock.mockResolvedValue({ stable: undefined, nightlies: [] });
+
+    const withSignup = renderToStaticMarkup(
+      await ReleaseDownloads({ productName: "Freight Fate", repo: "Freight-Fate" }),
+    );
+    const withoutSignup = renderToStaticMarkup(
+      await ReleaseDownloads({
+        buildNotifications: false,
+        productName: "PortkeyDrop",
+        repo: "PortkeyDrop",
+      }),
+    );
+
+    expect(withSignup).toContain("Build notifications");
+    expect(withoutSignup).not.toContain("Build notifications");
+    expect(withoutSignup).not.toContain('role="status"');
+  });
 });

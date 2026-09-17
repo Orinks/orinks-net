@@ -53,6 +53,7 @@ export type ProjectPage = {
   links: { href: string; label: string }[];
   downloadsHref?: string;
   manualHref?: string;
+  maintainerNote?: string;
 };
 
 export type GameSummary = {
@@ -156,6 +157,9 @@ export const gameSummaries: GameSummary[] = [
   },
 ];
 
+export const portkeyDropMaintainerNote =
+  "PortkeyDrop was started by Orinks and is now maintained by Nick6489, who leads its development on GitHub.";
+
 export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiweather",
@@ -187,6 +191,7 @@ export const projectSummaries: ProjectPage[] = [
       "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
     status: "Stable releases and nightly builds are available.",
     audience: "Tested with NVDA, JAWS, and VoiceOver.",
+    maintainerNote: portkeyDropMaintainerNote,
     features: [
       "One client for SFTP, FTP, FTPS, and WebDAV, so there's no juggling separate apps.",
       "Dual-pane layout for local and remote files, with clear labels and full keyboard navigation throughout.",
@@ -196,8 +201,8 @@ export const projectSummaries: ProjectPage[] = [
     ],
     downloadsHref: "/portkeydrop/downloads",
     links: [
-      { href: "https://github.com/Orinks/PortkeyDrop", label: "GitHub repository" },
-      { href: "https://github.com/Orinks/PortkeyDrop/issues", label: "Report an issue" },
+      { href: "https://github.com/Nick6489/PortkeyDrop", label: "GitHub repository" },
+      { href: "https://github.com/Nick6489/PortkeyDrop/issues", label: "Report an issue" },
     ],
   },
   {

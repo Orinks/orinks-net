@@ -5,6 +5,7 @@ import {
   getReleaseGroups,
   downloadAssetLabel,
   releaseTitle,
+  repoSlug,
   selectedDownloadAssets,
   type GitHubRelease,
 } from "@/lib/github";
@@ -13,6 +14,7 @@ type ReleaseDownloadsProps = {
   repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake";
   productName: string;
   prereleaseLabel?: string;
+  buildNotifications?: boolean;
 };
 
 function DownloadList({ release }: { release: GitHubRelease }) {
@@ -121,6 +123,7 @@ export async function ReleaseDownloads({
   repo,
   productName,
   prereleaseLabel = "nightly builds",
+  buildNotifications = true,
 }: ReleaseDownloadsProps) {
   try {
     const { stable, nightlies } = await getReleaseGroups(repo);
@@ -139,7 +142,7 @@ export async function ReleaseDownloads({
             the newest fixes and features.
           </p>
         </div>
-        <BuildNotificationSignup productName={productName} />
+        {buildNotifications ? <BuildNotificationSignup productName={productName} /> : null}
 
         {stable ? (
           <article className="rounded-lg border border-line bg-soft-green p-5">
@@ -203,7 +206,7 @@ export async function ReleaseDownloads({
           releases.
         </p>
         <p className="mt-4">
-          <a href={`https://github.com/Orinks/${repo}/releases`}>Open GitHub releases</a>
+          <a href={`https://github.com/${repoSlug(repo)}/releases`}>Open GitHub releases</a>
         </p>
       </section>
     );
