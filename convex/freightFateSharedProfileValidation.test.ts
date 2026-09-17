@@ -326,6 +326,40 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
   });
 
+  // The game stamps a ticket with the live clock, game_hours plus the trip in
+  // progress, and game_hours only moves at delivery. Every backup between a
+  // ticket and the next delivery was refused until the trip clock was counted.
+  test("accepts a ticket written during the trip the backup was made in", () => {
+    const profile = validProfile();
+    const record = {
+      serious_violations: [profile.game_hours + 3.1], major_offenses: [],
+      citations: 1, citation_times: [profile.game_hours + 3.1],
+      fines_paid: 250, fatigue_events: 0, repossessions: 0, carrier_terminations: 0,
+    };
+    expect(validateSharedProfile({
+      ...profile, driving_record: record, active_trip: { game_minutes: 257.5 },
+    }, "Road Star")).toMatchObject({ ok: true });
+    // A trip shape this server cannot read is a newer game, not a forgery.
+    expect(validateSharedProfile({
+      ...profile, driving_record: record, active_trip: { clock: "elsewhere" },
+    }, "Road Star")).toMatchObject({ ok: true });
+  });
+
+  test("rejects a ticket dated past anything the career clock could have reached", () => {
+    const profile = validProfile();
+    const record = {
+      serious_violations: [], major_offenses: [],
+      citations: 1, citation_times: [profile.game_hours + 40],
+      fines_paid: 250, fatigue_events: 0, repossessions: 0, carrier_terminations: 0,
+    };
+    expect(validateSharedProfile({
+      ...profile, driving_record: record, active_trip: null,
+    }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
+    expect(validateSharedProfile({
+      ...profile, driving_record: record, active_trip: { game_minutes: 257.5 },
+    }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
+  });
+
   test("accepts a legacy market carrying only the original cargo classes", () => {
     // Careers begun before a cargo-class expansion keep the smaller
     // multiplier set (seen in the wild: 8 of the current 16 classes).

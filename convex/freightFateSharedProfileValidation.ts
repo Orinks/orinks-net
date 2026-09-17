@@ -260,13 +260,31 @@ function validateOptionalProjectionFacts(
   return true;
 }
 
+// The latest career hour a record entry can honestly carry. The game stamps a
+// citation with the live clock -- `game_hours` plus the minutes of the trip in
+// progress -- while `game_hours` itself only moves when the trip ends. Holding
+// entries to `game_hours` alone therefore refused every backup made between a
+// ticket and the next delivery (found on staging 2026-09-17: each refused save
+// was mid-trip and over by no more than its own trip clock). A trip whose
+// clock this server cannot read is a newer shape, not a forged record, so it
+// falls back to the range every other career hour is held to.
+const RECORD_CLOCK_SLACK_H = 1;
+function latestRecordHour(payload: JsonObject) {
+  const trip = object(payload.active_trip);
+  if (!trip) return (payload.game_hours as number) + RECORD_CLOCK_SLACK_H;
+  if (!finite(trip.game_minutes, 0, 600_000_000)) return 10_000_000;
+  return (payload.game_hours as number) + (trip.game_minutes as number) / 60
+    + RECORD_CLOCK_SLACK_H;
+}
+
 function validateOptionalDrivingRecord(payload: JsonObject) {
   if (!("driving_record" in payload)) return true;
   const record = object(payload.driving_record);
   if (!record) return false;
+  const latest = latestRecordHour(payload);
   const violationTimes = [record.serious_violations, record.major_offenses];
   if (violationTimes.some((times) => !Array.isArray(times)
-    || times.some((at) => !finite(at, 0, payload.game_hours as number)))) return false;
+    || times.some((at) => !finite(at, 0, latest)))) return false;
   for (const field of ["citations", "fatigue_events", "repossessions", "carrier_terminations"]) {
     if (!integer(record[field], 0, 1_000_000)) return false;
   }
@@ -274,7 +292,7 @@ function validateOptionalDrivingRecord(payload: JsonObject) {
   // hour that review started; both optional, both career hours like the
   // violation times above.
   if ("citation_times" in record && (!Array.isArray(record.citation_times)
-    || record.citation_times.some((at) => !finite(at, 0, payload.game_hours as number)))) {
+    || record.citation_times.some((at) => !finite(at, 0, latest)))) {
     return false;
   }
   return !(("fines_paid" in record && !finite(record.fines_paid, 0, 100_000_000))
