@@ -39,16 +39,20 @@ export default function HomePage() {
           Featured projects
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {projectSummaries.slice(0, 4).map((project) => (
-            <article className="rounded-lg border border-line bg-white p-5" key={project.href}>
-              <h3 className="text-xl font-bold">
-                <Link className="text-action hover:text-action-dark" href={project.href}>
-                  {project.title}
-                </Link>
-              </h3>
-              <p className="mt-2 leading-7 text-slate-700">{project.tagline}</p>
-            </article>
-          ))}
+          {/* Projects handed to another maintainer keep their page but are not featured. */}
+          {projectSummaries
+            .filter((project) => !project.maintainerNote)
+            .slice(0, 4)
+            .map((project) => (
+              <article className="rounded-lg border border-line bg-white p-5" key={project.href}>
+                <h3 className="text-xl font-bold">
+                  <Link className="text-action hover:text-action-dark" href={project.href}>
+                    {project.title}
+                  </Link>
+                </h3>
+                <p className="mt-2 leading-7 text-slate-700">{project.tagline}</p>
+              </article>
+            ))}
         </div>
       </section>
 
