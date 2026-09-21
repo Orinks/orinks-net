@@ -243,7 +243,7 @@ export const listIntegrityObservations = internalQuery({
     const rows = args.driverId
       ? await ctx.db
         .query("freightFateIntegrityObservations")
-        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId as string))
+        .withIndex("by_driver_slot",(q) => q.eq("driverId", args.driverId as string))
         .collect()
       : await ctx.db.query("freightFateIntegrityObservations").collect();
     return rows
@@ -254,8 +254,10 @@ export const listIntegrityObservations = internalQuery({
         saveVersion: row.saveVersion,
         clientVersion: row.clientVersion ?? null,
         contentHash: row.contentHash,
-        observedAt: row.observedAt,
+        firstObservedAt: row.firstObservedAt,
+        lastObservedAt: row.lastObservedAt,
+        observations: row.observations,
       }))
-      .sort((a, b) => b.observedAt - a.observedAt);
+      .sort((a, b) => b.lastObservedAt - a.lastObservedAt);
   },
 });

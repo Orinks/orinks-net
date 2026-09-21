@@ -468,19 +468,22 @@ export default defineSchema({
   // hand-edited save) was the thing that marked it. Unlike rejected uploads
   // the payload is not retained: the same bytes already sit in
   // freightFateSaves under contentHash, so keeping them again would double
-  // the storage cost of every marked career. Pruned alongside rejected
-  // uploads on the same review window.
+  // the storage cost of every marked career. The mark never clears, so a
+  // row is one career slot: first and last marked backup, how many, and the
+  // latest one's pointer. Pruned alongside rejected uploads on the same
+  // review window, counted from the last marked backup.
   freightFateIntegrityObservations: defineTable({
     driverId: v.string(),
     saveName: v.string(),
     saveVersion: v.number(),
     contentHash: v.string(),
     clientVersion: v.optional(v.string()),
-    observedAt: v.number(),
+    firstObservedAt: v.number(),
+    lastObservedAt: v.number(),
+    observations: v.number(),
   })
-    .index("by_driver", ["driverId"])
-    .index("by_driver_content", ["driverId", "contentHash"])
-    .index("by_observed_at", ["observedAt"]),
+    .index("by_driver_slot", ["driverId", "saveName"])
+    .index("by_last_observed_at", ["lastObservedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),
     eventId: v.string(),

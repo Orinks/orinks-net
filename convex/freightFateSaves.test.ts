@@ -222,15 +222,22 @@ describe("validated private cloud revisions", () => {
       { driverId: auth.driverId, saveName: "Road Star" },
     ]);
 
-    // The same marked payload recorded again does not grow the table.
-    const content = contentFor(marked);
+    // The same marked payload recorded again is a retry, not a new sighting.
     const recordArgs = {
       ...auth, saveName: marked.name, saveVersion: marked.version,
-      contentHash: hash(content), now: Date.now(),
+      contentHash: hash(contentFor(marked)), now: Date.now(),
     };
     await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
-    await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
-    expect(await observations()).toHaveLength(1);
+    expect(await observations()).toMatchObject([{ observations: 1 }]);
+
+    // The mark never clears, so later backups of the career arrive marked
+    // too. They update the slot's one row instead of adding rows.
+    const later = { ...marked, money: 9_100 };
+    await expect(upload(t, auth, later, 1))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await observations()).toMatchObject([
+      { saveName: "Road Star", observations: 2, contentHash: hash(contentFor(later)) },
+    ]);
 
     // Unmarked careers record nothing.
     await expect(upload(t, auth, profileNamed("Clean Career")))
