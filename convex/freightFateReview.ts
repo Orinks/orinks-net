@@ -1,7 +1,8 @@
 // The owner's review of Freight Fate careers marked as changed outside the
-// game. A marked backup is held (freightFateSaves.recordIntegrityObservation)
-// until the owner decides; the daily digest (freightFateReviewDigest.ts)
-// emails one Accept and one Decline link per held career, and the pages here
+// game. A marked career keeps backing up while it waits
+// (freightFateSaves.recordIntegrityObservation); the daily digest
+// (freightFateReviewDigest.ts) emails one Accept and one Decline link per
+// career waiting, and the pages here
 // answer those links. Links carry a signed, expiring token, and a link only
 // opens a page: the decision is a separate POST from that page, so a mail
 // scanner that follows every link in an email can never decide anything.
@@ -75,7 +76,7 @@ export async function verifyReviewClaim(token: string, now: number): Promise<Rev
   };
 }
 
-// Held careers the digest should list. Empty unless at least one has a
+// Careers waiting for review that the digest should list. Empty unless at least one has a
 // marked backup the last digest did not include -- a day with nothing new
 // sends no email, even while older reviews still wait.
 export const listReviewDigest = internalQuery({
@@ -233,15 +234,15 @@ export const reviewPage = httpAction(async (ctx, request) => {
   }
   const verb = VERB[claim.decision];
   const effect = claim.decision === "accepted"
-    ? "Its backups are stored again, and the game clears its mark."
-    : "Its marked backups stay refused until the player restores an earlier cloud backup.";
+    ? "The game clears its mark at its next backup."
+    : "It stops backing up, and the driver's public profile is hidden.";
   return page(
     `${verb} ${row.saveName}?`,
     `<dl>
 <dt>Driver</dt><dd>${escapeHtml(row.displayName)} (${escapeHtml(row.driverId)})</dd>
 <dt>Career</dt><dd>${escapeHtml(row.saveName)}</dd>
 ${row.summary ? `<dt>Latest backup</dt><dd>${escapeHtml(row.summary)}</dd>` : ""}
-<dt>Marked backups held</dt><dd>${row.observations}</dd>
+<dt>Marked backups</dt><dd>${row.observations}</dd>
 </dl>
 <p>${effect}</p>
 <form method="post">
@@ -269,7 +270,7 @@ export const decideFromPage = httpAction(async (ctx, request) => {
   }
   const done = claim.decision === "accepted" ? "Accepted" : "Declined";
   const next = claim.decision === "accepted"
-    ? "Its next backup is stored, and the game clears its mark."
-    : "Its marked backups stay refused.";
+    ? "The game clears its mark at its next backup."
+    : "It no longer backs up, and the driver's public profile is hidden.";
   return page(`${done}: ${result.saveName ?? "career"}`, `<p>${next}</p>`);
 });

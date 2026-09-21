@@ -34,7 +34,7 @@ crons.interval(
   {},
 );
 
-// The owner's digest of careers held for review: 13:00 UTC is 9 a.m.
+// The owner's digest of careers waiting for review: 13:00 UTC is 9 a.m.
 // Eastern. Sends nothing on a day with nothing new.
 crons.daily(
   "email the Freight Fate review digest",

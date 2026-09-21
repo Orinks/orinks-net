@@ -461,13 +461,13 @@ export default defineSchema({
   // A backup that PASSED the full validation gate while carrying the
   // client's own "changed outside the game" mark (integrity_modified). The
   // mark is raised by an honest copy to a second computer as readily as by a
-  // save or memory edit, so a marked backup is held, not stored, until the
+  // save or memory edit, so a marked career keeps backing up until the
   // owner reviews it from the daily digest email. One row per career slot:
-  // first and last marked backup, how many, and the latest held payload.
+  // first and last marked backup, how many, and the latest marked payload.
   //
-  // status: pending (held, waiting for the owner), accepted (marked backups
-  // of this slot are stored, and the game is told to clear its mark),
-  // declined (marked backups of this slot are refused), resolved (an
+  // status: pending (backing up, waiting for the owner), accepted (the game
+  // is told to clear its mark), declined (every backup of this slot is
+  // refused and the driver is hidden from public surfaces), resolved (an
   // unmarked backup of the slot arrived, so the review is settled; the next
   // mark starts a new one). Rows from before review existed have no status
   // and read as pending. Pruned alongside rejected uploads on the same
@@ -487,8 +487,8 @@ export default defineSchema({
       v.literal("declined"),
       v.literal("resolved"),
     )),
-    // The latest held payload, gzipped exactly as the game sent it: what the
-    // reviewer judges. Cleared once a decision is made.
+    // The latest marked payload, gzipped exactly as the game sent it: what
+    // the reviewer judges. Cleared once a decision is made.
     content: v.optional(v.bytes()),
     summary: v.optional(v.string()),
     // The last digest that listed this row; a row is listed again only when

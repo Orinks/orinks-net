@@ -55,8 +55,7 @@ const FAILURE_STATUS: Record<string, number> = {
   invalid_meaningful_play: 422,
   unsupported_version: 422,
   signing_unavailable: 503,
-  // A career marked as changed outside the game waits for the owner.
-  held_for_review: 423,
+  // A career the owner declined after review no longer backs up.
   review_declined: 403,
   rate_limited: 429,
 };

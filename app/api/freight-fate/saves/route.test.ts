@@ -87,12 +87,12 @@ describe("POST /api/freight-fate/saves", () => {
     });
   });
 
-  test("a held career answers with its reason", async () => {
-    mocks.post.mockResolvedValue({ ok: false, reason: "held_for_review" });
+  test("a declined career answers with its reason", async () => {
+    mocks.post.mockResolvedValue({ ok: false, reason: "review_declined" });
 
     const response = await POST(post());
 
-    expect(response.status).toBe(423);
-    await expect(response.json()).resolves.toMatchObject({ error: "held_for_review" });
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ error: "review_declined" });
   });
 });

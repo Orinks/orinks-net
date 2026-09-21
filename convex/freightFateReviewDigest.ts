@@ -1,8 +1,8 @@
 "use node";
 
-// The daily review digest: one email listing every Freight Fate career held
-// for review, with an Accept and a Decline link each. Sent only when at least
-// one held career has a marked backup the last digest did not include.
+// The daily review digest: one email listing every Freight Fate career
+// waiting for review, with an Accept and a Decline link each. Sent only when
+// at least one has a marked backup the last digest did not include.
 import { gunzipSync } from "node:zlib";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -31,7 +31,7 @@ function day(ms: number) {
 }
 
 // What the reviewer judges: the balance against what the career has ever
-// earned, and how far along it is. Read from the held payload itself.
+// earned, and how far along it is. Read from the latest marked backup.
 function careerFacts(content: ArrayBuffer | null) {
   if (!content) return null;
   try {
@@ -99,8 +99,8 @@ export const sendReviewDigest = internalAction({
         facts
           ? `Balance ${facts.money}; lifetime earnings ${facts.earnings}; level ${facts.level ?? "unknown"}; ` +
             `${facts.deliveries ?? "unknown"} deliveries; ${facts.miles ?? "unknown"} miles.`
-          : "The held backup could not be read.",
-        `${row.observations} marked backup${row.observations === 1 ? "" : "s"} held, first ${day(row.firstObservedAt)}, latest ${day(row.lastObservedAt)}, build ${row.clientVersion ?? "unknown"}.`,
+          : "The latest marked backup could not be read.",
+        `${row.observations} marked backup${row.observations === 1 ? "" : "s"}, first ${day(row.firstObservedAt)}, latest ${day(row.lastObservedAt)}, build ${row.clientVersion ?? "unknown"}.`,
       ];
       text.push([...lines, `Accept: ${accept}`, `Decline: ${decline}`].join("\n"));
       html.push(
@@ -113,7 +113,8 @@ export const sendReviewDigest = internalAction({
     const intro =
       `${rows.length} Freight Fate career${rows.length === 1 ? " is" : "s are"} waiting for review. ` +
       "Each was marked as changed outside the game, which also happens when a player copies a career " +
-      "to another computer. Its backups are held until you decide. Links open a confirmation page and " +
+      "to another computer. It keeps backing up until you decide. Accept clears its mark; Decline stops " +
+      "its backups and hides the driver's public profile. Links open a confirmation page and " +
       "expire in 14 days; the next digest carries fresh ones.";
     const subject = `Freight Fate: ${rows.length} career${rows.length === 1 ? "" : "s"} waiting for review`;
     const response = await fetch(RESEND_SEND_URL, {

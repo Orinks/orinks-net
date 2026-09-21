@@ -1,4 +1,5 @@
 import { internalMutation, internalQuery } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { driverIdFromName, SHARING_CONSENT_VERSION } from "./freightFate";
 import { screenDisplayName } from "./moderation";
@@ -128,37 +129,10 @@ export const setIntegrityFlag = internalMutation({
     flag: v.union(v.string(), v.null()),
   },
   handler: async (ctx, args) => {
-    const driver = await ctx.db
-      .query("freightFateDrivers")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
-      .unique();
-
+    const driver = await applyIntegrityFlag(ctx, args.driverId, args.flag);
     if (!driver) {
       throw new Error(`No driver with id "${args.driverId}".`);
     }
-
-    await ctx.db.patch(driver._id, {
-      integrityFlag: args.flag === null ? undefined : args.flag.slice(0, 32),
-      integrityFlaggedAt: args.flag === null ? undefined : Date.now(),
-    });
-
-    // The live board reads a denormalized flag on the presence row, not this
-    // driver row, so raising the verdict has to reach in and hold the listing
-    // now rather than at the driver's next heartbeat. Clearing it after
-    // review restores the listing the same way.
-    const presence = await ctx.db
-      .query("freightFatePresence")
-      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
-      .unique();
-    if (presence) {
-      await ctx.db.patch(presence._id, {
-        listed:
-          args.flag === null &&
-          driver.visibility === "public" &&
-          driver.sharingConsentVersion === SHARING_CONSENT_VERSION,
-      });
-    }
-
     return {
       driverId: driver.driverId,
       displayName: driver.displayName,
@@ -166,6 +140,38 @@ export const setIntegrityFlag = internalMutation({
     };
   },
 });
+
+/** Stamp or clear the flag; shared with a declined integrity review. */
+export async function applyIntegrityFlag(ctx: MutationCtx, driverId: string, flag: string | null) {
+  const driver = await ctx.db
+    .query("freightFateDrivers")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+    .unique();
+  if (!driver) return null;
+
+  await ctx.db.patch(driver._id, {
+    integrityFlag: flag === null ? undefined : flag.slice(0, 32),
+    integrityFlaggedAt: flag === null ? undefined : Date.now(),
+  });
+
+  // The live board reads a denormalized flag on the presence row, not this
+  // driver row, so raising the verdict has to reach in and hold the listing
+  // now rather than at the driver's next heartbeat. Clearing it after
+  // review restores the listing the same way.
+  const presence = await ctx.db
+    .query("freightFatePresence")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+    .unique();
+  if (presence) {
+    await ctx.db.patch(presence._id, {
+      listed:
+        flag === null &&
+        driver.visibility === "public" &&
+        driver.sharingConsentVersion === SHARING_CONSENT_VERSION,
+    });
+  }
+  return driver;
+}
 
 // Who runs what: one line per driver with the game build it last posted from
 // (stamped by updatePresence, journal events, or Cloud Backup upload) and any
