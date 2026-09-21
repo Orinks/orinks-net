@@ -347,6 +347,14 @@ export const recordRejectedUpload = internalMutation({
 //   accepted -- stored, and the game is told to clear its mark.
 //   declined -- refused, like every backup of a declined slot.
 //
+// A career moved to another computer proves it: the game sends copiedFrom,
+// the fingerprint of the save file exactly as it arrived, and when that
+// equals an UNMARKED revision this server already validated and stored for
+// the same driver and career, the move is accepted without the owner. Any
+// change to the file, however small, breaks the match; anything short of
+// an exact match is simply left for the owner, so this can only ever
+// accept, never flag or decline.
+//
 // A slot whose last review was settled by an unmarked backup (resolved), or
 // that has never been marked, starts a new pending review. Internal only:
 // the action calling it has already run the full validation gate.
@@ -360,6 +368,7 @@ export const recordIntegrityObservation = internalMutation({
     content: v.optional(v.bytes()),
     summary: v.optional(v.string()),
     clientVersion: v.optional(v.string()),
+    copiedFrom: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args): Promise<"pending" | "accepted" | "declined" | null> => {
@@ -376,6 +385,9 @@ export const recordIntegrityObservation = internalMutation({
       content: args.content,
       summary: args.summary,
     };
+    const proven = args.copiedFrom !== undefined &&
+      await provesMove(ctx, args.driverId, args.saveName, args.copiedFrom);
+    const moved = { status: "accepted" as const, autoAccepted: true, decidedAt: args.now, content: undefined };
     if (!seen) {
       await ctx.db.insert("freightFateIntegrityObservations", {
         driverId: args.driverId,
@@ -384,8 +396,9 @@ export const recordIntegrityObservation = internalMutation({
         firstObservedAt: args.now,
         observations: 1,
         status: "pending",
+        ...(proven ? moved : {}),
       });
-      return "pending";
+      return proven ? "accepted" : "pending";
     }
     const status = seen.status ?? "pending";
     // A game retrying the same backup is not a second observation.
@@ -400,8 +413,18 @@ export const recordIntegrityObservation = internalMutation({
         status: "pending",
         notifiedAt: undefined,
         decidedAt: undefined,
+        autoAccepted: undefined,
+        ...(proven ? moved : {}),
       });
-      return "pending";
+      return proven ? "accepted" : "pending";
+    }
+    if (status === "pending" && proven) {
+      await ctx.db.patch(seen._id, {
+        ...latest,
+        observations: repeat ? seen.observations : seen.observations + 1,
+        ...moved,
+      });
+      return "accepted";
     }
     if (!repeat) {
       await ctx.db.patch(seen._id, {
@@ -414,6 +437,18 @@ export const recordIntegrityObservation = internalMutation({
     return status;
   },
 });
+
+// True when copiedFrom names an unmarked revision of this driver's career
+// that the server itself validated and stored. The last ten revisions are
+// kept, which covers any copy made since the career's last few backups.
+async function provesMove(ctx: QueryCtx, driverId: string, saveName: string, copiedFrom: string) {
+  if (!/^[0-9a-f]{64}$/.test(copiedFrom)) return false;
+  const revisions = await ctx.db
+    .query("freightFateSaves")
+    .withIndex("by_slot", (q) => q.eq("driverId", driverId).eq("saveName", saveName))
+    .collect();
+  return revisions.some((row) => row.contentHash === copiedFrom && row.integrityModified === false);
+}
 
 async function integrityReviewRow(ctx: QueryCtx, driverId: string, saveName: string) {
   return await ctx.db
@@ -663,6 +698,7 @@ export const storeValidatedSave = internalMutation({
       revision,
       saveVersion: args.saveVersion,
       contentHash: args.contentHash,
+      integrityModified: (args.payload as Record<string, unknown>).integrity_modified === true,
       sizeBytes: args.content.byteLength,
       summary: args.summary,
       contentId,

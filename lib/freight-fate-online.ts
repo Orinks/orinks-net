@@ -136,6 +136,7 @@ export async function postFreightFateSave(input: {
   meaningfulPlay?: unknown;
   clientVersion?: string;
   reviewAware?: boolean;
+  copiedFrom?: string;
 }) {
   const client = getConvexClient();
 
@@ -157,6 +158,7 @@ export async function postFreightFateSave(input: {
       : {}),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
     ...(input.reviewAware ? { reviewAware: true } : {}),
+    ...(input.copiedFrom ? { copiedFrom: input.copiedFrom } : {}),
   });
 }
 

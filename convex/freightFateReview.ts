@@ -76,8 +76,9 @@ export async function verifyReviewClaim(token: string, now: number): Promise<Rev
   };
 }
 
-// Careers waiting for review that the digest should list. Empty unless at least one has a
-// marked backup the last digest did not include -- a day with nothing new
+// Careers waiting for review that the digest should list, plus computer
+// moves accepted automatically since the last digest (autoAccepted, listed
+// once, no links). Empty unless something is new -- a day with nothing new
 // sends no email, even while older reviews still wait.
 export const listReviewDigest = internalQuery({
   args: {},
@@ -93,11 +94,15 @@ export const listReviewDigest = internalQuery({
         .withIndex("by_status", (q) => q.eq("status", undefined))
         .collect()),
     ];
-    const anyNew = pending.some((row) =>
+    const moved = (await ctx.db
+      .query("freightFateIntegrityObservations")
+      .withIndex("by_status", (q) => q.eq("status", "accepted"))
+      .collect()).filter((row) => row.autoAccepted === true && row.notifiedAt === undefined);
+    const anyNew = moved.length > 0 || pending.some((row) =>
       row.notifiedAt === undefined || row.lastObservedAt > row.notifiedAt);
     if (!anyNew) return [];
     const rows = [];
-    for (const row of pending) {
+    for (const row of [...pending, ...moved]) {
       const driver = await ctx.db
         .query("freightFateDrivers")
         .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
@@ -113,6 +118,7 @@ export const listReviewDigest = internalQuery({
         lastObservedAt: row.lastObservedAt,
         observations: row.observations,
         isNew: row.notifiedAt === undefined || row.lastObservedAt > row.notifiedAt,
+        autoAccepted: row.autoAccepted === true,
         content: row.content ?? null,
       });
     }

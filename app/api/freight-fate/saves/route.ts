@@ -23,6 +23,7 @@ type SaveUploadRequest = {
   summary?: unknown;
   meaningfulPlay?: unknown;
   reviewAware?: unknown;
+  copiedFrom?: unknown;
 };
 
 function bearerToken(request: Request) {
@@ -101,6 +102,9 @@ export async function POST(request: Request) {
         : {}),
       clientVersion: freightFateClientVersion(request),
       ...(body.reviewAware === true ? { reviewAware: true } : {}),
+      ...(typeof body.copiedFrom === "string" && /^[0-9a-f]{64}$/.test(body.copiedFrom)
+        ? { copiedFrom: body.copiedFrom }
+        : {}),
     });
 
     if (!result) {

@@ -62,6 +62,10 @@ export const uploadValidatedSave = action({
     // Sent by builds that know the review_declined reason and the
     // clearIntegrityFlag reply.
     reviewAware: v.optional(v.boolean()),
+    // The fingerprint of a career's save file as it arrived on this
+    // computer, sent when the game marked it for failing another computer's
+    // signature. See freightFateSaves.recordIntegrityObservation.
+    copiedFrom: v.optional(v.string()),
     // Accepted only for direct callers of the former action contract. It is
     // intentionally ignored; security-sensitive time always comes from the
     // Convex runtime clock.
@@ -130,6 +134,7 @@ export const uploadValidatedSave = action({
         content: args.content,
         summary: args.summary,
         clientVersion: args.clientVersion,
+        copiedFrom: args.copiedFrom,
         now,
       });
       if (review === null) return { ok: false, reason: "unauthorized" };
@@ -141,6 +146,7 @@ export const uploadValidatedSave = action({
       meaningfulPlay: _unvalidatedMeaningfulPlay,
       now: _callerSuppliedNow,
       reviewAware: _reviewAware,
+      copiedFrom: _copiedFrom,
       ...request
     } = args;
     const stored: Record<string, unknown> = await ctx.runMutation(

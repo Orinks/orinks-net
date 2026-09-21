@@ -120,13 +120,13 @@ async function uploadReviewAware(
   auth: { driverId: string; driverTokenHash: string },
   payload: ReturnType<typeof validProfile>,
   parentRevision: number | null = null,
-  now = Date.now(),
+  extra: Record<string, unknown> = {},
 ) {
   const content = contentFor(payload);
   return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, {
     ...auth, saveName: payload.name, saveVersion: payload.version,
     parentRevision, contentHash: hash(content), content, summary: "Road Star, level 4",
-    now, reviewAware: true,
+    now: Date.now(), reviewAware: true, ...extra,
   });
 }
 
@@ -363,6 +363,74 @@ describe("validated private cloud revisions", () => {
     expect(await decided.text()).toContain("Accepted: Road Star");
     expect(await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
       .toMatchObject([{ status: "accepted" }]);
+  });
+
+  test("a career proven to be an exact copy of an unmarked backup is accepted as a move", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const reviews = async () =>
+      await t.query(internal.freightFateAdmin.listIntegrityObservations, {});
+    // The old computer's last backup, unmarked.
+    const clean = validProfile();
+    await expect(upload(t, auth, clean)).resolves.toMatchObject({ ok: true, revision: 1 });
+    // The new computer marks the copy and says which file it arrived as.
+    const marked = { ...clean, integrity_modified: true, integrity_notice_pending: true };
+    await expect(uploadReviewAware(t, auth, marked, 1, { copiedFrom: hash(contentFor(clean)) }))
+      .resolves.toMatchObject({ ok: true, revision: 2, clearIntegrityFlag: true });
+    expect(await reviews()).toMatchObject([{ status: "accepted" }]);
+
+    // It is listed once in the next digest, with no links to act on.
+    const digest = await t.query(internal.freightFateReview.listReviewDigest, {});
+    expect(digest).toMatchObject([{ saveName: "Road Star", autoAccepted: true }]);
+    await t.mutation(internal.freightFateReview.markDigestSent, {
+      ids: digest.map((row) => row.id), now: Date.now(),
+    });
+    expect(await t.query(internal.freightFateReview.listReviewDigest, {})).toEqual([]);
+  });
+
+  test("anything short of an exact copy of an unmarked backup is left for the owner", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const other = await provisionedDriver(t, "user_cloud_other");
+    const statusOf = async (saveName: string) =>
+      (await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
+        .find((row) => row.saveName === saveName)?.status;
+
+    // A fingerprint that matches nothing the server stored.
+    const marked = { ...validProfile(), integrity_modified: true };
+    const unmatched = await uploadReviewAware(t, auth, marked, null, { copiedFrom: "a".repeat(64) });
+    expect(unmatched).toMatchObject({ ok: true, revision: 1 });
+    expect(unmatched.clearIntegrityFlag).toBeUndefined();
+    expect(await statusOf("Road Star")).toBe("pending");
+
+    // A fingerprint of a revision that was itself marked proves nothing.
+    const markedTwo = { ...profileNamed("Second Career"), integrity_modified: true };
+    await uploadReviewAware(t, auth, markedTwo);
+    await uploadReviewAware(t, auth, { ...markedTwo, money: 9_100 }, 1, {
+      copiedFrom: hash(contentFor(markedTwo)),
+    });
+    expect(await statusOf("Second Career")).toBe("pending");
+
+    // Another driver's unmarked backup proves nothing for this driver.
+    const theirs = profileNamed("Third Career");
+    await upload(t, other, theirs);
+    await uploadReviewAware(t, auth, { ...theirs, integrity_modified: true }, null, {
+      copiedFrom: hash(contentFor(theirs)),
+    });
+    expect(await statusOf("Third Career")).toBe("pending");
+
+    // A declined career stays declined whatever it proves.
+    const fourth = profileNamed("Fourth Career");
+    await upload(t, auth, fourth);
+    await uploadReviewAware(t, auth, { ...fourth, integrity_modified: true }, 1);
+    const row = (await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
+      .find((r) => r.saveName === "Fourth Career")!;
+    await t.mutation(internal.freightFateSaves.decideIntegrityReview, {
+      id: row.id, decision: "declined",
+    });
+    await expect(uploadReviewAware(t, auth, { ...fourth, integrity_modified: true }, 2, {
+      copiedFrom: hash(contentFor(fourth)),
+    })).resolves.toMatchObject({ ok: false, reason: "review_declined" });
   });
 
   test("the same rejected payload from two drivers is kept once per driver", async () => {

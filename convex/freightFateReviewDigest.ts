@@ -60,6 +60,7 @@ type DigestRow = {
   lastObservedAt: number;
   observations: number;
   isNew: boolean;
+  autoAccepted: boolean;
   content: ArrayBuffer | null;
 };
 
@@ -80,7 +81,9 @@ export const sendReviewDigest = internalAction({
     const expiresAt = now + REVIEW_LINK_TTL_MS;
     const text: string[] = [];
     const html: string[] = [];
-    for (const row of rows) {
+    const waiting = rows.filter((row) => !row.autoAccepted);
+    const moved = rows.filter((row) => row.autoAccepted);
+    for (const row of waiting) {
       const link = async (decision: "accepted" | "declined") => {
         const token = await signReviewClaim({
           id: row.id, decision, firstObservedAt: row.firstObservedAt, expiresAt,
@@ -110,13 +113,25 @@ export const sendReviewDigest = internalAction({
         `<p><a href="${escapeHtml(decline)}">Decline ${escapeHtml(row.saveName)}</a></p>`,
       );
     }
-    const intro =
-      `${rows.length} Freight Fate career${rows.length === 1 ? " is" : "s are"} waiting for review. ` +
+    if (moved.length > 0) {
+      const lines = moved.map((row) =>
+        `${row.saveName}, driven by ${row.displayName} (${row.driverId}), ${day(row.lastObservedAt)}`);
+      const lead = "Accepted automatically as computer moves: each arrived as an exact copy of a " +
+        "backup the server had already stored unmarked.";
+      text.push([lead, ...lines].join("\n"));
+      html.push(`<h2>Computer moves</h2><p>${escapeHtml(lead)}</p><ul>` +
+        lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("") + "</ul>");
+    }
+    const intro = waiting.length === 0
+      ? "No Freight Fate careers are waiting for review."
+      : `${waiting.length} Freight Fate career${waiting.length === 1 ? " is" : "s are"} waiting for review. ` +
       "Each was marked as changed outside the game, which also happens when a player copies a career " +
       "to another computer. It keeps backing up until you decide. Accept clears its mark; Decline stops " +
       "its backups and hides the driver's public profile. Links open a confirmation page and " +
       "expire in 14 days; the next digest carries fresh ones.";
-    const subject = `Freight Fate: ${rows.length} career${rows.length === 1 ? "" : "s"} waiting for review`;
+    const subject = waiting.length > 0
+      ? `Freight Fate: ${waiting.length} career${waiting.length === 1 ? "" : "s"} waiting for review`
+      : `Freight Fate: ${moved.length} computer move${moved.length === 1 ? "" : "s"} accepted`;
     const response = await fetch(RESEND_SEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

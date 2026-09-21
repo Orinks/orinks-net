@@ -418,6 +418,11 @@ export default defineSchema({
     // sha256 hex of the content bytes, verified server-side at upload and
     // re-checked by the game after download.
     contentHash: v.string(),
+    // Whether this revision carried the game's "changed outside the game"
+    // mark. Only an unmarked revision can prove a later computer move (see
+    // freightFateSaves.recordIntegrityObservation); revisions stored before
+    // this was recorded prove nothing.
+    integrityModified: v.optional(v.boolean()),
     sizeBytes: v.number(),
     // Short player-facing description ("Level 12, $48,300, in Chicago") the
     // game speaks when offering a restore; never parsed.
@@ -495,6 +500,10 @@ export default defineSchema({
     // a newer marked backup arrived after it.
     notifiedAt: v.optional(v.number()),
     decidedAt: v.optional(v.number()),
+    // Accepted without the owner: the career proved it arrived as an exact
+    // copy of an unmarked backup the server already stored. Listed once in
+    // the next digest, with no links.
+    autoAccepted: v.optional(v.boolean()),
   })
     .index("by_driver_slot", ["driverId", "saveName"])
     .index("by_status", ["status", "lastObservedAt"])

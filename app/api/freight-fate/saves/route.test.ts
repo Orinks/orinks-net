@@ -76,12 +76,16 @@ describe("POST /api/freight-fate/saves", () => {
   test("carries the review handshake both ways", async () => {
     mocks.post.mockResolvedValue({ ok: true, revision: 3, clearIntegrityFlag: true });
     const request = post();
-    const body = { ...(await request.clone().json()), reviewAware: true };
+    const body = {
+      ...(await request.clone().json()), reviewAware: true, copiedFrom: "b".repeat(64),
+    };
     const response = await POST(new Request(request.url, {
       method: "POST", headers: request.headers, body: JSON.stringify(body),
     }));
 
-    expect(mocks.post).toHaveBeenCalledWith(expect.objectContaining({ reviewAware: true }));
+    expect(mocks.post).toHaveBeenCalledWith(
+      expect.objectContaining({ reviewAware: true, copiedFrom: "b".repeat(64) }),
+    );
     await expect(response.json()).resolves.toEqual({
       ok: true, revision: 3, clearIntegrityFlag: true,
     });
