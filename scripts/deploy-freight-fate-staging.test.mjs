@@ -6,10 +6,11 @@ import {
   isTransientConvexFailure,
 } from "./deploy-freight-fate-staging.mjs";
 
-describe("temporary Freight Fate staging deployment policy", () => {
-  it("deploys the fixed backend only for Vercel's dev branch", () => {
+describe("Freight Fate Vercel backend deployment policy", () => {
+  it("deploys the fixed staging backend for Vercel's dev branch", () => {
     expect(classifyVercelBuild({ branch: "dev", hasDeployKey: true })).toEqual({
       deployBackend: true,
+      target: "staging",
       reason: "dev uses fixed staging backend",
     });
     expect(classifyVercelBuild({ branch: "feature/profile-copy", hasDeployKey: false })).toEqual({
@@ -18,9 +19,25 @@ describe("temporary Freight Fate staging deployment policy", () => {
     });
   });
 
+  it("deploys the production backend for main", () => {
+    expect(classifyVercelBuild({ branch: "main", hasDeployKey: true })).toEqual({
+      deployBackend: true,
+      target: "production",
+      reason: "main deploys the production backend",
+    });
+  });
+
   it("refuses to publish dev without its fixed backend key", () => {
     expect(() => classifyVercelBuild({ branch: "dev", hasDeployKey: false })).toThrow(
       "dev is missing its Convex staging deploy key",
+    );
+  });
+
+  it("refuses to publish main's frontend without deploying its backend", () => {
+    // The failure this guards: the site ships, Vercel goes green, and the
+    // Convex functions behind it are a release behind.
+    expect(() => classifyVercelBuild({ branch: "main", hasDeployKey: false })).toThrow(
+      "main is missing its Convex production deploy key",
     );
   });
 
@@ -34,8 +51,14 @@ describe("temporary Freight Fate staging deployment policy", () => {
   });
 
   it("explicitly acknowledges the intentional production-class staging target", () => {
-    expect(convexDeployArgs()).toContain("--check-build-environment");
-    expect(convexDeployArgs()).toContain("disable");
+    expect(convexDeployArgs("staging")).toContain("--check-build-environment");
+    expect(convexDeployArgs("staging")).toContain("disable");
+  });
+
+  it("keeps the build-environment guard on for a real production deploy", () => {
+    expect(convexDeployArgs("production")).not.toContain("--check-build-environment");
+    expect(convexDeployArgs("production")).toContain("deploy");
+    expect(convexDeployArgs("production")).toContain("NEXT_PUBLIC_CONVEX_URL");
   });
 
 });
