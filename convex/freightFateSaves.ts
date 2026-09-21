@@ -335,6 +335,58 @@ export const recordRejectedUpload = internalMutation({
   },
 });
 
+// A validated upload that arrived carrying the client's own
+// "changed outside the game" mark. Kept as a reviewable observation, one row
+// per driver per career slot: the mark never clears once a career carries
+// it, so every later backup arrives marked too, and a row per payload would
+// grow by one per backup. The row keeps when the mark was first and last
+// seen, how many marked backups arrived, and the latest one's pointer.
+// Internal only: the action calling it has already run the full validation
+// gate.
+export const recordIntegrityObservation = internalMutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    saveName: v.string(),
+    saveVersion: v.number(),
+    contentHash: v.string(),
+    clientVersion: v.optional(v.string()),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver) return;
+    const seen = await ctx.db
+      .query("freightFateIntegrityObservations")
+      .withIndex("by_driver_slot", (q) =>
+        q.eq("driverId", args.driverId).eq("saveName", args.saveName),
+      )
+      .first();
+    if (!seen) {
+      await ctx.db.insert("freightFateIntegrityObservations", {
+        driverId: args.driverId,
+        saveName: args.saveName,
+        saveVersion: args.saveVersion,
+        contentHash: args.contentHash,
+        clientVersion: args.clientVersion,
+        firstObservedAt: args.now,
+        lastObservedAt: args.now,
+        observations: 1,
+      });
+      return;
+    }
+    // A game retrying the same backup is not a second observation.
+    if (seen.contentHash === args.contentHash) return;
+    await ctx.db.patch(seen._id, {
+      saveVersion: args.saveVersion,
+      contentHash: args.contentHash,
+      clientVersion: args.clientVersion,
+      lastObservedAt: args.now,
+      observations: seen.observations + 1,
+    });
+  },
+});
+
 // Drop retained payloads past the review window. Internal only:
 // Runs on a cron; returns how much it removed so a backlog is visible in the
 // logs. Also runnable by hand:
@@ -356,6 +408,33 @@ export const pruneRejectedUploads = internalMutation({
 
     // A full batch means more was waiting than one pass can take; the next
     // tick continues from there.
+    return {
+      deleted: stale.length,
+      moreWaiting: stale.length === REJECTED_UPLOAD_PRUNE_BATCH,
+    };
+  },
+});
+
+// Integrity observations share the rejected-upload review window, counted
+// from the last marked backup: a slot not seen marked for that long has
+// either been reviewed already or stopped mattering.
+// Runs on the same daily cron:
+//
+//   npx convex run freightFateSaves:pruneIntegrityObservations --prod
+export const pruneIntegrityObservations = internalMutation({
+  args: { now: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = args.now ?? Date.now();
+    const cutoff = now - REJECTED_UPLOAD_TTL_MS;
+    const stale = await ctx.db
+      .query("freightFateIntegrityObservations")
+      .withIndex("by_last_observed_at", (q) => q.lt("lastObservedAt", cutoff))
+      .take(REJECTED_UPLOAD_PRUNE_BATCH);
+
+    for (const row of stale) {
+      await ctx.db.delete(row._id);
+    }
+
     return {
       deleted: stale.length,
       moreWaiting: stale.length === REJECTED_UPLOAD_PRUNE_BATCH,

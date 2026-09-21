@@ -205,6 +205,46 @@ describe("validated private cloud revisions", () => {
     expect(await flagOf()).toBe("impossible_money");
   });
 
+  test("a marked upload that passes validation leaves a reviewable observation", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const observations = async () =>
+      await t.query(internal.freightFateAdmin.listIntegrityObservations, {});
+
+    // A career carrying the client's "changed outside the game" mark is
+    // still validated in full and stored -- but now it is also recorded, so
+    // a runtime tamper mark (or an honest second-computer copy) leaves a
+    // trail a human can review instead of only a console line.
+    const marked = { ...validProfile(), integrity_modified: true };
+    await expect(upload(t, auth, marked))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await observations()).toMatchObject([
+      { driverId: auth.driverId, saveName: "Road Star" },
+    ]);
+
+    // The same marked payload recorded again is a retry, not a new sighting.
+    const recordArgs = {
+      ...auth, saveName: marked.name, saveVersion: marked.version,
+      contentHash: hash(contentFor(marked)), now: Date.now(),
+    };
+    await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
+    expect(await observations()).toMatchObject([{ observations: 1 }]);
+
+    // The mark never clears, so later backups of the career arrive marked
+    // too. They update the slot's one row instead of adding rows.
+    const later = { ...marked, money: 9_100 };
+    await expect(upload(t, auth, later, 1))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    expect(await observations()).toMatchObject([
+      { saveName: "Road Star", observations: 2, contentHash: hash(contentFor(later)) },
+    ]);
+
+    // Unmarked careers record nothing.
+    await expect(upload(t, auth, profileNamed("Clean Career")))
+      .resolves.toMatchObject({ ok: true });
+    expect(await observations()).toHaveLength(1);
+  });
+
   test("the same rejected payload from two drivers is kept once per driver", async () => {
     const t = setup();
     const one = await provisionedDriver(t, "user_cloud_one");

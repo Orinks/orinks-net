@@ -25,6 +25,16 @@ crons.interval(
   {},
 );
 
+// Integrity observations share the same ninety-day review window. Rows are
+// small (a pointer, not a payload), but the table still gets the same daily
+// batched sweep.
+crons.interval(
+  "drop reviewed-window Freight Fate integrity observations",
+  { hours: 24 },
+  internal.freightFateSaves.pruneIntegrityObservations,
+  {},
+);
+
 // Activation rows live ten minutes unclaimed, and a claim restarts a
 // two-minute collection window, so the longest-lived row is one claimed at
 // the last second: about twelve minutes. They are deleted the moment they
