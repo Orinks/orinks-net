@@ -228,3 +228,34 @@ export const listRejectedUploads = internalQuery({
       .sort((a, b) => b.rejectedAt - a.rejectedAt);
   },
 });
+
+// Validated uploads that arrived carrying the client's own "changed outside
+// the game" mark, newest first. Evidence for review like rejected uploads,
+// but these saves were accepted -- the mark can mean an honest copy to a
+// second computer, a save edited on disk, or the runtime money guard
+// tripping. Internal only:
+//
+//   npx convex run freightFateAdmin:listIntegrityObservations --prod
+//   npx convex run freightFateAdmin:listIntegrityObservations '{"driverId":"<id>"}' --prod
+export const listIntegrityObservations = internalQuery({
+  args: { driverId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const rows = args.driverId
+      ? await ctx.db
+        .query("freightFateIntegrityObservations")
+        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId as string))
+        .collect()
+      : await ctx.db.query("freightFateIntegrityObservations").collect();
+    return rows
+      .map((row) => ({
+        id: row._id,
+        driverId: row.driverId,
+        saveName: row.saveName,
+        saveVersion: row.saveVersion,
+        clientVersion: row.clientVersion ?? null,
+        contentHash: row.contentHash,
+        observedAt: row.observedAt,
+      }))
+      .sort((a, b) => b.observedAt - a.observedAt);
+  },
+});

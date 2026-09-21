@@ -205,6 +205,39 @@ describe("validated private cloud revisions", () => {
     expect(await flagOf()).toBe("impossible_money");
   });
 
+  test("a marked upload that passes validation leaves a reviewable observation", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const observations = async () =>
+      await t.query(internal.freightFateAdmin.listIntegrityObservations, {});
+
+    // A career carrying the client's "changed outside the game" mark is
+    // still validated in full and stored -- but now it is also recorded, so
+    // a runtime tamper mark (or an honest second-computer copy) leaves a
+    // trail a human can review instead of only a console line.
+    const marked = { ...validProfile(), integrity_modified: true };
+    await expect(upload(t, auth, marked))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await observations()).toMatchObject([
+      { driverId: auth.driverId, saveName: "Road Star" },
+    ]);
+
+    // The same marked payload recorded again does not grow the table.
+    const content = contentFor(marked);
+    const recordArgs = {
+      ...auth, saveName: marked.name, saveVersion: marked.version,
+      contentHash: hash(content), now: Date.now(),
+    };
+    await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
+    await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
+    expect(await observations()).toHaveLength(1);
+
+    // Unmarked careers record nothing.
+    await expect(upload(t, auth, profileNamed("Clean Career")))
+      .resolves.toMatchObject({ ok: true });
+    expect(await observations()).toHaveLength(1);
+  });
+
   test("the same rejected payload from two drivers is kept once per driver", async () => {
     const t = setup();
     const one = await provisionedDriver(t, "user_cloud_one");

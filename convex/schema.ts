@@ -458,6 +458,29 @@ export default defineSchema({
     // seen this exact payload" with a single row.
     .index("by_driver_content", ["driverId", "contentHash"])
     .index("by_rejected_at", ["rejectedAt"]),
+  // A backup that PASSED the full validation gate while carrying the
+  // client's own "changed outside the game" mark (integrity_modified). The
+  // mark is raised by an honest copy to a second computer as readily as by a
+  // save or memory edit, so these rows are evidence for review, never a
+  // verdict: nothing public reads them and no flag is stamped from them.
+  // They exist because a marked-but-valid upload used to leave only a
+  // console line -- no trail when the game's runtime money guard (or a
+  // hand-edited save) was the thing that marked it. Unlike rejected uploads
+  // the payload is not retained: the same bytes already sit in
+  // freightFateSaves under contentHash, so keeping them again would double
+  // the storage cost of every marked career. Pruned alongside rejected
+  // uploads on the same review window.
+  freightFateIntegrityObservations: defineTable({
+    driverId: v.string(),
+    saveName: v.string(),
+    saveVersion: v.number(),
+    contentHash: v.string(),
+    clientVersion: v.optional(v.string()),
+    observedAt: v.number(),
+  })
+    .index("by_driver", ["driverId"])
+    .index("by_driver_content", ["driverId", "contentHash"])
+    .index("by_observed_at", ["observedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),
     eventId: v.string(),

@@ -120,6 +120,19 @@ export const uploadValidatedSave = action({
         `Freight Fate: modified-marked profile passed validation for driver ${args.driverId}` +
         ` (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
       );
+      // Keep a reviewable observation, not just a log line: the mark can come
+      // from the game's runtime money guard now, and a pattern of marked
+      // uploads from one driver is what a human reviews before deciding
+      // anything. The payload itself already lives in freightFateSaves.
+      await ctx.runMutation(anyApi.freightFateSaves.recordIntegrityObservation, {
+        driverId: args.driverId,
+        driverTokenHash: args.driverTokenHash,
+        saveName: args.saveName,
+        saveVersion: args.saveVersion,
+        contentHash: args.contentHash,
+        clientVersion: args.clientVersion,
+        now,
+      });
     }
     const signed = signPayload(validation.payload, now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
