@@ -37,3 +37,9 @@ This site's owner and much of its audience use screen readers. UI changes
 go through the accessibility review process (see the repo history for the
 pattern: design consult before writing UI, delta review after). Never
 ship UI without it.
+
+**No redundant text** (owner rule, 2026-09-21). Every sentence on a page is
+one a screen reader user sits through. Do not describe what the page already
+does ("this list updates itself", "refreshes automatically"), restate a
+heading, or explain something the controls make obvious. If a line tells the
+reader nothing they need, delete it.
