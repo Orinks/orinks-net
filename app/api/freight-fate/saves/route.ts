@@ -22,6 +22,7 @@ type SaveUploadRequest = {
   content?: unknown;
   summary?: unknown;
   meaningfulPlay?: unknown;
+  reviewAware?: unknown;
 };
 
 function bearerToken(request: Request) {
@@ -54,6 +55,9 @@ const FAILURE_STATUS: Record<string, number> = {
   invalid_meaningful_play: 422,
   unsupported_version: 422,
   signing_unavailable: 503,
+  // A career marked as changed outside the game waits for the owner.
+  held_for_review: 423,
+  review_declined: 403,
   rate_limited: 429,
 };
 
@@ -97,6 +101,7 @@ export async function POST(request: Request) {
         ? { meaningfulPlay: body.meaningfulPlay }
         : {}),
       clientVersion: freightFateClientVersion(request),
+      ...(body.reviewAware === true ? { reviewAware: true } : {}),
     });
 
     if (!result) {
@@ -137,6 +142,7 @@ export async function POST(request: Request) {
       ok: true,
       revision: result.revision,
       ...(result.evictedSaveName ? { evictedSaveName: result.evictedSaveName } : {}),
+      ...(result.clearIntegrityFlag === true ? { clearIntegrityFlag: true } : {}),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid save upload.";

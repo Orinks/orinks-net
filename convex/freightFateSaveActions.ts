@@ -20,6 +20,17 @@ function signingConfig() {
   return { privateKey, keyId };
 }
 
+// Holding a career is only fair when the owner hears about it: without the
+// digest's email settings and link secret, a held career would wait on a
+// review nobody is told about. Until they are all set, marked backups are
+// recorded and stored as before.
+function reviewConfigured() {
+  return Boolean(
+    process.env.RESEND_API_KEY && process.env.CONTACT_FROM_EMAIL &&
+    process.env.CONTACT_TO_EMAIL && (process.env.FREIGHT_FATE_REVIEW_SECRET ?? "").length >= 32,
+  );
+}
+
 function decodeAndValidate(content: ArrayBuffer, saveName: string, expectedHash: string) {
   const bytes = Buffer.from(content);
   if (createHash("sha256").update(bytes).digest("hex") !== expectedHash) {
@@ -59,6 +70,9 @@ export const uploadValidatedSave = action({
     saveVersion: v.number(), parentRevision: v.union(v.number(), v.null()),
     contentHash: v.string(), content: v.bytes(), summary: v.string(),
     clientVersion: v.optional(v.string()), meaningfulPlay: v.optional(v.any()),
+    // Sent by builds that know the review reasons (held_for_review,
+    // review_declined) and the clearIntegrityFlag reply.
+    reviewAware: v.optional(v.boolean()),
     // Accepted only for direct callers of the former action contract. It is
     // intentionally ignored; security-sensitive time always comes from the
     // Convex runtime clock.
@@ -112,41 +126,56 @@ export const uploadValidatedSave = action({
     }
     // A profile marked modified is a risk signal, never a verdict: the same
     // mark is raised by copying a career to a second computer, which is
-    // honest. It has already been through the full gate above -- nothing here
-    // samples or shortcuts -- so record that it passed and let it through.
-    // Absolution rides the next verified download (see downloadValidatedSave).
+    // honest, as readily as by an edit. It has already been through the full
+    // gate above, and it is still not stored until the owner has reviewed
+    // the career from the daily digest (freightFateReview.ts). Builds that
+    // predate review do not know the hold reasons, and would retry an
+    // unknown one every two minutes, so they get a refusal they already
+    // treat as final.
+    let clearIntegrityFlag = false;
     if (validation.payload.integrity_modified === true) {
-      console.warn(
-        `Freight Fate: modified-marked profile passed validation for driver ${args.driverId}` +
-        ` (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
-      );
-      // Keep a reviewable observation, not just a log line: the mark can come
-      // from the game's runtime money guard now, and a pattern of marked
-      // uploads from one driver is what a human reviews before deciding
-      // anything. The payload itself already lives in freightFateSaves.
-      await ctx.runMutation(anyApi.freightFateSaves.recordIntegrityObservation, {
+      const review = await ctx.runMutation(anyApi.freightFateSaves.recordIntegrityObservation, {
         driverId: args.driverId,
         driverTokenHash: args.driverTokenHash,
         saveName: args.saveName,
         saveVersion: args.saveVersion,
         contentHash: args.contentHash,
+        content: args.content,
+        summary: args.summary,
         clientVersion: args.clientVersion,
         now,
       });
+      if (review === null) return { ok: false, reason: "unauthorized" };
+      if (review !== "accepted" && reviewConfigured()) {
+        console.warn(
+          `Freight Fate: modified-marked profile ${review === "pending" ? "held for review" : "declined"}` +
+          ` for driver ${args.driverId} (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
+        );
+        const reason = review === "pending" ? "held_for_review" : "review_declined";
+        return { ok: false, reason: args.reviewAware === true ? reason : "invalid_career" };
+      }
+      // Accepted: store it, and tell the game to clear its mark. Its next
+      // backup then arrives unmarked, which settles the review.
+      clearIntegrityFlag = review === "accepted";
     }
     const signed = signPayload(validation.payload, now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
     const {
       meaningfulPlay: _unvalidatedMeaningfulPlay,
       now: _callerSuppliedNow,
+      reviewAware: _reviewAware,
       ...request
     } = args;
-    return ctx.runMutation(anyApi.freightFateSaves.storeValidatedSave, {
-      ...request,
-      ...signed,
-      payload: validation.payload,
-      ...(meaningfulPlay.value === undefined ? {} : { meaningfulPlay: meaningfulPlay.value }),
-    });
+    const stored: Record<string, unknown> = await ctx.runMutation(
+      anyApi.freightFateSaves.storeValidatedSave,
+      {
+        ...request,
+        ...signed,
+        payload: validation.payload,
+        ...(meaningfulPlay.value === undefined ? {} : { meaningfulPlay: meaningfulPlay.value }),
+      },
+    );
+    return stored.ok === true && clearIntegrityFlag ? { ...stored, clearIntegrityFlag } : stored;
   },
 });
 

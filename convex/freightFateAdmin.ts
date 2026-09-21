@@ -229,11 +229,11 @@ export const listRejectedUploads = internalQuery({
   },
 });
 
-// Validated uploads that arrived carrying the client's own "changed outside
-// the game" mark, newest first. Evidence for review like rejected uploads,
-// but these saves were accepted -- the mark can mean an honest copy to a
-// second computer, a save edited on disk, or the runtime money guard
-// tripping. Internal only:
+// Careers whose backups arrived carrying the client's own "changed outside
+// the game" mark, newest first, with where each review stands (see
+// freightFateSaves.recordIntegrityObservation). The mark can mean an honest
+// copy to a second computer, a save edited on disk, or the runtime money
+// guard tripping. Internal only:
 //
 //   npx convex run freightFateAdmin:listIntegrityObservations --prod
 //   npx convex run freightFateAdmin:listIntegrityObservations '{"driverId":"<id>"}' --prod
@@ -243,7 +243,7 @@ export const listIntegrityObservations = internalQuery({
     const rows = args.driverId
       ? await ctx.db
         .query("freightFateIntegrityObservations")
-        .withIndex("by_driver_slot",(q) => q.eq("driverId", args.driverId as string))
+        .withIndex("by_driver_slot", (q) => q.eq("driverId", args.driverId as string))
         .collect()
       : await ctx.db.query("freightFateIntegrityObservations").collect();
     return rows
@@ -257,6 +257,8 @@ export const listIntegrityObservations = internalQuery({
         firstObservedAt: row.firstObservedAt,
         lastObservedAt: row.lastObservedAt,
         observations: row.observations,
+        status: row.status ?? "pending",
+        decidedAt: row.decidedAt ?? null,
       }))
       .sort((a, b) => b.lastObservedAt - a.lastObservedAt);
   },

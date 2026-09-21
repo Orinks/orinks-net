@@ -336,13 +336,18 @@ export const recordRejectedUpload = internalMutation({
 });
 
 // A validated upload that arrived carrying the client's own
-// "changed outside the game" mark. Kept as a reviewable observation, one row
-// per driver per career slot: the mark never clears once a career carries
-// it, so every later backup arrives marked too, and a row per payload would
-// grow by one per backup. The row keeps when the mark was first and last
-// seen, how many marked backups arrived, and the latest one's pointer.
-// Internal only: the action calling it has already run the full validation
-// gate.
+// "changed outside the game" mark. One row per driver per career slot: the
+// mark never clears on its own, so every later backup of that career arrives
+// marked too. Returns the slot's review status, which decides what the
+// upload action does next:
+//
+//   pending  -- hold it: keep the payload for the reviewer, store nothing.
+//   accepted -- the owner cleared this career: store it as usual.
+//   declined -- the owner refused this career: refuse it.
+//
+// A slot whose last review was settled by an unmarked backup (resolved), or
+// that has never been marked, starts a new pending review. Internal only:
+// the action calling it has already run the full validation gate.
 export const recordIntegrityObservation = internalMutation({
   args: {
     driverId: v.string(),
@@ -350,42 +355,125 @@ export const recordIntegrityObservation = internalMutation({
     saveName: v.string(),
     saveVersion: v.number(),
     contentHash: v.string(),
+    content: v.optional(v.bytes()),
+    summary: v.optional(v.string()),
     clientVersion: v.optional(v.string()),
     now: v.number(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<"pending" | "accepted" | "declined" | null> => {
     const { driver } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
-    if (!driver) return;
+    if (!driver) return null;
     const seen = await ctx.db
       .query("freightFateIntegrityObservations")
       .withIndex("by_driver_slot", (q) =>
         q.eq("driverId", args.driverId).eq("saveName", args.saveName),
       )
       .first();
-    if (!seen) {
-      await ctx.db.insert("freightFateIntegrityObservations", {
-        driverId: args.driverId,
-        saveName: args.saveName,
-        saveVersion: args.saveVersion,
-        contentHash: args.contentHash,
-        clientVersion: args.clientVersion,
-        firstObservedAt: args.now,
-        lastObservedAt: args.now,
-        observations: 1,
-      });
-      return;
-    }
-    // A game retrying the same backup is not a second observation.
-    if (seen.contentHash === args.contentHash) return;
-    await ctx.db.patch(seen._id, {
+    const held = {
       saveVersion: args.saveVersion,
       contentHash: args.contentHash,
       clientVersion: args.clientVersion,
       lastObservedAt: args.now,
-      observations: seen.observations + 1,
-    });
+      content: args.content,
+      summary: args.summary,
+    };
+    if (!seen) {
+      await ctx.db.insert("freightFateIntegrityObservations", {
+        driverId: args.driverId,
+        saveName: args.saveName,
+        ...held,
+        firstObservedAt: args.now,
+        observations: 1,
+        status: "pending",
+      });
+      return "pending";
+    }
+    const status = seen.status ?? "pending";
+    // A game retrying the same backup is not a second observation.
+    const repeat = seen.contentHash === args.contentHash;
+    if (status === "accepted" || status === "declined") {
+      if (!repeat) {
+        await ctx.db.patch(seen._id, {
+          saveVersion: args.saveVersion,
+          contentHash: args.contentHash,
+          clientVersion: args.clientVersion,
+          lastObservedAt: args.now,
+          observations: seen.observations + 1,
+        });
+      }
+      return status;
+    }
+    if (status === "resolved") {
+      // A new review: the digest lists it as new, and the old decision no
+      // longer speaks for a career that has been marked again since.
+      await ctx.db.patch(seen._id, {
+        ...held,
+        firstObservedAt: args.now,
+        observations: 1,
+        status: "pending",
+        notifiedAt: undefined,
+        decidedAt: undefined,
+      });
+      return "pending";
+    }
+    if (!repeat) {
+      await ctx.db.patch(seen._id, {
+        ...held,
+        observations: seen.observations + 1,
+        status: "pending",
+      });
+    }
+    return "pending";
   },
 });
+
+// The owner's decision on a pending review, from the digest's Accept or
+// Decline link (freightFateReview.ts) or by hand:
+//
+//   npx convex run freightFateSaves:decideIntegrityReview '{"id":"<row id>","decision":"accepted"}' --prod
+//
+// Only a pending review can be decided, so an old link clicked after the
+// career was marked again cannot decide the newer review.
+export const decideIntegrityReview = internalMutation({
+  args: {
+    id: v.id("freightFateIntegrityObservations"),
+    decision: v.union(v.literal("accepted"), v.literal("declined")),
+    firstObservedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    if (!row) return { ok: false as const, reason: "not_found" };
+    if ((row.status ?? "pending") !== "pending") {
+      return { ok: false as const, reason: "already_decided", status: row.status };
+    }
+    if (args.firstObservedAt !== undefined && args.firstObservedAt !== row.firstObservedAt) {
+      return { ok: false as const, reason: "stale_link" };
+    }
+    await ctx.db.patch(row._id, {
+      status: args.decision,
+      decidedAt: Date.now(),
+      content: undefined,
+    });
+    return { ok: true as const, driverId: row.driverId, saveName: row.saveName };
+  },
+});
+
+// An unmarked backup of a slot settles its review: after an accept, the game
+// has cleared its mark; after a decline, the player restored a clean backup.
+// Either way the next mark starts a new review. Called from
+// storeValidatedSave, which already holds the slot.
+async function settleIntegrityReview(
+  ctx: MutationCtx,
+  driverId: string,
+  saveName: string,
+) {
+  const row = await ctx.db
+    .query("freightFateIntegrityObservations")
+    .withIndex("by_driver_slot", (q) => q.eq("driverId", driverId).eq("saveName", saveName))
+    .first();
+  if (!row || row.status === "resolved") return;
+  await ctx.db.patch(row._id, { status: "resolved", content: undefined });
+}
 
 // Drop retained payloads past the review window. Internal only:
 // Runs on a cron; returns how much it removed so a backlog is visible in the
@@ -557,6 +645,9 @@ export const storeValidatedSave = internalMutation({
 
     const payload = args.payload as Record<string, unknown>;
     await mergeVerifiedAchievements(ctx, args.driverId, payload, now);
+    if (payload.integrity_modified !== true) {
+      await settleIntegrityReview(ctx, args.driverId, args.saveName);
+    }
 
     let acceptedMeaningful = false;
     if (args.meaningfulPlay) {

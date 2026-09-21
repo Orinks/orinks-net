@@ -461,16 +461,16 @@ export default defineSchema({
   // A backup that PASSED the full validation gate while carrying the
   // client's own "changed outside the game" mark (integrity_modified). The
   // mark is raised by an honest copy to a second computer as readily as by a
-  // save or memory edit, so these rows are evidence for review, never a
-  // verdict: nothing public reads them and no flag is stamped from them.
-  // They exist because a marked-but-valid upload used to leave only a
-  // console line -- no trail when the game's runtime money guard (or a
-  // hand-edited save) was the thing that marked it. Unlike rejected uploads
-  // the payload is not retained: the same bytes already sit in
-  // freightFateSaves under contentHash, so keeping them again would double
-  // the storage cost of every marked career. The mark never clears, so a
-  // row is one career slot: first and last marked backup, how many, and the
-  // latest one's pointer. Pruned alongside rejected uploads on the same
+  // save or memory edit, so a marked backup is held, not stored, until the
+  // owner reviews it from the daily digest email. One row per career slot:
+  // first and last marked backup, how many, and the latest held payload.
+  //
+  // status: pending (held, waiting for the owner), accepted (marked backups
+  // of this slot are stored, and the game is told to clear its mark),
+  // declined (marked backups of this slot are refused), resolved (an
+  // unmarked backup of the slot arrived, so the review is settled; the next
+  // mark starts a new one). Rows from before review existed have no status
+  // and read as pending. Pruned alongside rejected uploads on the same
   // review window, counted from the last marked backup.
   freightFateIntegrityObservations: defineTable({
     driverId: v.string(),
@@ -481,8 +481,23 @@ export default defineSchema({
     firstObservedAt: v.number(),
     lastObservedAt: v.number(),
     observations: v.number(),
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("resolved"),
+    )),
+    // The latest held payload, gzipped exactly as the game sent it: what the
+    // reviewer judges. Cleared once a decision is made.
+    content: v.optional(v.bytes()),
+    summary: v.optional(v.string()),
+    // The last digest that listed this row; a row is listed again only when
+    // a newer marked backup arrived after it.
+    notifiedAt: v.optional(v.number()),
+    decidedAt: v.optional(v.number()),
   })
     .index("by_driver_slot", ["driverId", "saveName"])
+    .index("by_status", ["status", "lastObservedAt"])
     .index("by_last_observed_at", ["lastObservedAt"]),
   freightFateDriverEvents: defineTable({
     driverId: v.string(),

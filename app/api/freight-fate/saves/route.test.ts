@@ -72,4 +72,27 @@ describe("POST /api/freight-fate/saves", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true, revision: 2 });
   });
+
+  test("carries the review handshake both ways", async () => {
+    mocks.post.mockResolvedValue({ ok: true, revision: 3, clearIntegrityFlag: true });
+    const request = post();
+    const body = { ...(await request.clone().json()), reviewAware: true };
+    const response = await POST(new Request(request.url, {
+      method: "POST", headers: request.headers, body: JSON.stringify(body),
+    }));
+
+    expect(mocks.post).toHaveBeenCalledWith(expect.objectContaining({ reviewAware: true }));
+    await expect(response.json()).resolves.toEqual({
+      ok: true, revision: 3, clearIntegrityFlag: true,
+    });
+  });
+
+  test("a held career answers with its reason", async () => {
+    mocks.post.mockResolvedValue({ ok: false, reason: "held_for_review" });
+
+    const response = await POST(post());
+
+    expect(response.status).toBe(423);
+    await expect(response.json()).resolves.toMatchObject({ error: "held_for_review" });
+  });
 });

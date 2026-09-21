@@ -25,13 +25,21 @@ crons.interval(
   {},
 );
 
-// Integrity observations share the same ninety-day review window. Rows are
-// small (a pointer, not a payload), but the table still gets the same daily
-// batched sweep.
+// Integrity reviews share the same ninety-day window, counted from a career's
+// last marked backup, and get the same daily batched sweep.
 crons.interval(
   "drop reviewed-window Freight Fate integrity observations",
   { hours: 24 },
   internal.freightFateSaves.pruneIntegrityObservations,
+  {},
+);
+
+// The owner's digest of careers held for review: 13:00 UTC is 9 a.m.
+// Eastern. Sends nothing on a day with nothing new.
+crons.daily(
+  "email the Freight Fate review digest",
+  { hourUTC: 13, minuteUTC: 0 },
+  internal.freightFateReviewDigest.sendReviewDigest,
   {},
 );
 

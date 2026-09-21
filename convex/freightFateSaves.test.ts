@@ -8,6 +8,7 @@ import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import { REJECTED_UPLOAD_TTL_MS } from "./freightFateSaves";
+import { REVIEW_LINK_TTL_MS, signReviewClaim } from "./freightFateReview";
 import { levelForXp } from "./freightFateProfileProjection";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -114,6 +115,21 @@ async function upload(
   return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, request);
 }
 
+async function uploadReviewAware(
+  t: ReturnType<typeof setup>,
+  auth: { driverId: string; driverTokenHash: string },
+  payload: ReturnType<typeof validProfile>,
+  parentRevision: number | null = null,
+  now = Date.now(),
+) {
+  const content = contentFor(payload);
+  return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, {
+    ...auth, saveName: payload.name, saveVersion: payload.version,
+    parentRevision, contentHash: hash(content), content, summary: "Road Star, level 4",
+    now, reviewAware: true,
+  });
+}
+
 async function uploadMeaningfully(
   t: ReturnType<typeof setup>,
   auth: { driverId: string; driverTokenHash: string },
@@ -131,12 +147,20 @@ beforeEach(() => {
   process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY = privateKey
     .export({ format: "der", type: "pkcs8" }).toString("base64");
   process.env.FREIGHT_FATE_PROFILE_SIGNING_KEY_ID = "2026-07-test";
+  // Review holds only run when the owner can be told about them.
+  process.env.RESEND_API_KEY = "re_test";
+  process.env.CONTACT_FROM_EMAIL = "reviews@example.test";
+  process.env.CONTACT_TO_EMAIL = "owner@example.test";
+  process.env.FREIGHT_FATE_REVIEW_SECRET = "test-review-secret-that-is-long-enough-000";
 });
 
 afterEach(() => {
   vi.useRealTimers();
   delete process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY;
   delete process.env.FREIGHT_FATE_PROFILE_SIGNING_KEY_ID;
+  for (const key of ["RESEND_API_KEY", "CONTACT_FROM_EMAIL", "CONTACT_TO_EMAIL", "FREIGHT_FATE_REVIEW_SECRET"]) {
+    delete process.env[key];
+  }
 });
 
 describe("validated private cloud revisions", () => {
@@ -205,44 +229,135 @@ describe("validated private cloud revisions", () => {
     expect(await flagOf()).toBe("impossible_money");
   });
 
-  test("a marked upload that passes validation leaves a reviewable observation", async () => {
+  test("a marked career is held for review, then stored once the owner accepts it", async () => {
     const t = setup();
     const auth = await provisionedDriver(t);
-    const observations = async () =>
+    const reviews = async () =>
       await t.query(internal.freightFateAdmin.listIntegrityObservations, {});
-
-    // A career carrying the client's "changed outside the game" mark is
-    // still validated in full and stored -- but now it is also recorded, so
-    // a runtime tamper mark (or an honest second-computer copy) leaves a
-    // trail a human can review instead of only a console line.
+    const listed = async () => await t.query(api.freightFateSaves.listSaves, auth);
     const marked = { ...validProfile(), integrity_modified: true };
+
+    // Held, not stored: a build that knows review hears why...
+    await expect(uploadReviewAware(t, auth, marked))
+      .resolves.toMatchObject({ ok: false, reason: "held_for_review" });
+    // ...and an older build gets a refusal it already treats as final,
+    // instead of an unknown reason it would retry every two minutes.
     await expect(upload(t, auth, marked))
-      .resolves.toMatchObject({ ok: true, revision: 1 });
-    expect(await observations()).toMatchObject([
-      { driverId: auth.driverId, saveName: "Road Star" },
-    ]);
+      .resolves.toMatchObject({ ok: false, reason: "invalid_career" });
+    expect(await listed()).toMatchObject({ ok: true, saves: [] });
+    const [held] = await reviews();
+    expect(held).toMatchObject({ saveName: "Road Star", observations: 1, status: "pending" });
 
-    // The same marked payload recorded again is a retry, not a new sighting.
-    const recordArgs = {
-      ...auth, saveName: marked.name, saveVersion: marked.version,
-      contentHash: hash(contentFor(marked)), now: Date.now(),
-    };
-    await t.mutation(internal.freightFateSaves.recordIntegrityObservation, recordArgs);
-    expect(await observations()).toMatchObject([{ observations: 1 }]);
-
-    // The mark never clears, so later backups of the career arrive marked
-    // too. They update the slot's one row instead of adding rows.
+    // Later backups of the same career update its one review.
     const later = { ...marked, money: 9_100 };
-    await expect(upload(t, auth, later, 1))
-      .resolves.toMatchObject({ ok: true, revision: 2 });
-    expect(await observations()).toMatchObject([
-      { saveName: "Road Star", observations: 2, contentHash: hash(contentFor(later)) },
+    await uploadReviewAware(t, auth, later);
+    expect(await reviews()).toMatchObject([
+      { observations: 2, contentHash: hash(contentFor(later)) },
     ]);
+
+    // Accepted: the next marked backup is stored, and the game is told to
+    // clear its mark.
+    await expect(t.mutation(internal.freightFateSaves.decideIntegrityReview, {
+      id: held.id, decision: "accepted",
+    })).resolves.toMatchObject({ ok: true });
+    await expect(uploadReviewAware(t, auth, later))
+      .resolves.toMatchObject({ ok: true, revision: 1, clearIntegrityFlag: true });
+
+    // The game's next backup arrives unmarked, which settles the review; a
+    // new mark after that starts a new one instead of riding the old accept.
+    await expect(upload(t, auth, { ...validProfile(), money: 9_200 }, 1))
+      .resolves.toMatchObject({ ok: true, revision: 2 });
+    await expect(uploadReviewAware(t, auth, { ...marked, money: 9_300 }, 2))
+      .resolves.toMatchObject({ ok: false, reason: "held_for_review" });
+    expect(await reviews()).toMatchObject([{ observations: 1, status: "pending" }]);
 
     // Unmarked careers record nothing.
     await expect(upload(t, auth, profileNamed("Clean Career")))
       .resolves.toMatchObject({ ok: true });
-    expect(await observations()).toHaveLength(1);
+    expect(await reviews()).toHaveLength(1);
+  });
+
+  test("without the review email configured, a marked career backs up as before", async () => {
+    delete process.env.RESEND_API_KEY;
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    await expect(uploadReviewAware(t, auth, { ...validProfile(), integrity_modified: true }))
+      .resolves.toMatchObject({ ok: true, revision: 1 });
+    expect(await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
+      .toMatchObject([{ saveName: "Road Star", observations: 1 }]);
+  });
+
+  test("a declined career stays refused until it backs up unmarked", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const marked = { ...validProfile(), integrity_modified: true };
+    await uploadReviewAware(t, auth, marked);
+    const [held] = await t.query(internal.freightFateAdmin.listIntegrityObservations, {});
+    await t.mutation(internal.freightFateSaves.decideIntegrityReview, {
+      id: held.id, decision: "declined",
+    });
+    await expect(uploadReviewAware(t, auth, { ...marked, money: 9_100 }))
+      .resolves.toMatchObject({ ok: false, reason: "review_declined" });
+    // A decided review cannot be decided again from an old link.
+    await expect(t.mutation(internal.freightFateSaves.decideIntegrityReview, {
+      id: held.id, decision: "accepted",
+    })).resolves.toMatchObject({ ok: false, reason: "already_decided" });
+    // Restoring an unmarked backup and backing that up settles it.
+    await expect(upload(t, auth)).resolves.toMatchObject({ ok: true, revision: 1 });
+    await expect(uploadReviewAware(t, auth, { ...marked, money: 9_100 }, 1))
+      .resolves.toMatchObject({ ok: false, reason: "held_for_review" });
+  });
+
+  test("the digest lists held careers only when something is new", async () => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const digest = async () => await t.query(internal.freightFateReview.listReviewDigest, {});
+    expect(await digest()).toEqual([]);
+    const marked = { ...validProfile(), integrity_modified: true };
+    await uploadReviewAware(t, auth, marked);
+    const first = await digest();
+    expect(first).toMatchObject([{ saveName: "Road Star", isNew: true, observations: 1 }]);
+    expect(first[0].content).not.toBeNull();
+    await t.mutation(internal.freightFateReview.markDigestSent, {
+      ids: first.map((row) => row.id), now: first[0].lastObservedAt,
+    });
+    // Nothing new: no email, even though the review still waits.
+    expect(await digest()).toEqual([]);
+    // A newer marked backup puts it back in the next digest.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await uploadReviewAware(t, auth, { ...marked, money: 9_100 });
+    expect(await digest()).toMatchObject([{ isNew: true, observations: 2 }]);
+  });
+
+  test("review links open a page and only the page's form decides", async () => {
+    {
+      const t = setup();
+      const auth = await provisionedDriver(t);
+      await uploadReviewAware(t, auth, { ...validProfile(), integrity_modified: true });
+      const [held] = await t.query(internal.freightFateReview.listReviewDigest, {});
+      const token = await signReviewClaim({
+        id: held.id, decision: "accepted", firstObservedAt: held.firstObservedAt,
+        expiresAt: Date.now() + REVIEW_LINK_TTL_MS,
+      });
+      const url = `/freight-fate/review?t=${encodeURIComponent(token!)}`;
+      const opened = await t.fetch(url);
+      expect(opened.status).toBe(200);
+      expect(await opened.text()).toContain("Accept this career");
+      // Opening the link decided nothing.
+      expect(await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
+        .toMatchObject([{ status: "pending" }]);
+      // A changed token is refused.
+      const forged = await t.fetch(url.replace("accepted", "declined"));
+      expect(forged.status).toBe(400);
+      const decided = await t.fetch("/freight-fate/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ t: token! }).toString(),
+      });
+      expect(await decided.text()).toContain("Accepted: Road Star");
+      expect(await t.query(internal.freightFateAdmin.listIntegrityObservations, {}))
+        .toMatchObject([{ status: "accepted" }]);
+    }
   });
 
   test("the same rejected payload from two drivers is kept once per driver", async () => {
