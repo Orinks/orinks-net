@@ -31,7 +31,13 @@ vi.mock("next/cache", () => ({
   },
 }));
 
-import { getReleases, renderMarkdown, stripSnapshotPreamble } from "./github";
+import {
+  getLatestStableRelease,
+  getReleaseGroups,
+  getReleases,
+  renderMarkdown,
+  stripSnapshotPreamble,
+} from "./github";
 
 describe("snapshot preamble", () => {
   const preamble =
@@ -69,6 +75,13 @@ describe("GitHub response caching", () => {
   test("persists release and rendered-note responses with bounded revalidation", () => {
     expect(cacheCalls).toEqual([
       {
+        keyParts: ["github-releases"],
+        revalidate: 60,
+        tags: ["github-releases"],
+      },
+      {
+        // The latest-stable lookup shares the releases tag so one
+        // revalidation still refreshes both halves of the downloads page.
         keyParts: ["github-releases"],
         revalidate: 60,
         tags: ["github-releases"],
@@ -132,5 +145,66 @@ describe("GitHub response caching", () => {
     // inside unstable_cache pinned raw markdown on the downloads page for a day.
     await expect(renderMarkdown("Fixed.", "Freight-Fate")).resolves.toBe("<p>Fixed.</p>");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("finding the stable release behind a wall of snapshots", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    cacheStore.clear();
+  });
+
+  const release = (tag: string, prerelease: boolean) => ({
+    tag_name: tag,
+    name: tag,
+    prerelease,
+    draft: false,
+    body: "",
+    published_at: "2026-09-21T00:00:00Z",
+    html_url: `https://github.com/Orinks/Freight-Fate/releases/tag/${tag}`,
+    assets: [],
+  });
+
+  test("asks GitHub for the latest release rather than scanning a page", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(release("v1.8.8.1", false)), { status: 200 }));
+
+    await expect(getLatestStableRelease("Freight-Fate")).resolves.toMatchObject({
+      tag_name: "v1.8.8.1",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.github.com/repos/Orinks/Freight-Fate/releases/latest",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+  });
+
+  test("a repo with nothing but prereleases has no stable release, not an error", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("", { status: 404 }));
+
+    await expect(getLatestStableRelease("Freight-Fate")).resolves.toBeNull();
+  });
+
+  test("the stable release survives more snapshots than the release page holds", async () => {
+    // The outage this guards: a preview snapshot every night pushed v1.8.8.1
+    // past the 20 releases the list request returns, and the downloads page
+    // told every player there was no stable game to download.
+    const snapshots = Array.from({ length: 20 }, (_, index) =>
+      release(`1.9-tester-2026090${index % 10}`, true),
+    );
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/releases/latest")) {
+        return new Response(JSON.stringify(release("v1.8.8.1", false)), { status: 200 });
+      }
+      if (url.includes("/releases?")) {
+        return new Response(JSON.stringify(snapshots), { status: 200 });
+      }
+      return new Response("<p></p>", { status: 200 });
+    });
+
+    const groups = await getReleaseGroups("Freight-Fate");
+
+    expect(groups.stable?.tag_name).toBe("v1.8.8.1");
   });
 });

@@ -80,6 +80,37 @@ const getCachedReleases = unstable_cache(
   { revalidate: 60, tags: [githubReleasesCacheTag] },
 );
 
+const getCachedLatestStable = unstable_cache(
+  async (repo: string): Promise<GitHubRelease | null> => {
+    // GitHub's own "latest" endpoint, not the first full release on a page of
+    // recent ones. Freight Fate publishes a preview snapshot every night, and
+    // on 2026-09-20 the 21st of them pushed v1.8.8.1 out of the 20-release
+    // window: the downloads page said "No stable release was found on GitHub"
+    // while that release sat on GitHub with all five of its assets, and every
+    // player looking for the stable game saw nothing to download. A bigger
+    // window would only have been a longer fuse -- this endpoint answers with
+    // the newest published non-prerelease however many snapshots precede it.
+    const response = await fetch(`https://api.github.com/repos/${repoSlug(repo)}/releases/latest`, {
+      headers: githubHeaders(),
+      cache: "no-store",
+    });
+
+    // A repo that has only ever published prereleases has no latest release,
+    // and that is a 404 rather than an error worth failing the page over.
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`GitHub latest release request failed for ${repo}: ${response.status}`);
+    }
+
+    return response.json() as Promise<GitHubRelease>;
+  },
+  [githubReleasesCacheTag],
+  { revalidate: 60, tags: [githubReleasesCacheTag] },
+);
+
 export const githubRenderedMarkdownCacheTag = "github-rendered-markdown";
 
 const getCachedRenderedMarkdown = unstable_cache(
@@ -128,6 +159,10 @@ export async function renderMarkdown(body: string | null, repo: string) {
 
 export async function getReleases(repo: string): Promise<GitHubRelease[]> {
   return getCachedReleases(repo);
+}
+
+export async function getLatestStableRelease(repo: string): Promise<GitHubRelease | null> {
+  return getCachedLatestStable(repo);
 }
 
 export async function getRecentReleaseActivity(repo: string): Promise<GitHubActivityItem[]> {
@@ -246,11 +281,19 @@ export function stripSnapshotPreamble(body: string | null) {
   return lines.slice(index).join("\n").trim();
 }
 
+const isStable = (release: GitHubRelease) =>
+  !release.prerelease && !release.tag_name.toLowerCase().startsWith("nightly");
+
 export async function getReleaseGroups(repo: string) {
-  const releases = await getReleases(repo);
-  const stable = releases.find(
-    (release) => !release.prerelease && !release.tag_name.toLowerCase().startsWith("nightly"),
-  );
+  const [releases, latestStable] = await Promise.all([
+    getReleases(repo),
+    getLatestStableRelease(repo),
+  ]);
+  // The scan stays as a fallback: an old `nightly-*` tag published as a full
+  // release would come back from the latest endpoint, and it is not what the
+  // downloads page means by stable.
+  const stable =
+    latestStable && isStable(latestStable) ? latestStable : releases.find(isStable);
   const nightlies = releases
     .filter((release) => release.prerelease || release.tag_name.toLowerCase().startsWith("nightly"))
     .slice(0, 5);
