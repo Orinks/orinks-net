@@ -53,6 +53,7 @@ export type ProjectPage = {
   links: { href: string; label: string }[];
   downloadsHref?: string;
   manualHref?: string;
+  maintainerNote?: string;
 };
 
 export type GameSummary = {
@@ -69,18 +70,18 @@ export const freightFate: ProjectPage = {
   title: "Freight Fate",
   tagline: "An audio trucking adventure across America.",
   summary:
-    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Build a freight career across 194 cities on real interstate corridors: pick up jobs, plan routes, and drive a ten-speed Class 8 truck with realistic physics, entirely by sound. Every menu, gauge, and road event is spoken, with a visible text mirror for sighted helpers.",
-  status: "Stable releases and preview snapshots are available.",
+    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Accept freight jobs, plan routes, and drive a ten-speed Class 8 truck by sound. Spoken menus and driving reports have a visible text display.",
+  status: "Stable releases and Career 1.9 tester builds are available. Features and installation steps depend on the version you download.",
   audience:
     "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
   features: [
     "Truck physics you can hear: a ten-speed transmission (manual with clutch or automatic), torque, grades, traction limits, brake fade, and an engine note that tracks RPM in real time.",
-    "A living map: 194 cities and 437 legs along real interstates, regional freight identity, cargo markets that drift day by day, and multiple route options per job.",
-    "Highway exit callouts that read like real signs: \"In 2 miles, exit 7 for US-1 North toward Trenton and New York,\" with onramp merges and grounded interchange numbers, sourced from OpenStreetMap and snapped onto truck-legal routes.",
+    "Career 1.9 expands the map to more than 600 cities, with local pickup and delivery facilities, regional freight markets, and multiple route options per job.",
+    "Highway exit callouts that read like real signs: \"In 2 miles, exit 7 for US-1 North toward Trenton and New York,\" with onramp merges and interchange numbers based on OpenStreetMap road data.",
     "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world National Weather Service conditions.",
-    "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock, choose relaxed or realistic pacing, and draw a dispatcher pay advance when cash runs low so a rough run is never a dead end.",
-    "A full career: experience levels, reputation, cargo endorsements, truck upgrades, a second truck, unlockable achievements, and mid-trip save and resume.",
-    "Optional extras that stay out of the way: a gentle lane-drift steering task and Discord Rich Presence that shares only broad game status.",
+    "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock. Career 1.9 offers Relaxed, Standard, and Real time pacing.",
+    "Build your career through experience levels, reputation, cargo endorsements, and achievements. Career 1.9 adds company-driver and owner-operator paths, with equipment purchases and operating costs for owner-operators. Save and resume during a trip.",
+    "Optional lane-drift steering and Discord Rich Presence, which shares broad game activity such as your route and cargo.",
     "Layered sound effects and music keep speech, driving cues, weather, and the truck cab easy to balance.",
   ],
   downloadsHref: "/freight-fate/downloads",
@@ -156,6 +157,9 @@ export const gameSummaries: GameSummary[] = [
   },
 ];
 
+export const portkeyDropMaintainerNote =
+  "PortkeyDrop was started by Orinks and is now maintained by Nick6489, who leads its development on GitHub.";
+
 export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiweather",
@@ -187,6 +191,7 @@ export const projectSummaries: ProjectPage[] = [
       "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
     status: "Stable releases and nightly builds are available.",
     audience: "Tested with NVDA, JAWS, and VoiceOver.",
+    maintainerNote: portkeyDropMaintainerNote,
     features: [
       "One client for SFTP, FTP, FTPS, and WebDAV, so there's no juggling separate apps.",
       "Dual-pane layout for local and remote files, with clear labels and full keyboard navigation throughout.",
@@ -196,8 +201,8 @@ export const projectSummaries: ProjectPage[] = [
     ],
     downloadsHref: "/portkeydrop/downloads",
     links: [
-      { href: "https://github.com/Orinks/PortkeyDrop", label: "GitHub repository" },
-      { href: "https://github.com/Orinks/PortkeyDrop/issues", label: "Report an issue" },
+      { href: "https://github.com/Nick6489/PortkeyDrop", label: "GitHub repository" },
+      { href: "https://github.com/Nick6489/PortkeyDrop/issues", label: "Report an issue" },
     ],
   },
   {

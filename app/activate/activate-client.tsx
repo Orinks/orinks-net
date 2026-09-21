@@ -53,10 +53,18 @@ type ClaimFn = (input: {
 // wording the setup page uses), not generic alert text, so they are
 // deliberately absent here. Keyed by ClaimFailureCode rather than string so
 // a mistyped key is a compile error rather than a silent fallback message.
-const MESSAGES: Partial<Record<ClaimFailureCode, string>> = {
-  unknown_code:
-    "That code was not recognised, or it has expired. Codes last ten minutes. Start setup again in Freight Fate to get a new one.",
-  not_signed_in: "Sign in first, then enter your code again.",
+// Two of these failures are only fixable on the setup page, so they carry a
+// link name as well as a sentence. The link is rendered inside the alert the
+// message goes to, which focus has already moved to -- "open the setup page"
+// with no link means hunting for it, and this page is reached mid-task by
+// someone who is trying to finish setting up a game.
+const SETUP_HREF = "/freight-fate/online/setup";
+
+const MESSAGES: Partial<Record<ClaimFailureCode, { text: string; linkText?: string }>> = {
+  unknown_code: {
+    text: "That code was not recognised, or it has expired. Codes last ten minutes. Start setup again in Freight Fate to get a new one.",
+  },
+  not_signed_in: { text: "Sign in first, then enter your code again." },
   // Kept as a defensive fallback, not as a case this page routinely
   // produces: ActivateGate resolves driver state before rendering anything,
   // so an account with no driver always gets the three-field shape and
@@ -64,10 +72,22 @@ const MESSAGES: Partial<Record<ClaimFailureCode, string>> = {
   // arrived. It survives a stale answer in a long-open tab (the driver
   // disappeared after the gate resolved), and in that state the advice below
   // is still the recovery that works.
-  no_driver: "Set up your driver on the Freight Fate setup page first, then come back here.",
-  too_many_computers:
-    "You have connected the maximum number of computers. Remove one on the setup page, then try again.",
-  rate_limited: "Too many attempts. Wait a minute, then try again.",
+  no_driver: {
+    text: "Set up your driver first, then come back here.",
+    linkText: "Open the Freight Fate setup page",
+  },
+  // "Sign out" is what the setup page's buttons say; they have never said
+  // "Remove", so the old wording sent people looking for a control that is
+  // not on the page. The middle clause is here because the usual way to
+  // reach this cap is not owning ten machines: a fresh copy of the game
+  // activates as its own computer, so the list fills up with one PC over and
+  // over. Kept short deliberately -- an assertive alert that focus then
+  // lands on is spoken about twice.
+  too_many_computers: {
+    text: "You have connected the maximum number of computers. Setting up the same computer again uses another slot, so sign out the ones you no longer play on, then enter your code again.",
+    linkText: "Your computers on the Freight Fate setup page",
+  },
+  rate_limited: { text: "Too many attempts. Wait a minute, then try again." },
 };
 
 const focusRing =
@@ -103,7 +123,11 @@ export default function ActivateClient({
   const [label, setLabel] = useState("");
   const [name, setName] = useState(prefillName);
   const [nameError, setNameError] = useState<NameError | null>(null);
-  const [error, setError] = useState("");
+  // Message and link name live in one state value so they always land in a
+  // single commit: role="alert" is aria-atomic, so a link mounting one
+  // render after its sentence would make a reader announce the whole alert
+  // a second time.
+  const [error, setError] = useState<{ text: string; linkText?: string } | null>(null);
   const [invalidCode, setInvalidCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -134,7 +158,7 @@ export default function ActivateClient({
   function showNameError(rejection: NameError) {
     setNameError(rejection);
     if (document.activeElement === nameRef.current) {
-      setError(rejection.message);
+      setError({ text: rejection.message });
     } else {
       requestAnimationFrame(() => nameRef.current?.focus());
     }
@@ -147,7 +171,7 @@ export default function ActivateClient({
     if (busy) {
       return;
     }
-    setError("");
+    setError(null);
     setInvalidCode(false);
     setNameError(null);
 
@@ -185,7 +209,9 @@ export default function ActivateClient({
         showNameError(nameRejectionForReason(result.reason));
         return;
       }
-      const message = MESSAGES[result.code] ?? "Something went wrong. Try again in a moment.";
+      const message = MESSAGES[result.code] ?? {
+        text: "Something went wrong. Try again in a moment.",
+      };
       setError(message);
       if (result.code === "unknown_code") {
         // A field problem: mark it invalid and move the reader there.
@@ -227,7 +253,19 @@ export default function ActivateClient({
         role="alert"
         tabIndex={-1}
       >
-        {error}
+        {error?.text}
+        {/* Conditional child, never a conditional container: the paragraph
+            has to stay mounted to be a live region, but an always-mounted
+            link inside it would be an invisible tab stop ahead of the code
+            field on a page with no error at all. */}
+        {error?.linkText ? (
+          <>
+            {" "}
+            <Link className={`underline ${focusRing}`} href={SETUP_HREF}>
+              {error.linkText}
+            </Link>
+          </>
+        ) : null}
       </p>
 
       {/* Always-mounted polite live region for the busy state ("Connecting…"

@@ -11,6 +11,7 @@ import {
   SHARED_PROFILE_VALIDATOR_VERSION,
   validateSharedProfile,
 } from "./freightFateSharedProfileValidation";
+import { validateMeaningfulPlay } from "./freightFateMeaningfulPlay";
 
 function signingConfig() {
   const privateKey = process.env.FREIGHT_FATE_PROFILE_SIGNING_PRIVATE_KEY;
@@ -57,13 +58,20 @@ export const uploadValidatedSave = action({
     driverId: v.string(), driverTokenHash: v.string(), saveName: v.string(),
     saveVersion: v.number(), parentRevision: v.union(v.number(), v.null()),
     contentHash: v.string(), content: v.bytes(), summary: v.string(),
-    clientVersion: v.optional(v.string()), now: v.number(),
+    clientVersion: v.optional(v.string()), meaningfulPlay: v.optional(v.any()),
+    // Accepted only for direct callers of the former action contract. It is
+    // intentionally ignored; security-sensitive time always comes from the
+    // Convex runtime clock.
+    now: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<Record<string, unknown>> => {
+    const now = Date.now();
     const authorized = await ctx.runQuery(anyApi.freightFateSaves.authorizeSaveAction, {
       driverId: args.driverId, driverTokenHash: args.driverTokenHash,
     });
     if (!authorized) return { ok: false, reason: "unauthorized" };
+    const meaningfulPlay = validateMeaningfulPlay(args.meaningfulPlay, now);
+    if (!meaningfulPlay.ok) return { ok: false, reason: "invalid_meaningful_play" };
     const validation = decodeAndValidate(args.content, args.saveName, args.contentHash);
     if (!validation.ok) {
       // The arithmetic reasons used to stamp a sticky integrityFlag here, which
@@ -79,19 +87,24 @@ export const uploadValidatedSave = action({
       // Keep the evidence instead. Real edits are convicted offline against a
       // retained payload (ff-admin/save_forensics.py), which is what caught
       // every confirmed case, and setIntegrityFlag stamps the result by hand.
-      if (validation.reason === "impossible_money" || validation.reason === "impossible_xp") {
-        await ctx.runMutation(anyApi.freightFateSaves.recordRejectedUpload, {
-          driverId: args.driverId,
-          driverTokenHash: args.driverTokenHash,
-          reason: validation.reason,
-          saveName: args.saveName,
-          saveVersion: args.saveVersion,
-          contentHash: args.contentHash,
-          content: args.content,
-          clientVersion: args.clientVersion,
-          now: args.now,
-        });
-      }
+      //
+      // Every refusal family is retained, not just the arithmetic ones.
+      // Schema-family refusals used to vanish without a trace, and four
+      // honest-save bugs in a row (stale badge catalog, cross-line fields,
+      // assigned-tractor possession, start-option money) each had to be
+      // diagnosed blind because the payload that would have named the bug
+      // in seconds was thrown away. Rate limiting already bounds the rows.
+      await ctx.runMutation(anyApi.freightFateSaves.recordRejectedUpload, {
+        driverId: args.driverId,
+        driverTokenHash: args.driverTokenHash,
+        reason: validation.reason,
+        saveName: args.saveName,
+        saveVersion: args.saveVersion,
+        contentHash: args.contentHash,
+        content: args.content,
+        clientVersion: args.clientVersion,
+        now,
+      });
       return { ok: false, reason: validation.reason };
     }
     if (validation.payload.version !== args.saveVersion) {
@@ -108,12 +121,18 @@ export const uploadValidatedSave = action({
         ` (build ${args.clientVersion ?? "unknown"}, save "${args.saveName}").`,
       );
     }
-    const signed = signPayload(validation.payload, args.now);
+    const signed = signPayload(validation.payload, now);
     if (!signed) return { ok: false, reason: "signing_unavailable" };
+    const {
+      meaningfulPlay: _unvalidatedMeaningfulPlay,
+      now: _callerSuppliedNow,
+      ...request
+    } = args;
     return ctx.runMutation(anyApi.freightFateSaves.storeValidatedSave, {
-      ...args,
+      ...request,
       ...signed,
       payload: validation.payload,
+      ...(meaningfulPlay.value === undefined ? {} : { meaningfulPlay: meaningfulPlay.value }),
     });
   },
 });

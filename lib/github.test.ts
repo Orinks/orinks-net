@@ -31,7 +31,34 @@ vi.mock("next/cache", () => ({
   },
 }));
 
-import { getReleases, renderMarkdown } from "./github";
+import { getReleases, renderMarkdown, stripSnapshotPreamble } from "./github";
+
+describe("snapshot preamble", () => {
+  const preamble =
+    "Preview snapshot for players who want the newest features before the next stable " +
+    "release. Expect rough edges; your save files stay compatible whenever possible, but " +
+    "back them up first.";
+
+  test("the downloads page opens on the first section, not the boilerplate", () => {
+    const body = `${preamble}\n\n## Changes since the previous snapshot\n\n## Changed\n- **Fog is silent now.** Gone.\n`;
+
+    expect(stripSnapshotPreamble(body)).toBe("## Changed\n- **Fog is silent now.** Gone.");
+  });
+
+  test("a first snapshot's framing goes the same way, footer kept", () => {
+    const body = `${preamble}\r\n\r\n## Changes in this snapshot\r\n\r\n### Added\r\n- **A thing.**\r\n\r\n## Complete change list\r\n\r\nRead CHANGELOG.md.`;
+
+    expect(stripSnapshotPreamble(body)).toBe(
+      "### Added\n- **A thing.**\n\n## Complete change list\n\nRead CHANGELOG.md.",
+    );
+  });
+
+  test("stable notes and empty bodies pass through untouched", () => {
+    expect(stripSnapshotPreamble("## Fixed\n- **Stable fix.**")).toBe("## Fixed\n- **Stable fix.**");
+    expect(stripSnapshotPreamble(null)).toBeNull();
+    expect(stripSnapshotPreamble("")).toBe("");
+  });
+});
 
 describe("GitHub response caching", () => {
   beforeEach(() => {
@@ -65,6 +92,18 @@ describe("GitHub response caching", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.github.com/repos/Orinks/Freight-Fate/releases?per_page=20",
       expect.objectContaining({ cache: "no-store" }),
+    );
+  });
+
+  test("reads PortkeyDrop from its new maintainer's account", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    await expect(getReleases("PortkeyDrop")).resolves.toEqual([]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.github.com/repos/Nick6489/PortkeyDrop/releases?per_page=20",
+      expect.anything(),
     );
   });
 

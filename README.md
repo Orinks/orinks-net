@@ -46,3 +46,7 @@ npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run b
 ```
 
 `vercel.json` wraps this in a check for `CONVEX_DEPLOY_KEY` so a build without one still runs `npm run build` alone.
+
+### Freight Fate music download
+
+Set `FREIGHT_FATE_MUSIC_BLOB_URL` to `https://crisp-crystal-9a9y.here.now/music.pak`, the verified permanent public URL for the Freight Fate music pack.

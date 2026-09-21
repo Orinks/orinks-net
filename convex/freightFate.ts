@@ -1,9 +1,19 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { maskDisplayName, screenDisplayName } from "./moderation";
+import {
+  accountAchievementPage,
+  publicDriverEvent,
+  publicVerifiedSnapshot,
+  recentEarnedAchievements,
+} from "./freightFateProfileProjection";
+import {
+  FREIGHT_FATE_ACHIEVEMENT_ID_SET,
+} from "./freightFateProfileCatalog";
+import { readCatalogAchievements } from "./freightFateProfileAchievements";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -21,19 +31,48 @@ const visibility = v.union(v.literal("public"), v.literal("private"), v.literal(
 export const PRESENCE_TTL_MS = 6 * 60_000;
 
 // A driver whose activity/detail have not changed for this long is idle: a
-// truck parked on the road with the game left running (a paused game already
-// counts as off duty and stops reporting). The row keeps beating, so the TTL
-// never expires it — the public surfaces just stop showing it. New game
-// builds sign themselves off on the same clock (IDLE_SIGNOFF_S in
-// online_presence.py); this filter is what ages older builds off the board.
+// truck parked on the road with the game left running. The row keeps beating,
+// so the TTL never expires it — the public surfaces just stop showing it. New
+// game builds sign themselves off on the same clock (IDLE_SIGNOFF_S in
+// online_presence.rs); this filter is what ages older builds off the board.
 // While actually driving the strings tick every five percent of progress, so
 // half an hour of no change really does mean a parked truck.
 export const PRESENCE_IDLE_MS = 30 * 60_000;
+
+// A paused game sends this activity once and then stops beating: a pause is
+// not the end of a shift, so the driver must not drop off the list (and get
+// called off duty by everyone's duty watch) for a bathroom break -- but a
+// paused game has nothing new to say, so it should not spend a heartbeat
+// every two and a half minutes saying it either. A paused row is therefore
+// judged by the idle window instead of the heartbeat one: it stays on the
+// list for half an hour with no beats at all, then ages off exactly as a
+// parked truck does. Resuming sends a change beat, which re-dates the row.
+// The game's pause menu reports this exact string (PAUSED_ACTIVITY in
+// online_presence.rs); keep the two equal.
+export const PAUSED_ACTIVITY = "Paused";
+
+/** How long a driver's last beat vouches for them, given what it said. */
+function presenceWindowMs(activity: string) {
+  return activity === PAUSED_ACTIVITY ? PRESENCE_IDLE_MS : PRESENCE_TTL_MS;
+}
 export const PRESENCE_WRITE_LIMIT = 30;
 export const DRIVER_EVENT_WRITE_LIMIT = 120;
 export const DRIVER_EVENT_CLOCK_SKEW_MS = 24 * 60 * 60_000;
 export const MAX_DRIVER_EVENTS = 50;
 export const SHARING_CONSENT_VERSION = 3;
+
+export function freightFateProfileLinkVisible(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return driver.sharingConsentVersion === SHARING_CONSENT_VERSION
+    && (driver.visibility === "public" || driver.visibility === "unlisted");
+}
+
+export function freightFateProfilePubliclyListed(
+  driver: Pick<Doc<"freightFateDrivers">, "sharingConsentVersion" | "visibility">,
+) {
+  return freightFateProfileLinkVisible(driver) && driver.visibility === "public";
+}
 
 // --- Account-issued driver identity (Clerk) ---
 //
@@ -141,15 +180,40 @@ export async function mintDeviceTokenRow(
   driverId: string,
   label: string | undefined,
   now: number,
+  machineKey?: string,
 ) {
   const token = mintDriverToken();
   await ctx.db.insert("freightFateDeviceTokens", {
     driverId,
     tokenHash: await hashDriverToken(token),
     label: normalizeDeviceLabel(label),
+    machineKey: normalizeMachineKey(machineKey),
     createdAt: now,
   });
   return token;
+}
+
+// Opaque and bounded: the game sends a hash, and anything that is not a
+// plausible one is dropped rather than stored, so a malformed value can never
+// collide two real computers onto one row.
+export function normalizeMachineKey(value: string | undefined) {
+  const key = (value ?? "").trim().toLowerCase();
+  return /^[a-f0-9]{16,64}$/.test(key) ? key : undefined;
+}
+
+// The driver's existing row for this computer, if the game named one.
+export async function findDeviceRowForMachine(
+  ctx: MutationCtx,
+  driverId: string,
+  machineKey: string | undefined,
+) {
+  const key = normalizeMachineKey(machineKey);
+  if (!key) return null;
+  const rows = await ctx.db
+    .query("freightFateDeviceTokens")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", driverId))
+    .collect();
+  return rows.find((row) => row.machineKey === key) ?? null;
 }
 
 // Produce a public slug already in normalizeFreightFateDriverId's canonical
@@ -254,7 +318,7 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
     return { error: "unauthorized" as const };
   }
-  if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION || driver.visibility !== "public") {
+  if (!freightFateProfileLinkVisible(driver)) {
     return { error: "sharing_not_enabled" as const };
   }
   return { driver };
@@ -291,8 +355,7 @@ export const getMyDriver = query({
       updatedAt: driver.updatedAt,
       hasToken: driver.driverTokenHash !== undefined || anyDevice !== null,
       needsRename: driver.needsRename === true,
-      sharingEnabled:
-        driver.sharingConsentVersion === SHARING_CONSENT_VERSION && driver.visibility === "public",
+      sharingEnabled: freightFateProfileLinkVisible(driver),
     };
   },
 });
@@ -357,7 +420,7 @@ export const provisionDriver = mutation({
         displayName,
         visibility:
           args.expandedSharingConsent === true
-            ? "public"
+            ? args.visibility
             : args.expandedSharingConsent === false
               ? "private"
               : existing.visibility,
@@ -413,7 +476,7 @@ export const provisionDriver = mutation({
     await ctx.db.insert("freightFateDrivers", {
       driverId,
       displayName,
-      visibility: args.expandedSharingConsent ? "public" : "private",
+      visibility: args.expandedSharingConsent ? args.visibility : "private",
       authSubject: identity.subject,
       ...(args.expandedSharingConsent
         ? { sharingConsentVersion: SHARING_CONSENT_VERSION, sharingConsentedAt: args.now }
@@ -536,7 +599,7 @@ export const recordDriverEvent = mutation({
       return { ok: false as const, reason: "unauthorized" };
     }
 
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
 
@@ -572,6 +635,29 @@ export const recordDriverEvent = mutation({
     return { ok: true as const, duplicate: false, driverId: args.driverId };
   },
 });
+
+// How many drivers either board reads at most. The live query re-runs for
+// every status change, so this is also the ceiling on what one re-execution
+// can cost.
+export const MAX_BOARD_ROWS = 100;
+
+/** Whether a driver may appear on the public board, and under what name.
+ *
+ * Folded into the presence row at heartbeat time rather than checked when the
+ * board is read: the live query must never open a driver document (see the
+ * note on freightFatePresence in schema.ts). Anything that changes one of
+ * these three conditions outside a heartbeat has to reach into the presence
+ * row itself -- setProfileSharing and setIntegrityFlag both do.
+ */
+function boardListing(driver: Doc<"freightFateDrivers">) {
+  return {
+    displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+    listed:
+      driver.visibility === "public" &&
+      driver.sharingConsentVersion === SHARING_CONSENT_VERSION &&
+      !driver.integrityFlag,
+  };
+}
 
 export const updatePresence = mutation({
   args: {
@@ -610,6 +696,10 @@ export const updatePresence = mutation({
     await stampClientVersion(ctx, driver, args.clientVersion, args.now);
     await stampDeviceTokenUse(ctx, device, args.now);
 
+    const beat = await ctx.db
+      .query("freightFatePresenceBeats")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
     const existing = await ctx.db
       .query("freightFatePresence")
       .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
@@ -620,85 +710,377 @@ export const updatePresence = mutation({
       if (existing) {
         await ctx.db.delete(existing._id);
       }
+      if (beat) {
+        await ctx.db.delete(beat._id);
+        // Only a driver who was actually on duty went off it. A sign-off
+        // with no beat behind it (a game closing that never got a beat out)
+        // stamps nothing, so the directory never dates a session that was
+        // not seen.
+        await ctx.db.patch(driver._id, { lastOnDutyAt: args.now });
+      }
       return { ok: true as const, cleared: true };
     }
 
-    if (existing) {
-      const changed =
-        existing.activity !== args.activity || existing.detail !== args.detail;
-      await ctx.db.patch(existing._id, {
-        activity: args.activity,
-        detail: args.detail,
-        updatedAt: args.now,
-        // Pre-filter rows have no changedAt; baseline them at this beat so a
-        // long-parked driver gets one full idle window from deploy, not an
-        // instant drop. Free: this patch already writes updatedAt every beat.
-        changedAt: changed ? args.now : existing.changedAt ?? args.now,
-      });
+    // The clock always moves. Nothing subscribes to this table, so a beat
+    // that changes nothing a reader could see costs one small write and
+    // wakes no board.
+    if (beat) {
+      await ctx.db.patch(beat._id, { updatedAt: args.now });
     } else {
+      await ctx.db.insert("freightFatePresenceBeats", {
+        driverId: args.driverId,
+        updatedAt: args.now,
+      });
+    }
+
+    // The board row moves only when a reader would see a difference. This
+    // early return is the whole point of the split: a driver parked at a dock
+    // or grinding out a long leg between progress ticks beats every hundred
+    // and fifty seconds and writes nothing here, so every browser watching
+    // the board stays quiet too.
+    const listing = boardListing(driver);
+    if (!existing) {
       await ctx.db.insert("freightFatePresence", {
         driverId: args.driverId,
         activity: args.activity,
         detail: args.detail,
-        updatedAt: args.now,
         changedAt: args.now,
+        ...listing,
       });
+      return { ok: true as const, cleared: false };
     }
 
-    // Piggyback expiry cleanup on writes so the table never accumulates
-    // stale rows without needing a scheduled job.
-    const stale = await ctx.db
-      .query("freightFatePresence")
-      .withIndex("by_updated", (q) => q.lt("updatedAt", args.now - PRESENCE_TTL_MS))
-      .take(20);
-    for (const row of stale) {
-      await ctx.db.delete(row._id);
+    const changed =
+      existing.activity !== args.activity || existing.detail !== args.detail;
+    if (
+      changed ||
+      existing.displayName !== listing.displayName ||
+      existing.listed !== listing.listed ||
+      existing.changedAt === undefined
+    ) {
+      await ctx.db.patch(existing._id, {
+        activity: args.activity,
+        detail: args.detail,
+        // Pre-split rows have no changedAt; baseline them at this beat so a
+        // long-parked driver gets one full idle window from deploy, not an
+        // instant drop.
+        changedAt: changed ? args.now : existing.changedAt ?? args.now,
+        ...listing,
+      });
     }
 
     return { ok: true as const, cleared: false };
   },
 });
 
+/** Drop drivers whose heartbeat has stopped.
+ *
+ * Expiry used to piggyback on heartbeat writes, which worked while every beat
+ * wrote to the board table anyway. Now that a beat usually writes nothing
+ * there, a driver whose game crashed would sit on the board until somebody
+ * else happened to change status, so the sweep is its own scheduled pass.
+ *
+ * Runs every minute against a six-minute TTL, and on the overwhelmingly
+ * common tick it reads one empty index range and writes nothing at all --
+ * which matters, because a sweep that wrote on every tick would wake every
+ * subscribed board once a minute for no reason.
+ *
+ * A paused game stops beating on purpose and is owed the idle window, not
+ * the heartbeat one (see PAUSED_ACTIVITY), so its overdue beat is read and
+ * left alone until that window has passed too. That read costs two small
+ * rows a minute per paused driver and writes nothing.
+ */
+export const sweepStalePresence = internalMutation({
+  args: { now: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = args.now ?? Date.now();
+    const overdue = await ctx.db
+      .query("freightFatePresenceBeats")
+      .withIndex("by_updated", (q) => q.lt("updatedAt", now - PRESENCE_TTL_MS))
+      .take(200);
+
+    let swept = 0;
+    for (const beat of overdue) {
+      const row = await ctx.db
+        .query("freightFatePresence")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (row && beat.updatedAt >= now - presenceWindowMs(row.activity)) {
+        continue;
+      }
+      swept += 1;
+      if (row) {
+        await ctx.db.delete(row._id);
+      }
+      await ctx.db.delete(beat._id);
+      // The last beat is the last moment the server can vouch for the driver
+      // being on duty, so that is what the directory dates a session by --
+      // one write on the driver row per session end, which is the only time
+      // the drivers table should hear about presence at all.
+      const driver = await ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (driver && (driver.lastOnDutyAt ?? 0) < beat.updatedAt) {
+        await ctx.db.patch(driver._id, { lastOnDutyAt: beat.updatedAt });
+      }
+    }
+
+    return { swept };
+  },
+});
+
+/** One-off: give the rows written before the split their heartbeat back.
+ *
+ * Rows from the previous deploy carry the clock on the board row itself and
+ * have no freightFatePresenceBeats entry at all, which every read here treats
+ * as "stopped talking to us". Left alone that empties the board for everyone
+ * until each driver's next beat, so this hands the old clock across instead of
+ * throwing it away; rows already past the TTL are simply dropped, which is
+ * what the sweep would have done to them anyway.
+ *
+ * Deliberately NOT on the cron. Every live path writes and deletes the two
+ * rows together, so once this has run an orphan cannot occur again -- and a
+ * reconciling scan of the whole board table every minute would cost more
+ * database bandwidth on its own than the live board it was protecting. Run it
+ * by hand, once, right after the deploy that adds freightFatePresenceBeats:
+ *
+ *   npx convex run freightFate:migrateLegacyPresence
+ *
+ * Safe to run twice: a row that already has a beat is left alone.
+ */
+export const migrateLegacyPresence = internalMutation({
+  args: { now: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = args.now ?? Date.now();
+    let carried = 0;
+    let dropped = 0;
+
+    for await (const row of ctx.db.query("freightFatePresence")) {
+      const beat = await ctx.db
+        .query("freightFatePresenceBeats")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
+        .unique();
+      if (beat) {
+        continue;
+      }
+
+      const lastBeat = row.updatedAt;
+      if (lastBeat !== undefined && lastBeat >= now - PRESENCE_TTL_MS) {
+        await ctx.db.insert("freightFatePresenceBeats", {
+          driverId: row.driverId,
+          updatedAt: lastBeat,
+        });
+        carried += 1;
+      } else {
+        await ctx.db.delete(row._id);
+        dropped += 1;
+      }
+    }
+
+    return { carried, dropped };
+  },
+});
+
+/** Authoritative "who is on duty", read against a caller-supplied clock.
+ *
+ * Reads the heartbeat table and re-checks every driver document, so it is
+ * correct the instant it runs and expensive enough that it must not be
+ * subscribed to. Two callers, both cheap by construction: the once-a-minute
+ * cached snapshot behind the site and the game's own board endpoint. Anything
+ * a browser watches continuously wants getLivePresenceBoard.
+ */
 export const getPresenceBoard = query({
   args: {
     now: v.number(),
   },
   handler: async (ctx, args) => {
+    // The wider window, because a paused game's last beat vouches for it
+    // that long; a driving game's beat only counts for the heartbeat window,
+    // checked per row below. The sweep clears dead beats a minute after the
+    // heartbeat window, so the extra range holds paused drivers and little else.
     const fresh = await ctx.db
-      .query("freightFatePresence")
-      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_TTL_MS))
+      .query("freightFatePresenceBeats")
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
       .order("desc")
-      .take(100);
+      .take(MAX_BOARD_ROWS);
 
     // Only drivers who chose the public listing appear on the board.
     const drivers = [];
-    for (const row of fresh) {
+    for (const beat of fresh) {
+      const row = await ctx.db
+        .query("freightFatePresence")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
+        continue;
+      }
       // Still beating but nothing has changed in half an hour: a parked
       // truck with the game left running, not a live driver.
-      if ((row.changedAt ?? row.updatedAt) < args.now - PRESENCE_IDLE_MS) {
+      if ((row.changedAt ?? beat.updatedAt) < args.now - PRESENCE_IDLE_MS) {
         continue;
       }
       const driver = await ctx.db
         .query("freightFateDrivers")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId))
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
         .unique();
       if (
         !driver ||
-        driver.visibility !== "public" ||
-        driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+        !freightFateProfilePubliclyListed(driver) ||
         driver.integrityFlag
       ) {
         continue;
       }
       drivers.push({
-        driverId: row.driverId,
+        driverId: beat.driverId,
         // Safety net for names stored before write-time screening existed.
         displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
         activity: row.activity,
         detail: row.detail,
-        updatedAt: row.updatedAt,
+        // The heartbeat clock, which is what the game's own drivers list
+        // shows and has always meant "last heard from".
+        updatedAt: beat.updatedAt,
+        // When the status itself last moved, which is what the website shows.
+        changedAt: row.changedAt ?? beat.updatedAt,
       });
     }
+
+    return { drivers, asOf: args.now };
+  },
+});
+
+/** The board as a browser subscribes to it: one index scan, no clock.
+ *
+ * Three properties, and every one of them is load-bearing for what this costs
+ * to keep open:
+ *
+ * - **No arguments.** Convex caches a query result per (function, arguments),
+ *   so identical arguments mean one execution shared by every subscriber. The
+ *   moment a timestamp is passed in, each browser gets its own execution and
+ *   the bill starts tracking viewers instead of drivers. Do not add an
+ *   argument here, and in particular do not add `now`.
+ * - **One table.** No driver documents, no heartbeat rows -- so nothing but a
+ *   real, visible status change re-runs it or wakes a reader.
+ * - **No server timestamp in the result.** Freshness is decided by the reader
+ *   against absolute `changedAt` stamps. An `asOf` baked into the result
+ *   would be frozen at whatever moment the query last happened to run, and a
+ *   board that had been quiet for twenty minutes would date itself twenty
+ *   minutes ago.
+ *
+ * Rows the reader should hide -- gone idle, or beating but since dropped by
+ * the sweep -- are filtered by the reader for the same reason: a clock that
+ * ticks on the server costs a database read every time it ticks, and one in
+ * the browser costs nothing.
+ */
+export const getLivePresenceBoard = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_changed")
+      .order("desc")
+      .take(MAX_BOARD_ROWS);
+
+    return {
+      drivers: rows
+        // `listed` absent means the row predates the denormalization and
+        // nothing here knows whether its driver opted in; the next heartbeat
+        // settles it. Hiding is the safe way to be wrong for one beat.
+        .filter((row) => row.listed === true && row.changedAt !== undefined)
+        .map((row) => ({
+          driverId: row.driverId,
+          displayName: row.displayName ?? "Driver",
+          activity: row.activity,
+          detail: row.detail,
+          changedAt: row.changedAt as number,
+        })),
+    };
+  },
+});
+
+// How many drivers the directory lists at most. Read once a minute per
+// site, not per viewer, so this bounds one cached read rather than a
+// subscription; the ceiling exists so a directory of every driver who ever
+// opted in cannot grow into a full-table read.
+export const MAX_DIRECTORY_ROWS = 200;
+
+/** Every driver with a public profile, on duty or not, and when they were
+ * last on duty.
+ *
+ * The drivers list answers "who is out right now"; this answers "who is
+ * there at all, and when did I last miss them". On-duty drivers come first,
+ * judged exactly as getPresenceBoard judges them (a fresh beat, a status
+ * that moved inside the idle window), then everyone else by how recently
+ * they went off duty, then drivers the field has never been stamped for, by
+ * name. Same audience as the board: public, consented, unflagged. The stamp
+ * is the last beat the server saw, so it is never more precise than the
+ * board already was.
+ *
+ * Authoritative and uncached here; the site reads it through a one-minute
+ * snapshot and the game reads that. Never subscribe to it: it takes a clock
+ * and opens driver rows, both of which the live board was built to avoid.
+ */
+export const getDriverDirectory = query({
+  args: {
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Who is on duty right now, by the board's own rules.
+    const onDuty = new Map<string, { activity: string; detail: string; changedAt: number }>();
+    const fresh = await ctx.db
+      .query("freightFatePresenceBeats")
+      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
+      .order("desc")
+      .take(MAX_BOARD_ROWS);
+    for (const beat of fresh) {
+      const row = await ctx.db
+        .query("freightFatePresence")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+        .unique();
+      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
+        continue;
+      }
+      const changedAt = row.changedAt ?? beat.updatedAt;
+      if (changedAt < args.now - PRESENCE_IDLE_MS) {
+        continue;
+      }
+      onDuty.set(beat.driverId, { activity: row.activity, detail: row.detail, changedAt });
+    }
+
+    // Everyone with a public profile, most recently off duty first. Rows
+    // with no stamp sort first in the index and so come out last here.
+    const candidates = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_last_on_duty")
+      .order("desc")
+      .take(MAX_DIRECTORY_ROWS);
+
+    const drivers = [];
+    for (const driver of candidates) {
+      if (!boardListing(driver).listed) {
+        continue;
+      }
+      const live = onDuty.get(driver.driverId);
+      drivers.push({
+        driverId: driver.driverId,
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+        onDuty: live !== undefined,
+        ...(live ? { activity: live.activity, detail: live.detail, changedAt: live.changedAt } : {}),
+        ...(driver.lastOnDutyAt !== undefined ? { lastOnDutyAt: driver.lastOnDutyAt } : {}),
+      });
+    }
+
+    drivers.sort((a, b) => {
+      if (a.onDuty !== b.onDuty) {
+        return a.onDuty ? -1 : 1;
+      }
+      const aStamp = a.lastOnDutyAt ?? -1;
+      const bStamp = b.lastOnDutyAt ?? -1;
+      if (aStamp !== bStamp) {
+        return bStamp - aStamp;
+      }
+      return a.displayName.localeCompare(b.displayName, "en-US") || a.driverId.localeCompare(b.driverId);
+    });
 
     return { drivers, asOf: args.now };
   },
@@ -728,10 +1110,18 @@ export const setProfileSharing = mutation({
       sharingConsentedAt: args.enabled ? args.now : undefined,
       updatedAt: args.now,
     });
-    if (!args.enabled) {
-      const presence = await ctx.db.query("freightFatePresence")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
-      if (presence) await ctx.db.delete(presence._id);
+    // The live board reads a denormalized `listed` flag rather than this
+    // driver row, so a sharing change has to reach the presence row itself or
+    // it would not take effect until the next heartbeat. Turning sharing off
+    // is the direction that must be instant.
+    const presence = await ctx.db.query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+    if (presence) {
+      if (args.enabled) {
+        await ctx.db.patch(presence._id, { listed: !driver.integrityFlag });
+      } else {
+        await ctx.db.delete(presence._id);
+      }
     }
     return { ok: true as const, enabled: args.enabled };
   },
@@ -777,6 +1167,9 @@ export const publishAchievementEarned = mutation({
       ...args, scope: "driver-event", limit: DRIVER_EVENT_WRITE_LIMIT,
     });
     if ("error" in auth) return { ok: false as const, reason: auth.error };
+    if (!FREIGHT_FATE_ACHIEVEMENT_ID_SET.has(args.achievementKey)) {
+      return { ok: false as const, reason: "invalid_achievement" as const };
+    }
     const existing = await ctx.db.query("freightFateAchievements")
       .withIndex("by_driver_achievement", (q) => q.eq("driverId", args.driverId).eq("achievementKey", args.achievementKey)).unique();
     if (existing) return { ok: true as const, duplicate: true, driverId: args.driverId };
@@ -784,13 +1177,13 @@ export const publishAchievementEarned = mutation({
     const name = cleanFact(args.name, 100);
     const description = cleanFact(args.description, 240);
     await ctx.db.insert("freightFateAchievements", {
-      driverId: args.driverId, achievementKey: cleanFact(args.achievementKey, 96),
+      driverId: args.driverId, achievementKey: args.achievementKey,
       name, description, earnedAt, createdAt: args.now,
     });
     await ctx.db.insert("freightFateDriverEvents", {
       driverId: args.driverId, eventId: cleanFact(args.eventId, 96),
       eventType: "achievement_earned", summary: `${name}: ${description}`.slice(0, 280),
-      payloadVersion: 1, payload: { achievementKey: cleanFact(args.achievementKey, 96), name, description },
+      payloadVersion: 1, payload: { achievementKey: args.achievementKey, name, description },
       occurredAt: earnedAt, createdAt: args.now,
     });
     await pruneDriverEvents(ctx, args.driverId);
@@ -854,10 +1247,15 @@ export const getPublicUpdates = query({
           .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId)).unique();
         drivers.set(row.driverId, driver);
       }
-      if (!driver || driver.visibility !== "public" ||
-          driver.sharingConsentVersion !== SHARING_CONSENT_VERSION ||
+      if (!driver || !freightFateProfilePubliclyListed(driver) ||
           driver.integrityFlag) continue;
-      updates.push({ ...row, displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver") });
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      updates.push({
+        ...event,
+        driverId: row.driverId,
+        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+      });
       if (updates.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     updates.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -872,6 +1270,8 @@ export const getDriverProfile = query({
     driverId: v.string(),
     limit: v.optional(v.number()),
     before: v.optional(v.object({ occurredAt: v.number(), eventId: v.string() })),
+    achievementLimit: v.optional(v.number()),
+    achievementBefore: v.optional(v.object({ sortAt: v.number(), achievementKey: v.string() })),
     now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -884,11 +1284,7 @@ export const getDriverProfile = query({
       return null;
     }
 
-    if (driver.visibility === "private") {
-      return null;
-    }
-
-    if (driver.sharingConsentVersion !== SHARING_CONSENT_VERSION) {
+    if (!freightFateProfileLinkVisible(driver)) {
       return null;
     }
 
@@ -921,7 +1317,9 @@ export const getDriverProfile = query({
       .order("desc")) {
       if (boundaryOccurredAt !== null && row.occurredAt !== boundaryOccurredAt) break;
       if (args.before && row.occurredAt === args.before.occurredAt && row.eventId >= args.before.eventId) continue;
-      collected.push(row);
+      const event = publicDriverEvent(row);
+      if (!event) continue;
+      collected.push(event);
       if (collected.length > limit && boundaryOccurredAt === null) boundaryOccurredAt = row.occurredAt;
     }
     collected.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));
@@ -930,28 +1328,22 @@ export const getDriverProfile = query({
       .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
     const presenceRow = await ctx.db.query("freightFatePresence")
       .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
-    // Same idle rule as the board: a parked-and-forgotten truck should not
-    // read as "on duty" on the profile page either.
-    const presence = presenceRow && args.now !== undefined
-      && presenceRow.updatedAt >= args.now - PRESENCE_TTL_MS
-      && (presenceRow.changedAt ?? presenceRow.updatedAt) >= args.now - PRESENCE_IDLE_MS
-      ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceRow.updatedAt }
+    const presenceBeat = await ctx.db.query("freightFatePresenceBeats")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+    // Same rules as the board, and for the same reason it joins two tables:
+    // the beat says whether the game is still talking to us, the row says
+    // whether anything has happened lately. A parked-and-forgotten truck
+    // should not read as "on duty" on the profile page either.
+    const presence = presenceRow && presenceBeat && args.now !== undefined
+      && presenceBeat.updatedAt >= args.now - presenceWindowMs(presenceRow.activity)
+      && (presenceRow.changedAt ?? presenceBeat.updatedAt) >= args.now - PRESENCE_IDLE_MS
+      ? { activity: presenceRow.activity, detail: presenceRow.detail, updatedAt: presenceBeat.updatedAt }
       : null;
-    // Same shape as the events above: earnedAt ties break by achievementKey,
-    // which the index does not order by, so the boundary tie group is read in
-    // full and the rest of the shelf is left on disk.
-    const earned = [];
-    let boundaryEarnedAt: number | null = null;
-    for await (const row of ctx.db.query("freightFateAchievements")
-      .withIndex("by_driver_earned", (q) => q.eq("driverId", args.driverId))
-      .order("desc")) {
-      if (boundaryEarnedAt !== null && row.earnedAt !== boundaryEarnedAt) break;
-      earned.push(row);
-      if (earned.length > limit && boundaryEarnedAt === null) boundaryEarnedAt = row.earnedAt;
-    }
-    const achievements = earned
-      .sort((a, b) => b.earnedAt - a.earnedAt || b.achievementKey.localeCompare(a.achievementKey))
-      .slice(0, limit);
+    const accountAchievements = await readCatalogAchievements(ctx, args.driverId);
+    const achievementLimit = Math.min(Math.max(args.achievementLimit ?? 20, 1), 50);
+    const achievementPage = accountAchievementPage(
+      accountAchievements, achievementLimit, args.achievementBefore,
+    );
 
     return {
       driver: {
@@ -966,14 +1358,10 @@ export const getDriverProfile = query({
       nextBefore: collected.length > limit && events.at(-1) ? {
         occurredAt: events.at(-1)!.occurredAt, eventId: events.at(-1)!.eventId,
       } : null,
-      snapshot: snapshot?.sourceRevision && snapshot.validatorVersion ? {
-        version: snapshot.version, level: snapshot.level, careerTitle: snapshot.careerTitle,
-        lastSavedCity: snapshot.lastSavedCity, deliveries: snapshot.deliveries,
-        milesDriven: snapshot.milesDriven, reputation: snapshot.reputation,
-        onTimeDeliveries: snapshot.onTimeDeliveries, truckName: snapshot.truckName,
-        employmentStatus: snapshot.employmentStatus, capturedAt: snapshot.capturedAt,
-      } : null,
-      achievements,
+      snapshot: publicVerifiedSnapshot(snapshot),
+      achievementCount: accountAchievements.length,
+      recentAchievements: recentEarnedAchievements(accountAchievements, 3),
+      ...achievementPage,
       presence,
     };
   },

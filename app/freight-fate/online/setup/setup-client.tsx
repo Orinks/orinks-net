@@ -25,14 +25,31 @@ export function shouldAnnounceDriverReady(alreadyAnnounced: boolean, driver: unk
 }
 
 type PendingAction = "save" | "rotate" | null;
+type DriverVisibility = "public" | "unlisted" | "private";
 
 // The one place that explains how a computer actually connects now: no
 // values are copied here. Reused verbatim everywhere the page used to point
 // at the removed copy-paste panel, so the instruction reads the same way
 // every time (a screen reader user should not have to re-parse a reworded
-// synonym for the same step).
-const CONNECT_INSTRUCTIONS =
-  'open Freight Fate, choose "Set up this computer with orinks.net," and enter the code it gives you at orinks.net/activate';
+// synonym for the same step) -- which is why this is one function and not a
+// sentence each call site assembles for itself.
+//
+// Only the activate address varies by deployment. The quoted words are the
+// game's OWN menu item, and that item is the literal "Set up this computer
+// with orinks.net" in every build, including the ones pointed at staging --
+// interpolating the host there would name a menu item that does not exist,
+// which is unfindable for someone arrowing the menu by its spoken label.
+export function connectInstructions(activateHost: string) {
+  return (
+    'open Freight Fate, choose "Set up this computer with orinks.net," and ' +
+    `enter the code it gives you at ${activateHost}/activate`
+  );
+}
+
+// What the server render and the first client render both say, so hydration
+// sees one string; the effect in DriverSetup corrects it to whichever host
+// is actually serving the page.
+const DEFAULT_ACTIVATE_HOST = "orinks.net";
 
 // provisionDriver throws ConvexError({ code: "name_taken" }) when another
 // account already uses the name, and ConvexError({ code: "name_rejected",
@@ -139,11 +156,26 @@ function DriverSetup() {
 
   const [name, setName] = useState("");
   const [profileSharing, setProfileSharing] = useState(false);
+  // `sharingEnabled` is true for public and unlisted profiles. Keep the
+  // server's exact visibility alongside the checkbox so unrelated saves do
+  // not silently turn an unlisted profile public.
+  const [profileVisibility, setProfileVisibility] = useState<DriverVisibility>("private");
+  const [sharingControlDirty, setSharingControlDirty] = useState(false);
   const [nameError, setNameError] = useState<NameError | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [saveError, setSaveError] = useState("");
   const [rotateError, setRotateError] = useState("");
   const [initialized, setInitialized] = useState(false);
+  // The same site answers on more than one host: the 1.9 test builds talk to
+  // dev.orinks.net, where "enter the code at orinks.net/activate" sends the
+  // player to a page their code was never minted on. A plain mount effect,
+  // deliberately -- gating it on the driver query would let an announcement
+  // beat it and speak the wrong address.
+  const [activateHost, setActivateHost] = useState(DEFAULT_ACTIVATE_HOST);
+  useEffect(() => {
+    setActivateHost(window.location.host);
+  }, []);
+  const connectHelp = connectInstructions(activateHost);
   const driverReadyAnnounced = useRef(false);
   // Set right before a provision call that mints a brand-new driver (never
   // for an edit of an existing one). The reactive getMyDriver query lags the
@@ -199,9 +231,11 @@ function DriverSetup() {
     if (myDriver) {
       setName(myDriver.displayName);
       setProfileSharing(myDriver.sharingEnabled === true);
+      setProfileVisibility(myDriver.visibility);
     } else {
       setName(user?.username ?? user?.firstName ?? "");
       setProfileSharing(false);
+      setProfileVisibility("private");
     }
     setInitialized(true);
   }, [initialized, myDriver, user]);
@@ -254,11 +288,16 @@ function DriverSetup() {
     try {
       await provision({
         displayName: trimmed,
-        visibility: profileSharing ? "public" : "private",
-        expandedSharingConsent: profileSharing,
+        visibility: profileVisibility,
+        // Omission tells provisionDriver this is an ordinary profile edit;
+        // only a deliberate checkbox change may rewrite visibility/consent.
+        ...(!editing || sharingControlDirty
+          ? { expandedSharingConsent: profileSharing }
+          : {}),
         rotateToken: false,
         now: Date.now(),
       });
+      setSharingControlDirty(false);
       // Created versus edited is decided by what was on screen when the
       // player pressed Save, not by anything in the response. It used to be
       // read off a minted token, which meant a server that stopped minting
@@ -267,7 +306,7 @@ function DriverSetup() {
       if (!editing) {
         justCreatedDriverRef.current = true;
         announcePolite(
-          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${CONNECT_INSTRUCTIONS}.`,
+          `Driver ready. Profile sharing is ${profileSharing ? "on" : "off"}. To connect Freight Fate, ${connectHelp}.`,
         );
       } else {
         announcePolite(
@@ -283,6 +322,8 @@ function DriverSetup() {
         showNameError(rejection);
       } else {
         setProfileSharing(myDriver?.sharingEnabled === true);
+        setProfileVisibility(myDriver?.visibility ?? "private");
+        setSharingControlDirty(false);
         const message = "Save failed. Your changes were not applied. Please try again.";
         setSaveError(message);
         announceError(message);
@@ -337,13 +378,12 @@ function DriverSetup() {
       // to match.
       await provision({
         displayName: myDriver.displayName,
-        visibility: myDriver.sharingEnabled ? "public" : "private",
-        expandedSharingConsent: myDriver.sharingEnabled,
+        visibility: myDriver.visibility,
         rotateToken: true,
         now: Date.now(),
       });
       announcePolite(
-        `Done. Every computer is signed out. Each one needs activating again: ${CONNECT_INSTRUCTIONS}.`,
+        `Done. Every computer is signed out. Each one needs activating again: ${connectHelp}.`,
       );
     } catch {
       const message = "Signing out all computers failed. Nothing changed. Please try again.";
@@ -356,6 +396,9 @@ function DriverSetup() {
 
   async function handleSignOut(row: ComputerRow, rows: ComputerRow[]) {
     const spokenLabel = row.legacy ? "the original token" : row.label;
+    if (signingOutId === row.id) {
+      return;
+    }
     // Arming is always allowed — a silently dead "Sign out" button on the
     // other rows while one sign-out is in flight would be unexplained to a
     // reader. Only the confirm step waits, and it says so.
@@ -407,6 +450,9 @@ function DriverSetup() {
   function ComputerList(props: {
     armedId: string | null;
     computersHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+    // Passed in, not computed here: this function must stay hook-free (see
+    // the call site), and the host it depends on lives in DriverSetup state.
+    connectHelp: string;
     myComputers: MyComputers;
     onArmedBlur: (id: string, spokenLabel: string) => void;
     onArmedKeyDown: (event: React.KeyboardEvent, id: string, spokenLabel: string) => void;
@@ -414,6 +460,7 @@ function DriverSetup() {
     onSignOut: (row: ComputerRow, rows: ComputerRow[]) => void;
     rotateError: string;
     rotatePending: boolean;
+    actionsPending: boolean;
     rowButtonRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
     signingOutId: string | null;
   }) {
@@ -495,6 +542,7 @@ function DriverSetup() {
                           : `Sign out ${spokenLabel}`
                     }
                     className={`shrink-0 rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+                    disabled={busy}
                     onBlur={() => props.onArmedBlur(row.id, spokenLabel)}
                     onClick={() => props.onSignOut(row, rows)}
                     onKeyDown={(event) => props.onArmedKeyDown(event, row.id, spokenLabel)}
@@ -512,7 +560,7 @@ function DriverSetup() {
         )}
 
         <p className="text-sm text-slate-700">
-          To add a computer, {CONNECT_INSTRUCTIONS}.
+          To add a computer, {props.connectHelp}.
         </p>
 
         <div className="space-y-2 border-t border-line pt-3">
@@ -522,8 +570,9 @@ function DriverSetup() {
           </p>
           <button
             aria-describedby={props.rotateError ? "rotate-token-error" : undefined}
-            aria-disabled={props.rotatePending || undefined}
+            aria-disabled={props.actionsPending || undefined}
             className={`rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-slate-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 ${focusRing}`}
+            disabled={props.actionsPending}
             onBlur={() => props.onArmedBlur("rotate-all", "every computer")}
             onClick={props.onRotateAll}
             onKeyDown={(event) => props.onArmedKeyDown(event, "rotate-all", "every computer")}
@@ -580,7 +629,7 @@ function DriverSetup() {
             <p className="text-slate-800">
               {myDriver
                 ? "Update your driver name or profile sharing. Tokens for each of your computers are managed below."
-                : `Create your driver identity. Then, to connect Freight Fate to it, ${CONNECT_INSTRUCTIONS}.`}
+                : `Create your driver identity. Then, to connect Freight Fate to it, ${connectHelp}.`}
             </p>
             <p className="text-sm text-slate-600">Fields marked with * are required.</p>
 
@@ -596,6 +645,7 @@ function DriverSetup() {
                 aria-invalid={nameError ? true : undefined}
                 aria-required="true"
                 className="w-full rounded border border-line-strong px-3 py-2 text-ink"
+                disabled={pendingAction === "save"}
                 id="displayName"
                 maxLength={48}
                 name="displayName"
@@ -633,9 +683,15 @@ function DriverSetup() {
                     aria-describedby="profile-sharing-help"
                     checked={profileSharing}
                     className="mt-1 h-5 w-5 shrink-0"
+                    disabled={pendingAction === "save"}
                     id="profileSharing"
                     name="profileSharing"
-                    onChange={(event) => setProfileSharing(event.target.checked)}
+                    onChange={(event) => {
+                      const enabled = event.target.checked;
+                      setProfileSharing(enabled);
+                      setProfileVisibility(enabled ? "public" : "private");
+                      setSharingControlDirty(true);
+                    }}
                     type="checkbox"
                   />
                   <label className="font-semibold text-ink" htmlFor="profileSharing">
@@ -679,7 +735,9 @@ function DriverSetup() {
               ) : (
                 <p>
                   <Link href={`/freight-fate/drivers/${myDriver.driverId}`}>
-                    View your public driver profile
+                    {myDriver.visibility === "unlisted"
+                      ? "View your shared-by-link driver profile"
+                      : "View your public driver profile"}
                   </Link>
                   .
                 </p>
@@ -694,6 +752,7 @@ function DriverSetup() {
               {ComputerList({
                 armedId,
                 computersHeadingRef,
+                connectHelp,
                 myComputers,
                 onArmedBlur: armedBlur,
                 onArmedKeyDown: armedKeyDown,
@@ -701,6 +760,7 @@ function DriverSetup() {
                 onSignOut: handleSignOut,
                 rotateError,
                 rotatePending: pendingAction === "rotate",
+                actionsPending: pendingAction !== null,
                 rowButtonRefs,
                 signingOutId,
               })}

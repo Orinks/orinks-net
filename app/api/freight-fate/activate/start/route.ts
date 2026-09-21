@@ -9,10 +9,24 @@ function clientKey(request: Request) {
   return forwarded.split(",")[0]?.trim() || "unknown";
 }
 
+// The game may name the computer it is connecting. Anything unreadable is
+// simply absent: an older build sends no body at all, and this endpoint has
+// always accepted that.
+async function machineKey(request: Request) {
+  try {
+    const body = (await request.json()) as { machine_key?: unknown } | null;
+    const key = body?.machine_key;
+    return typeof key === "string" ? key.slice(0, 64) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const started = await startFreightFateActivation({
       clientKey: clientKey(request),
+      machineKey: await machineKey(request),
       siteOrigin: new URL(request.url).origin,
     });
     if (!started) {

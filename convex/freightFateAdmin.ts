@@ -1,6 +1,6 @@
 import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
-import { driverIdFromName } from "./freightFate";
+import { driverIdFromName, SHARING_CONSENT_VERSION } from "./freightFate";
 import { screenDisplayName } from "./moderation";
 
 // Moderation hammer for driver names that break the published naming rules
@@ -81,13 +81,21 @@ export const forceRename = internalMutation({
       }
 
       // Presence is ephemeral; the next heartbeat under the old id simply
-      // reports driver_not_found until the player updates the game.
+      // reports driver_not_found until the player updates the game. Both
+      // halves go: the board row and the heartbeat row that keeps it alive.
       const presence = await ctx.db
         .query("freightFatePresence")
         .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
         .unique();
       if (presence) {
         await ctx.db.delete(presence._id);
+      }
+      const beat = await ctx.db
+        .query("freightFatePresenceBeats")
+        .withIndex("by_driver_id", (q) => q.eq("driverId", driver.driverId))
+        .unique();
+      if (beat) {
+        await ctx.db.delete(beat._id);
       }
     }
 
@@ -133,6 +141,23 @@ export const setIntegrityFlag = internalMutation({
       integrityFlag: args.flag === null ? undefined : args.flag.slice(0, 32),
       integrityFlaggedAt: args.flag === null ? undefined : Date.now(),
     });
+
+    // The live board reads a denormalized flag on the presence row, not this
+    // driver row, so raising the verdict has to reach in and hold the listing
+    // now rather than at the driver's next heartbeat. Clearing it after
+    // review restores the listing the same way.
+    const presence = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+    if (presence) {
+      await ctx.db.patch(presence._id, {
+        listed:
+          args.flag === null &&
+          driver.visibility === "public" &&
+          driver.sharingConsentVersion === SHARING_CONSENT_VERSION,
+      });
+    }
 
     return {
       driverId: driver.driverId,

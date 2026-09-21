@@ -2,8 +2,16 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import { acceptDriverToken, driverTokenAccepted, stampClientVersion, stampDeviceTokenUse } from "./freightFate";
-import invariants from "../data/freight-fate-profile-invariants.json";
+import {
+  acceptDriverToken,
+  driverTokenAccepted,
+  freightFateProfileLinkVisible,
+  stampClientVersion,
+  stampDeviceTokenUse,
+} from "./freightFate";
+import { buildVerifiedProfileSnapshot } from "./freightFateProfileProjection";
+import { meaningfulPlayValidator } from "./freightFateMeaningfulPlay";
+import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
 
 // --- Cloud saves for Freight Fate ---
 //
@@ -26,8 +34,9 @@ export const MAX_SAVE_BYTES = 900 * 1024;
 export const KEEP_REVISIONS = 10;
 // Distinct save names per driver. The game caps profiles well below this;
 // the limit only stops a runaway or hostile client from filling the table.
-export const MAX_SLOTS = 20;
+export const MAX_SLOTS = 10;
 export const SAVE_UPLOAD_LIMIT = 30;
+const MAX_RETENTION_OPERATIONS_PER_SLOT = 100;
 
 function toHex(bytes: Uint8Array) {
   let out = "";
@@ -71,55 +80,187 @@ async function latestRevision(ctx: QueryCtx, driverId: string, saveName: string)
     .first();
 }
 
-function levelForXp(xp: number) {
-  const thresholds = invariants.levelXp as number[];
-  let level = 1;
-  for (let index = 1; index < thresholds.length; index += 1) {
-    if (xp >= thresholds[index]) level = index + 1;
+function retentionName(saveName: string) {
+  return freightFateSaveSlotName(saveName).normalize("NFKC").toLowerCase();
+}
+
+async function planRetentionEviction(
+  ctx: MutationCtx,
+  args: { driverId: string; incomingSaveName: string; publicSaveName?: string },
+) {
+  // Ten slots times ten retained revisions is the largest healthy account.
+  // One extra row means the invariant is already broken, so a new career
+  // cannot safely decide which complete slot history it would replace.
+  const rows = await ctx.db
+    .query("freightFateSaves")
+    .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+    .take(MAX_SLOTS * KEEP_REVISIONS + 1);
+  if (rows.length > MAX_SLOTS * KEEP_REVISIONS) return null;
+
+  const latestBySave = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const previous = latestBySave.get(row.saveName);
+    if (!previous || row.revision > previous.revision) latestBySave.set(row.saveName, row);
   }
-  const extra = xp - thresholds[thresholds.length - 1];
-  if (extra > 0) level = thresholds.length + Math.floor(extra / 1500);
-  return level;
+  if (latestBySave.size < MAX_SLOTS) return undefined;
+  if (latestBySave.size !== MAX_SLOTS) return null;
+
+  const candidates = [];
+  for (const [saveName, latest] of latestBySave) {
+    if (saveName === args.incomingSaveName || saveName === args.publicSaveName) continue;
+    const meaningful = await ctx.db
+      .query("freightFateMeaningfulPlayOperations")
+      .withIndex("by_driver_save_accepted", (q) =>
+        q.eq("driverId", args.driverId).eq("saveName", saveName),
+      )
+      .order("desc")
+      .first();
+    candidates.push({
+      saveName,
+      rankingTime: meaningful?.acceptedAt ?? latest.createdAt,
+      normalizedName: retentionName(saveName),
+    });
+  }
+  candidates.sort((a, b) =>
+    a.rankingTime - b.rankingTime
+    || (a.normalizedName < b.normalizedName ? -1 : a.normalizedName > b.normalizedName ? 1 : 0)
+    || (a.saveName < b.saveName ? -1 : a.saveName > b.saveName ? 1 : 0),
+  );
+  const selected = candidates[0];
+  if (!selected) return null;
+
+  const saveRows = rows.filter((row) => row.saveName === selected.saveName);
+  for (const row of saveRows) {
+    if (!(await ctx.db.get(row.contentId))) return null;
+  }
+  const operationRows = await ctx.db
+    .query("freightFateMeaningfulPlayOperations")
+    .withIndex("by_driver_save_accepted", (q) =>
+      q.eq("driverId", args.driverId).eq("saveName", selected.saveName),
+    )
+    .take(MAX_RETENTION_OPERATIONS_PER_SLOT + 1);
+  if (operationRows.length > MAX_RETENTION_OPERATIONS_PER_SLOT) return null;
+  const snapshot = await ctx.db
+    .query("freightFateProfileSnapshots")
+    .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
+    .unique();
+
+  return {
+    saveName: selected.saveName,
+    saveRows,
+    operationRows,
+    snapshot: snapshot?.sourceSaveName === selected.saveName ? snapshot : undefined,
+  };
 }
 
 async function upsertVerifiedSnapshot(
   ctx: MutationCtx,
-  args: { driverId: string; saveName: string; revision: number; payload: Record<string, unknown>; now: number; validatorVersion: number },
+  args: {
+    driverId: string;
+    saveName: string;
+    revision: number;
+    payload: Record<string, unknown>;
+    now: number;
+    validatorVersion: number;
+    selection?: "legacy" | "meaningful";
+  },
 ) {
-  const career = args.payload.career as Record<string, number>;
-  const level = levelForXp(career.xp);
-  const cityLabels = invariants.cityLabels as Record<string, string>;
-  const truckLabels = invariants.truckLabels as Record<string, string>;
-  const truck = args.payload.truck as string;
-  const clean = {
-    driverId: args.driverId,
-    version: 1,
-    level,
-    careerTitle: `Level ${level} driver`,
-    lastSavedCity: cityLabels[args.payload.current_city as string],
-    deliveries: career.deliveries,
-    milesDriven: Math.round(career.total_miles * 10) / 10,
-    reputation: Math.round(career.reputation * 10) / 10,
-    onTimeDeliveries: career.on_time_deliveries,
-    truckName: truckLabels[truck],
-    employmentStatus: "Owner-operator",
-    capturedAt: args.now,
-    updatedAt: args.now,
-    sourceSaveName: args.saveName,
-    sourceRevision: args.revision,
-    validatorVersion: args.validatorVersion,
-  };
+  const selection = args.selection ?? "legacy";
+  const clean = buildVerifiedProfileSnapshot({
+    ...args,
+    ...(selection === "meaningful" ? { meaningfulPlayedAt: args.now } : {}),
+  });
   const existing = await ctx.db.query("freightFateProfileSnapshots")
     .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
+  // A player-designated public career (setPublicSave) decides outright which
+  // slot may project. Without one, the first verified slot owns the
+  // projection until that slot is deleted -- uploading a different career
+  // must not silently replace the driver's chosen public identity. Legacy
+  // rows without an owner are claimed by the first verified upload.
+  const owner = await ctx.db.query("freightFateDrivers")
+    .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId)).unique();
+  if (owner?.publicSaveName !== undefined) {
+    if (args.saveName !== owner.publicSaveName) return;
+  } else if (existing?.sourceSaveName && existing.sourceSaveName !== args.saveName) {
+    return;
+  }
   if (existing) {
     // The first verified slot owns the public projection until that slot is
     // deleted. Uploading a different career must not silently replace the
     // driver's chosen public identity. Legacy rows without an owner are
     // claimed by the first verified upload that reaches them.
-    if (existing.sourceSaveName && existing.sourceSaveName !== args.saveName) return;
-    await ctx.db.patch(existing._id, clean);
+    if (selection === "legacy"
+      && existing.sourceSaveName && existing.sourceSaveName !== args.saveName) return;
+    // Replace rather than patch: optional facts that disappear from a later
+    // verified save (for example a now-unpriced trailer) must be removed,
+    // never inherited from the previously selected career.
+    await ctx.db.replace(existing._id, clean);
   } else {
     await ctx.db.insert("freightFateProfileSnapshots", clean);
+  }
+}
+
+// One career is the driver's public face; the rest are private cloud
+// backups. Chosen from the game's Cloud backup menu. Designating a career
+// other than the current projection's source drops the projection at once --
+// the player just said it is not their public identity -- and the designated
+// career's next accepted backup rebuilds it. null returns to the
+// first-uploader rule above.
+export const setPublicSave = mutation({
+  args: {
+    driverId: v.string(),
+    driverTokenHash: v.string(),
+    saveName: v.union(v.string(), v.null()),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { driver, reason } = await authorizedDriver(ctx, args.driverId, args.driverTokenHash);
+    if (!driver) {
+      return { ok: false as const, reason };
+    }
+    const allowed = await consumeFreightFateWrite(ctx, {
+      scope: "public-save", driverId: args.driverId, now: args.now, limit: 12,
+    });
+    if (!allowed) {
+      return { ok: false as const, reason: "rate_limited" as const };
+    }
+    if (args.saveName !== null && (args.saveName.length === 0 || args.saveName.length > 48)) {
+      return { ok: false as const, reason: "invalid_name" as const };
+    }
+    await ctx.db.patch(driver._id, {
+      publicSaveName: args.saveName ?? undefined,
+      updatedAt: args.now,
+    });
+    if (args.saveName !== null) {
+      const snapshot = await ctx.db.query("freightFateProfileSnapshots")
+        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId)).unique();
+      if (snapshot && snapshot.sourceSaveName !== args.saveName) {
+        await ctx.db.delete(snapshot._id);
+      }
+    }
+    return { ok: true as const, publicSaveName: args.saveName };
+  },
+});
+
+async function mergeVerifiedAchievements(
+  ctx: MutationCtx,
+  driverId: string,
+  payload: Record<string, unknown>,
+  now: number,
+) {
+  for (const achievementKey of payload.achievements as string[]) {
+    const existing = await ctx.db.query("freightFateAchievements")
+      .withIndex("by_driver_achievement", (q) =>
+        q.eq("driverId", driverId).eq("achievementKey", achievementKey),
+      ).unique();
+    if (existing) continue;
+    await ctx.db.insert("freightFateAchievements", {
+      driverId,
+      achievementKey,
+      importSource: "verified_save",
+      importedAt: now,
+      createdAt: now,
+    });
   }
 }
 
@@ -241,9 +382,10 @@ export const storeValidatedSave = internalMutation({
     signedAt: v.string(),
     validatorVersion: v.number(),
     payload: v.any(),
-    now: v.number(),
+    meaningfulPlay: v.optional(v.union(v.null(), meaningfulPlayValidator)),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
     const driver = await ctx.db
       .query("freightFateDrivers")
       .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
@@ -256,7 +398,7 @@ export const storeValidatedSave = internalMutation({
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "save-upload",
       driverId: args.driverId,
-      now: args.now,
+      now,
       limit: SAVE_UPLOAD_LIMIT,
     });
     if (!allowed) {
@@ -268,8 +410,8 @@ export const storeValidatedSave = internalMutation({
       return { ok: false as const, reason: "unauthorized" as const };
     }
 
-    await stampClientVersion(ctx, driver, args.clientVersion, args.now);
-    await stampDeviceTokenUse(ctx, device, args.now);
+    await stampClientVersion(ctx, driver, args.clientVersion, now);
+    await stampDeviceTokenUse(ctx, device, now);
 
     if (args.content.byteLength === 0 || args.content.byteLength > MAX_SAVE_BYTES) {
       return { ok: false as const, reason: "too_large" as const };
@@ -281,18 +423,6 @@ export const storeValidatedSave = internalMutation({
 
     const latest = await latestRevision(ctx, args.driverId, args.saveName);
 
-    if (!latest) {
-      // New slot: enforce the per-driver slot cap before creating it.
-      const rows = await ctx.db
-        .query("freightFateSaves")
-        .withIndex("by_driver", (q) => q.eq("driverId", args.driverId))
-        .collect();
-      const slots = new Set(rows.map((row) => row.saveName));
-      if (slots.size >= MAX_SLOTS) {
-        return { ok: false as const, reason: "too_many_slots" as const };
-      }
-    }
-
     const latestRev = latest?.revision ?? null;
     if (args.parentRevision !== latestRev) {
       return {
@@ -302,6 +432,27 @@ export const storeValidatedSave = internalMutation({
         latestCreatedAt: latest?.createdAt ?? null,
         latestSummary: latest?.summary ?? null,
       };
+    }
+
+    const eviction = latest
+      ? undefined
+      : await planRetentionEviction(ctx, {
+          driverId: args.driverId,
+          incomingSaveName: args.saveName,
+          publicSaveName: driver.publicSaveName,
+        });
+    if (eviction === null) {
+      return { ok: false as const, reason: "retention_blocked" as const };
+    }
+    if (eviction) {
+      for (const row of eviction.saveRows) {
+        await ctx.db.delete(row.contentId);
+        await ctx.db.delete(row._id);
+      }
+      for (const operation of eviction.operationRows) {
+        await ctx.db.delete(operation._id);
+      }
+      if (eviction.snapshot) await ctx.db.delete(eviction.snapshot._id);
     }
 
     const revision = (latest?.revision ?? 0) + 1;
@@ -322,17 +473,42 @@ export const storeValidatedSave = internalMutation({
       keyId: args.keyId,
       signedAt: args.signedAt,
       validatorVersion: args.validatorVersion,
-      createdAt: args.now,
+      createdAt: now,
     });
 
-    await upsertVerifiedSnapshot(ctx, {
-      driverId: args.driverId,
-      saveName: args.saveName,
-      revision,
-      payload: args.payload as Record<string, unknown>,
-      now: args.now,
-      validatorVersion: args.validatorVersion,
-    });
+    const payload = args.payload as Record<string, unknown>;
+    await mergeVerifiedAchievements(ctx, args.driverId, payload, now);
+
+    let acceptedMeaningful = false;
+    if (args.meaningfulPlay) {
+      const existingOperation = await ctx.db.query("freightFateMeaningfulPlayOperations")
+        .withIndex("by_driver_operation", (q) =>
+          q.eq("driverId", args.driverId).eq("operationId", args.meaningfulPlay!.operationId),
+        ).unique();
+      if (!existingOperation) {
+        await ctx.db.insert("freightFateMeaningfulPlayOperations", {
+          driverId: args.driverId,
+          operationId: args.meaningfulPlay.operationId,
+          saveName: args.saveName,
+          occurredAt: args.meaningfulPlay.occurredAt,
+          reason: args.meaningfulPlay.reason,
+          acceptedAt: now,
+        });
+        acceptedMeaningful = true;
+      }
+    }
+
+    // Old clients still store cloud revisions, but omitted intent cannot
+    // create, select, or refresh a shared career. Only a new operation may
+    // do that, and only while the profile remains link-visible.
+    if (acceptedMeaningful && freightFateProfileLinkVisible(driver)) {
+      await ctx.db.patch(driver._id, { publicSaveName: args.saveName, updatedAt: now });
+      await upsertVerifiedSnapshot(ctx, {
+        driverId: args.driverId, saveName: args.saveName, revision,
+        payload, now, validatorVersion: args.validatorVersion,
+        selection: "meaningful",
+      });
+    }
 
     // Prune revisions beyond the keep window, oldest first, content included.
     const keepAbove = revision - KEEP_REVISIONS;
@@ -349,7 +525,11 @@ export const storeValidatedSave = internalMutation({
       }
     }
 
-    return { ok: true as const, revision };
+    return {
+      ok: true as const,
+      revision,
+      ...(eviction ? { evictedSaveName: eviction.saveName } : {}),
+    };
   },
 });
 
@@ -490,6 +670,9 @@ export const listSaves = query({
 
     return {
       ok: true as const,
+      // Which career fronts the public profile (null = first-uploader rule),
+      // so the game's menu can say it without a second request.
+      publicSaveName: driver.publicSaveName ?? null,
       saves: rows.map((row) => ({
         saveName: row.saveName,
         revision: row.revision,
@@ -531,6 +714,9 @@ export const deleteSaveSlot = mutation({
       .unique();
     if (snapshot?.sourceSaveName === args.saveName) {
       await ctx.db.delete(snapshot._id);
+    }
+    if (driver.publicSaveName === args.saveName) {
+      await ctx.db.patch(driver._id, { publicSaveName: undefined });
     }
 
     return { ok: true as const, deletedRevisions: rows.length };

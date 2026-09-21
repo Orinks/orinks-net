@@ -1,8 +1,15 @@
 import { createHash } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { freightFateSaveSlotName } from "./freight-fate-save-name";
+import { FREIGHT_FATE_PROFILE_SUMMARY_EVENTS, freightFateProfileSummary } from "./freight-fate-profile-summary";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
+import type {
+  FreightFateDirectoryDriver,
+  FreightFateDriverDirectory,
+  FreightFatePresenceBoard,
+  FreightFatePresenceDriver,
+} from "./freight-fate-presence";
 import { formatUserCode } from "@/convex/freightFateActivation";
 
 export type FreightFateVisibility = "public" | "private" | "unlisted";
@@ -30,13 +37,10 @@ export function normalizeFreightFateDriverId(value: unknown) {
   return driverId;
 }
 
-export function normalizeFreightFateDisplayName(value: unknown, fallback = "Freight Fate Driver") {
-  if (typeof value !== "string") {
-    return fallback;
-  }
-
-  return value.trim().replace(/\s+/g, " ").slice(0, 48) || fallback;
-}
+// Defined in lib/freight-fate-presence.ts so the browser half of the drivers
+// list can use it as well; re-exported here for the server-side callers that
+// have always found it in this module.
+export { normalizeFreightFateDisplayName } from "./freight-fate-presence";
 
 export function normalizeFreightFateVisibility(value: unknown): FreightFateVisibility {
   if (value === "public" || value === "unlisted") {
@@ -129,6 +133,7 @@ export async function postFreightFateSave(input: {
   contentHash: string;
   content: ArrayBuffer;
   summary: string;
+  meaningfulPlay?: unknown;
   clientVersion?: string;
 }) {
   const client = getConvexClient();
@@ -146,8 +151,10 @@ export async function postFreightFateSave(input: {
     contentHash: input.contentHash,
     content: input.content,
     summary: input.summary.trim().replace(/\s+/g, " ").slice(0, 160),
+    ...(input.meaningfulPlay !== undefined
+      ? { meaningfulPlay: input.meaningfulPlay }
+      : {}),
     ...(input.clientVersion ? { clientVersion: input.clientVersion } : {}),
-    now: Date.now(),
   });
 }
 
@@ -179,6 +186,25 @@ export async function deleteFreightFateSaveSlot(input: {
     driverId: normalizeFreightFateDriverId(input.driverId),
     driverTokenHash: hashFreightFateToken(input.driverToken),
     saveName: normalizeFreightFateSaveName(input.saveName),
+  });
+}
+
+export async function setFreightFatePublicSave(input: {
+  driverId: string;
+  driverToken: string;
+  saveName: string | null;
+}) {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.mutation(anyApi.freightFateSaves.setPublicSave, {
+    driverId: normalizeFreightFateDriverId(input.driverId),
+    driverTokenHash: hashFreightFateToken(input.driverToken),
+    saveName: input.saveName === null ? null : normalizeFreightFateSaveName(input.saveName),
+    now: Date.now(),
   });
 }
 
@@ -302,11 +328,38 @@ export async function getFreightFateMastodonStatus(input: { driverId: string; dr
   });
 }
 
-export async function getFreightFatePublicUpdates(limit = 20, before?: { occurredAt: number; eventId: string }) {
+export const FREIGHT_FATE_UPDATES_SNAPSHOT_TAG = "freight-fate-public-updates";
+
+// How long a page of the public feed may be reused. Unlike the presence board
+// this has no correctness ceiling to stay inside -- the feed is finished
+// deliveries, which nobody acts on and which never stop being true -- so the
+// only question is how stale a page may look. Two minutes reads as live.
+export const FREIGHT_FATE_UPDATES_SNAPSHOT_SECONDS = 120;
+
+async function readFreightFatePublicUpdates(limit: number, before?: { occurredAt: number; eventId: string }) {
   const client = getConvexClient();
   if (!client) return null;
   return client.query(anyApi.freightFate.getPublicUpdates, { limit, ...(before ? { before } : {}) });
 }
+
+/** A page of the public feed, cached per (limit, cursor).
+ *
+ * This is what caps backend reads, the same job the presence snapshot does.
+ * Uncached, every server render read the feed afresh, so cost tracked page
+ * views rather than the number of deliveries actually finishing -- and the
+ * traffic that dominates is a crawler walking the "Older updates" chain in
+ * bursts, not players. Measured 2026-08-11: 17 KB per call, ~170 calls an
+ * hour, two thirds of the whole deployment's database I/O.
+ */
+export const getFreightFatePublicUpdates = unstable_cache(
+  (limit = 20, before?: { occurredAt: number; eventId: string }) =>
+    readFreightFatePublicUpdates(limit, before),
+  [FREIGHT_FATE_UPDATES_SNAPSHOT_TAG],
+  {
+    revalidate: FREIGHT_FATE_UPDATES_SNAPSHOT_SECONDS,
+    tags: [FREIGHT_FATE_UPDATES_SNAPSHOT_TAG],
+  },
+);
 
 export async function postFreightFatePresence(input: {
   driverId: string;
@@ -333,15 +386,14 @@ export async function postFreightFatePresence(input: {
   });
 }
 
-export type FreightFatePresenceBoard = {
-  drivers: {
-    driverId: string;
-    displayName: string;
-    activity: string;
-    detail: string;
-    updatedAt: number;
-  }[];
-  asOf: number;
+// Defined in lib/freight-fate-presence.ts, which the browser can import and
+// this module cannot be (node:crypto, above). Re-exported here so the
+// server-side callers below keep reading as one module.
+export type {
+  FreightFateDirectoryDriver,
+  FreightFateDriverDirectory,
+  FreightFatePresenceBoard,
+  FreightFatePresenceDriver,
 };
 
 export const FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG = "freight-fate-presence-board";
@@ -391,7 +443,7 @@ export async function getFreightFateLivePresenceBoard(): Promise<FreightFatePres
  * This is what caps backend reads. Without it, read volume tracks page views
  * and API polling rather than the number of people actually driving.
  */
-export const getFreightFatePresenceBoardSnapshot = unstable_cache(
+const cachedPresenceBoardSnapshot = unstable_cache(
   getFreightFateLivePresenceBoard,
   [FREIGHT_FATE_PRESENCE_SNAPSHOT_TAG],
   {
@@ -400,7 +452,129 @@ export const getFreightFatePresenceBoardSnapshot = unstable_cache(
   },
 );
 
-export async function getFreightFateDriverProfile(driverId: string, limit = 20, before?: { occurredAt: number; eventId: string }) {
+export function getFreightFatePresenceBoardSnapshot() {
+  return freshSnapshot(cachedPresenceBoardSnapshot, getFreightFateLivePresenceBoard);
+}
+
+// The oldest snapshot a reader may be handed. The cache serves the entry it
+// has to the first request after the minute is up and rebuilds it in the
+// background (stale while revalidating), which is fine while readers keep
+// coming and wrong after a quiet spell: the first player to open the driver
+// directory in a day got the day-old list, with every driver since then
+// "not seen on duty yet", and the game aged those stamps against its own
+// clock. Past this age the reader gets a live read instead; the background
+// rebuild the stale hit already started refreshes the cache for the next one,
+// so a quiet spell costs one extra backend read, not one per reader.
+export const FREIGHT_FATE_SNAPSHOT_MAX_AGE_MS = 3 * FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS * 1000;
+
+/** The cached snapshot while it is recent, a live read once it is not. */
+export async function freshSnapshot<T extends { asOf: number }>(
+  cached: () => Promise<T | null>,
+  live: () => Promise<T | null>,
+  now = Date.now(),
+): Promise<T | null> {
+  const snapshot = await cached();
+
+  if (snapshot && now - snapshot.asOf > FREIGHT_FATE_SNAPSHOT_MAX_AGE_MS) {
+    return live();
+  }
+
+  return snapshot;
+}
+
+export const FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG = "freight-fate-driver-directory";
+
+/** Every driver with a public profile and when they were last on duty, as a
+ * cached snapshot.
+ *
+ * Same treatment as the board snapshot, for the same reason: the directory
+ * page and the game's directory GET are public and unauthenticated, so this
+ * is what keeps backend reads at one a minute rather than one a viewer. The
+ * whole payload is cached with its `asOf`, so every "last on duty" age is
+ * measured from the moment the list was actually read.
+ *
+ * Returns null when online presence is not configured, like the board.
+ */
+async function getFreightFateLiveDriverDirectory(): Promise<FreightFateDriverDirectory | null> {
+  const client = getConvexClient();
+
+  if (!client) {
+    return null;
+  }
+
+  return client.query(anyApi.freightFate.getDriverDirectory, { now: Date.now() });
+}
+
+const cachedDriverDirectorySnapshot = unstable_cache(
+  getFreightFateLiveDriverDirectory,
+  [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
+  {
+    revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS,
+    tags: [FREIGHT_FATE_DIRECTORY_SNAPSHOT_TAG],
+  },
+);
+
+export function getFreightFateDriverDirectorySnapshot() {
+  return freshSnapshot(cachedDriverDirectorySnapshot, getFreightFateLiveDriverDirectory);
+}
+
+/** The game's copy of a public profile: the profile page's sections, trimmed
+ * to what a spoken list reads (see `freightFateProfileSummary`), cached for
+ * the same minute the drivers list is.
+ *
+ * Public and unauthenticated like the presence GET, so it gets the same
+ * treatment: a player arrowing down the drivers list and opening one profile
+ * after another costs the backend one read per driver per minute, not one
+ * per Enter. `driverId` is part of the cache key, so pass it normalized --
+ * the route does -- or two spellings of one driver are two cache entries.
+ *
+ * `configured: false` means no backend is wired up at all (the presence
+ * board's null), which is a different answer from a profile that is hidden:
+ * the first is a 503 the game reads as "could not be reached", the second a
+ * 404 it reads as "not public".
+ */
+async function getFreightFateLiveDriverProfileSummary(driverId: string) {
+  const client = getConvexClient();
+  const asOf = Date.now();
+
+  if (!client) {
+    return { configured: false as const, profile: null, asOf };
+  }
+
+  const profile = await client.query(anyApi.freightFate.getDriverProfile, {
+    driverId,
+    limit: FREIGHT_FATE_PROFILE_SUMMARY_EVENTS,
+    // The query's floor; the summary reads recentAchievements, not the page.
+    achievementLimit: 1,
+    now: asOf,
+  });
+
+  return { configured: true as const, profile: freightFateProfileSummary(profile), asOf };
+}
+
+const cachedDriverProfileSummary = unstable_cache(
+  getFreightFateLiveDriverProfileSummary,
+  ["freight-fate-driver-profile-summary"],
+  { revalidate: FREIGHT_FATE_PRESENCE_SNAPSHOT_SECONDS },
+);
+
+// Guarded like the two lists: a driver's summary is read far less often than
+// the board, so its cached copy is usually hours old when the next player
+// presses Enter on them, and it said "off duty" about a driver the list just
+// showed driving.
+export function getFreightFateDriverProfileSummary(driverId: string) {
+  return freshSnapshot(
+    () => cachedDriverProfileSummary(driverId),
+    () => getFreightFateLiveDriverProfileSummary(driverId),
+  );
+}
+
+export async function getFreightFateDriverProfile(
+  driverId: string,
+  limit = 20,
+  before?: { occurredAt: number; eventId: string },
+  achievementBefore?: { sortAt: number; achievementKey: string },
+) {
   const client = getConvexClient();
 
   if (!client) {
@@ -410,7 +584,9 @@ export async function getFreightFateDriverProfile(driverId: string, limit = 20, 
   return client.query(anyApi.freightFate.getDriverProfile, {
     driverId: normalizeFreightFateDriverId(driverId),
     limit,
+    achievementLimit: 20,
     ...(before ? { before } : {}),
+    ...(achievementBefore ? { achievementBefore } : {}),
     now: Date.now(),
   });
 }
@@ -433,13 +609,21 @@ export async function setFreightFateProfileSharing(input: {
 // Poll spacing the game starts from; it backs off from here on its own.
 export const FREIGHT_FATE_ACTIVATION_INTERVAL_S = 3;
 
-export async function startFreightFateActivation(input: { clientKey: string; siteOrigin: string }) {
+export async function startFreightFateActivation(input: {
+  clientKey: string;
+  siteOrigin: string;
+  // The game's opaque name for the computer connecting. Carried to the device
+  // row so that connecting the same PC again replaces its entry instead of
+  // spending another slot on the ten-computer list.
+  machineKey?: string;
+}) {
   const client = getConvexClient();
   if (!client) {
     return null;
   }
   const started = await client.mutation(anyApi.freightFateActivation.startActivation, {
     clientKey: input.clientKey.slice(0, 64),
+    machineKey: input.machineKey,
     now: Date.now(),
   });
   // Formatted by the same function the /activate page's parser was built

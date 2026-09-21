@@ -273,6 +273,10 @@ export default defineSchema({
     // board consent never implies journal/profile consent.
     sharingConsentVersion: v.optional(v.number()),
     sharingConsentedAt: v.optional(v.number()),
+    // The verified career selected by the most recent accepted meaningful
+    // operation. Optional so existing accounts and old clients keep their
+    // first-verified-slot behavior until the new protocol selects a career.
+    publicSaveName: v.optional(v.string()),
     // The game build this driver last posted from ("v1.8.0",
     // "nightly-20260711", or "source-<version>" for source checkouts),
     // parsed from the game's User-Agent by the REST routes. Never public;
@@ -287,11 +291,21 @@ export default defineSchema({
     // dashboard after review. Never public.
     integrityFlag: v.optional(v.string()),
     integrityFlaggedAt: v.optional(v.number()),
+    // When this driver last went OFF duty: the last heartbeat the server saw
+    // before the sweep aged them off the board, or the moment the game signed
+    // off. Written once per session end, never per beat, so the driver
+    // directory can say "last on duty three days ago" without the heartbeat
+    // ever touching this row. Absent until the first session ends under this
+    // field; the directory reads that as "not seen on duty yet". Shown only
+    // to the same audience as the on-duty listing (public, consented,
+    // unflagged) -- it is a coarser version of what the board already says.
+    lastOnDutyAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_driver_id", ["driverId"])
-    .index("by_auth_subject", ["authSubject"]),
+    .index("by_auth_subject", ["authSubject"])
+    .index("by_last_on_duty", ["lastOnDutyAt"]),
   // One posting token per computer the player connects, so adding a laptop
   // never retires the desktop's sign-in (Freight Fate issue #64). Tokens
   // exist only as hashes; the plain token is shown once at issuance on the
@@ -301,6 +315,14 @@ export default defineSchema({
     tokenHash: v.string(),
     // Player-chosen computer name shown only to the owner on the setup page.
     label: v.string(),
+    // Which physical computer this row belongs to, as the game reports it: an
+    // opaque hash, never a hostname, since equality is all it is ever used
+    // for. Activating again from the same computer REPLACES its row instead
+    // of adding one -- without this the cap counted activations, so a tester
+    // who unzips a build a week filled a ten-slot list with one PC
+    // (armstrong445, 2026-08-15). Optional: a game build that does not send
+    // one behaves exactly as before, a fresh row every time.
+    machineKey: v.optional(v.string()),
     createdAt: v.number(),
     // Coarse (see DEVICE_TOKEN_USE_STAMP_MS): "which computer was this again"
     // freshness for the owner, not an audit log.
@@ -319,25 +341,65 @@ export default defineSchema({
     // Set when the signed-in player claims the code.
     driverId: v.optional(v.string()),
     label: v.optional(v.string()),
+    // Supplied by the game when it asks for the code, carried to the device
+    // row when the activation is redeemed. See freightFateDeviceTokens.
+    machineKey: v.optional(v.string()),
     createdAt: v.number(),
     expiresAt: v.number(),
   })
     .index("by_device_code", ["deviceCodeHash"])
     .index("by_user_code", ["userCode"])
     .index("by_expires_at", ["expiresAt"]),
-  // Live "who's on duty" board: one row per driver holding only the latest
-  // heartbeat. Rows older than the board TTL are treated as offline and
-  // pruned on the next write; no history is kept by design.
+  // What the "who's on duty" board DISPLAYS: one row per driver, holding the
+  // status the board shows and nothing that ticks on its own. No history is
+  // kept by design.
+  //
+  // Browsers subscribe to this table live, so what matters most about it is
+  // what it does NOT contain: the heartbeat clock. A reactive query re-runs
+  // for every subscriber whenever a document it read changes, so a row that
+  // took a write every heartbeat would bill the board at
+  // drivers x beats x viewers whether or not anything a reader could see had
+  // moved. The clock lives in freightFatePresenceBeats instead, which the
+  // live query never reads, and this row is written only when the DISPLAYED
+  // status changes. Do not add a per-beat field here.
   freightFatePresence: defineTable({
     driverId: v.string(),
     activity: v.string(),
     detail: v.string(),
-    updatedAt: v.number(),
-    // When activity/detail last actually changed; updatedAt advances on every
-    // heartbeat, this only on real changes, so the board can hide parked
-    // trucks whose game was left running. Optional: rows written before the
-    // idle filter existed lack it until their next beat stamps a baseline.
+    // When activity/detail last actually changed. This is the only clock the
+    // live board has, and it is what "updated N minutes ago" now measures --
+    // a phrase that used to track the heartbeat and so read "just now"
+    // forever, saying a truck had done something when it had only pinged.
+    // Optional: rows written before the idle filter existed lack it until
+    // their next beat stamps a baseline.
     changedAt: v.optional(v.number()),
+    // Denormalized from freightFateDrivers at heartbeat time so the live
+    // query is one index scan that never opens a driver row. Two reasons, and
+    // the second is the load-bearing one: it keeps a fat driver document off
+    // every re-execution, and it keeps unrelated driver edits (a rename, a
+    // version stamp) from invalidating every subscriber's board.
+    //
+    // `listed` folds together public visibility, current sharing consent and
+    // an unset integrity flag. Absent means "written before this existed" and
+    // is read as NOT listed -- the next heartbeat stamps it, so an opted-in
+    // driver is missing from the live board for at most one beat after
+    // deploy, which is the safe direction to be wrong in.
+    displayName: v.optional(v.string()),
+    listed: v.optional(v.boolean()),
+    // Legacy: the heartbeat clock used to live here. Kept optional so rows
+    // written by the previous deploy still validate; nothing reads it.
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_driver_id", ["driverId"])
+    .index("by_changed", ["changedAt"])
+    .index("by_updated", ["updatedAt"]),
+  // The heartbeat clock, split out of freightFatePresence so that beating
+  // costs nothing on the live board (see the note there). One row per driver,
+  // rewritten every beat, read only by the server's authoritative presence
+  // read and by the sweep that ages dropped drivers off the board.
+  freightFatePresenceBeats: defineTable({
+    driverId: v.string(),
+    updatedAt: v.number(),
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
@@ -416,9 +478,14 @@ export default defineSchema({
   freightFateAchievements: defineTable({
     driverId: v.string(),
     achievementKey: v.string(),
-    name: v.string(),
-    description: v.string(),
-    earnedAt: v.number(),
+    // Event-posted achievements carry trusted event time and the legacy
+    // display copy. Verified-save imports deliberately carry neither: the
+    // save proves ownership, but not when the achievement was earned.
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    earnedAt: v.optional(v.number()),
+    importSource: v.optional(v.literal("verified_save")),
+    importedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_driver", ["driverId"])
@@ -426,23 +493,81 @@ export default defineSchema({
     // Same reason as by_driver_occurred above: the profile shows the most
     // recent badges, not the whole shelf.
     .index("by_driver_earned", ["driverId", "earnedAt"]),
+  // Stable operation IDs make meaningful-play selection idempotent even
+  // after the save slot gains later revisions. These rows are account data,
+  // not public events, and never feed the road journal or Mastodon.
+  freightFateMeaningfulPlayOperations: defineTable({
+    driverId: v.string(),
+    operationId: v.string(),
+    saveName: v.string(),
+    occurredAt: v.number(),
+    reason: v.union(
+      v.literal("job_accepted"),
+      v.literal("drive_started"),
+      v.literal("delivery_completed"),
+      v.literal("equipment_changed"),
+      v.literal("business_changed"),
+      v.literal("changed_save"),
+    ),
+    acceptedAt: v.number(),
+  })
+    .index("by_driver_operation", ["driverId", "operationId"])
+    .index("by_driver_save_accepted", ["driverId", "saveName", "acceptedAt"]),
   freightFateProfileSnapshots: defineTable({
     driverId: v.string(),
     version: v.number(),
+    saveName: v.optional(v.string()),
+    businessStatus: v.optional(v.union(
+      v.literal("company_driver"),
+      v.literal("leased_owner_operator"),
+      v.literal("independent_authority"),
+    )),
+    businessIdentity: v.optional(v.string()),
+    carrierName: v.optional(v.string()),
     level: v.number(),
     careerTitle: v.string(),
-    lastSavedCity: v.string(),
+    lastSavedCity: v.optional(v.string()),
     deliveries: v.number(),
     milesDriven: v.number(),
     reputation: v.number(),
     onTimeDeliveries: v.optional(v.number()),
+    onTimeRate: v.optional(v.number()),
+    damageFreeDeliveries: v.optional(v.number()),
+    damageFreeRate: v.optional(v.number()),
     truckName: v.optional(v.string()),
+    truckIsCarrierAssigned: v.optional(v.boolean()),
     employmentStatus: v.optional(v.string()),
+    // The CDL is disqualified for life; the career is readable, not driven.
+    careerEnded: v.optional(v.boolean()),
+    // 1.9 career projection: lifetime career earnings (never the current
+    // money balance — that is the game's published promise), badges earned
+    // out of the game's catalog, endorsement labels in unlock order, and —
+    // company drivers only — the carrier fleet tier.
+    lifetimeEarnings: v.optional(v.number()),
+    citiesVisited: v.optional(v.number()),
+    statesVisited: v.optional(v.number()),
+    longestHaulMiles: v.optional(v.number()),
+    safetyRecord: v.optional(v.object({
+      citations: v.number(),
+      seriousViolations: v.number(),
+      majorOffenses: v.number(),
+      fatigueEvents: v.number(),
+      cargoClaims: v.optional(v.number()),
+      preventableEquipmentDamage: v.optional(v.number()),
+      carrierTerminations: v.number(),
+      repossessions: v.number(),
+    })),
+    netWorth: v.optional(v.number()),
+    netWorthComplete: v.optional(v.boolean()),
+    badgesEarned: v.optional(v.number()),
+    endorsements: v.optional(v.array(v.string())),
+    fleetTier: v.optional(v.string()),
     capturedAt: v.number(),
     updatedAt: v.number(),
     sourceSaveName: v.optional(v.string()),
     sourceRevision: v.optional(v.number()),
     validatorVersion: v.optional(v.number()),
+    meaningfulPlayedAt: v.optional(v.number()),
     // Reserved server-gated compatibility envelope. Current public queries
     // intentionally never return it until a later activation migration.
     future: v.optional(v.any()),

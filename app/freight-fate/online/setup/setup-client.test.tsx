@@ -31,6 +31,14 @@ function notify() {
   }
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ isLoaded: true, isSignedIn: true, user: { username: "Road Star" } }),
 }));
@@ -61,7 +69,11 @@ vi.mock("convex/react", async () => {
 });
 vi.mock("@/components/AccountControls", () => ({ AccountControls: () => null }));
 
-import { FreightFateSetupClient, shouldAnnounceDriverReady } from "./setup-client";
+import {
+  connectInstructions,
+  FreightFateSetupClient,
+  shouldAnnounceDriverReady,
+} from "./setup-client";
 
 beforeEach(() => {
   store.driver = DRIVER;
@@ -121,6 +133,16 @@ test("the computer list names every sign-out control and keeps list semantics", 
   expect(html).not.toContain("Rotate token");
 });
 
+test("an unlisted driver profile is described as shared by link", () => {
+  store.driver = { ...DRIVER, visibility: "unlisted", sharingEnabled: true };
+  render(<FreightFateSetupClient />);
+
+  expect(screen.getByRole("link", { name: "View your shared-by-link driver profile" }))
+    .toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /public driver profile/i }))
+    .not.toBeInTheDocument();
+});
+
 test("no remaining control promises a token", () => {
   const html = renderToStaticMarkup(<FreightFateSetupClient />);
   // Both buttons used to promise a token the page would show; neither does
@@ -128,6 +150,27 @@ test("no remaining control promises a token", () => {
   expect(html).not.toContain("get its token");
   expect(html).not.toContain("get a new token");
   expect(html).not.toContain("Add computer");
+});
+
+// The same site answers on orinks.net and on dev.orinks.net (the staging
+// deployment the 1.9 game builds talk to), and the address was hardcoded, so
+// staging told players to enter their code on a host that never minted it.
+test("the connect instruction names the host serving the page", () => {
+  expect(connectInstructions("dev.orinks.net")).toContain("dev.orinks.net/activate");
+  expect(connectInstructions("orinks.net")).toContain("orinks.net/activate");
+});
+
+// The regression guard that matters: the quoted words are the game's own
+// menu item, which is "Set up this computer with orinks.net" in every build
+// including the staging-pointed ones. Interpolating the host there would
+// name a menu item that does not exist -- unfindable for someone arrowing
+// the menu by its spoken label.
+test("the quoted menu item keeps the game's own name on every host", () => {
+  for (const host of ["orinks.net", "dev.orinks.net", "localhost:3000"]) {
+    expect(connectInstructions(host)).toContain(
+      'choose "Set up this computer with orinks.net,"',
+    );
+  }
 });
 
 test("driver readiness announces only on the first resolved query state", () => {
@@ -219,3 +262,129 @@ test("saving an edit to an existing driver leaves focus where the player put it"
 
   expect(screen.getByRole("heading", { name: /your computers/i })).not.toHaveFocus();
 });
+
+test("name and sharing controls stay frozen until an unresolved save finishes", async () => {
+  const pending = deferred<{ driverId: string; rotated: boolean }>();
+  store.provision = vi.fn().mockReturnValue(pending.promise);
+  render(<FreightFateSetupClient />);
+
+  const name = screen.getByRole("textbox", { name: /driver name/i });
+  const sharing = screen.getByRole("checkbox", { name: "Profile sharing" });
+  fireEvent.click(sharing);
+  fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+  expect(name).toBeDisabled();
+  expect(sharing).toBeDisabled();
+  sharing.click();
+  expect(sharing).toBeChecked();
+
+  await act(async () => pending.resolve({ driverId: DRIVER.driverId, rotated: false }));
+  expect(name).not.toBeDisabled();
+  expect(sharing).not.toBeDisabled();
+  expect(store.provision).toHaveBeenCalledWith(expect.objectContaining({
+    visibility: "public",
+    expandedSharingConsent: true,
+  }));
+});
+
+test("a computer sign-out button is inert while its request is unresolved", async () => {
+  const pending = deferred<void>();
+  store.removeComputer = vi.fn().mockReturnValue(pending.promise);
+  render(<FreightFateSetupClient />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Sign out Laptop" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm sign out of Laptop" }));
+  const busy = screen.getByRole("button", { name: "Signing out Laptop" });
+  expect(busy).toBeDisabled();
+  fireEvent.click(busy);
+  expect(store.removeComputer).toHaveBeenCalledTimes(1);
+
+  await act(async () => pending.resolve());
+});
+
+test("sign out all is disabled during save without moving focus", async () => {
+  const pending = deferred<{ driverId: string; rotated: boolean }>();
+  store.provision = vi.fn().mockReturnValue(pending.promise);
+  render(<FreightFateSetupClient />);
+
+  const save = screen.getByRole("button", { name: /save changes/i });
+  save.focus();
+  fireEvent.click(save);
+  const signOutAll = screen.getByRole("button", { name: "Sign out all computers" });
+  expect(signOutAll).toBeDisabled();
+  fireEvent.click(signOutAll);
+  expect(store.provision).toHaveBeenCalledTimes(1);
+  expect(save).toHaveFocus();
+
+  await act(async () => pending.resolve({ driverId: DRIVER.driverId, rotated: false }));
+  expect(signOutAll).not.toBeDisabled();
+});
+
+test.each([
+  { visibility: "public", sharingEnabled: true },
+  { visibility: "unlisted", sharingEnabled: true },
+  { visibility: "private", sharingEnabled: false },
+] as const)(
+  "an ordinary save preserves $visibility visibility without renewing sharing consent",
+  async ({ visibility, sharingEnabled }) => {
+    store.driver = { ...DRIVER, visibility, sharingEnabled };
+    store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: false });
+    render(<FreightFateSetupClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+    const payload = store.provision.mock.calls[0]![0];
+    expect(payload).toMatchObject({
+      displayName: DRIVER.displayName,
+      visibility,
+      rotateToken: false,
+      now: expect.any(Number),
+    });
+    expect(payload).not.toHaveProperty("expandedSharingConsent");
+  },
+);
+
+test("the explicit sharing control can change an unlisted profile to private", async () => {
+  store.driver = { ...DRIVER, visibility: "unlisted", sharingEnabled: true };
+  store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: false });
+  render(<FreightFateSetupClient />);
+
+  const sharing = screen.getByRole("checkbox", { name: "Profile sharing" });
+  expect(sharing).toBeChecked();
+  fireEvent.click(sharing);
+  fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+  await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+  expect(store.provision).toHaveBeenCalledWith(expect.objectContaining({
+    visibility: "private",
+    expandedSharingConsent: false,
+    rotateToken: false,
+  }));
+});
+
+test.each([
+  { visibility: "public", sharingEnabled: true },
+  { visibility: "unlisted", sharingEnabled: true },
+  { visibility: "private", sharingEnabled: false },
+] as const)(
+  "signing out every computer preserves $visibility visibility without renewing sharing consent",
+  async ({ visibility, sharingEnabled }) => {
+    store.driver = { ...DRIVER, visibility, sharingEnabled };
+    store.provision = vi.fn().mockResolvedValue({ driverId: DRIVER.driverId, rotated: true });
+    render(<FreightFateSetupClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out all computers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm: sign out all computers" }));
+    await waitFor(() => expect(store.provision).toHaveBeenCalledTimes(1));
+
+    const payload = store.provision.mock.calls[0]![0];
+    expect(payload).toMatchObject({
+      displayName: DRIVER.displayName,
+      visibility,
+      rotateToken: true,
+      now: expect.any(Number),
+    });
+    expect(payload).not.toHaveProperty("expandedSharingConsent");
+  },
+);

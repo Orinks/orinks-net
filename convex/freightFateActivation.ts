@@ -6,6 +6,8 @@ import {
   driverIdFromName,
   MAX_DEVICE_TOKENS,
   mintDeviceTokenRow,
+  findDeviceRowForMachine,
+  normalizeMachineKey,
   normalizeDisplayName,
 } from "./freightFate";
 import { screenDisplayName } from "./moderation";
@@ -94,7 +96,10 @@ export const ACTIVATION_CLAIM_LIMIT = 10;
 export const ACTIVATION_SWEEP_BATCH = 200;
 
 export const startActivation = mutation({
-  args: { clientKey: v.string(), now: v.number() },
+  // machineKey is the game's opaque name for the computer asking. It rides
+  // the activation to the device row so that connecting the same PC again
+  // replaces its entry instead of taking another slot on the list.
+  args: { clientKey: v.string(), now: v.number(), machineKey: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "activation_start",
@@ -131,6 +136,7 @@ export const startActivation = mutation({
       deviceCodeHash: await hashDeviceCode(deviceCode),
       userCode,
       status: "pending",
+      machineKey: normalizeMachineKey(args.machineKey),
       createdAt: args.now,
       expiresAt,
     });
@@ -207,6 +213,13 @@ export const claimActivation = mutation({
     // about the cap while they are still looking at a browser that can
     // explain it. A brand-new driver has no computers yet, so this can only
     // ever trip for an account that already has one.
+    //
+    // A computer already on the list does not count against it: redeeming
+    // replaces that row rather than adding one, so refusing here would lock
+    // a player out of the very PC they are already signed in on.
+    const replacing = driver
+      ? await findDeviceRowForMachine(ctx, driver.driverId, row.machineKey)
+      : null;
     const deviceCount = driver
       ? (
           await ctx.db
@@ -215,7 +228,7 @@ export const claimActivation = mutation({
             .collect()
         ).length
       : 0;
-    if (deviceCount >= MAX_DEVICE_TOKENS) {
+    if (!replacing && deviceCount >= MAX_DEVICE_TOKENS) {
       return { ok: false as const, code: "too_many_computers" as const };
     }
 
@@ -345,16 +358,29 @@ export const redeemActivation = mutation({
     // the player ever gets here; this path is only reachable by racing
     // claims, and the row is deleted so "expired" becomes true rather than a
     // lie the next poll would repeat.
+    const replacing = await findDeviceRowForMachine(ctx, row.driverId, row.machineKey);
     const devices = await ctx.db
       .query("freightFateDeviceTokens")
       .withIndex("by_driver_id", (q) => q.eq("driverId", row.driverId!))
       .collect();
-    if (devices.length >= MAX_DEVICE_TOKENS) {
+    if (!replacing && devices.length >= MAX_DEVICE_TOKENS) {
       await ctx.db.delete(row._id);
       return null;
     }
+    if (replacing) {
+      // This computer, connecting again -- a new build unzipped, or a
+      // re-activation after signing out in the game. One computer, one row:
+      // the old token stops working, which is what signing in again means.
+      await ctx.db.delete(replacing._id);
+    }
 
-    const token = await mintDeviceTokenRow(ctx, row.driverId, row.label, args.now);
+    const token = await mintDeviceTokenRow(
+      ctx,
+      row.driverId,
+      row.label ?? replacing?.label,
+      args.now,
+      row.machineKey,
+    );
     await ctx.db.delete(row._id);
     // displayName goes back so the game can say who it connected as; that
     // spoken name is the only thing standing between a claimed-by-a-stranger
