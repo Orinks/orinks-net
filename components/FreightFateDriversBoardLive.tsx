@@ -406,8 +406,9 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
           a row held open under someone's focus is a courtesy to that reader,
           not a driver. */}
       <p>{countPhrase(onDuty.length)}</p>
-      {/* Live, the list says nothing about itself: the count announcing
-          changes is the proof it is live (owner, 2026-09-21: no text that
+      {/* Live, the list says nothing about itself: the status region above,
+          announcing arrivals and departures, is the proof it is live; this
+          count paragraph needs no live-region role (owner, 2026-09-21: no text that
           describes what the page already does). Only the still frame needs
           a line, because there the reader has to act to see anything newer. */}
       {connected ? null : <p>{checkedPhrase(initial.asOf)}</p>}
