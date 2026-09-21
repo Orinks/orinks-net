@@ -40,17 +40,6 @@ function countPhrase(count: number) {
   return `${count} ${count === 1 ? "driver is" : "drivers are"} on duty.`;
 }
 
-/** The one thing a reader cannot work out for themselves.
- *
- * Landing on this page there is no cue whether it is live or a still frame,
- * and the page it replaced said "Refresh the page to check again" -- so
- * something has to say which one they have. That is all it has to say.
- * Spelling out that drivers appear when they go on duty explains a list to
- * the person already reading its heading, and "you don't need to refresh"
- * says the same thing twice.
- */
-const EXPLANATION = "This list updates itself.";
-
 /** Said only where the list really is a still frame: before the browser has
  * taken over, and for anyone without JavaScript. A reader has no page-load
  * cue either way, so this has to say which one they have. */
@@ -417,7 +406,11 @@ function LiveBoard({ initial }: { initial: FreightFatePresenceBoard }) {
           a row held open under someone's focus is a courtesy to that reader,
           not a driver. */}
       <p>{countPhrase(onDuty.length)}</p>
-      <p>{connected ? EXPLANATION : checkedPhrase(initial.asOf)}</p>
+      {/* Live, the list says nothing about itself: the count announcing
+          changes is the proof it is live (owner, 2026-09-21: no text that
+          describes what the page already does). Only the still frame needs
+          a line, because there the reader has to act to see anything newer. */}
+      {connected ? null : <p>{checkedPhrase(initial.asOf)}</p>}
 
       <DriverRows
         rows={rows}

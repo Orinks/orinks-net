@@ -99,7 +99,8 @@ test("the still frame stands until the subscription answers, then the wording ch
   push([driver("Road Star")]);
 
   expect(screen.queryByText(/Refresh the page to check again/)).toBeNull();
-  expect(screen.getByText(/This list updates itself/)).toBeInTheDocument();
+  // Live, the list does not describe itself.
+  expect(screen.queryByText(/updates itself|refresh/i)).toBeNull();
 });
 
 test("the first live list is not news", () => {
