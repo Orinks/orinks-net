@@ -20,6 +20,32 @@ function snapshot(career: Record<string, number>) {
   });
 }
 
+describe("the profile's career title", () => {
+  function titleAt(level: number, extra: Record<string, unknown>) {
+    return buildVerifiedProfileSnapshot({
+      driverId: "road-star-1234", saveName: "Main", revision: 1,
+      payload: { ...payload({ xp: invariants.levelXp[level - 1] }), ...extra },
+      now: 1_800_000_000_000, validatorVersion: 1,
+    }).careerTitle;
+  }
+
+  test("a company driver past the fork takes the company ladder, as the game does", () => {
+    expect(titleAt(19, { business_status: "company_driver" }))
+      .toBe(invariants.companyCareerTitles[18]);
+    expect(titleAt(19, { business_status: "company_driver" })).not.toMatch(/Owner-Operator/);
+  });
+
+  test("a company driver who declined the buy-in takes it early", () => {
+    expect(titleAt(12, { business_status: "company_driver", owner_operator_declined: true }))
+      .toBe(invariants.companyCareerTitles[11]);
+  });
+
+  test("an owner-operator keeps the owner-operator ladder", () => {
+    expect(titleAt(19, { business_status: "leased_owner_operator" }))
+      .toBe("Settled Owner-Operator");
+  });
+});
+
 describe("the profile's reputation", () => {
   test("is the standing the game saved: the ledger less the driving record", () => {
     // A pinned ledger beside a bad record: the game shows 60, so the profile does.

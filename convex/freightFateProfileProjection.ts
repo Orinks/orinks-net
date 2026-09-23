@@ -39,6 +39,16 @@ function businessStatusOf(value: unknown): BusinessStatus | undefined {
     : undefined;
 }
 
+// The game's display_rank_for_level: a driver still on carrier wages takes
+// the company ladder once they declined the buy-in or reached the fork.
+function careerTitle(level: number, businessStatus: BusinessStatus, declined: boolean) {
+  const titles = businessStatus === "company_driver"
+    && (declined || level >= invariants.companyRankForkLevel)
+    ? invariants.companyCareerTitles
+    : FREIGHT_FATE_CAREER_TITLES;
+  return titles[Math.min(level, titles.length) - 1];
+}
+
 function safetyRecord(payload: JsonObject) {
   const record = payload.driving_record as JsonObject | undefined;
   const stats = payload.achievement_stats as JsonObject;
@@ -177,9 +187,7 @@ export function buildVerifiedProfileSnapshot(args: {
     ...(carrierName ? { carrierName } : {}),
     level,
     careerTitle: businessStatus
-      ? FREIGHT_FATE_CAREER_TITLES[
-        Math.min(level, FREIGHT_FATE_CAREER_TITLES.length) - 1
-      ]
+      ? careerTitle(level, businessStatus, args.payload.owner_operator_declined === true)
       : `Level ${level} driver`,
     lastSavedCity: cityLabels[args.payload.current_city as string],
     deliveries,
