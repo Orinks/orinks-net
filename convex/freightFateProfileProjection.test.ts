@@ -79,6 +79,39 @@ describe("the profile's out-of-service orders", () => {
   });
 });
 
+describe("the profile's crashes", () => {
+  function crashesFrom(extra: Record<string, unknown>) {
+    return buildVerifiedProfileSnapshot({
+      driverId: "road-star-1234", saveName: "Main", revision: 1,
+      payload: {
+        ...payload({}),
+        driving_record: {
+          serious_violations: [], major_offenses: [], citations: 0,
+          fatigue_events: 0, repossessions: 0, carrier_terminations: 0,
+          ...extra,
+        },
+      },
+      now: 1_800_000_000_000, validatorVersion: 1,
+    }).safetyRecord;
+  }
+
+  test("are the lifetime count the game saved", () => {
+    expect(crashesFrom({ crashes: 2 })?.crashes).toBe(2);
+    expect(crashesFrom({ crashes: 0 })?.crashes).toBe(0);
+  });
+
+  test("are left off for a save from before the count existed", () => {
+    expect(crashesFrom({})).toBeDefined();
+    expect(crashesFrom({})).not.toHaveProperty("crashes");
+  });
+
+  test("are left off when the count is not a whole non-negative number", () => {
+    for (const bad of [-1, 1.5, "3", null]) {
+      expect(crashesFrom({ crashes: bad })).not.toHaveProperty("crashes");
+    }
+  });
+});
+
 describe("the profile's reputation", () => {
   test("is the standing the game saved: the ledger less the driving record", () => {
     // A pinned ledger beside a bad record: the game shows 60, so the profile does.

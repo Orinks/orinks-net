@@ -27,7 +27,7 @@ const completeProfile = {
     careerTitle: "Leased-On Owner-Operator", truckName: "Ridgeline Sleeper",
     truckIsCarrierAssigned: false, deliveries: 100, milesDriven: 80_000,
     reputation: 92, onTimeRate: 0, damageFreeRate: 0,
-    safetyRecord: { citations: 1, seriousViolations: 0, majorOffenses: 0, outOfServiceOrders: 2, fatigueEvents: 2, cargoClaims: 1, preventableEquipmentDamage: 1, carrierTerminations: 0, repossessions: 0 },
+    safetyRecord: { citations: 1, seriousViolations: 0, majorOffenses: 0, outOfServiceOrders: 2, crashes: 3, fatigueEvents: 2, cargoClaims: 1, preventableEquipmentDamage: 1, carrierTerminations: 0, repossessions: 0 },
     citiesVisited: 120, statesVisited: 35, longestHaulMiles: 1_400,
     lifetimeEarnings: 750_000, netWorth: 186_000, netWorthComplete: true,
     capturedAt: 1_800_000_000_000,
@@ -82,9 +82,9 @@ describe("driver profile routes", () => {
     const safety = Array.from(lists[1].querySelectorAll("div")).find((row) => row.querySelector("dt")?.textContent === "Safety record")!;
     expect(safety.querySelectorAll(":scope > dd")).toHaveLength(1);
     const items = Array.from(safety.querySelectorAll("dd > ul > li"), (item) => item.textContent);
-    expect(items).toHaveLength(8);
-    // Out-of-service orders read right after major offenses.
-    expect(items.slice(2, 4)).toEqual(["0 major offenses", "2 out-of-service orders"]);
+    expect(items).toHaveLength(9);
+    // Out-of-service orders read right after major offenses, then crashes.
+    expect(items.slice(2, 5)).toEqual(["0 major offenses", "2 out-of-service orders", "3 crashes"]);
     expect(safety.textContent).toContain("1 citation");
     expect(safety.textContent).toContain("1 cargo claim");
     expect(safety.textContent).toContain("1 preventable equipment damage incident");

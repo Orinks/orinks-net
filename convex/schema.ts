@@ -602,6 +602,7 @@ export default defineSchema({
       seriousViolations: v.number(),
       majorOffenses: v.number(),
       outOfServiceOrders: v.optional(v.number()),
+      crashes: v.optional(v.number()),
       fatigueEvents: v.number(),
       cargoClaims: v.optional(v.number()),
       preventableEquipmentDamage: v.optional(v.number()),

@@ -360,7 +360,7 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
   });
 
-  test("holds fatigue and out-of-service times to the same career clock", () => {
+  test("holds fatigue, out-of-service and crash times to the same career clock", () => {
     const profile = validProfile();
     const record = (times: Record<string, unknown>) => ({
       serious_violations: [], major_offenses: [], citations: 0,
@@ -370,9 +370,11 @@ describe("validateSharedProfile", () => {
     const hour = profile.game_hours - 1;
     expect(validateSharedProfile({
       ...profile, out_of_service_events: 1, active_trip: null,
-      driving_record: record({ fatigue_times: [hour], out_of_service_times: [hour] }),
+      driving_record: record({
+        fatigue_times: [hour], out_of_service_times: [hour], crashes: 1, crash_times: [hour],
+      }),
     }, "Road Star")).toMatchObject({ ok: true });
-    for (const field of ["fatigue_times", "out_of_service_times"]) {
+    for (const field of ["fatigue_times", "out_of_service_times", "crash_times"]) {
       for (const bad of [[profile.game_hours + 40], [-1], "soon"]) {
         expect(validateSharedProfile({
           ...profile, active_trip: null, driving_record: record({ [field]: bad }),

@@ -70,6 +70,11 @@ function safetyRecord(payload: JsonObject) {
       && (payload.out_of_service_events as number) >= 0
       ? { outOfServiceOrders: payload.out_of_service_events as number }
       : {}),
+    // A crash on the accident register (49 CFR 390.15), such as a rollover;
+    // public by owner ruling 2026-09-24. Older saves do not carry the count.
+    ...(Number.isInteger(record.crashes) && (record.crashes as number) >= 0
+      ? { crashes: record.crashes as number }
+      : {}),
     fatigueEvents: record.fatigue_events as number,
     ...(Number.isInteger(stats.cargo_claims)
       ? { cargoClaims: stats.cargo_claims as number }
@@ -262,6 +267,7 @@ export function publicVerifiedSnapshot(
       seriousViolations: snapshot.safetyRecord.seriousViolations,
       majorOffenses: snapshot.safetyRecord.majorOffenses,
       outOfServiceOrders: snapshot.safetyRecord.outOfServiceOrders,
+      crashes: snapshot.safetyRecord.crashes,
       cargoClaims: snapshot.safetyRecord.cargoClaims,
       preventableEquipmentDamage: snapshot.safetyRecord.preventableEquipmentDamage,
       carrierTerminations: snapshot.safetyRecord.carrierTerminations,
