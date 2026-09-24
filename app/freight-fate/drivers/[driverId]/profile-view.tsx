@@ -73,7 +73,7 @@ function percent(value: number) {
 
 function SafetyRecord({ record }: { record: {
   citations: number; seriousViolations: number; majorOffenses: number;
-  cargoClaims?: number; preventableEquipmentDamage?: number;
+  outOfServiceOrders?: number; cargoClaims?: number; preventableEquipmentDamage?: number;
   carrierTerminations: number; repossessions: number;
 } }) {
   const counted = (count: number, singular: string, plural = `${singular}s`) =>
@@ -82,6 +82,7 @@ function SafetyRecord({ record }: { record: {
     counted(record.citations, "citation"),
     counted(record.seriousViolations, "serious violation"),
     counted(record.majorOffenses, "major offense"),
+    ...(record.outOfServiceOrders === undefined ? [] : [counted(record.outOfServiceOrders, "out-of-service order")]),
     ...(record.cargoClaims === undefined ? [] : [counted(record.cargoClaims, "cargo claim")]),
     ...(record.preventableEquipmentDamage === undefined ? [] : [counted(record.preventableEquipmentDamage, "preventable equipment damage incident")]),
     counted(record.carrierTerminations, "carrier termination"),

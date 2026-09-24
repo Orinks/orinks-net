@@ -288,12 +288,13 @@ function validateOptionalDrivingRecord(payload: JsonObject) {
   for (const field of ["citations", "fatigue_events", "repossessions", "carrier_terminations"]) {
     if (!integer(record[field], 0, 1_000_000)) return false;
   }
-  // Career 1.9 adds the citation times the carrier's review counts and the
-  // hour that review started; both optional, both career hours like the
-  // violation times above.
-  if ("citation_times" in record && (!Array.isArray(record.citation_times)
-    || record.citation_times.some((at) => !finite(at, 0, latest)))) {
-    return false;
+  // Career 1.9 adds the citation, fatigue and out-of-service times the
+  // safety record counts, and the hour the carrier's review started; all
+  // optional, all career hours like the violation times above.
+  for (const field of ["citation_times", "fatigue_times", "out_of_service_times"]) {
+    const times = record[field];
+    if (field in record && (!Array.isArray(times)
+      || times.some((at) => !finite(at, 0, latest)))) return false;
   }
   return !(("fines_paid" in record && !finite(record.fines_paid, 0, 100_000_000))
     || ("suspended_until_h" in record && !finite(record.suspended_until_h, 0, 10_000_000))

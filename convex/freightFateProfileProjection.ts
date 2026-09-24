@@ -63,6 +63,13 @@ function safetyRecord(payload: JsonObject) {
     citations: record.citations as number,
     seriousViolations: record.serious_violations.length,
     majorOffenses: record.major_offenses.length,
+    // Public by owner ruling 2026-09-24: FMCSA publishes inspection
+    // out-of-service results. The hours-of-service detail behind an order
+    // stays private. Older saves do not carry the count.
+    ...(Number.isInteger(payload.out_of_service_events)
+      && (payload.out_of_service_events as number) >= 0
+      ? { outOfServiceOrders: payload.out_of_service_events as number }
+      : {}),
     fatigueEvents: record.fatigue_events as number,
     ...(Number.isInteger(stats.cargo_claims)
       ? { cargoClaims: stats.cargo_claims as number }
@@ -254,6 +261,7 @@ export function publicVerifiedSnapshot(
       citations: snapshot.safetyRecord.citations,
       seriousViolations: snapshot.safetyRecord.seriousViolations,
       majorOffenses: snapshot.safetyRecord.majorOffenses,
+      outOfServiceOrders: snapshot.safetyRecord.outOfServiceOrders,
       cargoClaims: snapshot.safetyRecord.cargoClaims,
       preventableEquipmentDamage: snapshot.safetyRecord.preventableEquipmentDamage,
       carrierTerminations: snapshot.safetyRecord.carrierTerminations,

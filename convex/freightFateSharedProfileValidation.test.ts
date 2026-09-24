@@ -360,6 +360,27 @@ describe("validateSharedProfile", () => {
     }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
   });
 
+  test("holds fatigue and out-of-service times to the same career clock", () => {
+    const profile = validProfile();
+    const record = (times: Record<string, unknown>) => ({
+      serious_violations: [], major_offenses: [], citations: 0,
+      fines_paid: 0, fatigue_events: 1, repossessions: 0, carrier_terminations: 0,
+      ...times,
+    });
+    const hour = profile.game_hours - 1;
+    expect(validateSharedProfile({
+      ...profile, out_of_service_events: 1, active_trip: null,
+      driving_record: record({ fatigue_times: [hour], out_of_service_times: [hour] }),
+    }, "Road Star")).toMatchObject({ ok: true });
+    for (const field of ["fatigue_times", "out_of_service_times"]) {
+      for (const bad of [[profile.game_hours + 40], [-1], "soon"]) {
+        expect(validateSharedProfile({
+          ...profile, active_trip: null, driving_record: record({ [field]: bad }),
+        }, "Road Star")).toMatchObject({ ok: false, reason: "invalid_range" });
+      }
+    }
+  });
+
   test("accepts a legacy market carrying only the original cargo classes", () => {
     // Careers begun before a cargo-class expansion keep the smaller
     // multiplier set (seen in the wild: 8 of the current 16 classes).
