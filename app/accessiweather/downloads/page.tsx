@@ -32,6 +32,12 @@ export default function AccessiWeatherDownloadsPage() {
           install it.
         </p>
         <p>
+          On macOS, choose the <strong>macOS disk image</strong> download. Open it, then drag
+          AccessiWeather into your Applications folder, or copy it (Command-C) and paste it there
+          (Command-V). AccessiWeather updates itself. It downloads the new disk image, verifies it,
+          replaces the app, and restarts on its own.
+        </p>
+        <p>
           <a href="/accessiweather">Back to AccessiWeather</a>
         </p>
       </Section>
