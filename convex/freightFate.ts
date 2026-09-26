@@ -1017,7 +1017,10 @@ export const MAX_DIRECTORY_ROWS = 200;
  * board already was.
  *
  * Authoritative and uncached here; the site reads it through a one-minute
- * snapshot and the game reads that. Never subscribe to it: it takes a clock
+ * snapshot and the game reads that. The site then overwrites who is on duty
+ * with the drivers list's own snapshot (onDutyFromBoard in
+ * lib/freight-fate-online.ts), because two snapshots cached on separate
+ * clocks named different drivers. Never subscribe to it: it takes a clock
  * and opens driver rows, both of which the live board was built to avoid.
  */
 export const getDriverDirectory = query({
