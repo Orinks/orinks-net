@@ -518,8 +518,51 @@ const cachedDriverDirectorySnapshot = unstable_cache(
   },
 );
 
-export function getFreightFateDriverDirectorySnapshot() {
-  return freshSnapshot(cachedDriverDirectorySnapshot, getFreightFateLiveDriverDirectory);
+/** The directory with who is on duty taken from the drivers list's own
+ * snapshot.
+ *
+ * The two snapshots are cached on their own clocks, so for up to a few
+ * minutes after anyone came on or went off duty they named different
+ * drivers: five on the list, four in the directory, read one after the other
+ * (2026-09-26). The list is the answer to "who is on duty", so the directory
+ * borrows it rather than keeping a second opinion. A driver on the list whose
+ * profile the directory has not read yet joins the end of the on-duty group;
+ * the directory's own order (by last on duty, then name) stands otherwise.
+ */
+export function onDutyFromBoard(
+  directory: FreightFateDriverDirectory,
+  board: FreightFatePresenceBoard,
+): FreightFateDriverDirectory {
+  const live = new Map(board.drivers.map((driver) => [driver.driverId, driver]));
+  const listed = new Set(directory.drivers.map((driver) => driver.driverId));
+  const rows = [
+    ...directory.drivers,
+    ...board.drivers.filter((driver) => !listed.has(driver.driverId)),
+  ].map((driver): FreightFateDirectoryDriver => {
+    const row = {
+      driverId: driver.driverId,
+      displayName: driver.displayName,
+      lastOnDutyAt: "lastOnDutyAt" in driver ? driver.lastOnDutyAt : undefined,
+    };
+    const on = live.get(driver.driverId);
+    return on
+      ? { ...row, onDuty: true, activity: on.activity, detail: on.detail, changedAt: on.changedAt }
+      : { ...row, onDuty: false };
+  });
+
+  return {
+    drivers: [...rows.filter((driver) => driver.onDuty), ...rows.filter((driver) => !driver.onDuty)],
+    asOf: directory.asOf,
+  };
+}
+
+export async function getFreightFateDriverDirectorySnapshot() {
+  const [directory, board] = await Promise.all([
+    freshSnapshot(cachedDriverDirectorySnapshot, getFreightFateLiveDriverDirectory),
+    getFreightFatePresenceBoardSnapshot(),
+  ]);
+
+  return directory && board ? onDutyFromBoard(directory, board) : directory;
 }
 
 /** The game's copy of a public profile: the profile page's sections, trimmed
