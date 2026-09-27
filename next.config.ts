@@ -1,6 +1,32 @@
 import type { NextConfig } from "next";
 
+// The game's presence heartbeat is the site's most frequent request, and all
+// it does is call one Convex mutation. Sent straight to the Convex HTTP router
+// (convex/http.ts) it runs no Vercel function at all. Only the game's
+// authenticated calls go: the public board GET carries no Authorization header
+// and stays on the cached snapshot served here. Without a Convex cloud URL at
+// build time there is nothing to point at, and the Next route answers instead.
+export function presenceRewrites(convexUrl = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL) {
+  const origin = convexUrl && /^(https:\/\/[^/]+)\.convex\.cloud\/?$/.exec(convexUrl)?.[1];
+
+  if (!origin) {
+    return [];
+  }
+
+  return [
+    {
+      source: "/api/freight-fate/presence",
+      has: [{ type: "header" as const, key: "authorization" }],
+      destination: `${origin}.convex.site/freight-fate/presence`,
+    },
+  ];
+}
+
 const nextConfig: NextConfig = {
+  // beforeFiles, because an ordinary rewrite never shadows a route that exists.
+  async rewrites() {
+    return { beforeFiles: presenceRewrites(), afterFiles: [], fallback: [] };
+  },
   images: {
     remotePatterns: [
       {

@@ -2192,3 +2192,49 @@ describe("live drivers board", () => {
       .toEqual({ carried: 0, dropped: 0 });
   });
 });
+
+describe("presence over the HTTP router", () => {
+  // What the game sends. orinks.net rewrites exactly these requests here.
+  function beat(t: ReturnType<typeof setup>, token: string | null, body: Record<string, unknown>) {
+    return t.fetch("/freight-fate/presence", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "user-agent": "FreightFate/v1.9.0",
+        ...(token === null ? {} : { authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  test("a heartbeat with the game's token lists the driver, and anything else is refused with the route's statuses", async () => {
+    const t = setup();
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now: Date.now(),
+    });
+
+    const ok = await beat(t, token, { driverId, activity: "Hauling  reefer ", detail: "I-70" });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ ok: true, cleared: false });
+    const board = await t.query(api.freightFate.getPresenceBoard, { now: Date.now() });
+    expect(board.drivers.find((driver) => driver.driverId === driverId)?.activity).toBe("Hauling reefer");
+
+    const wrongToken = await beat(t, "ffd_not_the_real_token_value_here", { driverId, activity: "x" });
+    expect(wrongToken.status).toBe(401);
+    expect(await wrongToken.json()).toEqual({ error: "unauthorized" });
+
+    const unknownDriver = await beat(t, token, { driverId: "nobody-home-12345678", activity: "x" });
+    expect(unknownDriver.status).toBe(404);
+    expect(await unknownDriver.json()).toEqual({ error: "driver_not_found" });
+
+    const noToken = await beat(t, null, { driverId, activity: "x" });
+    expect(noToken.status).toBe(400);
+    expect(await noToken.json()).toEqual({ error: "Driver token is required." });
+
+    const signOff = await beat(t, token, { driverId, activity: "", detail: "" });
+    expect(await signOff.json()).toEqual({ ok: true, cleared: true });
+  });
+});
