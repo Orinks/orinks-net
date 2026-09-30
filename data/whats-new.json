@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-09-30-freight-fate-carrier-pages",
+      "date": "2026-09-30",
+      "project": "Freight Fate",
+      "title": "Every Freight Fate carrier has its own page",
+      "body": [
+        "Each carrier a company driver can work for now has a page here with its wage plan and the kind of freight its dispatch sends you. One more page compares them side by side, for choosing where to start a career.",
+        "The pages also cover what every carrier gives its drivers: the equipment each level earns, the training it pays for, and when you can buy in as an owner-operator. The carrier on a driver profile now links to its page. The figures come from the game itself, so they change when the game does."
+      ],
+      "link": {
+        "href": "/freight-fate/carriers",
+        "label": "Compare the Freight Fate carriers"
+      }
+    },
+    {
       "id": "2026-09-17-portkeydrop-new-maintainer",
       "date": "2026-09-17",
       "project": "PortkeyDrop",

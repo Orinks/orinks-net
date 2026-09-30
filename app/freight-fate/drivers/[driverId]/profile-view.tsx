@@ -1,6 +1,8 @@
 import { cache, type ReactNode } from "react";
 import Link from "next/link";
+import { FreightFateEventLink } from "@/components/FreightFateEventLink";
 import { FreightFateHashFocus } from "@/components/FreightFateHashFocus";
+import { freightFateCarrierHrefForName } from "@/lib/freight-fate-carriers";
 import { freightFateEventFragment } from "@/lib/freight-fate-fragments";
 import { PageHeader } from "@/components/PageHeader";
 import { getFreightFateDriverProfile, normalizeFreightFateDriverId } from "@/lib/freight-fate-online";
@@ -165,6 +167,7 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
   if (!profile) return <Unavailable />;
   const { driver, snapshot } = profile;
   const root = `/freight-fate/drivers/${driver.driverId}`;
+  const carrierHref = snapshot?.carrierName ? freightFateCarrierHrefForName(snapshot.carrierName) : undefined;
   return (
     <div className="min-w-0 space-y-8 [overflow-wrap:anywhere]">
       <PageHeader title={driver.displayName} />
@@ -179,11 +182,11 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
               ...(snapshot.saveName ? [["Career name", snapshot.saveName] as [string, ReactNode]] : []),
               ...(snapshot.careerEnded ? [["Career status", "Ended. The CDL is disqualified for life; this is the last career on record."] as [string, ReactNode]] : []),
               ...(snapshot.businessIdentity ? [["Employment", snapshot.businessIdentity] as [string, ReactNode]] : snapshot.employmentStatus ? [["Employment", snapshot.employmentStatus] as [string, ReactNode]] : []),
-              ...(snapshot.carrierName ? [["Carrier", snapshot.carrierName] as [string, ReactNode]] : []),
+              ...(snapshot.carrierName ? [["Carrier", carrierHref ? <Link className={inlineLinkClass} href={carrierHref} key="carrier">{snapshot.carrierName}</Link> : snapshot.carrierName] as [string, ReactNode]] : []),
               ["Driver level", snapshot.level.toLocaleString("en-US")],
               ["Career title", snapshot.careerTitle],
               ...(snapshot.truckName ? [["Tractor", `${snapshot.truckName}${snapshot.truckIsCarrierAssigned === true ? " (carrier-assigned)" : snapshot.truckIsCarrierAssigned === false ? " (owned)" : ""}`] as [string, ReactNode]] : []),
-              ...(snapshot.fleetTier ? [["Carrier fleet tier", snapshot.fleetTier] as [string, ReactNode]] : []),
+              ...(snapshot.fleetTier ? [["Carrier fleet tier", carrierHref ? <FreightFateEventLink className={inlineLinkClass} fragment="equipment" href={carrierHref} key="fleet-tier">{snapshot.fleetTier}</FreightFateEventLink> : snapshot.fleetTier] as [string, ReactNode]] : []),
             ]} /> : <p>No current career has been shared yet.</p>}
             {profile.presence ? <p className="mt-4"><strong>Status:</strong> On duty. {profile.presence.activity}. {profile.presence.detail} Updated <Time value={profile.presence.updatedAt} />.</p> : <p className="mt-4"><strong>Status:</strong> Off duty.</p>}
           </section>
