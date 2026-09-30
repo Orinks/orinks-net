@@ -132,6 +132,26 @@ describe("driver profile routes", () => {
     }
   });
 
+  test("links the carrier and its fleet tier to the carrier's page", async () => {
+    const leased = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    const carrierRow = (doc: Document) => Array.from(doc.querySelectorAll("dl > div")).find((row) => row.querySelector("dt")?.textContent === "Carrier")!;
+    expect(carrierRow(leased).querySelector("dd a")?.getAttribute("href")).toBe("/freight-fate/carriers/northstar");
+
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: { ...completeProfile.snapshot, businessStatus: "company_driver", carrierName: "Prairie Link Regional", fleetTier: "regional fleet" } });
+    const company = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    expect(carrierRow(company).querySelector("dd a")?.getAttribute("href")).toBe("/freight-fate/carriers/prairie_link");
+    const tier = Array.from(company.querySelectorAll("dl > div")).find((row) => row.querySelector("dt")?.textContent === "Carrier fleet tier")!;
+    const tierLink = tier.querySelector("dd a")!;
+    expect(tierLink.getAttribute("href")).toBe("/freight-fate/carriers/prairie_link#equipment");
+    expect(tierLink.textContent).toBe("regional fleet");
+    expect(tierLink.className).toContain("underline");
+
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: { ...completeProfile.snapshot, carrierName: "A Carrier From A Newer Game", fleetTier: "regional fleet" } });
+    const unknown = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));
+    expect(carrierRow(unknown).querySelector("a")).toBeNull();
+    expect(carrierRow(unknown).textContent).toBe("CarrierA Carrier From A Newer Game");
+  });
+
   test("omits unavailable legacy facts without inventing values", async () => {
     getProfile.mockResolvedValue({ ...completeProfile, snapshot: { version: 1, level: 4, careerTitle: "Level 4 driver", deliveries: 12, milesDriven: 2_345, reputation: 80, capturedAt: 1_800_000_000_000 } });
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "overview" })));

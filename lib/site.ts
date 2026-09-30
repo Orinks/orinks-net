@@ -87,6 +87,7 @@ export const freightFate: ProjectPage = {
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [
+    { href: "/freight-fate/carriers", label: "Freight Fate carriers" },
     { href: "https://github.com/Orinks/Freight-Fate", label: "GitHub repository" },
     { href: "https://github.com/Orinks/Freight-Fate/issues", label: "Report an issue" },
   ],
