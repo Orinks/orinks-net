@@ -57,12 +57,12 @@ export const songs: GrimSong[] = [
     slug: "london-bridge",
     title: "London Bridge",
     origin: "England",
-    tagline: "The tolls go up; the upkeep doesn't.",
+    tagline: "Who will pay when the concrete cracks?",
     tune: "The traditional tune, in E minor, as a slow dance in 3/4.",
     onRecord:
       "The stone bridge stood from 1209 on 19 arches, with houses on it. In 1269 Henry III gave its income to Queen Eleanor; in the winter of 1281 ice took out five arches, and in 1282 the City set up a trust so the tolls paid for repairs. Traitors' heads were boiled, tarred and set over its gate from 1305 to 1661.",
     folklore:
-      'That the "fair lady" is Queen Eleanor (the oldest text, from 1744, says "Dance over my Lady Lee"), that a child was walled into the foundations (no remains were ever found), or that it recalls a Viking attack in 1014 (a translator borrowed the nursery line in 1844).',
+      'Nothing backs the stories that the "fair lady" is Queen Eleanor (the oldest text, from 1744, says "Dance over my Lady Lee"), that a child was walled into the foundations (no remains were ever found), or that the rhyme recalls a Viking attack in 1014 (a translator borrowed the nursery line in 1844).',
     modern: "Shareholders take the toll, the dividends go up and up, and nobody pays when the concrete cracks.",
     trivia: [
       "In 1968 the 1831 bridge was sold to Robert McCulloch and rebuilt at Lake Havasu City, Arizona. The story that he thought he was buying Tower Bridge is false.",
@@ -82,7 +82,7 @@ export const songs: GrimSong[] = [
       'William Miller, a Glasgow woodturner, published it in Scots in 1841: Willie runs through the town in his nightgown, "tirlin\' at the window, cryin\' at the lock". The first verse is older, from about 1820. Miller died poor in 1872, in an unmarked grave; a later monument called him "The Laureate of the Nursery".',
     folklore:
       '"Willie Winkie" was a nickname for King William III, but nothing ties the rhyme to him.',
-    modern: "Doorbell cameras, a glass eye in the night-light, and a stranger's voice through the speaker.",
+    modern: "The watcher at the window is now a doorbell camera or a glass eye in the night-light, and a stranger's voice comes through the speaker.",
     trivia: [
       "Rudyard Kipling used the name for a story in 1888, and Shirley Temple starred in the 1937 film.",
     ],
@@ -99,9 +99,9 @@ export const songs: GrimSong[] = [
     onRecord:
       'The first printing, in 1744, bakes "four and twenty naughty boys" in the pie; blackbirds replace them by about 1780. In the oldest full text the maid\'s nose is bitten off by a magpie. Pies of live birds were real: a cookbook printed in English in 1598 explains how to make one so the birds fly out when it is cut.',
     folklore:
-      "Henry VIII and his wives, the 24 hours of the day, a code for printing the Bible: none has evidence. The story that Blackbeard used the rhyme to recruit pirates was a hoax planted by Snopes in 1999.",
+      "No evidence links it to Henry VIII and his wives, the 24 hours of the day, or a code for printing the Bible. The story that Blackbeard used the rhyme to recruit pirates was a hoax Snopes planted in 1999.",
     modern:
-      "Fortunes counted in billions, warehouses filling with machines, and a worker's injury filed as the cost of doing business.",
+      "Fortunes are counted in billions while warehouses fill with machines. A worker's injury is filed as the cost of doing business.",
     trivia: [
       "Sixpence coins were minted from 1551 to 1980.",
       "A gentler verse, added in the 1800s, sends little Jenny Wren to put the maid's nose back on.",
@@ -118,8 +118,8 @@ export const songs: GrimSong[] = [
     onRecord:
       'First printed in about 1784. A 1797 version has her knock the children on the head with a borrowed mallet and order coffins; a Scots version printed in 1843 finds them "a\' lying dead", then "a\' lying laughing".',
     folklore:
-      'That she is Queen Caroline or George II, or that the shoe is a fertility charm: no evidence. "Mother Goose" as a real woman in Boston is a story from 1864.',
-    modern: "Families in single rooms, cots that never come, and six weeks that turn into a year.",
+      'Nobody has shown that she is Queen Caroline or George II, or that the shoe is a fertility charm. "Mother Goose" as a real woman in Boston is a story from 1864.',
+    modern: "Families live in single rooms and wait for cots that never come, and six weeks turn into a year.",
     trivia: [
       "Old shoes, many of them children's, have been found hidden in the walls and chimneys of old houses; one museum's index lists about 2,000.",
     ],
@@ -136,7 +136,7 @@ export const songs: GrimSong[] = [
       'Its oldest relative is German, from 1796: three children sit under an elder bush and all go "husch". By 1883 the sneeze was already a game noise, and the "fall" was a curtsy.',
     folklore:
       "The plague reading is folklore about folklore: nobody linked the rhyme to the plague in print until after the Second World War, and its symptoms don't match.",
-    modern: "A pandemic sung through masks and lockdowns, quickly forgotten, while the next outbreaks gather.",
+    modern: "A pandemic brings masks and lockdowns, then is quickly forgotten while the next outbreaks gather.",
     trivia: [
       'A 1949 parody ran "A pocket full of uranium, Hiro, shima, all fall down!"',
       "In 2020 it was suggested as a hand-washing song.",
@@ -152,8 +152,8 @@ export const songs: GrimSong[] = [
     tune: 'Sung to "Schlaf, Kindlein, schlaf", the German lullaby (1781); the key climbs a half step every verse.',
     onRecord:
       'The first printing, in 1744, ends "Your Children will burn"; around 1780 a printer softened it to "are gone". A longer version from about 1840 saves little Ann, who hides under the warming-pan. The "Lady" is Our Lady, the Virgin Mary.',
-    folklore: "Farmers burning the hop fields with the ladybirds on them, or Catholics hunted in Protestant England: no early evidence.",
-    modern: "Wildfire, the insurer gone before the smoke, and children breathing it.",
+    folklore: "There is no early evidence for farmers burning the hop fields with the ladybirds on them, or for Catholics hunted in Protestant England.",
+    modern: "Wildfire takes the house, and the insurer is gone before the smoke. The children breathe it.",
     trivia: [
       "Iona and Peter Opie began their lifetime's work on nursery rhymes after one of them said this rhyme to a ladybird.",
       'Its German twin, "Maikäfer, flieg!", is sung to the same lullaby: "Father\'s at war, Pomerania\'s burned down."',
@@ -169,8 +169,8 @@ export const songs: GrimSong[] = [
     tune: 'The tune of "For He\'s a Jolly Good Fellow", in F, as a march.',
     onRecord:
       'Malbrough is the Duke of Marlborough. The song surfaces in the 1760s: he goes to war, his lady climbs her tower, a page in black brings news of his burial, and everyone goes to bed, "some with their wives, and others alone". It became a craze after Marie Antoinette heard it in 1781.',
-    folklore: "That a soldier made it up in 1709 when Marlborough was falsely reported dead, or that the tune came from the Crusades.",
-    modern: "Soldiers who go to war, families who wait, and the dead who come home without a name.",
+    folklore: "Two stories of how it began have no support: that a soldier made it up in 1709 when Marlborough was falsely reported dead, and that the tune came from the Crusades.",
+    modern: "Soldiers still go to war and families still wait. Some of the dead come home without a name.",
     trivia: [
       "Beethoven used the tune for the French army in Wellington's Victory (1813).",
       'In America the same tune became "The Bear Went Over the Mountain".',
@@ -187,8 +187,8 @@ export const songs: GrimSong[] = [
     tune: "Brahms's own tune (1868), in E-flat.",
     onRecord:
       'The words are a folk rhyme printed in 1808: "tomorrow morning, if God wills, you will be woken again." Brahms set it for a friend, Bertha Faber, when her second son was born, and hid in the piano part a song she used to sing to him. The English most people sing, printed by 1886, drops "if God wills".',
-    folklore: 'Reading the line as being about babies who died in the night is a modern reading; in German it is an ordinary "God willing".',
-    modern: "Children put to bed in hallways and bathrooms while the sirens sound, under a sky where machines pick the targets.",
+    folklore: 'The idea that the line is about babies who died in the night is modern. In German it is an ordinary "God willing".',
+    modern: "Children are put to bed in hallways and bathrooms while the sirens sound, under a sky where machines pick the targets.",
     trivia: ["It was first performed in Vienna in 1869, with Clara Schumann at the piano."],
     singers: "Sarah sings it, with Robert; Webster and Tracy hum; Andy and Desmond are the siren.",
     duration: "2:50",
@@ -203,7 +203,7 @@ export const songs: GrimSong[] = [
       'The words first appear in 1852, in a song from the blackface minstrel stage, to a different tune; its chorus went "All that\'s past is gone, you know, the future\'s but a dream." The tune and "Life is but a dream" first appear in 1881, set as a round.',
     folklore:
       'That the boat is the ferry of the dead, or the song a Buddhist teaching, is modern. The "river chilly and cold" verses online belong to a different song, "Michael, Row the Boat Ashore".',
-    modern: "Small boats with too many aboard, and the ones that never reach the shore.",
+    modern: "Small boats set out with too many aboard, and some never reach the shore.",
     trivia: [
       "The 1881 tune is credited to E. O. Lyte, who was ten years old in 1852.",
       'Lewis Carroll\'s 1871 poem drifts "down the stream" and asks "Life, what is it but a dream?"',
@@ -220,8 +220,8 @@ export const songs: GrimSong[] = [
     onRecord:
       "The first printing, around 1744, is a list of London bells and their sayings, with no candle and no chopper; those lines appear about a hundred years later. In 1605 Robert Dowe paid for a bellman at St Sepulchre's, opposite Newgate prison, to ring a handbell outside the condemned cell at midnight and recite a verse. The handbell is still in the church.",
     folklore:
-      "That the churches mark the road to the gallows (they're in the wrong direction), or that it's about Henry VIII's wives. Debtors were jailed, not hanged.",
-    modern: "Bailiffs, letters and arrears, long days in jail, and the midnights the state still keeps.",
+      "The churches don't mark the road to the gallows (they're in the wrong direction), and nothing ties it to Henry VIII's wives. Debtors were jailed, not hanged.",
+    modern: "The bells ring for bailiffs, letters and arrears, then for long days in jail and the midnights the state still keeps.",
     trivia: [
       "George Orwell wove this rhyme through Nineteen Eighty-Four.",
       "Children at St Clement Danes are still given an orange and a lemon at an annual service.",
@@ -238,8 +238,8 @@ export const songs: GrimSong[] = [
     tune: "A new tune in B minor.",
     onRecord:
       'The first four verses were printed in 1744, and the whole funeral by about 1770. A fragment, "I saw a sparrow shoot an arrow", survives from the 1400s. An early-1800s chapbook puts the Sparrow on trial and ends: "The rest got away."',
-    folklore: "The fall of Robert Walpole in 1742, the Norse god Baldr, Robin Hood: no evidence, and the rhyme is centuries older than Walpole.",
-    modern: "A death with many hands in it: the maker, the checker, the council, the software, the drone, and no one charged.",
+    folklore: "Readings about the fall of Robert Walpole in 1742, the Norse god Baldr or Robin Hood have no evidence behind them, and the rhyme is centuries older than Walpole.",
+    modern: "Many hands are in one death: the maker, the checker, the council, the software, the drone. No one is charged.",
     trivia: [
       "Walter Potter's 1861 taxidermy tableau of the funeral used 98 species of British birds.",
       "In Disney's 1935 cartoon the judge sentences all three suspects to hang because he can't tell which one did it.",
