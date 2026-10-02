@@ -18,7 +18,7 @@ export const audioPath = (slug: string) => `/audio/grimatonics/${slug}.mp3`;
 export const songs: GrimSong[] = [
   {
     slug: "baa-baa-black-sheep",
-    title: "Baa Baa Black Sheep",
+    title: "Baa Baa Black Sheep (Five Stars)",
     origin: "England",
     tagline: "The platform takes its cut.",
     tune: 'The Twinkle Twinkle tune, "Ah! vous dirai-je, maman" (1761), in C minor, with the app\'s jingle in major.',
@@ -38,7 +38,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "pop-goes-the-weasel",
-    title: "Pop Goes the Weasel",
+    title: "Pop Goes the Weasel (Payday)",
     origin: "England",
     tagline: "Pawn it on Monday, buy it back on payday.",
     tune: "The 1850s dance tune, in C minor, 6/8.",
@@ -55,7 +55,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "london-bridge",
-    title: "London Bridge",
+    title: "London Bridge (The Toll)",
     origin: "England",
     tagline: "Who will pay when the concrete cracks?",
     tune: "The traditional tune, in E minor, as a slow dance in 3/4.",
@@ -74,7 +74,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "wee-willie-winkie",
-    title: "Wee Willie Winkie",
+    title: "Wee Willie Winkie (Night Vision)",
     origin: "Scotland",
     tagline: "Always at the window.",
     tune: "A new tune in A Dorian, with Scottish short-long rhythms over a sung bagpipe drone.",
@@ -92,7 +92,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "sing-a-song-of-sixpence",
-    title: "Sing a Song of Sixpence",
+    title: "Sing a Song of Sixpence (Cost of Doing Business)",
     origin: "England",
     tagline: "The king counts; the maid bleeds.",
     tune: "The traditional British tune, sung as a barbershop quartet in F.",
@@ -111,7 +111,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "the-old-woman-who-lived-in-a-shoe",
-    title: "The Old Woman Who Lived in a Shoe",
+    title: "The Old Woman Who Lived in a Shoe (Temporary)",
     origin: "England",
     tagline: "One cramped room.",
     tune: "A new tune in D minor, sung in mono: every voice in the middle, in one room.",
@@ -128,7 +128,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "ring-a-ring-o-roses",
-    title: "Ring a Ring o' Roses",
+    title: "Ring a Ring o' Roses (Next Wave)",
     origin: "England",
     tagline: "We all fall down, and we forget.",
     tune: "The familiar playground chant, in D.",
@@ -146,7 +146,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "ladybird-ladybird",
-    title: "Ladybird, Ladybird",
+    title: "Ladybird, Ladybird (Fire Season)",
     origin: "England",
     tagline: "Your house is on fire.",
     tune: 'Sung to "Schlaf, Kindlein, schlaf", the German lullaby (1781); the key climbs a half step every verse.',
@@ -163,7 +163,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "malbrough",
-    title: "Malbrough",
+    title: "Malbrough (Next of Kin)",
     origin: "France and Spain",
     tagline: "He'll never come back.",
     tune: 'The tune of "For He\'s a Jolly Good Fellow", in F, as a march.',
@@ -181,7 +181,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "brahms-lullaby",
-    title: "Brahms' Lullaby",
+    title: "Brahms' Lullaby (Shelter)",
     origin: "Germany",
     tagline: "If God wills, you'll wake again.",
     tune: "Brahms's own tune (1868), in E-flat.",
@@ -195,7 +195,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "row-row-row-your-boat",
-    title: "Row, Row, Row Your Boat",
+    title: "Row, Row, Row Your Boat (The Crossing)",
     origin: "USA",
     tagline: "Gently down the stream.",
     tune: "The 1881 tune, in D, ending as a round.",
@@ -213,7 +213,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "oranges-and-lemons",
-    title: "Oranges and Lemons",
+    title: "Oranges and Lemons (Final Notice)",
     origin: "England",
     tagline: "The bells call in the debts.",
     tune: "The traditional tune and bass line (Walter Crane, 1877), in A.",
@@ -232,7 +232,7 @@ export const songs: GrimSong[] = [
   },
   {
     slug: "who-killed-cock-robin",
-    title: "Who Killed Cock Robin",
+    title: "Who Killed Cock Robin (Many Hands)",
     origin: "England",
     tagline: "The rest got away.",
     tune: "A new tune in B minor.",
