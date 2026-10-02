@@ -11,6 +11,7 @@ export const navItems = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/playlists", label: "Playlists" },
+  { href: "/grimatonics", label: "Grimatonics" },
   { href: "/projects", label: "Projects" },
   { href: "/games", label: "Games" },
   { href: "/game-mods", label: "Game Mods" },
