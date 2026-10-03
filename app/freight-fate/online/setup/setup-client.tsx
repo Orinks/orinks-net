@@ -36,7 +36,7 @@ type DriverVisibility = "public" | "unlisted" | "private";
 //
 // Only the activate address varies by deployment. The quoted words are the
 // game's OWN menu item, and that item is the literal "Set up this computer
-// with orinks.net" in every build, including the ones pointed at staging --
+// with orinks.net" in every build, including ones pointed at a preview --
 // interpolating the host there would name a menu item that does not exist,
 // which is unfindable for someone arrowing the menu by its spoken label.
 export function connectInstructions(activateHost: string) {
@@ -166,9 +166,10 @@ function DriverSetup() {
   const [saveError, setSaveError] = useState("");
   const [rotateError, setRotateError] = useState("");
   const [initialized, setInitialized] = useState(false);
-  // The same site answers on more than one host: the 1.9 test builds talk to
-  // dev.orinks.net, where "enter the code at orinks.net/activate" sends the
-  // player to a page their code was never minted on. A plain mount effect,
+  // The same site answers on more than one host: the game's agent sandbox
+  // talks to the dev branch's preview, where "enter the code at
+  // orinks.net/activate" sends the player to a page their code was never
+  // minted on. A plain mount effect,
   // deliberately -- gating it on the driver query would let an announcement
   // beat it and speak the wrong address.
   const [activateHost, setActivateHost] = useState(DEFAULT_ACTIVATE_HOST);

@@ -1,5 +1,15 @@
 # Temporary Freight Fate staging deployments
 
+**Status: torn down on 2026-10-02.** The `dev` branch is an ordinary Vercel
+preview again. One change to the teardown below: step 3 kept the build
+wrapper, renamed `scripts/vercel-build.mjs`, because `main` deploys the
+production Convex backend through it (commit 9925714). Only its `dev` case was
+removed. Every preview, `dev` included, reads the staging backend
+(scrupulous-ferret-428) through a Preview-wide `NEXT_PUBLIC_CONVEX_URL`, and
+the game's agent sandbox talks to the `dev` branch's preview URL. The staging
+deployment and its data are kept; whether to archive or delete them is still
+open (step 6).
+
 ## Purpose
 
 Prevent Vercel preview builds from failing while they wait for Convex preview
