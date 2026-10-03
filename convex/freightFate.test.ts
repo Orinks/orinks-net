@@ -13,6 +13,7 @@ import {
   PAUSED_ACTIVITY,
   PRESENCE_WRITE_LIMIT,
   SHARING_CONSENT_VERSION,
+  withoutRadio,
 } from "./freightFate";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -1083,6 +1084,43 @@ describe("expanded sharing", () => {
     await beat(now + 32 * minute, "parcel freight, 70% there");
     expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 32 * minute })).drivers)
       .toHaveLength(1);
+  });
+
+  test("a parked truck with the radio on ages off even as the songs change", async () => {
+    const t = setup();
+    const now = 1_800_000_000_000;
+    const minute = 60_000;
+    const provisioned = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Radio Hauler", visibility: "public", expandedSharingConsent: true, now,
+    });
+    const driverId = provisioned.driverId;
+    const driverTokenHash = await sha256Hex(provisioned.token);
+    const beat = (at: number, detail: string) =>
+      t.mutation(api.freightFate.updatePresence, {
+        driverId, driverTokenHash,
+        activity: "Stopped: Richmond to Lynchburg", detail, now: at,
+      });
+    const parked = (song: number) => `parcel freight, 0% there, listening to KVSC 88.1: song ${song}`;
+
+    // A new song every few minutes for over half an hour: the board shows
+    // each one, but none of them is the truck doing anything.
+    for (let m = 0; m <= 30; m += 3) {
+      await beat(now + m * minute, parked(m));
+    }
+    await beat(now + 31 * minute, parked(31));
+    const board = await t.query(api.freightFate.getPresenceBoard, { now: now + 31 * minute });
+    expect(board.drivers).toEqual([]);
+
+    // Rolling again is a real change and re-lists the driver.
+    await beat(now + 32 * minute, "parcel freight, 5% there, listening to KVSC 88.1: song 31");
+    expect((await t.query(api.freightFate.getPresenceBoard, { now: now + 32 * minute })).drivers)
+      .toHaveLength(1);
+  });
+
+  test("withoutRadio keeps the drive and drops only the radio clause", () => {
+    expect(withoutRadio("steel, 45% there, listening to KVSC 88.1: a song")).toBe("steel, 45% there");
+    expect(withoutRadio("listening to KVSC 88.1")).toBe("");
+    expect(withoutRadio("steel, 45% there")).toBe("steel, 45% there");
   });
 
   test("pre-filter presence rows get a baseline stamp, not an instant drop", async () => {

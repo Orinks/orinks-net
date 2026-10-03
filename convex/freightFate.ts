@@ -51,6 +51,20 @@ export const PRESENCE_IDLE_MS = 30 * 60_000;
 // online_presence.rs); keep the two equal.
 export const PAUSED_ACTIVITY = "Paused";
 
+// The drivers-board detail ends with what the cab radio is playing, opened by
+// this phrase (RADIO_CLAUSE in Freight Fate's online_presence.rs; keep the two
+// equal). A live stream's song title changes every few minutes on its own, so
+// a truck parked with the radio on kept re-dating its row and never aged off
+// as idle (2026-10-03). The new song still shows; it just is not activity.
+export const RADIO_CLAUSE = "listening to ";
+
+/** `detail` without its trailing radio clause: the part that says what the truck is doing. */
+export function withoutRadio(detail: string) {
+  if (detail.startsWith(RADIO_CLAUSE)) return "";
+  const at = detail.indexOf(`, ${RADIO_CLAUSE}`);
+  return at === -1 ? detail : detail.slice(0, at);
+}
+
 /** How long a driver's last beat vouches for them, given what it said. */
 function presenceWindowMs(activity: string) {
   return activity === PAUSED_ACTIVITY ? PRESENCE_IDLE_MS : PRESENCE_TTL_MS;
@@ -750,10 +764,15 @@ export const updatePresence = mutation({
       return { ok: true as const, cleared: false };
     }
 
-    const changed =
+    const shown =
       existing.activity !== args.activity || existing.detail !== args.detail;
+    // Only a change in the drive re-dates the row; a new song is shown but
+    // leaves the idle clock running.
+    const changed =
+      existing.activity !== args.activity
+      || withoutRadio(existing.detail) !== withoutRadio(args.detail);
     if (
-      changed ||
+      shown ||
       existing.displayName !== listing.displayName ||
       existing.listed !== listing.listed ||
       existing.changedAt === undefined
