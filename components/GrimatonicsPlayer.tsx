@@ -44,6 +44,21 @@ function patchAblePlayer(proto: Able) {
     this.refreshControls();
   };
 
+  // The timeline's arrow keys move one second a press; make it ten. Page Up
+  // and Page Down pass the seek interval through untouched.
+  const seekbar = proto.addSeekbarListeners;
+  proto.addSeekbarListeners = function (this: Able) {
+    const slider = this.seekBar && Object.getPrototypeOf(this.seekBar);
+    if (slider && !slider.tenSeconds) {
+      slider.tenSeconds = true;
+      const arrow = slider.arrowKeyDown;
+      slider.arrowKeyDown = function (this: Able, step: number) {
+        return arrow.call(this, Math.abs(step) === 1 ? step * 10 : step);
+      };
+    }
+    return seekbar.call(this);
+  };
+
   // Mark while the controls are being rebuilt.
   const recreate = proto.recreatePlayer;
   proto.recreatePlayer = function (this: Able) {
@@ -86,6 +101,7 @@ function patchAblePlayer(proto: Able) {
 
 export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
   const listRef = useRef<HTMLOListElement>(null);
+  const playerRef = useRef<Able>(null);
   const [current, setCurrent] = useState(0);
   const [auto, setAuto] = useState(false);
 
@@ -100,7 +116,6 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
   }, [auto]);
 
   useEffect(() => {
-    let player: Able;
     let gone = false;
     const list = listRef.current!;
     const observer = new MutationObserver(() => {
@@ -116,12 +131,14 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
       ]);
       if (gone) return;
       patchAblePlayer(AblePlayer.prototype);
-      player = new AblePlayer($(`#${PLAYER_ID}`));
+      playerRef.current = new AblePlayer($(`#${PLAYER_ID}`));
     })();
 
     return () => {
       gone = true;
       observer.disconnect();
+      const player = playerRef.current;
+      playerRef.current = null;
       if (!player) return;
       player.media?.pause();
       player.dispose();
@@ -143,13 +160,28 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
   return (
     <div className="space-y-4">
       <p className="leading-7 text-slate-700">
-        Hold Alt+Control with these keys anywhere on the page except the checkbox: P plays or pauses, S
-        starts the song again, R and F rewind and fast forward, B goes back a song, and 0 to 9 set the
-        volume.
+        Tab to the timeline, the first control in the player. Your screen reader switches to focus mode
+        there, and plain keys work: Left and Right go back and forward 10 seconds, Page Up and Page Down 30
+        seconds, Home and End go to the start and end, and Space plays or pauses. If you reach it by
+        reading instead, turn on focus mode yourself (NVDA+Space).
       </p>
-      {/* A wrapper React owns: Able Player rebuilds everything inside it. */}
-      <div>
-        <audio data-heading-level="0" data-show-now-playing="true" data-skin="2020" id={PLAYER_ID} preload="metadata" />
+      {/* A wrapper React owns: Able Player rebuilds everything inside it.
+          Space on the timeline plays or pauses; held down, it toggles once. */}
+      <div
+        onKeyDown={(e) => {
+          if (e.key !== " " || !(e.target as Element).closest(".able-seekbar-head")) return;
+          e.preventDefault();
+          if (!e.repeat) playerRef.current?.handlePlay();
+        }}
+      >
+        <audio
+          data-heading-level="0"
+          data-seek-interval="30"
+          data-show-now-playing="true"
+          data-skin="2020"
+          id={PLAYER_ID}
+          preload="metadata"
+        />
       </div>
       <label className="flex items-center gap-3 font-semibold text-ink">
         <input
