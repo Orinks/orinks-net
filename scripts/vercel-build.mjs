@@ -20,13 +20,10 @@ export function classifyVercelBuild({ branch, hasDeployKey }) {
       reason: "main deploys the production backend",
     };
   }
-  if (branch !== "dev") {
-    return { deployBackend: false, reason: "ordinary frontend preview" };
-  }
-  if (!hasDeployKey) {
-    throw new Error("dev is missing its Convex staging deploy key");
-  }
-  return { deployBackend: true, target: "staging", reason: "dev uses fixed staging backend" };
+  // Every other branch, dev included, is an ordinary preview: it builds the
+  // site against the preview-wide Convex URL (the staging backend) and never
+  // deploys a backend of its own.
+  return { deployBackend: false, reason: "ordinary frontend preview" };
 }
 
 export function isTransientConvexFailure(output) {
@@ -36,25 +33,17 @@ export function isTransientConvexFailure(output) {
   return /(?:HTTP(?: status)?|status(?: code)?)\D*(?:408|5\d\d)\b/i.test(output);
 }
 
-export function convexDeployArgs(target = "staging") {
-  const args = ["convex", "deploy"];
-  if (target !== "production") {
-    // Staging is a *production* Convex deployment of its own project, reached
-    // with a production deploy key from a preview build. Convex refuses that
-    // pairing unless the environment check is switched off. A real production
-    // build needs no such waiver, and leaving it on would disable the guard
-    // exactly where it is worth having.
-    args.push("--check-build-environment", "disable");
-  }
-  args.push(
+export function convexDeployArgs() {
+  return [
+    "convex",
+    "deploy",
     "--typecheck",
     "try",
     "--cmd-url-env-var-name",
     "NEXT_PUBLIC_CONVEX_URL",
     "--cmd",
     "npm run build",
-  );
-  return args;
+  ];
 }
 
 function run(command, args) {
@@ -84,7 +73,7 @@ async function main() {
   }
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const deployment = run("npx", convexDeployArgs(decision.target));
+    const deployment = run("npx", convexDeployArgs());
     printResult(deployment);
     if (deployment.status === 0) return;
     const output = `${deployment.stdout ?? ""}\n${deployment.stderr ?? ""}`;

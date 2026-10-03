@@ -3,7 +3,7 @@ import { site } from "@/lib/site";
 
 // Everything that is not the production site is closed to crawlers entirely.
 // Deployment protection is off, so every preview URL is publicly reachable --
-// including dev.orinks.net, which is the 1.9 test environment. A crawler
+// including the dev branch's, which the game's agent sandbox talks to. A crawler
 // walking a preview is spending the same request and backend budget as one
 // walking the real site, for pages nobody should be finding in search.
 function isProduction() {
