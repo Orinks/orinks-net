@@ -43,8 +43,3 @@ one a screen reader user sits through. Do not describe what the page already
 does ("this list updates itself", "refreshes automatically"), restate a
 heading, or explain something the controls make obvious. If a line tells the
 reader nothing they need, delete it.
-
-**Check prose for AI writing** (owner, 2026-10-04). Before shipping page copy
-or a What's New entry, run it through the `avoid-ai-writing` skill in
-`.claude/skills/` in detect mode and fix what it finds. The rules above win
-where the two disagree.
