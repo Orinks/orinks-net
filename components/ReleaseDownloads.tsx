@@ -137,10 +137,12 @@ export async function ReleaseDownloads({
           <h2 id={`${repo.toLowerCase()}-downloads`} className="text-2xl font-bold text-ink">
             Download {productName}
           </h2>
-          <p className="mt-2 max-w-3xl text-slate-700">
-            Download the latest stable release directly, or choose a {singularPrereleaseLabel} for
-            the newest fixes and features.
-          </p>
+          {nightlies.length > 0 ? (
+            <p className="mt-2 max-w-3xl text-slate-700">
+              Download the latest stable release directly, or choose the {singularPrereleaseLabel}{" "}
+              for the newest fixes and features.
+            </p>
+          ) : null}
         </div>
         {buildNotifications ? <BuildNotificationSignup productName={productName} /> : null}
 
@@ -165,34 +167,36 @@ export async function ReleaseDownloads({
           <p>No stable release was found on GitHub.</p>
         )}
 
-        <div>
-          <h3 className="mb-3 text-xl font-bold text-ink">Latest {prereleaseLabel}</h3>
-          <div className="space-y-4">
-            {nightlies.map((release) => (
-              <article className="rounded-lg border border-line bg-white p-5" key={release.tag_name}>
-                <h4 className="text-lg font-bold text-ink">
-                  {prereleaseTitle(release, singularPrereleaseLabel)}
-                </h4>
-                <p className="mt-1 text-sm text-slate-700">
-                  Published {formatDate(release.published_at)}
-                </p>
-                <div className="mt-4">
-                  <DownloadList release={release} />
-                </div>
-                <p className="mt-4">
-                  <a href={release.html_url}>
-                    Full {singularPrereleaseLabel}: {prereleaseTitle(release, singularPrereleaseLabel)}
-                  </a>
-                </p>
-                <Notes
-                  headingLevel={5}
-                  release={release}
-                  title={prereleaseTitle(release, singularPrereleaseLabel)}
-                />
-              </article>
-            ))}
+        {nightlies.length > 0 ? (
+          <div>
+            <h3 className="mb-3 text-xl font-bold text-ink">Latest {singularPrereleaseLabel}</h3>
+            <div className="space-y-4">
+              {nightlies.map((release) => (
+                <article className="rounded-lg border border-line bg-white p-5" key={release.tag_name}>
+                  <h4 className="text-lg font-bold text-ink">
+                    {prereleaseTitle(release, singularPrereleaseLabel)}
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-700">
+                    Published {formatDate(release.published_at)}
+                  </p>
+                  <div className="mt-4">
+                    <DownloadList release={release} />
+                  </div>
+                  <p className="mt-4">
+                    <a href={release.html_url}>
+                      Full {singularPrereleaseLabel}: {prereleaseTitle(release, singularPrereleaseLabel)}
+                    </a>
+                  </p>
+                  <Notes
+                    headingLevel={5}
+                    release={release}
+                    title={prereleaseTitle(release, singularPrereleaseLabel)}
+                  />
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
     );
   } catch (error) {

@@ -207,4 +207,36 @@ describe("finding the stable release behind a wall of snapshots", () => {
 
     expect(groups.stable?.tag_name).toBe("v1.8.8.1");
   });
+
+  test("offers only the newest snapshot, and only when it is newer than stable", async () => {
+    const at = (tag: string, prerelease: boolean, published_at: string) => ({
+      ...release(tag, prerelease),
+      published_at,
+    });
+    const stable = at("v1.9.0", false, "2026-10-04T16:03:50Z");
+    const serve = (list: unknown[]) =>
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/releases/latest")) {
+          return new Response(JSON.stringify(stable), { status: 200 });
+        }
+        if (url.includes("/releases?")) {
+          return new Response(JSON.stringify(list), { status: 200 });
+        }
+        return new Response("<p></p>", { status: 200 });
+      });
+
+    serve([stable, at("1.9-tester-20261004", true, "2026-10-04T04:16:00Z")]);
+    expect((await getReleaseGroups("Freight-Fate")).nightlies).toEqual([]);
+
+    vi.restoreAllMocks();
+    cacheStore.clear();
+    serve([
+      at("1.9-tester-20261006", true, "2026-10-06T04:16:00Z"),
+      at("1.9-tester-20261005", true, "2026-10-05T04:16:00Z"),
+      stable,
+    ]);
+    const groups = await getReleaseGroups("Freight-Fate");
+    expect(groups.nightlies.map((r) => r.tag_name)).toEqual(["1.9-tester-20261006"]);
+  });
 });

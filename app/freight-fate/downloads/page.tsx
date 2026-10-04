@@ -17,11 +17,9 @@ export default function FreightFateDownloadsPage() {
       />
       <Section>
         <p>
-          Use the stable release for everyday hauling, or choose a preview snapshot when you want
-          the newest features and fixes before they reach a stable release. Preview snapshots can
-          have rough edges, so back up your careers first. Choose the download for your operating
-          system and processor. Career 1.9 supports Windows, Apple Silicon
-          Macs, and Linux on x64 or ARM64. Linux downloads include archives and AppImages.
+          Freight Fate runs on Windows, Apple Silicon Macs, and Linux on x64 or ARM64; Linux comes
+          as an archive or an AppImage. A preview snapshot, when there is one, can have rough edges,
+          so back up your careers before you try it.
         </p>
         <p>
           <a href="/freight-fate/user-manual">Read the installation instructions in the user manual</a>

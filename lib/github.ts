@@ -294,9 +294,17 @@ export async function getReleaseGroups(repo: string) {
   // downloads page means by stable.
   const stable =
     latestStable && isStable(latestStable) ? latestStable : releases.find(isStable);
+  // Only a snapshot newer than the stable release is worth offering, and only
+  // the newest one: older snapshots are behind what stable players already have.
+  const stablePublished = stable?.published_at ? Date.parse(stable.published_at) : null;
   const nightlies = releases
     .filter((release) => release.prerelease || release.tag_name.toLowerCase().startsWith("nightly"))
-    .slice(0, 5);
+    .filter(
+      (release) =>
+        stablePublished === null ||
+        (release.published_at !== null && Date.parse(release.published_at) > stablePublished),
+    )
+    .slice(0, 1);
 
   const releasesWithRenderedNotes = await Promise.all(
     [stable, ...nightlies].filter((release): release is GitHubRelease => Boolean(release)).map(
