@@ -14,7 +14,7 @@ type Feature = {
 const features: Feature[] = [
   {
     title: "Hear the road",
-    body: "The engine sound pans toward the side you need to steer, the road noise tells you where you sit in your lane, and a GPS warns you of bends, grades and speed-limit drops before you reach them. Take your exit, slow down the ramp, and follow the streets to the dock.",
+    body: "The engine sound pans toward the side you need to steer, the road noise tells you where you sit in your lane, and a GPS warns you of bends, grades and speed-limit drops before you reach them. Take your exit and slow down the ramp.",
     points: [
       "Ten gears, manual with a clutch or automatic, and a three-stage engine brake",
       "Real lane counts, exit ramps at their real lengths, and city streets to the dock",
