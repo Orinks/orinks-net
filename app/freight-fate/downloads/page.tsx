@@ -34,11 +34,12 @@ export default function FreightFateDownloadsPage() {
       />
       <Section title="Soundtrack">
         <p>
-          The music of Freight Fate 1.9: 178 tracks, about nine hours, by Orinks and Dodecahedron.
+          The Freight Fate soundtrack: 178 tracks, about nine hours, by Orinks and Dodecahedron. Most
+          of it was composed with the AI music tools Suno and Eleven Music.
         </p>
         <p>
           <a href="https://crisp-crystal-9a9y.here.now/Freight-Fate-1.9-Soundtrack-MP3.zip">
-            Download the Freight Fate 1.9 soundtrack, MP3, 1.2 GB
+            Download the Freight Fate soundtrack, MP3, 1.2 GB
           </a>
         </p>
       </Section>
