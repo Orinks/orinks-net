@@ -57,17 +57,13 @@ export function FreightFateLanding({ project }: FreightFateLandingProps) {
     <>
       <PageHeader title={project.title} intro={project.summary} showSiteName={false} />
       <div className="flex flex-wrap gap-3 pt-8">
-          <ButtonLink href="/freight-fate/downloads">Downloads</ButtonLink>
-          <ButtonLink href="/freight-fate/user-manual" variant="secondary">
-            User manual
-          </ButtonLink>
+        <ButtonLink href="/freight-fate/downloads">Downloads</ButtonLink>
+        <ButtonLink href="/freight-fate/user-manual" variant="secondary">
+          User manual
+        </ButtonLink>
       </div>
       <Section>
         <p>Free for Windows, Apple Silicon Macs, and Linux on x64 or ARM64.</p>
-        <p>
-          <strong>Coming from 1.8?</strong> Careers from earlier versions don&apos;t carry over, so
-          you&apos;ll start a new one. Your settings come across, and your old saves stay as they were.
-        </p>
       </Section>
 
       {features.map((feature) => (
