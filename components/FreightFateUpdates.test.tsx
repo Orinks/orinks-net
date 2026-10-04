@@ -25,7 +25,7 @@ test("renders the public feed as a labeled newest-first ordered list", async () 
   expect(new Set([...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1])).size).toBe(3);
   expect(html).not.toContain("aria-live");
   expect(html).not.toContain('role="feed"');
-  expect(html).toContain("Newest updates first.");
+  expect(html).not.toContain("Newest updates first.");
   expect(html).not.toContain("Factual public in-game activity");
 });
 

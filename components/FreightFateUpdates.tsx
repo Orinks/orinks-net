@@ -41,7 +41,6 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
     result = null;
   }
   const content = <>
-      <p className="mb-5 max-w-3xl">Newest updates first.</p>
       {!result ? <p>Freight Fate updates are temporarily unavailable.</p> : result.updates.length === 0 ? (
         <p>No Freight Fate updates yet.</p>
       ) : (
@@ -83,7 +82,7 @@ export async function FreightFateUpdates({ cursor, limit = 10, compact = false }
       <h2 className="mb-4 text-2xl font-bold text-ink" id="public-driver-updates-heading">Driver updates</h2>
       <details className="rounded-lg border border-line bg-white p-5">
         <summary className="cursor-pointer font-semibold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-600">
-          Freight Fate updates
+          Show recent updates
         </summary>
         <div className="mt-5">{content}</div>
       </details>

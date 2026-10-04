@@ -49,22 +49,36 @@ test("keyboard skip navigation and route links remain usable", async ({ page }) 
   await expect(page.locator("main")).toBeFocused();
 });
 
+test("landing page leads with one heading, the 1.9 download and flat feature headings", async ({ page }) => {
+  await page.goto("/freight-fate");
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1, name: "Freight Fate" })).toBeVisible();
+  await expect(page.locator("main")).not.toContainText("orinks.net");
+  const download = page.getByRole("link", { name: "Download Freight Fate 1.9" });
+  await expect(download).toHaveCount(1);
+  await expect(download).toHaveAttribute("href", "/freight-fate/downloads");
+  for (const name of ["Drive by ear", "Made for screen readers", "Community and source"]) {
+    await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
+  }
+  await expect(page.locator("main h3")).toHaveCount(0);
+});
+
 test("compact updates disclosure is closed by default and uses native keyboard behavior", async ({ page }) => {
   await page.goto("/freight-fate");
-  const heading = page.getByRole("heading", { level: 2, name: "Updates from public drivers" });
+  const heading = page.getByRole("heading", { level: 2, name: "Driver updates" });
   await expect(heading).toBeVisible();
-  const details = page.locator("details").filter({ hasText: "Public Freight Fate updates" });
+  const details = page.locator("details").filter({ hasText: "Show recent updates" });
   const summary = details.locator("summary");
   await expect(heading.locator("xpath=following-sibling::*[1]")).toHaveJSProperty("tagName", "DETAILS");
-  await expect(summary).toHaveText("Public Freight Fate updates");
+  await expect(summary).toHaveText("Show recent updates");
   await expect(details).not.toHaveAttribute("open", "");
-  await expect(details.getByRole("link", { name: "View all public Freight Fate updates" })).not.toBeVisible();
+  await expect(details.getByRole("link", { name: "View all Freight Fate updates" })).not.toBeVisible();
   await summary.focus();
   await expect(summary).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(details).toHaveAttribute("open", "");
   await page.keyboard.press("Tab");
-  await expect(details.getByRole("link", { name: "View all public Freight Fate updates" })).toBeFocused();
+  await expect(details.getByRole("link", { name: "View all Freight Fate updates" })).toBeFocused();
   await summary.focus();
   await page.keyboard.press("Space");
   await expect(details).not.toHaveAttribute("open", "");

@@ -1,12 +1,15 @@
 type PageHeaderProps = {
   title: string;
   intro?: string;
+  showSiteName?: boolean;
 };
 
-export function PageHeader({ title, intro }: PageHeaderProps) {
+export function PageHeader({ title, intro, showSiteName = true }: PageHeaderProps) {
   return (
     <header className="border-b border-line pb-8">
-      <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-action">orinks.net</p>
+      {showSiteName ? (
+        <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-action">orinks.net</p>
+      ) : null}
       <h1 className="max-w-4xl text-4xl font-bold text-ink sm:text-5xl" tabIndex={-1}>
         {title}
       </h1>
