@@ -47,9 +47,9 @@ export type ProjectPage = {
   title: string;
   tagline: string;
   summary: string;
-  status: string;
-  audience: string;
-  features: string[];
+  status?: string;
+  audience?: string;
+  features?: string[];
   links: { href: string; label: string }[];
   downloadsHref?: string;
   manualHref?: string;
@@ -68,22 +68,9 @@ export type GameSummary = {
 export const freightFate: ProjectPage = {
   href: "/freight-fate",
   title: "Freight Fate",
-  tagline: "An audio trucking adventure across America.",
+  tagline: "An audio trucking game for blind and visually impaired players.",
   summary:
-    "Freight Fate is an audio-first trucking simulation for Windows, macOS, and Linux. Accept freight jobs, plan routes, and drive a ten-speed Class 8 truck by sound. Spoken menus and driving reports have a visible text display.",
-  status: "Stable releases and Career 1.9 tester builds are available. Features and installation steps depend on the version you download.",
-  audience:
-    "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
-  features: [
-    "Truck physics you can hear: a ten-speed transmission (manual with clutch or automatic), torque, grades, traction limits, brake fade, and an engine note that tracks RPM in real time.",
-    "Career 1.9 expands the map to more than 600 cities, with local pickup and delivery facilities, regional freight markets, and multiple route options per job.",
-    "Highway exit callouts that read like real signs: \"In 2 miles, exit 7 for US-1 North toward Trenton and New York,\" with onramp merges and interchange numbers based on OpenStreetMap road data.",
-    "Dynamic weather and a day/night cycle with audio ambience, road hazards, and forecasts along your route, optionally driven by real-world National Weather Service conditions.",
-    "Hours of service and fatigue: plan breaks and overnight parking around an 11-hour driving clock. Career 1.9 offers Relaxed, Standard, and Real time pacing.",
-    "Build your career through experience levels, reputation, cargo endorsements, and achievements. Career 1.9 adds company-driver and owner-operator paths, with equipment purchases and operating costs for owner-operators. Save and resume during a trip.",
-    "Optional lane-drift steering and Discord Rich Presence, which shares broad game activity such as your route and cargo.",
-    "Layered sound effects and music keep speech, driving cues, weather, and the truck cab easy to balance.",
-  ],
+    "An audio trucking game for blind and visually impaired players. Haul freight between more than 600 American cities in a Class 8 truck, on highways and streets built from real maps, and build a career from your first load.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [

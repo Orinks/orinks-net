@@ -13,7 +13,7 @@ export function ProjectLanding({ project }: ProjectLandingProps) {
       <PageHeader title={project.title} intro={project.tagline} />
       <Section>
         <p>{project.summary}</p>
-        <p>{project.audience}</p>
+        {project.audience ? <p>{project.audience}</p> : null}
         {project.maintainerNote ? <p>{project.maintainerNote}</p> : null}
         <div className="mt-6 flex flex-wrap gap-3">
           {project.downloadsHref ? <ButtonLink href={project.downloadsHref}>Downloads</ButtonLink> : null}
@@ -25,17 +25,21 @@ export function ProjectLanding({ project }: ProjectLandingProps) {
         </div>
       </Section>
 
-      <Section title="Highlights">
-        <ul>
-          {project.features.map((feature) => (
-            <li key={feature}>{feature}</li>
-          ))}
-        </ul>
-      </Section>
+      {project.features ? (
+        <Section title="Highlights">
+          <ul>
+            {project.features.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
 
-      <Section title="Status">
-        <p>{project.status}</p>
-      </Section>
+      {project.status ? (
+        <Section title="Status">
+          <p>{project.status}</p>
+        </Section>
+      ) : null}
 
       <Section title="Links">
         <ul>
