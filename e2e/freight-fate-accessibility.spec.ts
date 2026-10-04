@@ -57,7 +57,7 @@ test("landing page leads with one heading, the 1.9 download and flat feature hea
   const download = page.getByRole("link", { name: "Download Freight Fate 1.9" });
   await expect(download).toHaveCount(1);
   await expect(download).toHaveAttribute("href", "/freight-fate/downloads");
-  for (const name of ["Drive by ear", "Made for screen readers", "Community and source"]) {
+  for (const name of ["Hear the road", "Made for screen readers", "Community and source"]) {
     await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
   }
   await expect(page.locator("main h3")).toHaveCount(0);

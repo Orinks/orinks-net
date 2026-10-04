@@ -68,9 +68,9 @@ export type GameSummary = {
 export const freightFate: ProjectPage = {
   href: "/freight-fate",
   title: "Freight Fate",
-  tagline: "An audio trucking simulation you drive by ear.",
+  tagline: "An audio trucking game for blind and visually impaired players.",
   summary:
-    "Haul freight between more than 600 American cities in a Class 8 truck, on highways and streets built from real maps, and build a career from your first load.",
+    "An audio trucking game for blind and visually impaired players. Haul freight between more than 600 American cities in a Class 8 truck, on highways and streets built from real maps, and build a career from your first load.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [

@@ -13,7 +13,7 @@ type Feature = {
 // and the list runs on into the drivers board and updates below.
 const features: Feature[] = [
   {
-    title: "Drive by ear",
+    title: "Hear the road",
     body: "The engine sound pans toward the side you need to steer, the road noise tells you where you sit in your lane, and a co-driver calls bends, grades and speed-limit drops before you reach them. Take your exit, slow down the ramp, and listen for a gap in the cross traffic at the light.",
     points: [
       "Ten gears, manual with a clutch or automatic, and a three-stage engine brake",
