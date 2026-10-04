@@ -35,8 +35,8 @@ const features: Feature[] = [
     body: "Start as a company driver or buy in as an owner-operator. Earn your endorsements, take loads from the dispatch board, and keep your hours legal. Troopers and inspectors are on the road, and your driving record follows you to the carrier and the insurer.",
   },
   {
-    title: "Choose how much the truck does",
-    body: "The first time you start, pick All assists, Balanced or Realistic. The assists can hold your lane, take bends and exits, and stop you at the dock, or they can leave every pedal and turn to you. Change any of them later under Driving assistance.",
+    title: "Driving assists",
+    body: "Assists can hold your lane, take bends and exits, and stop you at the dock. Turn on as many or as few as you like.",
   },
   {
     title: "Tune in across the country",
@@ -57,7 +57,7 @@ export function FreightFateLanding({ project }: FreightFateLandingProps) {
     <>
       <PageHeader title={project.title} intro={project.summary} showSiteName={false} />
       <div className="flex flex-wrap gap-3 pt-8">
-          <ButtonLink href="/freight-fate/downloads">Download Freight Fate 1.9</ButtonLink>
+          <ButtonLink href="/freight-fate/downloads">Downloads</ButtonLink>
           <ButtonLink href="/freight-fate/user-manual" variant="secondary">
             User manual
           </ButtonLink>
