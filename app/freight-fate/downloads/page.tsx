@@ -32,6 +32,16 @@ export default function FreightFateDownloadsPage() {
         repo="Freight-Fate"
         prereleaseLabel="preview snapshots"
       />
+      <Section title="Soundtrack">
+        <p>
+          The music of Freight Fate 1.9: 178 tracks, about nine hours, by Orinks and Dodecahedron.
+        </p>
+        <p>
+          <a href="https://crisp-crystal-9a9y.here.now/Freight-Fate-1.9-Soundtrack-MP3.zip">
+            Download the Freight Fate 1.9 soundtrack, MP3, 1.2 GB
+          </a>
+        </p>
+      </Section>
       <Section title="Playing with JAWS">
         <p>
           JAWS normally keeps the arrow keys for its own reading commands, so the truck does not
