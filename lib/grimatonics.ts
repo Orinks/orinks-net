@@ -11,6 +11,8 @@ export type GrimSong = {
   trivia: string[];
   singers: string;
   duration: string;
+  /** The MP3's size, for the download link. */
+  megabytes: string;
 };
 
 export const audioPath = (slug: string) => `/audio/grimatonics/${slug}.mp3`;
@@ -35,6 +37,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert leads; Sarah is the driver, Abe the master and Desmond the app; Richard sings the bass; Tracy, Andy and Webster hum.",
     duration: "2:54",
+    megabytes: "2.8",
   },
   {
     slug: "pop-goes-the-weasel",
@@ -52,6 +55,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert and Sarah lead, Abe is the pawnbroker and Desmond the app; Richard sings the bass; Tracy, Andy and Webster hum.",
     duration: "2:25",
+    megabytes: "2.3",
   },
   {
     slug: "london-bridge",
@@ -71,6 +75,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert leads; Andy calls each line, and Desmond, Abe and Webster shout it back; Sarah is the lady; Abe and Richard sing the heads on the gate; Richard sings the falling bass.",
     duration: "3:08",
+    megabytes: "3.0",
   },
   {
     slug: "wee-willie-winkie",
@@ -89,6 +94,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert leads; Sarah and Webster add harmony, then Andy; Richard and Abe hold the drone; Desmond knocks.",
     duration: "2:27",
+    megabytes: "2.3",
   },
   {
     slug: "sing-a-song-of-sixpence",
@@ -108,6 +114,7 @@ export const songs: GrimSong[] = [
     ],
     singers: "Robert sings the tune, Andy the tenor, Webster the baritone and Richard the bass; Sarah sings the 1744 ending alone.",
     duration: "2:13",
+    megabytes: "2.1",
   },
   {
     slug: "the-old-woman-who-lived-in-a-shoe",
@@ -125,6 +132,7 @@ export const songs: GrimSong[] = [
     ],
     singers: "Sarah is the mother; Tracy, Andy, Desmond and Webster are the children.",
     duration: "2:17",
+    megabytes: "2.2",
   },
   {
     slug: "ring-a-ring-o-roses",
@@ -143,6 +151,7 @@ export const songs: GrimSong[] = [
     ],
     singers: "Everyone sings in unison; two voices leave after each verse until Robert is alone.",
     duration: "1:46",
+    megabytes: "1.7",
   },
   {
     slug: "ladybird-ladybird",
@@ -160,6 +169,7 @@ export const songs: GrimSong[] = [
     ],
     singers: "Robert and Sarah, alone.",
     duration: "1:48",
+    megabytes: "1.7",
   },
   {
     slug: "malbrough",
@@ -178,6 +188,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert tells it, Abe is the page and Sarah the lady; Webster, Desmond, Andy, Abe and Richard roar the refrain; Desmond plays the drum.",
     duration: "1:44",
+    megabytes: "1.7",
   },
   {
     slug: "brahms-lullaby",
@@ -192,6 +203,7 @@ export const songs: GrimSong[] = [
     trivia: ["It was first performed in Vienna in 1869, with Clara Schumann at the piano."],
     singers: "Sarah sings it, with Robert; Webster and Tracy hum; Andy and Desmond are the siren.",
     duration: "2:50",
+    megabytes: "2.7",
   },
   {
     slug: "row-row-row-your-boat",
@@ -210,6 +222,7 @@ export const songs: GrimSong[] = [
     ],
     singers: "Robert and Sarah sing the verses; Andy and Webster join the round; Richard rows.",
     duration: "1:59",
+    megabytes: "1.9",
   },
   {
     slug: "oranges-and-lemons",
@@ -229,6 +242,7 @@ export const songs: GrimSong[] = [
     singers:
       "Robert leads, with Sarah and Webster at the end; five singers ring the bells; Richard sings the bass bell and Abe tolls; a whisper reads the bellman's verse; Tracy and Andy chant.",
     duration: "1:55",
+    megabytes: "1.8",
   },
   {
     slug: "who-killed-cock-robin",
@@ -247,6 +261,7 @@ export const songs: GrimSong[] = [
     singers:
       "Everyone asks; Andy, Sarah, Abe, Webster, Desmond, Robert and Richard answer; Robert, Andy, Webster and Richard sing the funeral chorale; Sarah ends it.",
     duration: "2:13",
+    megabytes: "2.1",
   },
 ];
 

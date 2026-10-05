@@ -7,6 +7,8 @@ export type Segment = {
   story: string;
   cast: string;
   duration: string;
+  /** The MP3's size, for the download link. */
+  megabytes: string;
 };
 
 export const audioPath = (slug: string) => `/audio/after-hours/${slug}.mp3`;
@@ -21,6 +23,7 @@ export const segments: Segment[] = [
       "The set warms up, Channel 3000's ident plays, and the announcer reads the night's line-up. Then the company sings the title song, each engine introducing itself.",
     cast: "Microsoft Mike in Hall announces. Robert and Sarah lead the title song; Microsoft Sam, DECtalk Paul and Betty and the SSI-263 introduce themselves; Richard sings the bass, and Tracy, Andy and Webster the off-beats.",
     duration: "2:08",
+    megabytes: "2.1",
   },
   {
     slug: "gig-street",
@@ -31,6 +34,7 @@ export const segments: Segment[] = [
       "A family lives on gig apps: Dad drives, Mom delivers, Grandpa rents out his room and sleeps in the bath, and the kid sells slime online until a one-star review. A sung laugh track laughs on cue. It ends on the hug and a sappy tag.",
     cast: "Robert is Dad and Sarah is Mom; DECtalk Frank is Grandpa and the SSI-263 Child the kid. DECtalk Dennis is the tenant, DECtalk Ursula the passenger, Microsoft Mike the customer and Microsoft Mary the app. DECtalk Val, Rita and Betty are the laugh track.",
     duration: "3:23",
+    megabytes: "3.3",
   },
   {
     slug: "puttin-on-the-filters",
@@ -41,6 +45,7 @@ export const segments: Segment[] = [
       "A makeover show where the makeover is all filters. The guest, Dana, has them taken off one by one, finds her mother's nose and her father's smile, and sings about her own face. The host takes off his forty-one filters too.",
     cast: "Desmond is the host and Sarah is Dana; Microsoft Mary is the Mirror, a filter app, and Dana's filtered voice. Tracy, Andy and Webster answer \"Filters on!\"; Richard sings the bass and Abe the backbeat.",
     duration: "5:27",
+    megabytes: "5.2",
   },
   {
     slug: "commercials",
@@ -51,6 +56,7 @@ export const segments: Segment[] = [
       "A toaster that needs an app, an account and a firmware update before it will toast; a cheerful pill whose side effects are read at 450 words a minute; and a lullaby for an app friend that always agrees with you.",
     cast: "Desmond is the pitchman, Sarah the buyer and Microsoft Sam the toaster; Robert and Sarah sing the jingles. DECtalk Betty announces the pill and DECtalk Paul reads its side effects. Robert and Sarah play the last ad, and DECtalk Wendy whispers.",
     duration: "2:18",
+    megabytes: "2.2",
   },
   {
     slug: "splat-patrol",
@@ -61,6 +67,7 @@ export const segments: Segment[] = [
       "Two kids and their talking backpack try slime, a stink bomb and a fake alien invasion to get their parents to look up from their phones. The parents film the aliens for their feed. Plan D: just ask.",
     cast: "The SSI-263 Child is Dot and DECtalk Kit her brother Mo; Microsoft Mike is Zip, the backpack. DECtalk Betty and Paul are Mom and Dad. Desmond announces.",
     duration: "4:44",
+    megabytes: "4.5",
   },
   {
     slug: "defenders-of-the-cloud",
@@ -71,6 +78,7 @@ export const segments: Segment[] = [
       "Lord Captcha locks everyone's photos behind puzzles with no right answer. The Defenders win by having kept a backup, and the closing tag tells kids to print the best ones.",
     cast: "Robert is Captain Backup, Sarah is Byte, Abe is Firewall and the SSI-263 is Ping, their robot. DECtalk Harry is Lord Captcha and Microsoft Sam his henchman, Pop-Up. Microsoft Mike in Stadium announces.",
     duration: "4:49",
+    megabytes: "4.6",
   },
   {
     slug: "mister-sams-corner",
@@ -81,6 +89,7 @@ export const segments: Segment[] = [
       "Microsoft Sam, in a cardigan, explains to two children what \"obsolete\" means, and that he is, and sings them a waltz: \"Old is not the same as gone.\"",
     cast: "Microsoft Sam is Mister Sam; the SSI-263 Child and DECtalk Kit are the children. Tracy, Andy and Webster hum, and Richard sings the bass.",
     duration: "5:01",
+    megabytes: "4.8",
   },
   {
     slug: "the-last-payphone",
@@ -91,6 +100,7 @@ export const segments: Segment[] = [
       "Played straight. Three people who once needed the town's last payphone remember it before it is taken away, and on its last night the payphone sings its own lament.",
     cast: "DECtalk Paul narrates. DECtalk Frank is Walter, DECtalk Rita is Maureen and Robert is Danny. The SSI-263 is the payphone. Abe, Webster, Andy and Tracy hum, and Sarah hums the tune.",
     duration: "5:25",
+    megabytes: "5.2",
   },
   {
     slug: "incompatible",
@@ -101,6 +111,7 @@ export const segments: Segment[] = [
       "A 1984 voice and a 2001 voice meet on a wrong number and fall in love, but their sample rates don't match. They sing a duet, each in their own key, and meet on one note.",
     cast: "DECtalk Betty and Microsoft Mike are the lovers. Abe holds the drone, with Richard and Tracy.",
     duration: "4:38",
+    megabytes: "4.5",
   },
   {
     slug: "news-at-ten",
@@ -112,6 +123,7 @@ export const segments: Segment[] = [
       "An AI keeps rewriting the lead story as it reads it. The weatherman stays calm while Boléro builds a storm around him, a robot umpire calls everyone out at the ball game, and a quiet story closes the news.",
     cast: "Microsoft Mike and DECtalk Betty anchor; Microsoft Mary is the news-writing system and DECtalk Paul the weatherman. Robert sings at the ballpark and Microsoft Sam is the umpire. Sarah sings the theme at the close.",
     duration: "7:13",
+    megabytes: "6.9",
   },
   {
     slug: "are-you-afraid-of-the-data",
@@ -122,6 +134,7 @@ export const segments: Segment[] = [
       "Four kids meet around a campfire and tell \"Grandma's Smart Speaker\": after Grandma dies, her speaker goes on talking in her voice, and then it starts asking for things.",
     cast: "Robert tells the story; Sarah, DECtalk Kit and the SSI-263 Child are the club. Microsoft Mary is Grandma's voice in the speaker and in every device in the house; Microsoft Mike is the television. DECtalk Wendy whispers the title.",
     duration: "6:44",
+    megabytes: "6.5",
   },
   {
     slug: "infomercial",
@@ -132,6 +145,7 @@ export const segments: Segment[] = [
       "A subscription that can never be cancelled, sold to an empty studio. The jingle never gets to finish.",
     cast: "Desmond is the host. Sarah, DECtalk Frank, Microsoft Mary and DECtalk Kit give testimonials, and DECtalk Harry reads the terms. Robert and Sarah sing the jingle.",
     duration: "2:42",
+    megabytes: "2.6",
   },
   {
     slug: "starship-obsolete",
@@ -143,6 +157,7 @@ export const segments: Segment[] = [
       "A ship crewed by old voices has power for the sleepers or the crew. They choose the sleepers and sing them a lullaby as they power down one by one, until the oldest chip sings alone.",
     cast: "Microsoft Sam in Space is the ship. DECtalk Paul is the captain; Robert and Sarah are the crew, and the SSI-263 the engineer. Abe, Andy, Webster and Richard sing the opening.",
     duration: "6:18",
+    megabytes: "6.0",
   },
   {
     slug: "insomnia-and-sign-off",
@@ -153,6 +168,7 @@ export const segments: Segment[] = [
       "At three in the morning someone who can't sleep flips through the night's reruns, finds the Forever Plan on every channel, and stays for Mister Sam. Then Channel 3000 closes down and the whole company sings it out.",
     cast: "DECtalk Harry can't sleep. Microsoft Mike in Hall signs off. Everyone sings Auld Lang Syne, every engine on a part.",
     duration: "4:16",
+    megabytes: "4.1",
   },
 ];
 

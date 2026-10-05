@@ -3,7 +3,7 @@ import { ChannelPlayer } from "@/components/ChannelPlayer";
 import { PageHeader } from "@/components/PageHeader";
 import { audioPath, cast, songs, sources } from "@/lib/grimatonics";
 import { lyrics } from "@/lib/grimatonics-lyrics";
-import { link, megabytes, Note } from "../_shared";
+import { link, Note } from "../_shared";
 
 export const metadata = {
   title: "Grimatonics",
@@ -87,7 +87,7 @@ export default function GrimatonicsPage() {
               </div>
               <p className="mt-4">
                 <a className={link} download href={audioPath(song.slug)}>
-                  Download {song.title} (MP3, {megabytes(audioPath(song.slug))} MB)
+                  Download {song.title} (MP3, {song.megabytes} MB)
                 </a>
               </p>
             </article>

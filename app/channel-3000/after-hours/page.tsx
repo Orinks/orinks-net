@@ -3,7 +3,7 @@ import { ChannelPlayer } from "@/components/ChannelPlayer";
 import { PageHeader } from "@/components/PageHeader";
 import { audioPath, cast, segments, sources } from "@/lib/after-hours";
 import { transcripts } from "@/lib/after-hours-transcripts";
-import { link, megabytes, Note } from "../_shared";
+import { link, Note } from "../_shared";
 
 export const metadata = {
   title: "After Hours",
@@ -68,7 +68,7 @@ export default function AfterHoursPage() {
               </div>
               <p className="mt-4">
                 <a className={link} download href={audioPath(segment.slug)}>
-                  Download {segment.title} (MP3, {megabytes(audioPath(segment.slug))} MB)
+                  Download {segment.title} (MP3, {segment.megabytes} MB)
                 </a>
               </p>
             </article>

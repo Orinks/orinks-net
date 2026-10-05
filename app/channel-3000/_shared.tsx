@@ -1,12 +1,6 @@
-import { statSync } from "node:fs";
-import { join } from "node:path";
 import type { ReactNode } from "react";
 
 export const link = "font-semibold text-action underline hover:text-action-dark";
-
-export function megabytes(src: string) {
-  return (statSync(join(process.cwd(), "public", src)).size / 1e6).toFixed(1);
-}
 
 export function Note({ title, children }: { title: string; children: ReactNode }) {
   return (
