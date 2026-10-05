@@ -1,44 +1,41 @@
-import { statSync } from "node:fs";
-import { join } from "node:path";
-import type { ReactNode } from "react";
-import { GrimatonicsPlayer } from "@/components/GrimatonicsPlayer";
+import Link from "next/link";
+import { ChannelPlayer } from "@/components/ChannelPlayer";
 import { PageHeader } from "@/components/PageHeader";
 import { audioPath, cast, songs, sources } from "@/lib/grimatonics";
 import { lyrics } from "@/lib/grimatonics-lyrics";
+import { link, megabytes, Note } from "../_shared";
 
 export const metadata = {
   title: "Grimatonics",
-  description: "Dark nursery rhymes, sung a cappella by computer voices.",
+  description: "Dark nursery rhymes, sung a cappella by computer voices on Channel 3000.",
 };
 
 export const dynamic = "force-static";
-
-const link = "font-semibold text-action underline hover:text-action-dark";
-
-function megabytes(slug: string) {
-  return (statSync(join(process.cwd(), "public", audioPath(slug))).size / 1e6).toFixed(1);
-}
-
-function Note({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div>
-      <h4 className="font-bold text-ink">{title}</h4>
-      <div className="mt-1 leading-7 text-slate-700">{children}</div>
-    </div>
-  );
-}
 
 export default function GrimatonicsPage() {
   return (
     <>
       <PageHeader
         title="Grimatonics"
-        intro="Dark nursery rhymes, sung a cappella by computer voices. Each song starts in the rhyme's own time and walks it into ours. They run from the lightest to the darkest."
+        intro={
+          <>
+            Dark nursery rhymes, sung a cappella by computer voices on{" "}
+            <Link className={link} href="/channel-3000">
+              Channel 3000
+            </Link>
+            . Each song starts in the rhyme&rsquo;s own time and walks it into ours. They run from the lightest to
+            the darkest.
+          </>
+        }
       />
 
       <section className="border-b border-line py-8">
         <h2 className="mb-4 text-2xl font-bold text-ink">Player</h2>
-        <GrimatonicsPlayer songs={songs.map(({ slug, title }) => ({ slug, title, src: audioPath(slug) }))} />
+        <ChannelPlayer
+          autoLabel="Play the next song automatically when one ends"
+          id="grimatonics"
+          songs={songs.map(({ slug, title }) => ({ slug, title, src: audioPath(slug) }))}
+        />
       </section>
 
       <section className="py-8">
@@ -90,7 +87,7 @@ export default function GrimatonicsPage() {
               </div>
               <p className="mt-4">
                 <a className={link} download href={audioPath(song.slug)}>
-                  Download {song.title} (MP3, {megabytes(song.slug)} MB)
+                  Download {song.title} (MP3, {megabytes(audioPath(song.slug))} MB)
                 </a>
               </p>
             </article>

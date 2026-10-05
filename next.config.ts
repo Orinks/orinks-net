@@ -57,6 +57,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/grimatonics",
+        destination: "/channel-3000/grimatonics",
+        permanent: true,
+      },
+      {
         source: "/projects/accessiweather",
         destination: "/accessiweather",
         permanent: true,

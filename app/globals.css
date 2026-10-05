@@ -98,13 +98,13 @@ a {
   list-style: decimal;
 }
 
-/* Grimatonics: the song Able Player has cued reads bold with a bar beside it,
+/* Channel 3000 players: the song Able Player has cued reads bold with a bar beside it,
    and the list uses the site's own type size. */
-.grimatonics-playlist li button {
+.channel-playlist li button {
   font-size: 1rem;
 }
 
-.grimatonics-playlist li.able-current button {
+.channel-playlist li.able-current button {
   font-weight: 700;
   border-left: 6px solid #075985;
 }
@@ -114,7 +114,7 @@ a {
    controller keeps the orange, which passes there. */
 div.able-modal-dialog,
 .able-wrapper .able-alert,
-.grimatonics-playlist.able-playlist {
+.channel-playlist.able-playlist {
   --able-focus-outline: #075985;
 }
 
@@ -123,7 +123,7 @@ div.able-modal-dialog,
    The seek handle keeps its ring: it is the handle's only visible shape. */
 @media (forced-colors: active) {
   .able-controller [role="button"]:not(:focus-visible),
-  .grimatonics-playlist button:not(:focus-visible) {
+  .channel-playlist button:not(:focus-visible) {
     outline-color: Canvas;
   }
 }

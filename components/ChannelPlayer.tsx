@@ -7,10 +7,8 @@ type Song = { slug: string; title: string; src: string };
 // The prototype methods we adjust aren't in Able Player's published types.
 type Able = any;
 
-const PLAYER_ID = "grimatonics-player";
-const AUTO_KEY = "grimatonics-auto-advance";
-
-// Read by onMediaComplete below; the checkbox keeps it current.
+// Read by onMediaComplete below; the checkbox keeps it current. One player
+// per page, so one setting.
 let autoAdvance = false;
 let patched = false;
 
@@ -99,7 +97,11 @@ function patchAblePlayer(proto: Able) {
   };
 }
 
-export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
+// `id` names the page's player and its saved auto-advance setting: "grimatonics"
+// gives grimatonics-player and grimatonics-auto-advance.
+export function ChannelPlayer({ id, songs, autoLabel }: { id: string; songs: Song[]; autoLabel: string }) {
+  const PLAYER_ID = `${id}-player`;
+  const AUTO_KEY = `${id}-auto-advance`;
   const listRef = useRef<HTMLOListElement>(null);
   const playerRef = useRef<Able>(null);
   const [current, setCurrent] = useState(0);
@@ -109,7 +111,7 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
     try {
       setAuto(localStorage.getItem(AUTO_KEY) === "true");
     } catch {}
-  }, []);
+  }, [AUTO_KEY]);
 
   useEffect(() => {
     autoAdvance = auto;
@@ -153,7 +155,7 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
         $(window).off("resize");
       });
     };
-  }, []);
+  }, [PLAYER_ID]);
 
   const song = songs[current];
 
@@ -195,9 +197,9 @@ export function GrimatonicsPlayer({ songs }: { songs: Song[] }) {
           }}
           type="checkbox"
         />
-        Play the next song automatically when one ends
+        {autoLabel}
       </label>
-      <ol className="able-playlist grimatonics-playlist" data-player={PLAYER_ID} ref={listRef} role="list">
+      <ol className="able-playlist channel-playlist" data-player={PLAYER_ID} ref={listRef} role="list">
         {songs.map((s) => (
           <li key={s.slug}>
             {/* Able Player reads "Selected Track:" straight onto this text,

@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
+
 type PageHeaderProps = {
   title: string;
-  intro?: string;
+  intro?: ReactNode;
   showSiteName?: boolean;
 };
 

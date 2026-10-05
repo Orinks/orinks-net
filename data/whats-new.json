@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-05-channel-3000",
+      "date": "2026-10-05",
+      "project": "Channel 3000",
+      "title": "Channel 3000: After Hours, and Grimatonics' new home",
+      "body": [
+        "Channel 3000 is a television station where every voice is a computer's. Its first full broadcast is After Hours: a whole night of television in 14 segments, about an hour long, from sign-on to closedown. There's a family sitcom, two Saturday-morning cartoons, a documentary, a love story, the news, a ghost story, a space drama and a 2 a.m. infomercial. All of it is sung and spoken by VocalWriter's singers, DECtalk, the SSI-263 chip, and Microsoft Sam, Mike and Mary.",
+        "Each segment has notes on what happens, the music and who plays whom, and a full transcript. Grimatonics has moved to Channel 3000 too, and its old address still works."
+      ],
+      "link": {
+        "href": "/channel-3000",
+        "label": "Tune in to Channel 3000"
+      }
+    },
+    {
       "id": "2026-10-04-freight-fate-1-9-0",
       "date": "2026-10-04",
       "project": "Freight Fate",
@@ -26,7 +40,7 @@
         "Every song has notes beside it: the tune, what is on record about the rhyme, which famous \"dark origins\" are only folklore, a little trivia, who sings what, and the full words. The idea comes from Robatonics at L-Works."
       ],
       "link": {
-        "href": "/grimatonics",
+        "href": "/channel-3000/grimatonics",
         "label": "Listen to Grimatonics"
       }
     },
