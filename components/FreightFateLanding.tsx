@@ -10,7 +10,7 @@ type Feature = {
 };
 
 // Flat h2s on purpose: each one is a stop in a screen reader's heading list,
-// and the list runs on into the drivers board and updates below.
+// following on from the drivers board and updates above them.
 const features: Feature[] = [
   {
     title: "Hear the road",
@@ -52,7 +52,13 @@ type FreightFateLandingProps = {
   project: ProjectPage;
 };
 
-export function FreightFateLanding({ project }: FreightFateLandingProps) {
+/** The top of the page: the title, the pitch in one line, and the downloads.
+ *
+ * The live sections (drivers on duty, driver updates) follow this on the
+ * page, and the features in FreightFatePitch come after them, so a returning
+ * player reaches the downloads and the road without reading the pitch again.
+ */
+export function FreightFateIntro({ project }: FreightFateLandingProps) {
   return (
     <>
       <PageHeader title={project.title} intro={project.summary} showSiteName={false} />
@@ -65,7 +71,14 @@ export function FreightFateLanding({ project }: FreightFateLandingProps) {
       <Section>
         <p>Free for Windows, Apple Silicon Macs, and Linux on x64 or ARM64.</p>
       </Section>
+    </>
+  );
+}
 
+/** The features, then the community and source links to close the page. */
+export function FreightFatePitch({ project }: FreightFateLandingProps) {
+  return (
+    <>
       {features.map((feature) => (
         <Section key={feature.title} title={feature.title}>
           <p>{feature.body}</p>
@@ -78,7 +91,6 @@ export function FreightFateLanding({ project }: FreightFateLandingProps) {
           ) : null}
         </Section>
       ))}
-
 
       <Section title="Community and source">
         <ul>

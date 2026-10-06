@@ -61,6 +61,11 @@ test("landing page leads with one heading, the 1.9 download and flat feature hea
     await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
   }
   await expect(page.locator("main h3")).toHaveCount(0);
+  // The live sections come before the pitch, so a returning player reaches them first.
+  const h2s = await page.locator("main h2").allTextContents();
+  expect(h2s.indexOf("Driver updates")).toBeGreaterThan(-1);
+  expect(h2s.indexOf("Driver updates")).toBeLessThan(h2s.indexOf("Hear the road"));
+  expect(h2s.at(-1)).toBe("Community and source");
 });
 
 test("compact updates disclosure is closed by default and uses native keyboard behavior", async ({ page }) => {

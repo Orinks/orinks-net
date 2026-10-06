@@ -1,6 +1,6 @@
 import { FreightFateDriversBoard } from "@/components/FreightFateDriversBoard";
 import { FreightFateUpdates } from "@/components/FreightFateUpdates";
-import { FreightFateLanding } from "@/components/FreightFateLanding";
+import { FreightFateIntro, FreightFatePitch } from "@/components/FreightFateLanding";
 import { getGame } from "@/lib/site";
 
 export const metadata = {
@@ -23,11 +23,13 @@ export const metadata = {
 export const revalidate = 60;
 
 export default function FreightFatePage() {
+  const project = getGame("/freight-fate")!;
   return (
     <>
-      <FreightFateLanding project={getGame("/freight-fate")!} />
+      <FreightFateIntro project={project} />
       <FreightFateDriversBoard />
       <FreightFateUpdates compact limit={5} />
+      <FreightFatePitch project={project} />
     </>
   );
 }
