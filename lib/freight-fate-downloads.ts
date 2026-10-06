@@ -19,3 +19,7 @@ export function getFreightFateMusicBlobUrl(
 
   return url;
 }
+
+/** Channel 3000's clips, beside the music pack on the same here.now site. */
+export const FREIGHT_FATE_CHANNEL_3000_PACK_URL =
+  "https://crisp-crystal-9a9y.here.now/channel3000.pak";
