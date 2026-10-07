@@ -281,6 +281,15 @@ export function stripSnapshotPreamble(body: string | null) {
   return lines.slice(index).join("\n").trim();
 }
 
+/** A snapshot whose notes say only "No user-facing changes" plays the same as
+ * the build before it, so the downloads page has nothing to offer in it. The
+ * nightly publishes one even when the day's commits were CI or tests alone.
+ */
+export function hasNoUserFacingChanges(body: string | null) {
+  const notes = stripSnapshotPreamble(body) ?? "";
+  return /^[-*]?\s*No user-facing changes\.?$/i.test(notes.trim());
+}
+
 const isStable = (release: GitHubRelease) =>
   !release.prerelease && !release.tag_name.toLowerCase().startsWith("nightly");
 
@@ -296,6 +305,8 @@ export async function getReleaseGroups(repo: string) {
     latestStable && isStable(latestStable) ? latestStable : releases.find(isStable);
   // Only a snapshot newer than the stable release is worth offering, and only
   // the newest one: older snapshots are behind what stable players already have.
+  // One that changed nothing a player notices is skipped, so a quiet night
+  // never offers a copy of the stable game.
   const stablePublished = stable?.published_at ? Date.parse(stable.published_at) : null;
   const nightlies = releases
     .filter((release) => release.prerelease || release.tag_name.toLowerCase().startsWith("nightly"))
@@ -304,6 +315,7 @@ export async function getReleaseGroups(repo: string) {
         stablePublished === null ||
         (release.published_at !== null && Date.parse(release.published_at) > stablePublished),
     )
+    .filter((release) => !hasNoUserFacingChanges(release.body))
     .slice(0, 1);
 
   const releasesWithRenderedNotes = await Promise.all(

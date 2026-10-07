@@ -239,4 +239,40 @@ describe("finding the stable release behind a wall of snapshots", () => {
     const groups = await getReleaseGroups("Freight-Fate");
     expect(groups.nightlies.map((r) => r.tag_name)).toEqual(["1.9-tester-20261006"]);
   });
+
+  test("skips a snapshot with no user-facing changes", async () => {
+    const quiet =
+      "Preview snapshot for players who want the newest features.\n\n" +
+      "## Changes since the previous snapshot\n\n- No user-facing changes\n";
+    const at = (tag: string, published_at: string, body: string) => ({
+      ...release(tag, true),
+      published_at,
+      body,
+    });
+    const stable = { ...release("v1.9.3", false), published_at: "2026-10-07T00:04:35Z" };
+    const serve = (list: unknown[]) =>
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/releases/latest")) {
+          return new Response(JSON.stringify(stable), { status: 200 });
+        }
+        if (url.includes("/releases?")) {
+          return new Response(JSON.stringify(list), { status: 200 });
+        }
+        return new Response("<p></p>", { status: 200 });
+      });
+
+    serve([at("1.9-tester-20261007", "2026-10-07T04:15:32Z", quiet), stable]);
+    expect((await getReleaseGroups("Freight-Fate")).nightlies).toEqual([]);
+
+    vi.restoreAllMocks();
+    cacheStore.clear();
+    serve([
+      at("1.9-tester-20261009", "2026-10-09T04:15:00Z", quiet),
+      at("1.9-tester-20261008", "2026-10-08T04:15:00Z", "## Fixed\n- **A real fix.**"),
+      stable,
+    ]);
+    const groups = await getReleaseGroups("Freight-Fate");
+    expect(groups.nightlies.map((r) => r.tag_name)).toEqual(["1.9-tester-20261008"]);
+  });
 });
