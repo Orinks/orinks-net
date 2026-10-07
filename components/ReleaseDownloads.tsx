@@ -4,6 +4,7 @@ import {
   formatDate,
   getReleaseGroups,
   downloadAssetLabel,
+  listedDownloadAssets,
   releaseTitle,
   repoSlug,
   selectedDownloadAssets,
@@ -18,8 +19,10 @@ type ReleaseDownloadsProps = {
 };
 
 function DownloadList({ release }: { release: GitHubRelease }) {
-  const assets = selectedDownloadAssets(release.assets);
-  const totalDownloads = assets.reduce((count, asset) => count + asset.download_count, 0);
+  const downloadable = selectedDownloadAssets(release.assets);
+  const assets = listedDownloadAssets(downloadable);
+  // The hidden updater copy's downloads are real installs, so they still count.
+  const totalDownloads = downloadable.reduce((count, asset) => count + asset.download_count, 0);
 
   if (assets.length === 0) {
     return (

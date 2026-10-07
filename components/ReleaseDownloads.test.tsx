@@ -65,6 +65,41 @@ describe("ReleaseDownloads", () => {
     expect(markup).toContain("<h5>Preview changes</h5><h6>Details</h6>");
   });
 
+  test("lists the Apple Silicon zip once and still counts the updater copy's downloads", async () => {
+    const asset = (name: string, download_count: number) => ({
+      name,
+      download_count,
+      browser_download_url: `https://github.com/Orinks/Freight-Fate/releases/download/v1.9.3/${name}`,
+    });
+
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: {
+        assets: [
+          asset("FreightFate-v1.9.3-macos-arm64.zip", 5),
+          asset("FreightFate-v1.9.3-macos.zip", 7),
+          asset("FreightFate-v1.9.3-windows-portable.zip", 10),
+        ],
+        body: "",
+        body_html: null,
+        html_url: "https://github.com/Orinks/Freight-Fate/releases/tag/v1.9.3",
+        name: "Freight Fate 1.9.3",
+        prerelease: false,
+        published_at: "2026-10-07T00:00:00Z",
+        tag_name: "v1.9.3",
+      },
+      nightlies: [],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({ productName: "Freight Fate", repo: "Freight-Fate" }),
+    );
+
+    expect(markup).toContain("FreightFate-v1.9.3-macos-arm64.zip");
+    expect(markup).not.toContain("FreightFate-v1.9.3-macos.zip");
+    expect(markup.match(/macOS ZIP archive/g)).toHaveLength(1);
+    expect(markup).toContain("Total downloads: 22");
+  });
+
   test("sends PortkeyDrop's fallback link to its new maintainer's releases", async () => {
     getReleaseGroupsMock.mockRejectedValue(new Error("GitHub releases request failed: 404"));
 
