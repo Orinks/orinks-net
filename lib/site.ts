@@ -236,14 +236,14 @@ export const projectSummaries: ProjectPage[] = [
     title: "Spectra",
     tagline: "A screen-reader-first OpenAPI documentation browser and REST client.",
     summary:
-      "A screen-reader-first OpenAPI documentation browser and REST client. Coming soon.",
-    status: "In development.",
+      "Open an OpenAPI 3 or Swagger 2 spec from a file or URL, browse its endpoints by tag, and send requests from the keyboard.",
+    status: "Stable releases are available. Spectra runs from source on Python 3.11 or later.",
     audience:
       "Built for developers who need to inspect OpenAPI descriptions, endpoints, and request details without fighting a visual-only docs UI.",
     features: [
       "OpenAPI navigation shaped around headings, lists, and predictable keyboard movement.",
       "REST request workflows that keep response details readable.",
-      "Downloads will be added after the first public release is ready.",
+      "A base URL filled in from the spec's servers, so each request only needs its path.",
     ],
     downloadsHref: "/spectra/downloads",
     links: [{ href: "https://github.com/Orinks/spectra", label: "GitHub repository" }],

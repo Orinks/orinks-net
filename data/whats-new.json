@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-07-spectra-0-2-0",
+      "date": "2026-10-07",
+      "project": "Spectra",
+      "title": "Spectra 0.2.0 is out, with a downloads page",
+      "body": [
+        "Spectra, the screen-reader-first OpenAPI browser and REST client, now has release notes and install steps on its downloads page.",
+        "Version 0.2.0 adds a Base URL field that fills in from the spec's servers when it loads, so each request only needs its path. If the base URL is missing, Send says so and moves focus to the field."
+      ],
+      "link": {
+        "href": "/spectra/downloads",
+        "label": "Get Spectra 0.2.0"
+      }
+    },
+    {
       "id": "2026-10-05-channel-3000",
       "date": "2026-10-05",
       "project": "Channel 3000",
