@@ -5,9 +5,9 @@
       "id": "2026-10-07-spectra-0-2-0",
       "date": "2026-10-07",
       "project": "Spectra",
-      "title": "Spectra 0.2.0 is out, with a downloads page",
+      "title": "Spectra 0.2.0 is out for Windows",
       "body": [
-        "Spectra, the screen-reader-first OpenAPI browser and REST client, now has release notes and install steps on its downloads page.",
+        "Spectra, the screen-reader-first OpenAPI browser and REST client, now has a Windows download: a portable ZIP you extract and run.",
         "Version 0.2.0 adds a Base URL field that fills in from the spec's servers when it loads, so each request only needs its path. If the base URL is missing, Send says so and moves focus to the field."
       ],
       "link": {

@@ -237,7 +237,7 @@ export const projectSummaries: ProjectPage[] = [
     tagline: "A screen-reader-first OpenAPI documentation browser and REST client.",
     summary:
       "Open an OpenAPI 3 or Swagger 2 spec from a file or URL, browse its endpoints by tag, and send requests from the keyboard.",
-    status: "Stable releases are available. Spectra runs from source on Python 3.11 or later.",
+    status: "Available for Windows as a portable ZIP.",
     audience:
       "Built for developers who need to inspect OpenAPI descriptions, endpoints, and request details without fighting a visual-only docs UI.",
     features: [
