@@ -29,6 +29,7 @@ export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enha
 export const gamesNav = [
   { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense" },
   { href: "/freight-fate", label: "Freight Fate" },
+  { href: "/freight-fate-dispatch", label: "Freight Fate: Dispatch" },
   { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
 ];
@@ -104,6 +105,29 @@ export const saltwake: ProjectPage = {
   ],
 };
 
+export const freightFateDispatch: ProjectPage = {
+  href: "/freight-fate-dispatch",
+  title: "Freight Fate: Dispatch",
+  tagline: "Run the dispatch desk at a Freight Fate trucking company.",
+  summary:
+    "Freight Fate: Dispatch puts you behind the desk instead of the wheel. Assign loads to your drivers, then handle what the road throws back over the phone: hours running out, breakdowns, weather, and detention at the dock. Time only moves when you act.",
+  status: "A first test build is available for Windows, Apple Silicon Macs, and Linux.",
+  audience:
+    "Designed for screen reader users first and played entirely from the keyboard. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher.",
+  features: [
+    "A carrier career across Freight Fate's map of American cities, one working day at a time, with a daily dispatch goal and overnight settlements.",
+    "Phone calls from drivers about breakdowns, weather, detention, and hours running out.",
+    "Import a driver from your Freight Fate career to work for your carrier.",
+    "An endless soundtrack composed with genny that stays under the speech. Page Up and Page Down set its volume.",
+    "The whole career works offline. An optional public drivers board and orinks.net sign-in are there when you want them.",
+  ],
+  downloadsHref: "/freight-fate-dispatch/downloads",
+  links: [
+    { href: "https://github.com/Orinks/freight-fate-dispatch", label: "GitHub repository" },
+    { href: "https://github.com/Orinks/freight-fate-dispatch/issues", label: "Report an issue" },
+  ],
+};
+
 export const gameSummaries: GameSummary[] = [
   {
     href: "/midnight-signal",
@@ -134,6 +158,14 @@ export const gameSummaries: GameSummary[] = [
     primaryHref: freightFate.downloadsHref!,
     primaryLabel: "Downloads",
     links: freightFate.links,
+  },
+  {
+    href: freightFateDispatch.href,
+    title: freightFateDispatch.title,
+    summary: freightFateDispatch.summary,
+    primaryHref: freightFateDispatch.downloadsHref!,
+    primaryLabel: "Downloads",
+    links: freightFateDispatch.links,
   },
   {
     href: saltwake.href,
@@ -257,5 +289,6 @@ export function getProject(href: string) {
 export function getGame(href: string) {
   if (href === freightFate.href) return freightFate;
   if (href === saltwake.href) return saltwake;
+  if (href === freightFateDispatch.href) return freightFateDispatch;
   return undefined;
 }

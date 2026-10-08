@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-08-freight-fate-dispatch-test-build",
+      "date": "2026-10-08",
+      "project": "Freight Fate: Dispatch",
+      "title": "Freight Fate: Dispatch has its first test build",
+      "body": [
+        "Freight Fate: Dispatch puts you behind the desk at a Freight Fate carrier. You assign loads to your drivers, then take their calls about breakdowns, weather, detention, and hours running out.",
+        "The first test build is out for Windows, Apple Silicon Macs, and Linux, with an endless soundtrack you can turn up or down with Page Up and Page Down."
+      ],
+      "link": {
+        "href": "/freight-fate-dispatch/downloads",
+        "label": "Get the Freight Fate: Dispatch test build"
+      }
+    },
+    {
       "id": "2026-10-07-spectra-0-2-0",
       "date": "2026-10-07",
       "project": "Spectra",

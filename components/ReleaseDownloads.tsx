@@ -12,7 +12,7 @@ import {
 } from "@/lib/github";
 
 type ReleaseDownloadsProps = {
-  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake" | "Spectra";
+  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "freight-fate-dispatch" | "saltwake" | "Spectra";
   productName: string;
   prereleaseLabel?: string;
   buildNotifications?: boolean;

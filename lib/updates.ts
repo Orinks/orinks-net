@@ -28,7 +28,7 @@ export type UpdateCategory = {
 };
 
 // PortkeyDrop is left out: it has a new maintainer, and this feed is Orinks' own activity.
-const featuredRepos = ["AccessiWeather", "station-scout", "Freight-Fate", "saltwake", "Spectra"];
+const featuredRepos = ["AccessiWeather", "station-scout", "Freight-Fate", "freight-fate-dispatch", "saltwake", "Spectra"];
 
 type RecentUpdateOptions = {
   includeCode?: boolean;
