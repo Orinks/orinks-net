@@ -55,6 +55,13 @@ crons.interval(
   {},
 );
 
+crons.interval(
+  "drop expired remote dispatcher calls",
+  { hours: 1 },
+  internal.freightFateDispatchCalls.cleanupDispatchCalls,
+  {},
+);
+
 // Drivers whose game stopped talking to us. Expiry used to ride along on
 // heartbeat writes, which worked while every beat touched the board table;
 // now that a beat usually writes nothing there, a crashed game would sit on

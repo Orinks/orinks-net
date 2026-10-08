@@ -48,6 +48,65 @@ export function normalizeFreightFateToken(value: unknown, label: string) {
   return token;
 }
 
+export type FreightFateDispatchCallFacts = {
+  remainingMiles: number;
+  hoursLeft: number;
+  truckDamagePct: number;
+  cargoDamagePct: number;
+  hosRemainingMinutes?: number;
+  weatherAlerts: number;
+};
+
+function finiteNumber(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function normalizeFreightFateDispatchCallFacts(
+  value: unknown,
+): FreightFateDispatchCallFacts {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Facts are required.");
+  }
+
+  const record = value as Record<string, unknown>;
+  const remainingMiles = finiteNumber(record, "remainingMiles");
+  const hoursLeft = finiteNumber(record, "hoursLeft");
+  const truckDamagePct = finiteNumber(record, "truckDamagePct");
+  const cargoDamagePct = finiteNumber(record, "cargoDamagePct");
+  const weatherAlerts = finiteNumber(record, "weatherAlerts");
+  const hosRemainingMinutes =
+    record.hosRemainingMinutes === undefined
+      ? undefined
+      : finiteNumber(record, "hosRemainingMinutes");
+
+  if (
+    remainingMiles === null ||
+    hoursLeft === null ||
+    truckDamagePct === null ||
+    cargoDamagePct === null ||
+    weatherAlerts === null ||
+    (record.hosRemainingMinutes !== undefined && hosRemainingMinutes === null)
+  ) {
+    throw new Error("Facts must contain finite numbers.");
+  }
+
+  return {
+    remainingMiles: clamp(remainingMiles, 0, 10_000),
+    hoursLeft: clamp(hoursLeft, -1_000, 1_000),
+    truckDamagePct: clamp(truckDamagePct, 0, 100),
+    cargoDamagePct: clamp(cargoDamagePct, 0, 100),
+    ...(hosRemainingMinutes === undefined || hosRemainingMinutes === null
+      ? {}
+      : { hosRemainingMinutes: clamp(hosRemainingMinutes, 0, 10_000) }),
+    weatherAlerts: clamp(Math.trunc(weatherAlerts), 0, 20),
+  };
+}
+
 function bearerToken(request: Request) {
   const header = request.headers.get("authorization") ?? "";
   return /^Bearer\s+(.+)$/i.exec(header)?.[1];

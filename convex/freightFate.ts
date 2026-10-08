@@ -663,7 +663,7 @@ export const MAX_BOARD_ROWS = 100;
  * these three conditions outside a heartbeat has to reach into the presence
  * row itself -- setProfileSharing and setIntegrityFlag both do.
  */
-function boardListing(driver: Doc<"freightFateDrivers">) {
+export function boardListing(driver: Doc<"freightFateDrivers">) {
   return {
     displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
     listed:

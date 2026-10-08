@@ -634,6 +634,49 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_window", ["windowStart"]),
+  freightFateDispatchCalls: defineTable({
+    callId: v.string(),
+    requestId: v.string(),
+    callerDriverId: v.string(),
+    callerName: v.string(),
+    kind: v.union(
+      v.literal("delay"),
+      v.literal("hours"),
+      v.literal("road_conditions"),
+      v.literal("truck_trouble"),
+      v.literal("load_trouble"),
+    ),
+    facts: v.object({
+      remainingMiles: v.number(),
+      hoursLeft: v.number(),
+      truckDamagePct: v.number(),
+      cargoDamagePct: v.number(),
+      hosRemainingMinutes: v.optional(v.number()),
+      weatherAlerts: v.number(),
+    }),
+    status: v.union(
+      v.literal("ringing"),
+      v.literal("claimed"),
+      v.literal("answered"),
+      v.literal("expired"),
+      v.literal("cancelled"),
+    ),
+    createdAt: v.number(),
+    ringUntil: v.number(),
+    responderDriverId: v.optional(v.string()),
+    responderName: v.optional(v.string()),
+    claimedAt: v.optional(v.number()),
+    answerBy: v.optional(v.number()),
+    decision: v.optional(v.string()),
+    answeredAt: v.optional(v.number()),
+  })
+    .index("by_call_id", ["callId"])
+    .index("by_caller_request", ["callerDriverId", "requestId"])
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_responder", ["responderDriverId"])
+    .index("by_created", ["createdAt"])
+    .index("by_caller_status", ["callerDriverId", "status"])
+    .index("by_responder_status", ["responderDriverId", "status"]),
   // Mastodon sharing: one dynamically registered OAuth app per instance
   // (POST /api/v1/apps), reused by every driver on that instance. The
   // client secret only ever authenticates this deployment to that instance;
