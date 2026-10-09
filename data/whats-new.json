@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-09-suggest-a-radio-station",
+      "date": "2026-10-09",
+      "project": "Freight Fate",
+      "title": "Suggest a radio station for Freight Fate",
+      "body": [
+        "Freight Fate drivers can now suggest a radio station for the game's dial. Give its name and stream address, and for an AM or FM station its call sign and state.",
+        "The stream is checked while you wait, so a dead link or a station already on the dial is turned away on the spot. Everything else is reviewed, and accepted stations reach players without waiting for a game release."
+      ],
+      "link": {
+        "href": "/freight-fate/suggest-a-station",
+        "label": "Suggest a radio station"
+      }
+    },
+    {
       "id": "2026-10-07-spectra-0-2-0",
       "date": "2026-10-07",
       "project": "Spectra",

@@ -69,4 +69,24 @@ crons.interval(
   {},
 );
 
+// Radio stations players suggested, waiting for the owner. A separate email
+// from the career digest, at the same hour, sent only when a suggestion
+// arrived since the last one.
+crons.daily(
+  "email the Freight Fate station digest",
+  { hourUTC: 13, minuteUTC: 0 },
+  internal.freightFateStationVetting.sendStationDigest,
+  {},
+);
+
+// Accepted stations' streams, re-checked overnight (08:00 UTC is the small
+// hours across the US). A stream that fails several nights in a row leaves
+// the community station list until it answers again.
+crons.daily(
+  "re-check accepted Freight Fate station streams",
+  { hourUTC: 8, minuteUTC: 0 },
+  internal.freightFateStationVetting.recheckAcceptedStations,
+  {},
+);
+
 export default crons;

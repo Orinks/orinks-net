@@ -22,12 +22,12 @@ type ReviewClaim = {
   expiresAt: number;
 };
 
-function reviewSecret() {
+export function reviewSecret() {
   const secret = process.env.FREIGHT_FATE_REVIEW_SECRET;
   return secret && secret.length >= 32 ? secret : null;
 }
 
-async function hmacHex(secret: string, message: string) {
+export async function hmacHex(secret: string, message: string) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -39,7 +39,7 @@ async function hmacHex(secret: string, message: string) {
   return Array.from(new Uint8Array(mac), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function sameText(a: string, b: string) {
+export function sameText(a: string, b: string) {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
@@ -168,7 +168,7 @@ export const getReviewRow = internalQuery({
 
 // -- pages -------------------------------------------------------------------
 
-function escapeHtml(text: string) {
+export function escapeHtml(text: string) {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -177,7 +177,7 @@ function escapeHtml(text: string) {
     .replace(/'/g, "&#39;");
 }
 
-function page(title: string, body: string, status = 200) {
+export function page(title: string, body: string, status = 200) {
   const html = `<!doctype html>
 <html lang="en">
 <head>

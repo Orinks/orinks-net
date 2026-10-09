@@ -75,6 +75,7 @@ export const freightFate: ProjectPage = {
   manualHref: "/freight-fate/user-manual",
   links: [
     { href: "/freight-fate/carriers", label: "Freight Fate carriers" },
+    { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
     { href: "https://github.com/orinks-games/Freight-Fate", label: "GitHub repository" },
     { href: "https://github.com/orinks-games/Freight-Fate/issues", label: "Report an issue" },
   ],

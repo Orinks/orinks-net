@@ -674,4 +674,55 @@ export default defineSchema({
   })
     .index("by_state", ["state"])
     .index("by_created", ["createdAt"]),
+  // Radio stations players suggest for Freight Fate's dial. A suggestion is
+  // stored only after its stream answered with audio the game can play and
+  // it matched nothing already on the dial or already suggested
+  // (freightFateStationVetting.ts). The owner accepts or declines each from
+  // the daily station digest; accepted rows are the community station list
+  // the game downloads (freightFateStations.listCommunityStations).
+  // Declined rows stay so the same stream is not suggested again.
+  freightFateStationSuggestions: defineTable({
+    driverId: v.string(),
+    kind: v.union(v.literal("terrestrial"), v.literal("web")),
+    name: v.string(),
+    streamUrl: v.string(),
+    // normalizeStreamUrl(streamUrl): what "the same stream" means here and
+    // in the game.
+    streamKey: v.string(),
+    // What the probe heard: "mp3", "aac", "aac+", "ogg", "flac" or "hls".
+    streamFormat: v.string(),
+    genre: v.optional(v.string()),
+    note: v.optional(v.string()),
+    // Terrestrial only, as the player gave them (normalized). The owner's
+    // research fills in the transmitter below; until then the game plays an
+    // accepted terrestrial station everywhere, the way it plays web radio.
+    callSign: v.optional(v.string()),
+    callSignBase: v.optional(v.string()),
+    frequency: v.optional(v.string()),
+    frequencyMhz: v.optional(v.number()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    // Set by hand from the dashboard after research. All three, or the
+    // station stays everywhere-on-the-dial.
+    lat: v.optional(v.number()),
+    lon: v.optional(v.number()),
+    rangeMiles: v.optional(v.number()),
+    // Whether the shipped catalog could be fetched to check for duplicates
+    // when this was suggested; false means the owner should check by hand.
+    catalogChecked: v.boolean(),
+    clientVersion: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("declined")),
+    createdAt: v.number(),
+    notifiedAt: v.optional(v.number()),
+    decidedAt: v.optional(v.number()),
+    // The nightly re-check of accepted streams. A station that fails
+    // STATION_DEAD_AFTER checks in a row leaves the list until it answers.
+    lastCheckedAt: v.optional(v.number()),
+    failedChecks: v.optional(v.number()),
+  })
+    .index("by_status", ["status", "createdAt"])
+    .index("by_stream_key", ["streamKey"])
+    .index("by_call_sign_base", ["callSignBase"])
+    .index("by_driver_created", ["driverId", "createdAt"])
+    .index("by_status_checked", ["status", "lastCheckedAt"]),
 });
