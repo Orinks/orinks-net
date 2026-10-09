@@ -306,7 +306,8 @@ const RECHECK_PARALLEL = 8;
 export const recheckAcceptedStations = internalAction({
   args: {},
   handler: async (ctx) => {
-    const rows: Array<{ id: Id<"freightFateStationSuggestions">; streamUrl: string }> = await ctx.runQuery(internal.freightFateStations.stationsToRecheck, { limit: RECHECK_BATCH });
+    const rows: Array<{ id: Id<"freightFateStationSuggestions">; streamUrl: string; needsPlacement: boolean }> =
+      await ctx.runQuery(internal.freightFateStations.stationsToRecheck, { limit: RECHECK_BATCH, now: Date.now() });
     for (let start = 0; start < rows.length; start += RECHECK_PARALLEL) {
       await Promise.all(
         rows.slice(start, start + RECHECK_PARALLEL).map(async (row) => {
@@ -316,6 +317,11 @@ export const recheckAcceptedStations = internalAction({
             ok: probe.ok,
             now: Date.now(),
           });
+          // An AM or FM station the FCC lookup missed, or that was accepted
+          // while the query was down, is asked about again here.
+          if (row.needsPlacement) {
+            await ctx.runAction(internal.freightFateStationPlacement.placeStation, { id: row.id });
+          }
         }),
       );
     }

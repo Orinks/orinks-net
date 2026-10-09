@@ -8,7 +8,7 @@
       "title": "Suggest a radio station for Freight Fate",
       "body": [
         "Freight Fate drivers can now suggest a radio station for the game's dial. Give its name and stream address, and for an AM or FM station its call sign and state.",
-        "The stream is checked while you wait, so a dead link or a station already on the dial is turned away on the spot. Everything else is reviewed, and accepted stations reach players without waiting for a game release."
+        "The stream is checked while you wait, so a dead link or a station already on the dial is turned away on the spot. Everything else is reviewed, and accepted stations reach players without waiting for a game release. An accepted AM or FM station plays near its real transmitter, found in the FCC's licence records."
       ],
       "link": {
         "href": "/freight-fate/suggest-a-station",

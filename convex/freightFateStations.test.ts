@@ -9,6 +9,7 @@ import {
   signStationClaim,
   verifyStationClaim,
 } from "./freightFateStations";
+import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
 import { DAILY_SUGGESTION_LIMIT } from "./freightFateStationRules";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -191,8 +192,8 @@ describe("the community station list", () => {
     await suggest(t, webStation);
     const row = await onlyRow(t);
     await t.run(async (ctx) => ctx.db.patch(row._id, { status: "accepted" }));
-    expect(await t.query(internal.freightFateStations.stationsToRecheck, { limit: 10 })).toEqual([
-      { id: row._id, streamUrl: webStation.streamUrl },
+    expect(await t.query(internal.freightFateStations.stationsToRecheck, { limit: 10, now: NOW })).toEqual([
+      { id: row._id, streamUrl: webStation.streamUrl, needsPlacement: false },
     ]);
     for (let night = 0; night < STATION_DEAD_AFTER; night += 1) {
       await t.mutation(internal.freightFateStations.recordStationCheck, { id: row._id, ok: false, now: NOW + night });
@@ -200,6 +201,65 @@ describe("the community station list", () => {
     expect((await t.query(api.freightFateStations.listCommunityStations, {})).stations).toEqual([]);
     await t.mutation(internal.freightFateStations.recordStationCheck, { id: row._id, ok: true, now: NOW + 10 });
     expect((await t.query(api.freightFateStations.listCommunityStations, {})).stations).toHaveLength(1);
+  });
+});
+
+describe("placing an accepted AM or FM station", () => {
+  test("accepting one asks the FCC, and the answer moves it to the AM and FM band", async () => {
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, terrestrialStation);
+    const row = await onlyRow(t);
+    await t.mutation(internal.freightFateStations.decideStationSuggestion, {
+      id: row._id, decision: "accepted", createdAt: row.createdAt, now: NOW + 1,
+    });
+    expect(await t.query(internal.freightFateStations.stationForPlacement, { id: row._id })).toEqual({
+      callSign: "KWSC-FM", state: "NE", frequency: "91.9 FM",
+    });
+    expect(
+      (await t.query(internal.freightFateStations.stationsToRecheck, { limit: 10, now: NOW }))[0].needsPlacement,
+    ).toBe(true);
+
+    await t.mutation(internal.freightFateStations.recordStationPlacement, {
+      id: row._id,
+      placement: { lat: 42.24, lon: -97.01, rangeMiles: 32, frequencyMhz: 91.9, community: "Wayne" },
+      now: NOW + 2,
+    });
+    const [station] = (await t.query(api.freightFateStations.listCommunityStations, {})).stations;
+    expect(station).toMatchObject({ source_type: "imported", lat: 42.24, range_miles: 32 });
+    expect(await t.query(internal.freightFateStations.stationForPlacement, { id: row._id })).toBeNull();
+  });
+
+  test("one the FCC does not list stays on the web band and is asked about weekly", async () => {
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, terrestrialStation);
+    const row = await onlyRow(t);
+    await t.run(async (ctx) => ctx.db.patch(row._id, { status: "accepted" }));
+    await t.mutation(internal.freightFateStations.recordStationPlacement, {
+      id: row._id, placement: null, now: NOW,
+    });
+    const needs = async (now: number) =>
+      (await t.query(internal.freightFateStations.stationsToRecheck, { limit: 10, now }))[0].needsPlacement;
+    expect(await needs(NOW + 1000)).toBe(false);
+    expect(await needs(NOW + PLACEMENT_RETRY_MS)).toBe(true);
+    const [station] = (await t.query(api.freightFateStations.listCommunityStations, {})).stations;
+    expect(station).toMatchObject({ source_type: "web", always_available: true });
+  });
+
+  test("numbers typed in by hand are never overwritten", async () => {
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, terrestrialStation);
+    const row = await onlyRow(t);
+    await t.run(async (ctx) => ctx.db.patch(row._id, { status: "accepted", lat: 40, lon: -96, rangeMiles: 20 }));
+    await t.mutation(internal.freightFateStations.recordStationPlacement, {
+      id: row._id,
+      placement: { lat: 42.24, lon: -97.01, rangeMiles: 32, community: "Wayne" },
+      now: NOW,
+    });
+    const after = await onlyRow(t);
+    expect([after.lat, after.lon, after.rangeMiles, after.placement]).toEqual([40, -96, 20, undefined]);
   });
 });
 

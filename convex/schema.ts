@@ -702,11 +702,17 @@ export default defineSchema({
     frequencyMhz: v.optional(v.number()),
     city: v.optional(v.string()),
     state: v.optional(v.string()),
-    // Set by hand from the dashboard after research. All three, or the
-    // station stays everywhere-on-the-dial.
+    // Where the transmitter stands. Filled in from the FCC licence when the
+    // station is accepted (freightFateStationPlacement.ts), or by hand from
+    // the dashboard. All three, or the station stays everywhere-on-the-dial.
     lat: v.optional(v.number()),
     lon: v.optional(v.number()),
     rangeMiles: v.optional(v.number()),
+    // How the transmitter above was found: "fcc" read from the licence,
+    // "not_found" when the FCC lists no such call sign (asked again weekly).
+    // Unset means nobody has asked, or the row was placed by hand.
+    placement: v.optional(v.union(v.literal("fcc"), v.literal("not_found"))),
+    placementCheckedAt: v.optional(v.number()),
     // Whether the shipped catalog could be fetched to check for duplicates
     // when this was suggested; false means the owner should check by hand.
     catalogChecked: v.boolean(),

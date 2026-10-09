@@ -24,6 +24,7 @@ import {
   sameText,
   type ReviewDecision,
 } from "./freightFateReview";
+import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
 import { DAILY_SUGGESTION_LIMIT, refuse, type Refusal } from "./freightFateStationRules";
 
 // Suggestion attempts per driver per minute, counted before the stream is
@@ -210,14 +211,71 @@ export const listCommunityStations = query({
 // -- the nightly re-check -------------------------------------------------------------
 
 export const stationsToRecheck = internalQuery({
-  args: { limit: v.number() },
+  args: { limit: v.number(), now: v.number() },
   handler: async (ctx, args) => {
     // Never-checked rows (lastCheckedAt undefined) sort first, then oldest.
     const rows = await ctx.db
       .query("freightFateStationSuggestions")
       .withIndex("by_status_checked", (q) => q.eq("status", "accepted"))
       .take(args.limit);
-    return rows.map((row) => ({ id: row._id, streamUrl: row.streamUrl }));
+    return rows.map((row) => ({
+      id: row._id,
+      streamUrl: row.streamUrl,
+      needsPlacement: needsPlacement(row, args.now),
+    }));
+  },
+});
+
+/** An accepted AM or FM station with no transmitter yet, not asked about lately. */
+export function needsPlacement(row: Doc<"freightFateStationSuggestions">, now: number) {
+  if (row.kind !== "terrestrial" || !row.callSign || row.lat !== undefined) return false;
+  return row.placement !== "not_found" || now - (row.placementCheckedAt ?? 0) >= PLACEMENT_RETRY_MS;
+}
+
+/** What placeStation needs to ask the FCC, or null when there is nothing to ask. */
+export const stationForPlacement = internalQuery({
+  args: { id: v.id("freightFateStationSuggestions") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    if (!row || row.status !== "accepted" || row.kind !== "terrestrial" || !row.callSign) return null;
+    if (row.lat !== undefined) return null;
+    return { callSign: row.callSign, state: row.state, frequency: row.frequency };
+  },
+});
+
+export const recordStationPlacement = internalMutation({
+  args: {
+    id: v.id("freightFateStationSuggestions"),
+    placement: v.union(
+      v.null(),
+      v.object({
+        lat: v.number(),
+        lon: v.number(),
+        rangeMiles: v.number(),
+        frequencyMhz: v.optional(v.number()),
+        community: v.string(),
+      }),
+    ),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    // A row placed by hand meanwhile keeps the owner's numbers.
+    if (!row || row.lat !== undefined) return;
+    if (!args.placement) {
+      await ctx.db.patch(args.id, { placement: "not_found", placementCheckedAt: args.now });
+      return;
+    }
+    const { lat, lon, rangeMiles, frequencyMhz, community } = args.placement;
+    await ctx.db.patch(args.id, {
+      lat,
+      lon,
+      rangeMiles,
+      frequencyMhz: frequencyMhz ?? row.frequencyMhz,
+      city: row.city ?? (community || undefined),
+      placement: "fcc",
+      placementCheckedAt: args.now,
+    });
   },
 });
 
@@ -362,6 +420,9 @@ export const decideStationSuggestion = internalMutation({
       return { ok: false as const };
     }
     await ctx.db.patch(args.id, { status: args.decision, decidedAt: args.now });
+    if (args.decision === "accepted" && row.kind === "terrestrial" && row.callSign) {
+      await ctx.scheduler.runAfter(0, internal.freightFateStationPlacement.placeStation, { id: args.id });
+    }
     return { ok: true as const, name: row.name, kind: row.kind };
   },
 });
@@ -446,7 +507,7 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     return page(`Declined: ${result.name}`, "<p>It stays off the dial.</p>");
   }
   const next = result.kind === "terrestrial"
-    ? "<p>It is on the dial from players' next launch, heard everywhere for now. Once you know the transmitter, add lat, lon and rangeMiles to its row in the freightFateStationSuggestions table, and it moves to the terrestrial band with real reception.</p>"
+    ? "<p>It is on the dial from players' next launch. Its transmitter is being looked up in the FCC's licence records; once found, it plays on the AM and FM band near home. If the FCC does not list it, it plays everywhere, the way web radio does.</p>"
     : "<p>It is on the dial from players' next launch.</p>";
   return page(`Accepted: ${result.name}`, next);
 });
