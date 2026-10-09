@@ -11,7 +11,7 @@ export default function SuggestAStationPage() {
     <>
       <PageHeader
         title="Suggest a Radio Station"
-        intro="Accepted stations reach every player without a game update."
+        intro="Send a station to the Freight Fate team for review."
       />
       {/* Not wrapped in <Section>: its prose styles would fight the form's own
           spacing, the same call the contact page makes. */}
