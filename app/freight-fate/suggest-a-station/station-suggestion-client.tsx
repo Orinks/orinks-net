@@ -70,7 +70,7 @@ const AFTER: Partial<Record<Field, React.ReactNode>> = {
         rel="noopener noreferrer"
         target="_blank"
       >
-        Find a station&apos;s stream address on StreamURL.link (opens in a new tab)
+        Find a station&apos;s stream address
       </a>
     </p>
   ),
