@@ -103,7 +103,7 @@ describe("GitHub response caching", () => {
 
     await expect(getReleases("Freight-Fate")).resolves.toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.github.com/repos/Orinks/Freight-Fate/releases?per_page=20",
+      "https://api.github.com/repos/orinks-games/Freight-Fate/releases?per_page=20",
       expect.objectContaining({ cache: "no-store" }),
     );
   });
@@ -161,7 +161,7 @@ describe("finding the stable release behind a wall of snapshots", () => {
     draft: false,
     body: "",
     published_at: "2026-09-21T00:00:00Z",
-    html_url: `https://github.com/Orinks/Freight-Fate/releases/tag/${tag}`,
+    html_url: `https://github.com/orinks-games/Freight-Fate/releases/tag/${tag}`,
     assets: [],
   });
 
@@ -174,7 +174,7 @@ describe("finding the stable release behind a wall of snapshots", () => {
       tag_name: "v1.8.8.1",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.github.com/repos/Orinks/Freight-Fate/releases/latest",
+      "https://api.github.com/repos/orinks-games/Freight-Fate/releases/latest",
       expect.objectContaining({ cache: "no-store" }),
     );
   });

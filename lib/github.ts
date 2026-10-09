@@ -52,9 +52,11 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
 };
 
 // Repositories that live under another account. PortkeyDrop was handed to a
-// new maintainer; everything else is still under Orinks.
+// new maintainer and Freight Fate moved to the orinks-games organization;
+// everything else is still under Orinks.
 const repoOwners: Record<string, string> = {
   PortkeyDrop: "Nick6489",
+  "Freight-Fate": "orinks-games",
 };
 
 export function repoSlug(repo: string) {

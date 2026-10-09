@@ -28,7 +28,7 @@ describe("ReleaseDownloads", () => {
 
     expect(markup).toContain("Downloads are temporarily unavailable");
     expect(markup).toContain("Please try again in a few minutes");
-    expect(markup).toContain('href="https://github.com/Orinks/Freight-Fate/releases"');
+    expect(markup).toContain('href="https://github.com/orinks-games/Freight-Fate/releases"');
     expect(markup).not.toContain("403");
     expect(markup).not.toContain('role="status"');
   });
@@ -37,7 +37,7 @@ describe("ReleaseDownloads", () => {
     const baseRelease = {
       assets: [],
       body: "## Changes",
-      html_url: "https://github.com/Orinks/Freight-Fate/releases/tag/test",
+      html_url: "https://github.com/orinks-games/Freight-Fate/releases/tag/test",
       name: "Test release",
       prerelease: false,
       published_at: "2026-07-13T00:00:00Z",
@@ -69,7 +69,7 @@ describe("ReleaseDownloads", () => {
     const asset = (name: string, download_count: number) => ({
       name,
       download_count,
-      browser_download_url: `https://github.com/Orinks/Freight-Fate/releases/download/v1.9.3/${name}`,
+      browser_download_url: `https://github.com/orinks-games/Freight-Fate/releases/download/v1.9.3/${name}`,
     });
 
     getReleaseGroupsMock.mockResolvedValue({
@@ -81,7 +81,7 @@ describe("ReleaseDownloads", () => {
         ],
         body: "",
         body_html: null,
-        html_url: "https://github.com/Orinks/Freight-Fate/releases/tag/v1.9.3",
+        html_url: "https://github.com/orinks-games/Freight-Fate/releases/tag/v1.9.3",
         name: "Freight Fate 1.9.3",
         prerelease: false,
         published_at: "2026-10-07T00:00:00Z",

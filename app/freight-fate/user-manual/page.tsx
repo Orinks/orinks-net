@@ -8,9 +8,9 @@ export const metadata = {
 };
 
 const MANUAL_SOURCE_URL =
-  "https://raw.githubusercontent.com/Orinks/Freight-Fate/main/docs/user-manual.md";
+  "https://raw.githubusercontent.com/orinks-games/Freight-Fate/main/docs/user-manual.md";
 const MANUAL_GITHUB_URL =
-  "https://github.com/Orinks/Freight-Fate/blob/main/docs/user-manual.md";
+  "https://github.com/orinks-games/Freight-Fate/blob/main/docs/user-manual.md";
 
 export default async function UserManualPage() {
   const manualMarkdown = await getManualMarkdown();
