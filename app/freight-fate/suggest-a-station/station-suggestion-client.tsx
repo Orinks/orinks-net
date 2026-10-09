@@ -52,8 +52,21 @@ const LABELS: Record<Exclude<Field, "kind">, string> = {
   note: "Anything else we should know",
 };
 
-const HINTS: Partial<Record<Field, string>> = {
-  streamUrl: "The direct link to the audio stream, often ending in .mp3, .aac, .pls or .m3u. A station's web page will not work.",
+const HINTS: Partial<Record<Field, React.ReactNode>> = {
+  streamUrl: (
+    <>
+      The direct link to the audio stream, often ending in .mp3, .aac, .pls or .m3u. A station&apos;s web page will not
+      work.{" "}
+      <a
+        className="font-semibold text-action underline hover:no-underline"
+        href="https://streamurl.link/"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Find a station&apos;s stream address on StreamURL.link (opens in a new tab)
+      </a>
+    </>
+  ),
   callSign: "Like WXYZ or KABC-FM.",
   frequency: "Like 101.5 or 1090.",
   genre: "Like classic country or news talk.",
