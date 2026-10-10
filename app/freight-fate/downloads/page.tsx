@@ -22,7 +22,7 @@ export default function FreightFateDownloadsPage() {
           so back up your careers before you try it.
         </p>
         <p>
-          <a href="/freight-fate/user-manual">Read the installation instructions in the user manual</a>
+          <a href="/freight-fate/user-manual">Read the Freight Fate player manual</a>
         </p>
       </Section>
       <ReleaseDownloads
