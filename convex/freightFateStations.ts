@@ -128,6 +128,7 @@ export const recordSuggestion = internalMutation({
     streamUrl: v.string(),
     streamKey: v.string(),
     streamFormat: v.string(),
+    streamUnheard: v.optional(v.boolean()),
     genre: v.optional(v.string()),
     note: v.optional(v.string()),
     callSign: v.optional(v.string()),
@@ -280,13 +281,28 @@ export const recordStationPlacement = internalMutation({
 });
 
 export const recordStationCheck = internalMutation({
-  args: { id: v.id("freightFateStationSuggestions"), ok: v.boolean(), now: v.number() },
+  args: {
+    id: v.id("freightFateStationSuggestions"),
+    ok: v.boolean(),
+    format: v.optional(v.string()),
+    now: v.number(),
+  },
   handler: async (ctx, args) => {
     const row = await ctx.db.get(args.id);
     if (!row) return;
+    if (args.ok) {
+      await ctx.db.patch(args.id, {
+        lastCheckedAt: args.now,
+        failedChecks: 0,
+        ...(row.streamUnheard ? { streamUnheard: undefined, streamFormat: args.format ?? row.streamFormat } : {}),
+      });
+      return;
+    }
+    // A stream the check has never heard was accepted on the reviewer's own
+    // listening, so not reaching it from here is no sign it died.
     await ctx.db.patch(args.id, {
       lastCheckedAt: args.now,
-      failedChecks: args.ok ? 0 : (row.failedChecks ?? 0) + 1,
+      failedChecks: row.streamUnheard ? 0 : (row.failedChecks ?? 0) + 1,
     });
   },
 });
@@ -302,6 +318,7 @@ export type StationDigestRow = {
   name: string;
   streamUrl: string;
   streamFormat: string;
+  streamUnheard?: boolean;
   genre: string | null;
   note: string | null;
   callSign: string | null;
@@ -329,6 +346,7 @@ async function digestRow(
     name: row.name,
     streamUrl: row.streamUrl,
     streamFormat: row.streamFormat,
+    streamUnheard: row.streamUnheard ?? false,
     genre: row.genre ?? null,
     note: row.note ?? null,
     callSign: row.callSign ?? null,
@@ -435,7 +453,12 @@ export function stationFacts(row: StationDigestRow) {
   const where = [row.city, row.state].filter(Boolean).join(", ");
   const facts: Array<[string, string]> = [
     ["Type", kind],
-    ["Stream", `${row.streamUrl} (${row.streamFormat})`],
+    [
+      "Stream",
+      row.streamUnheard
+        ? `${row.streamUrl} (did not answer the check; listen before accepting)`
+        : `${row.streamUrl} (${row.streamFormat})`,
+    ],
   ];
   if (row.callSign) facts.push(["Call sign", row.callSign]);
   if (row.frequency) facts.push(["Frequency", row.frequency]);

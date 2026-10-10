@@ -202,6 +202,24 @@ describe("the community station list", () => {
     await t.mutation(internal.freightFateStations.recordStationCheck, { id: row._id, ok: true, now: NOW + 10 });
     expect((await t.query(api.freightFateStations.listCommunityStations, {})).stations).toHaveLength(1);
   });
+
+  test("a stream the check never heard is not dropped for staying out of reach, and is marked heard once it answers", async () => {
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, { ...webStation, streamFormat: "unknown", streamUnheard: true });
+    const row = await onlyRow(t);
+    await t.run(async (ctx) => ctx.db.patch(row._id, { status: "accepted" }));
+    for (let night = 0; night < STATION_DEAD_AFTER + 1; night += 1) {
+      await t.mutation(internal.freightFateStations.recordStationCheck, { id: row._id, ok: false, now: NOW + night });
+    }
+    expect((await t.query(api.freightFateStations.listCommunityStations, {})).stations).toHaveLength(1);
+    await t.mutation(internal.freightFateStations.recordStationCheck, {
+      id: row._id, ok: true, format: "aac", now: NOW + 10,
+    });
+    const heard = await onlyRow(t);
+    expect(heard.streamUnheard).toBeUndefined();
+    expect(heard.streamFormat).toBe("aac");
+  });
 });
 
 describe("placing an accepted AM or FM station", () => {

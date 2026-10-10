@@ -691,6 +691,9 @@ export default defineSchema({
     streamKey: v.string(),
     // What the probe heard: "mp3", "aac", "aac+", "ogg", "flac" or "hls".
     streamFormat: v.string(),
+    // True while the check has never heard the stream: it did not answer the
+    // suggestion's probe, and no nightly re-check has reached it since.
+    streamUnheard: v.optional(v.boolean()),
     genre: v.optional(v.string()),
     note: v.optional(v.string()),
     // Terrestrial only, as the player gave them (normalized). The owner's

@@ -21,6 +21,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
   SUGGESTION_RECEIVED,
+  SUGGESTION_RECEIVED_UNHEARD,
   callSignBase,
   isPublicAddress,
   judgeProbe,
@@ -249,7 +250,7 @@ async function vetAndRecord(
   );
   if (!admitted.ok) return admitted;
 
-  const catalog = await shippedCatalog();
+  const catalog = await shippedCatalog().catch(() => null);
   if (
     catalog &&
     (catalog.streams.has(suggestion.streamKey) ||
@@ -257,21 +258,31 @@ async function vetAndRecord(
   ) {
     return refuse("duplicate_catalog");
   }
-  const probe = await probeStream(suggestion.streamUrl);
-  if (!probe.ok) return refuse(probe.reason);
+  // A stream that does not answer goes to review rather than back to the
+  // player: it may play fine for them and only turn this server away. An
+  // answer that is clearly not a station (a web page, a private address,
+  // something that is not audio) is still refused on the spot.
+  const probe: ProbeResult = await probeStream(suggestion.streamUrl).catch(() => ({
+    ok: false as const,
+    reason: "stream_unreachable" as const,
+  }));
+  if (!probe.ok && probe.reason !== "stream_unreachable") return refuse(probe.reason);
+  const heard = probe.ok;
 
   const recorded: { ok: true } | Refusal = await ctx.runMutation(
     internal.freightFateStations.recordSuggestion,
     {
       ...suggestion,
       driverId: admitted.driverId,
-      streamFormat: probe.format,
+      streamFormat: probe.ok ? probe.format : "unknown",
+      ...(heard ? {} : { streamUnheard: true }),
       catalogChecked: catalog !== null,
       ...(clientVersion ? { clientVersion } : {}),
       now,
     },
   );
-  return recorded.ok ? { ok: true, message: SUGGESTION_RECEIVED } : recorded;
+  if (!recorded.ok) return recorded;
+  return { ok: true, message: heard ? SUGGESTION_RECEIVED : SUGGESTION_RECEIVED_UNHEARD };
 }
 
 /** The game's suggestion, authenticated by the driver token it already holds. */
@@ -311,10 +322,14 @@ export const recheckAcceptedStations = internalAction({
     for (let start = 0; start < rows.length; start += RECHECK_PARALLEL) {
       await Promise.all(
         rows.slice(start, start + RECHECK_PARALLEL).map(async (row) => {
-          const probe = await probeStream(row.streamUrl).catch(() => ({ ok: false as const }));
+          const probe: ProbeResult = await probeStream(row.streamUrl).catch(() => ({
+            ok: false as const,
+            reason: "stream_unreachable" as const,
+          }));
           await ctx.runMutation(internal.freightFateStations.recordStationCheck, {
             id: row.id,
             ok: probe.ok,
+            ...(probe.ok ? { format: probe.format } : {}),
             now: Date.now(),
           });
           // An AM or FM station the FCC lookup missed, or that was accepted

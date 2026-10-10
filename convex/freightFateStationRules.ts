@@ -84,6 +84,12 @@ export function refuse(reason: RefusalReason): Refusal {
 export const SUGGESTION_RECEIVED =
   "Thanks. The stream checked out, and your suggestion is waiting for review.";
 
+// Said when the check could not reach the stream. A stream that plays for the
+// player can still refuse the check's server (a dropped connection, a host
+// that turns away data centres), so the suggestion goes to review anyway.
+export const SUGGESTION_RECEIVED_UNHEARD =
+  "Thanks. We couldn't reach the stream from here, so it will be checked by hand during review.";
+
 // -- stream identity ----------------------------------------------------------
 
 // Ported from normalize_stream_url in the game's ff-core radio.rs, so the
