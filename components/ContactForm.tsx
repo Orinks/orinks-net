@@ -9,30 +9,9 @@ import {
   type ContactValues,
   validateContactSubmission,
 } from "@/lib/contact";
+import { loadTurnstileScript } from "@/components/turnstile";
 
 type Status = "idle" | "submitting" | "sent";
-
-type TurnstileApi = {
-  render: (
-    container: HTMLElement,
-    options: {
-      callback: (token: string) => void;
-      "error-callback": (code?: string) => void;
-      "expired-callback": () => void;
-      sitekey: string;
-      size: "compact" | "flexible" | "normal";
-    },
-  ) => string;
-  reset: (widgetId: string) => void;
-};
-
-declare global {
-  interface Window {
-    turnstile?: TurnstileApi;
-  }
-}
-
-const TURNSTILE_SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 const CAPTCHA_REQUIRED_MESSAGE = "Confirm you are human using the checkbox below, then send again.";
 
@@ -51,36 +30,6 @@ const FIELD_HINTS: Record<ContactField, string> = {
 };
 
 const EMPTY_VALUES: ContactValues = { name: "", email: "", subject: "", message: "" };
-
-/** Loads the Turnstile script once per page, no matter how many callers ask. */
-function loadTurnstileScript(): Promise<void> {
-  if (typeof window === "undefined") {
-    return Promise.resolve();
-  }
-
-  if (window.turnstile) {
-    return Promise.resolve();
-  }
-
-  const existing = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT}"]`);
-
-  if (existing) {
-    return new Promise((resolve, reject) => {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("Turnstile failed to load")));
-    });
-  }
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.async = true;
-    script.defer = true;
-    script.src = TURNSTILE_SCRIPT;
-    script.addEventListener("load", () => resolve());
-    script.addEventListener("error", () => reject(new Error("Turnstile failed to load")));
-    document.head.appendChild(script);
-  });
-}
 
 export function ContactForm({ siteKey }: { siteKey: string }) {
   const [values, setValues] = useState<ContactValues>(EMPTY_VALUES);

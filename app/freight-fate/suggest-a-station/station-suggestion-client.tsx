@@ -3,8 +3,9 @@
 import { useUser } from "@clerk/nextjs";
 import { useAction, useQuery } from "convex/react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
+import { loadTurnstileScript } from "@/components/turnstile";
 import { api } from "@/convex/_generated/api";
 import { STATE_OPTIONS, validateSuggestion } from "@/convex/freightFateStationRules";
 
@@ -81,13 +82,15 @@ const OPTIONAL: Field[] = ["city", "frequency", "genre", "note"];
 const input =
   "mt-2 w-full rounded-md border bg-white px-3 py-3 text-ink focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2";
 
-export function StationSuggestionClient() {
+export function StationSuggestionClient({ siteKey }: { siteKey?: string }) {
   const { isLoaded, isSignedIn } = useUser();
   const driver = useQuery(api.freightFate.getMyDriver, isSignedIn ? {} : "skip");
 
   if (!isLoaded || (isSignedIn && driver === undefined)) {
     return <p role="status">Loading your account…</p>;
   }
+  // Without a driver, the human check stands in for signing in.
+  if (!driver && siteKey) return <StationSuggestionForm siteKey={siteKey} />;
   if (!isSignedIn) {
     return (
       <div className="max-w-2xl space-y-4">
@@ -113,8 +116,10 @@ export function StationSuggestionClient() {
   return <StationSuggestionForm />;
 }
 
-function StationSuggestionForm() {
-  const suggest = useAction(api.freightFateStationVetting.suggestStationSignedIn);
+function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
+  const suggestSignedIn = useAction(api.freightFateStationVetting.suggestStationSignedIn);
+  const suggestAnonymous = useAction(api.freightFateStationVetting.suggestStationAnonymous);
+  const captcha = useHumanCheck(siteKey);
   const [values, setValues] = useState<Values>(EMPTY);
   const [problem, setProblem] = useState<{ field: Field | null; message: string } | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -156,19 +161,32 @@ function StationSuggestionForm() {
       fail(checked.reason, checked.message);
       return;
     }
+    if (siteKey && !captcha.token) {
+      fail(
+        "human_check",
+        captcha.broken
+          ? "The human check could not load, so this can't be sent without signing in."
+          : "Confirm you are human using the checkbox, then send again.",
+      );
+      return;
+    }
     setProblem(null);
     setStatus("checking");
     try {
-      const result = await suggest(form as Record<string, string>);
+      const result = siteKey
+        ? await suggestAnonymous({ ...(form as Record<string, string>), turnstileToken: captcha.token })
+        : await suggestSignedIn(form as Record<string, string>);
       if (result.ok) {
         setSentMessage(result.message);
         setStatus("sent");
         return;
       }
       setStatus("idle");
+      captcha.reset();
       fail(result.reason, result.message);
     } catch {
       setStatus("idle");
+      captcha.reset();
       fail("unreachable", "Your suggestion could not be sent, which usually means the connection dropped. Please try again.");
     }
   }
@@ -347,6 +365,17 @@ function StationSuggestionForm() {
         {textField("genre")}
         {textField("note", true)}
 
+        {siteKey ? (
+          // The widget labels itself; the group gives the error summary
+          // something to name when it is the thing to fix.
+          <div aria-label="Human check" id={`${baseId}-human`} role="group" tabIndex={-1}>
+            <div className="overflow-x-auto" ref={captcha.containerRef} />
+            {captcha.broken ? (
+              <p className="mt-3 font-semibold text-red-900">The human check could not load.</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div>
           <button
             aria-disabled={status === "checking"}
@@ -363,4 +392,49 @@ function StationSuggestionForm() {
       </p>
     </form>
   );
+}
+
+/** Cloudflare's checkbox, for a visitor with no driver to sign in with. */
+function useHumanCheck(siteKey: string | undefined) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<string | null>(null);
+  const [token, setToken] = useState("");
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    if (!siteKey) return;
+    let cancelled = false;
+    loadTurnstileScript()
+      .then(() => {
+        // Strict Mode runs effects twice; the guard keeps one checkbox.
+        if (cancelled || widgetRef.current || !containerRef.current || !window.turnstile) return;
+        widgetRef.current = window.turnstile.render(containerRef.current, {
+          callback: (value) => {
+            setToken(value);
+            setBroken(false);
+          },
+          "error-callback": () => {
+            setToken("");
+            setBroken(true);
+          },
+          "expired-callback": () => setToken(""),
+          sitekey: siteKey,
+          size: "compact",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setBroken(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [siteKey]);
+
+  // Every send spends the token, so the checkbox starts over after a refusal.
+  const reset = useCallback(() => {
+    setToken("");
+    if (widgetRef.current && window.turnstile) window.turnstile.reset(widgetRef.current);
+  }, []);
+
+  return { containerRef, token, broken, reset };
 }

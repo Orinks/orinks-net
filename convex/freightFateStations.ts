@@ -25,12 +25,20 @@ import {
   type ReviewDecision,
 } from "./freightFateReview";
 import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
-import { DAILY_SUGGESTION_LIMIT, refuse, type Refusal } from "./freightFateStationRules";
+import {
+  ANONYMOUS_DAILY_LIMIT,
+  ANONYMOUS_SUGGESTER,
+  DAILY_SUGGESTION_LIMIT,
+  refuse,
+  type Refusal,
+} from "./freightFateStationRules";
 
 // Suggestion attempts per driver per minute, counted before the stream is
 // probed, so a refused probe still costs one. The daily limit counts only
 // suggestions that were stored.
 export const STATION_SUGGEST_WRITE_LIMIT = 2;
+// The same, shared by every visitor who is not signed in.
+export const ANONYMOUS_SUGGEST_WRITE_LIMIT = 6;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Nightly checks an accepted stream may fail in a row before it leaves the
@@ -88,11 +96,31 @@ export const admitSuggestion = internalMutation({
     driverId: v.optional(v.string()),
     driverTokenHash: v.optional(v.string()),
     authSubject: v.optional(v.string()),
+    // Someone not signed in, who has already passed the human check.
+    anonymous: v.optional(v.boolean()),
     streamKey: v.string(),
     callSignBase: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args): Promise<{ ok: true; driverId: string } | Refusal> => {
+    if (args.anonymous) {
+      const allowed = await consumeFreightFateWrite(ctx, {
+        scope: "station-suggest",
+        driverId: ANONYMOUS_SUGGESTER,
+        now: args.now,
+        limit: ANONYMOUS_SUGGEST_WRITE_LIMIT,
+      });
+      if (!allowed) return refuse("rate_limited");
+      const today = await ctx.db
+        .query("freightFateStationSuggestions")
+        .withIndex("by_driver_created", (q) =>
+          q.eq("driverId", ANONYMOUS_SUGGESTER).gt("createdAt", args.now - DAY_MS))
+        .take(ANONYMOUS_DAILY_LIMIT);
+      if (today.length >= ANONYMOUS_DAILY_LIMIT) return refuse("anonymous_limit");
+      const duplicate = await findDuplicate(ctx, args.streamKey, args.callSignBase);
+      if (duplicate) return duplicate;
+      return { ok: true, driverId: ANONYMOUS_SUGGESTER };
+    }
     const driver = await suggestingDriver(ctx, args);
     if (!driver) return refuse("driver_not_found");
     const allowed = await consumeFreightFateWrite(ctx, {
@@ -465,7 +493,10 @@ export function stationFacts(row: StationDigestRow) {
   if (where) facts.push(["Where", where]);
   if (row.genre) facts.push(["Format", row.genre]);
   if (row.note) facts.push(["Note", row.note]);
-  facts.push(["Suggested by", `${row.displayName} (${row.driverId})`]);
+  facts.push([
+    "Suggested by",
+    row.driverId === ANONYMOUS_SUGGESTER ? "Someone not signed in" : `${row.displayName} (${row.driverId})`,
+  ]);
   if (!row.catalogChecked) {
     facts.push(["Dial check", "The shipped station list could not be read; check it is not already on the dial."]);
   }

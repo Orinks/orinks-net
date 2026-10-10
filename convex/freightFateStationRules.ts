@@ -49,6 +49,12 @@ export const MAX_NOTE_LENGTH = 280;
 // a station now and then; anything past this is a script, and every one
 // still lands in the owner's inbox.
 export const DAILY_SUGGESTION_LIMIT = 5;
+// Suggestions from visitors who are not signed in, all of them together. They
+// pass a human check first; this keeps a determined one from filling the
+// owner's review email.
+export const ANONYMOUS_DAILY_LIMIT = 20;
+/** The driverId a suggestion from someone not signed in is stored under. */
+export const ANONYMOUS_SUGGESTER = "not-signed-in";
 
 export const REFUSALS = {
   invalid_kind: "Choose whether the station broadcasts on AM or FM, or plays only online.",
@@ -69,6 +75,8 @@ export const REFUSALS = {
   duplicate_suggestion: "That station has already been suggested.",
   already_declined: "That station was already suggested and turned down.",
   daily_limit: "That's all the suggestions for today. Try again tomorrow.",
+  anonymous_limit: "That's all the suggestions without signing in for today. Sign in, or try again tomorrow.",
+  human_check: "Confirm you are human using the checkbox, then send again.",
   rate_limited: "One moment, then try again.",
   unauthorized: "Your driver isn't signed in on this computer.",
   driver_not_found: "Your driver isn't signed in on this computer.",

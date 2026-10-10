@@ -236,7 +236,7 @@ type SuggestResult = { ok: true; message: string } | Refusal;
 
 async function vetAndRecord(
   ctx: ActionCtx,
-  who: { driverId?: string; driverTokenHash?: string; authSubject?: string },
+  who: { driverId?: string; driverTokenHash?: string; authSubject?: string; anonymous?: boolean },
   input: StationSuggestionInput,
   clientVersion: string | undefined,
 ): Promise<SuggestResult> {
@@ -306,6 +306,40 @@ export const suggestStationSignedIn = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return refuse("driver_not_found");
     return vetAndRecord(ctx, { authSubject: identity.subject }, args, undefined);
+  },
+});
+
+const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+/** Cloudflare's answer on the site form's human check; false when it can't be had. */
+async function humanCheckPassed(token: string, secret: string) {
+  try {
+    const response = await fetch(TURNSTILE_VERIFY_URL, {
+      method: "POST",
+      body: new URLSearchParams({ response: token, secret }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return false;
+    const result = (await response.json()) as { success?: boolean };
+    return result.success === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The site form's suggestion from a visitor who is not signed in. The human
+ * check stands in for the driver's sign-in, and every such visitor shares one
+ * daily allowance (admitSuggestion), so the review email stays readable.
+ */
+export const suggestStationAnonymous = action({
+  args: { turnstileToken: v.string(), ...formArgs },
+  handler: async (ctx, args): Promise<SuggestResult> => {
+    const { turnstileToken, ...form } = args;
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (!secret) return refuse("not_configured");
+    if (!turnstileToken || !(await humanCheckPassed(turnstileToken, secret))) return refuse("human_check");
+    return vetAndRecord(ctx, { anonymous: true }, form, undefined);
   },
 });
 

@@ -7,6 +7,8 @@ export const metadata = {
 };
 
 export default function SuggestAStationPage() {
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
   return (
     <>
       <PageHeader
@@ -17,7 +19,7 @@ export default function SuggestAStationPage() {
           spacing, the same call the contact page makes. */}
       <section className="py-8">
         <FreightFateOnlineProviders>
-          <StationSuggestionClient />
+          <StationSuggestionClient siteKey={siteKey} />
         </FreightFateOnlineProviders>
       </section>
     </>
