@@ -91,7 +91,29 @@ export function StationSuggestionClient({ siteKey }: { siteKey?: string }) {
     return <p role="status">Loading your account…</p>;
   }
   // Without a driver, the human check stands in for signing in.
-  if (!driver && siteKey && anonymousOpen) return <StationSuggestionForm siteKey={siteKey} />;
+  if (!driver && siteKey && anonymousOpen) {
+    return (
+      <>
+        <div className="mb-8 max-w-2xl space-y-3">
+          {isSignedIn ? (
+            <p className="text-slate-700">
+              Have a driver?{" "}
+              <Link className="font-semibold text-action underline" href="/freight-fate/online/setup">
+                Connect it on the online setup page
+              </Link>{" "}
+              first.
+            </p>
+          ) : (
+            <>
+              <p className="text-slate-700">Have a driver? Sign in with its account first.</p>
+              <AccountControls />
+            </>
+          )}
+        </div>
+        <StationSuggestionForm siteKey={siteKey} />
+      </>
+    );
+  }
   if (!isSignedIn) {
     return (
       <div className="max-w-2xl space-y-4">
