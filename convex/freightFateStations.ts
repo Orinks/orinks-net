@@ -221,6 +221,16 @@ export function communityStationRow(row: Doc<"freightFateStationSuggestions">): 
 }
 
 /** Every accepted station whose stream still answers, oldest first. */
+/**
+ * Whether a visitor who is not signed in can suggest: the human check needs
+ * its secret in this deployment's environment, so the site form offers the
+ * signed-out path only once it is there.
+ */
+export const anonymousSuggestionsOpen = query({
+  args: {},
+  handler: async () => Boolean(process.env.TURNSTILE_SECRET_KEY),
+});
+
 export const listCommunityStations = query({
   args: {},
   handler: async (ctx) => {

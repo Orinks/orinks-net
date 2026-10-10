@@ -85,12 +85,13 @@ const input =
 export function StationSuggestionClient({ siteKey }: { siteKey?: string }) {
   const { isLoaded, isSignedIn } = useUser();
   const driver = useQuery(api.freightFate.getMyDriver, isSignedIn ? {} : "skip");
+  const anonymousOpen = useQuery(api.freightFateStations.anonymousSuggestionsOpen, siteKey ? {} : "skip");
 
-  if (!isLoaded || (isSignedIn && driver === undefined)) {
+  if (!isLoaded || (isSignedIn && driver === undefined) || (siteKey && anonymousOpen === undefined)) {
     return <p role="status">Loading your account…</p>;
   }
   // Without a driver, the human check stands in for signing in.
-  if (!driver && siteKey) return <StationSuggestionForm siteKey={siteKey} />;
+  if (!driver && siteKey && anonymousOpen) return <StationSuggestionForm siteKey={siteKey} />;
   if (!isSignedIn) {
     return (
       <div className="max-w-2xl space-y-4">

@@ -125,3 +125,10 @@ describe("suggesting without signing in", () => {
     });
   });
 });
+
+test("the signed-out form is offered only once the human check has its secret", async () => {
+  const t = convexTest(schema, modules);
+  expect(await t.query(api.freightFateStations.anonymousSuggestionsOpen, {})).toBe(true);
+  vi.stubEnv("TURNSTILE_SECRET_KEY", "");
+  expect(await t.query(api.freightFateStations.anonymousSuggestionsOpen, {})).toBe(false);
+});
