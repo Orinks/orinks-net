@@ -14,37 +14,37 @@ type Feature = {
 const features: Feature[] = [
   {
     title: "Hear the road",
-    body: "The engine sound pans toward the side you need to steer, the road noise tells you where you sit in your lane, and a GPS warns you of bends, grades and speed-limit drops before you reach them. Take your exit and slow down the ramp.",
+    body: "Listen to the engine for steering guidance and the road noise for your position in the lane. The GPS warns you about bends, grades, and lower speed limits ahead, giving you time to slow down before a curve or exit ramp.",
     points: [
-      "Ten gears, manual with a clutch or automatic, and a three-stage engine brake",
-      "Real lane counts, exit ramps at their real lengths, and city streets to the dock",
-      "Loads that shift in a fast bend, and tankers that slosh",
+      "Drive a ten-speed manual with a clutch or use an automatic. A three-stage engine brake helps on descents.",
+      "Follow mapped lane counts, ramp lengths, and city streets to the dock.",
+      "Take bends carefully: cargo can shift, and liquid loads slosh in a tanker.",
     ],
   },
   {
-    title: "Cross a real America",
-    body: "More than 600 cities, each with its own ports, rail ramps, farms and plants to load at. Speed limits follow each state's truck law, the weather can come live from the National Weather Service, and road work comes from real state reports.",
+    title: "Drive across America",
+    body: "Haul freight between more than 600 cities, with pickups at ports, rail ramps, farms, and plants. Truck speed limits follow state laws. You can use live National Weather Service reports and road work reported by the states.",
     points: [
-      "Truck stops with meals, showers, repairs and loyalty points",
-      "Weigh stations, CAT scales, and chain laws on the western grades",
-      "Thousands of roadside billboards, state welcome signs and real roadside attractions",
+      "Stop for a meal, shower, or repair, and earn loyalty points at truck stops.",
+      "Check your weight at CAT scales, pull into weigh stations, and follow chain laws on western grades.",
+      "Hear thousands of roadside billboards, state welcome signs, and real attractions along the way.",
     ],
   },
   {
     title: "Build a career",
-    body: "Start as a company driver or buy in as an owner-operator. Earn your endorsements, take loads from the dispatch board, and keep your hours legal. Troopers and inspectors are on the road, and your driving record follows you to the carrier and the insurer.",
+    body: "Start with a company truck or pay the bills as an owner-operator. Endorsements open new freight on the dispatch board. Plan rest around your legal hours; troopers and inspectors can stop you, and your record affects your carrier and insurance.",
   },
   {
     title: "Driving assists",
-    body: "Assists can hold your lane, take bends and exits, and stop you at the dock. Turn on as many or as few as you like.",
+    body: "Choose how much of the drive you want to handle yourself. Assistance can keep you in your lane, guide you through bends and exits, and stop at the dock. Adjust each assist as you learn.",
   },
   {
     title: "Tune in across the country",
-    body: "Thousands of real radio stations come in and fade out as you drive, next to Freight Fate's own stations of original songs. Play your own music from a playlist, or switch to music the game composes as you go.",
+    body: "Tune into thousands of real radio stations that come into range and fade as you travel. Freight Fate also has its own stations with original songs. Bring a personal playlist or listen to music the game composes as you drive.",
   },
   {
     title: "Made for screen readers",
-    body: "Every screen speaks through your screen reader, including NVDA, JAWS, VoiceOver and Orca, with Speech Dispatcher on Linux, and every spoken line also appears as text. Play from the keyboard or a controller, move any driving control to another key, follow along on a braille display, and learn every sound in the game before you meet it on the road.",
+    body: "Menus and driving information work with NVDA, JAWS, VoiceOver, Orca, and Speech Dispatcher on Linux. Spoken messages also appear as text. Use a keyboard or controller and reassign supported driving controls. NVDA and JAWS can send messages to a braille display. Learn game sounds lets you hear each cue and its explanation before driving.",
   },
 ];
 
@@ -65,7 +65,7 @@ export function FreightFateIntro({ project }: FreightFateLandingProps) {
       <div className="flex flex-wrap gap-3 pt-8">
         <ButtonLink href="/freight-fate/downloads">Downloads</ButtonLink>
         <ButtonLink href="/freight-fate/user-manual" variant="secondary">
-          User manual
+          Player manual
         </ButtonLink>
       </div>
       <Section>

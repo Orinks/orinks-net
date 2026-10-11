@@ -70,7 +70,7 @@ export const freightFate: ProjectPage = {
   title: "Freight Fate",
   tagline: "An audio trucking game for blind and visually impaired players.",
   summary:
-    "An audio trucking game for blind and visually impaired players. Haul freight between more than 600 American cities in a Class 8 truck, on highways and streets built from real maps, and build a career from your first load.",
+    "Freight Fate is an audio trucking game for blind and visually impaired players. Drive a Class 8 truck between more than 600 American cities on mapped highways and streets. Take your first load and build a trucking career.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [
