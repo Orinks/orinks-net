@@ -9,7 +9,17 @@ export async function GET() {
       return NextResponse.json({ error: "Convex is not configured.", durable: false }, { status: 503 });
     }
 
-    return NextResponse.json({ ...counts, durable: true });
+    // Read side only: a short CDN cache is enough for a visitor counter. The POST
+    // below is never cached and always returns fresh counts.
+    return NextResponse.json(
+      { ...counts, durable: true },
+      {
+        headers: {
+          "cache-control": "public, max-age=0, must-revalidate",
+          "vercel-cdn-cache-control": "max-age=60, stale-while-revalidate=60",
+        },
+      },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Convex error";
 
