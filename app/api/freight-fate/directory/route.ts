@@ -9,9 +9,7 @@ export const runtime = "nodejs";
 // kind of one-minute snapshot for the same reason: a player opening the
 // directory costs the backend nothing a browser visiting the page did not
 // already pay for. `no-store` keeps clients from holding a copy past that
-// minute; the snapshot is what keeps the backend cost flat. Vercel's own CDN
-// may reuse a reply for sixty seconds, so game clients share one function
-// call per region instead of making one each.
+// minute; the snapshot is what keeps the backend cost flat.
 export async function GET() {
   const directory = await getFreightFateDriverDirectorySnapshot();
 
@@ -20,9 +18,6 @@ export async function GET() {
   }
 
   return NextResponse.json(directory, {
-    headers: {
-      "cache-control": "no-store",
-      "vercel-cdn-cache-control": "max-age=60",
-    },
+    headers: { "cache-control": "no-store" },
   });
 }
