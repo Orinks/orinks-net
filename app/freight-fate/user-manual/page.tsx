@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 const MANUAL_SOURCE_URL =
-  "https://raw.githubusercontent.com/orinks-games/Freight-Fate/main/docs/user-manual.md";
+  "https://raw.githubusercontent.com/orinks-games/Freight-Fate/main/docs/user-manual.md?revision=ef62cdb5";
 const MANUAL_GITHUB_URL =
   "https://github.com/orinks-games/Freight-Fate/blob/main/docs/user-manual.md";
 
