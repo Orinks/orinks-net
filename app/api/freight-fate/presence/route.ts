@@ -23,9 +23,9 @@ export async function POST(request: Request) {
 // decides: read from the shared snapshot rather than the backend, or a single
 // impatient poller costs a backend query per request. `no-store` still stops
 // the game and browsers holding a roster past its stamp. Vercel's own CDN may
-// reuse a reply for thirty seconds, so the games polling the board share one
+// reuse a reply for sixty seconds, so the games polling the board share one
 // function call per region instead of making one each; the board is already a
-// sixty-second snapshot, so that adds at most half a poll of age.
+// sixty-second snapshot, so that adds up to one more snapshot of age.
 export async function GET() {
   const board = await getFreightFatePresenceBoardSnapshot();
 
@@ -36,7 +36,7 @@ export async function GET() {
   return NextResponse.json(board, {
     headers: {
       "cache-control": "no-store",
-      "vercel-cdn-cache-control": "max-age=30",
+      "vercel-cdn-cache-control": "max-age=60",
     },
   });
 }
