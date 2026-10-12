@@ -102,6 +102,27 @@ describe("suggesting stations picked from a playlist", () => {
     expect(rows.every((row) => row.kind === "web" && row.genre === "Trance")).toBe(true);
   });
 
+  test("a driver named as unlimited is held to no daily allowance", async () => {
+    vi.stubEnv("FREIGHT_FATE_UNLIMITED_SUGGESTERS", "someone-else, treehouse-1");
+    const t = convexTest(schema, modules);
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "treehouse-1",
+        displayName: "Treehouse",
+        visibility: "public",
+        authSubject: SUBJECT,
+        driverTokenHash: "b".repeat(64),
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    });
+    const stations = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `Pick ${n}`, streamUrl: `http://s${n}.example/live` }));
+    const result = await t
+      .withIdentity({ subject: SUBJECT })
+      .action(api.freightFateStationVetting.suggestListedStationsSignedIn, { stations });
+    expect(result.ok && result.results.every((r) => r.ok)).toBe(true);
+  });
+
   test("a signed-out send needs the human check", async () => {
     const t = convexTest(schema, modules);
     humanCheckPasses = false;
