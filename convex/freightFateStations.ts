@@ -6,10 +6,11 @@
 // form, asks admitSuggestion whether this driver may suggest it at all (signed
 // in, under the limits, not a stream already suggested), probes the stream
 // and the shipped catalog, then recordSuggestion stores it as pending. The
-// daily station digest emails one Accept and one Decline link per pending
-// suggestion; the pages here answer those links the same way the career
-// review pages do (a link only opens a page, the decision is a POST from it).
-import { httpAction, internalMutation, internalQuery, query } from "./_generated/server";
+// daily station digest emails one link to the site's review page, where the
+// owner ticks stations and accepts or declines them together
+// (reviewStationBatch, decideStationBatch). The pages at the bottom answer the
+// per-station links older digests carried, until those expire.
+import { action, httpAction, internalMutation, internalQuery, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
@@ -507,6 +508,18 @@ export const getStationReviewRow = internalQuery({
   },
 });
 
+async function decide(
+  ctx: MutationCtx,
+  row: Doc<"freightFateStationSuggestions">,
+  decision: ReviewDecision,
+  now: number,
+) {
+  await ctx.db.patch(row._id, { status: decision, decidedAt: now });
+  if (decision === "accepted" && row.kind === "terrestrial" && row.callSign) {
+    await ctx.scheduler.runAfter(0, internal.freightFateStationPlacement.placeStation, { id: row._id });
+  }
+}
+
 export const decideStationSuggestion = internalMutation({
   args: {
     id: v.id("freightFateStationSuggestions"),
@@ -519,11 +532,114 @@ export const decideStationSuggestion = internalMutation({
     if (!row || row.status !== "pending" || row.createdAt !== args.createdAt) {
       return { ok: false as const };
     }
-    await ctx.db.patch(args.id, { status: args.decision, decidedAt: args.now });
-    if (args.decision === "accepted" && row.kind === "terrestrial" && row.callSign) {
-      await ctx.scheduler.runAfter(0, internal.freightFateStationPlacement.placeStation, { id: args.id });
-    }
+    await decide(ctx, row, args.decision, args.now);
     return { ok: true as const, name: row.name, kind: row.kind };
+  },
+});
+
+// -- the review page's link -------------------------------------------------------------
+
+// One link per digest, good for every suggestion that was pending when it was
+// signed. "stations" leads the signed body so neither kind of single-decision
+// token can be replayed as one.
+type BatchClaim = { issuedAt: number; expiresAt: number };
+
+/** The most stations one decision covers; the page sends what is ticked. */
+export const MAX_BATCH_DECISION = 200;
+
+export async function signStationBatch(claim: BatchClaim) {
+  const secret = reviewSecret();
+  if (!secret) return null;
+  const body = ["stations", claim.issuedAt, claim.expiresAt].join(".");
+  return `${body}.${await hmacHex(secret, body)}`;
+}
+
+export async function verifyStationBatch(token: string, now: number): Promise<BatchClaim | null> {
+  const secret = reviewSecret();
+  if (!secret) return null;
+  const parts = token.split(".");
+  if (parts.length !== 4 || parts[0] !== "stations") return null;
+  const [, issued, expires, mac] = parts;
+  const body = ["stations", issued, expires].join(".");
+  if (!sameText(mac, await hmacHex(secret, body))) return null;
+  const issuedAt = Number(issued);
+  const expiresAt = Number(expires);
+  if (!Number.isFinite(issuedAt) || !Number.isFinite(expiresAt) || expiresAt < now) return null;
+  return { issuedAt, expiresAt };
+}
+
+export type ReviewStation = {
+  id: Id<"freightFateStationSuggestions">;
+  name: string;
+  streamUrl: string;
+  facts: Array<[string, string]>;
+};
+
+export const pendingStationsFor = internalQuery({
+  args: { issuedAt: v.number() },
+  handler: async (ctx, args) => {
+    const pending = await ctx.db
+      .query("freightFateStationSuggestions")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+    const stations: ReviewStation[] = [];
+    for (const row of pending) {
+      if (row.createdAt > args.issuedAt) continue;
+      const digest = await digestRow(ctx, row);
+      stations.push({ id: row._id, name: row.name, streamUrl: row.streamUrl, facts: stationFacts(digest) });
+    }
+    return stations.sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
+export const decideStations = internalMutation({
+  args: {
+    ids: v.array(v.id("freightFateStationSuggestions")),
+    decision: v.union(v.literal("accepted"), v.literal("declined")),
+    issuedAt: v.number(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const decided: Array<Id<"freightFateStationSuggestions">> = [];
+    for (const id of args.ids.slice(0, MAX_BATCH_DECISION)) {
+      const row = await ctx.db.get(id);
+      if (!row || row.status !== "pending" || row.createdAt > args.issuedAt) continue;
+      await decide(ctx, row, args.decision, args.now);
+      decided.push(id);
+    }
+    return decided;
+  },
+});
+
+/** What the review page lists: every suggestion its link covers that still waits. */
+export const reviewStationBatch = action({
+  args: { token: v.string() },
+  handler: async (ctx, args): Promise<{ ok: false } | { ok: true; stations: ReviewStation[] }> => {
+    const claim = await verifyStationBatch(args.token, Date.now());
+    if (!claim) return { ok: false };
+    const stations: ReviewStation[] = await ctx.runQuery(internal.freightFateStations.pendingStationsFor, {
+      issuedAt: claim.issuedAt,
+    });
+    return { ok: true, stations };
+  },
+});
+
+/** Accepts or declines the ticked stations; answers with the ones it decided. */
+export const decideStationBatch = action({
+  args: {
+    token: v.string(),
+    ids: v.array(v.id("freightFateStationSuggestions")),
+    decision: v.union(v.literal("accepted"), v.literal("declined")),
+  },
+  handler: async (ctx, args): Promise<{ ok: false } | { ok: true; decided: Array<Id<"freightFateStationSuggestions">> }> => {
+    const now = Date.now();
+    const claim = await verifyStationBatch(args.token, now);
+    if (!claim) return { ok: false };
+    const decided: Array<Id<"freightFateStationSuggestions">> = await ctx.runMutation(
+      internal.freightFateStations.decideStations,
+      { ids: args.ids, decision: args.decision, issuedAt: claim.issuedAt, now },
+    );
+    return { ok: true, decided };
   },
 });
 

@@ -123,7 +123,7 @@ export function StationListPicker({
 }
 
 /** One station playing at a time, through the site, for twenty-five seconds. */
-function usePreview() {
+export function usePreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState<number | null>(null);
