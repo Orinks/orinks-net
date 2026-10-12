@@ -71,6 +71,7 @@ export const REFUSALS = {
   stream_unreachable: "That stream didn't answer. Check the address and try again.",
   stream_web_page: "That address is a web page, not a stream. Look for the station's direct stream link.",
   stream_not_audio: "That address answered, but not with audio the radio can play.",
+  stream_station_list: "That address is a list of several stations. Suggest each station with its own stream address.",
   duplicate_catalog: "That station is already on the dial.",
   duplicate_suggestion: "That station has already been suggested.",
   already_declined: "That station was already suggested and turned down.",
@@ -255,6 +256,7 @@ export type ProbeVerdict =
   | { verdict: "audio"; format: string }
   | { verdict: "hls" }
   | { verdict: "playlist"; next: string | null }
+  | { verdict: "station_list" }
   | { verdict: "web_page" }
   | { verdict: "not_audio" };
 
@@ -280,12 +282,50 @@ function sniffBytes(bytes: Uint8Array) {
   return null;
 }
 
-function firstPlaylistEntry(text: string) {
-  for (const line of text.split(/\r?\n/)) {
-    const entry = line.replace(/^File\d+=/i, "").trim();
-    if (/^https?:\/\//i.test(entry)) return entry;
+/** Each stream a playlist names, with the title it gives it, in order. */
+function playlistEntries(text: string) {
+  const entries: Array<{ url: string; title: string }> = [];
+  const plsTitles = new Map<string, string>();
+  let extinf = "";
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    const title = /^Title(\d+)=(.*)$/i.exec(line);
+    if (title) plsTitles.set(title[1], title[2].trim());
+    if (/^#EXTINF:/i.test(line)) extinf = line.replace(/^#EXTINF:[^,]*,?/i, "").trim();
+    const file = /^File(\d+)=(.*)$/i.exec(line);
+    const url = file ? file[2].trim() : line;
+    if (/^https?:\/\//i.test(url)) {
+      entries.push({ url, title: file ? `pls:${file[1]}` : extinf });
+      extinf = "";
+    }
   }
-  return null;
+  return entries.map((entry) =>
+    entry.title.startsWith("pls:") ? { ...entry, title: plsTitles.get(entry.title.slice(4)) ?? "" } : entry,
+  );
+}
+
+/**
+ * Whether a playlist names more than one station. A station's own playlist
+ * often lists several servers carrying one mount, so entries count as one
+ * station when they share a path, or when every entry carries the same title.
+ * The game only ever plays the first entry, so the rest of a list of stations
+ * would never be heard.
+ */
+function namesSeveralStations(entries: Array<{ url: string; title: string }>) {
+  if (entries.length < 2) return false;
+  const titles = new Set(entries.map((entry) => entry.title.toLowerCase()));
+  if (titles.size === 1 && !titles.has("")) return false;
+  const paths = new Set(
+    entries.map((entry) => {
+      try {
+        const url = new URL(entry.url);
+        return `${url.pathname.replace(/[/;]+$/, "").toLowerCase()}${url.search}`;
+      } catch {
+        return entry.url;
+      }
+    }),
+  );
+  return paths.size > 1;
 }
 
 /** What the first bytes of a reply say it is. */
@@ -299,7 +339,9 @@ export function judgeProbe(contentType: string, bytes: Uint8Array): ProbeVerdict
     /^#EXTM3U/.test(trimmed) ||
     /^\[playlist\]/i.test(trimmed)
   ) {
-    return { verdict: "playlist", next: firstPlaylistEntry(text) };
+    const entries = playlistEntries(text);
+    if (namesSeveralStations(entries)) return { verdict: "station_list" };
+    return { verdict: "playlist", next: entries[0]?.url ?? null };
   }
   if (type === "text/html" || /^<!doctype html|^<html/i.test(trimmed)) return { verdict: "web_page" };
   for (const [pattern, format] of CONTENT_TYPE_FORMATS) {

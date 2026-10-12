@@ -47,7 +47,10 @@ const PROBE_USER_AGENT = "FreightFate-StationCheck/1 (+https://orinks.net/freigh
 
 export type ProbeResult =
   | { ok: true; format: string }
-  | { ok: false; reason: "stream_address_blocked" | "stream_unreachable" | "stream_web_page" | "stream_not_audio" };
+  | {
+      ok: false;
+      reason: "stream_address_blocked" | "stream_unreachable" | "stream_web_page" | "stream_not_audio" | "stream_station_list";
+    };
 
 type RawReply = { status: number; headers: Map<string, string>; body: Uint8Array };
 
@@ -172,6 +175,8 @@ export async function probeWith(
         // station's playlist ever needs, and it must lead to real audio.
         if (!verdict.next || depth > 0) return { ok: false, reason: "stream_not_audio" };
         return probeWith(verdict.next, resolve, depth + 1, deadline);
+      case "station_list":
+        return { ok: false, reason: "stream_station_list" };
       case "web_page":
         return { ok: false, reason: "stream_web_page" };
       default:
