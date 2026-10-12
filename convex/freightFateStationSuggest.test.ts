@@ -22,16 +22,20 @@ const modules = import.meta.glob("./**/*.ts");
 const SUBJECT = "user_2suggestTest";
 
 let humanCheckPasses = true;
+let sentSecrets: string[] = [];
 
 beforeEach(() => {
   humanCheckPasses = true;
+  sentSecrets = [];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: string) =>
-      String(url).includes("challenges.cloudflare.com")
-        ? Response.json({ success: humanCheckPasses })
-        : new Response("", { status: 503 }),
-    ),
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (!String(url).includes("challenges.cloudflare.com")) return new Response("", { status: 503 });
+      const secret = new URLSearchParams(String(init?.body)).get("secret") ?? "";
+      sentSecrets.push(secret);
+      if (secret !== "secret") return Response.json({ success: false, "error-codes": ["invalid-input-secret"] });
+      return Response.json({ success: humanCheckPasses });
+    }),
   );
   vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
 });
@@ -95,6 +99,22 @@ describe("suggesting without signing in", () => {
       reason: "human_check",
     });
     vi.stubEnv("TURNSTILE_SECRET_KEY", "");
+    expect(await anonymous(t, "Treehouse Radio", "http://s6.autopo.st:8515/live")).toMatchObject({
+      ok: false,
+      reason: "not_configured",
+    });
+  });
+
+  test("passes the human check with a secret copied in with its quotes and a written-out newline", async () => {
+    const t = convexTest(schema, modules);
+    vi.stubEnv("TURNSTILE_SECRET_KEY", '"secret\\n"');
+    expect(await anonymous(t, "Treehouse Radio", "http://s6.autopo.st:8515/live")).toMatchObject({ ok: true });
+    expect(sentSecrets).toEqual(["secret"]);
+  });
+
+  test("blames the site, not the visitor, when Cloudflare refuses the secret", async () => {
+    const t = convexTest(schema, modules);
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "not-the-secret");
     expect(await anonymous(t, "Treehouse Radio", "http://s6.autopo.st:8515/live")).toMatchObject({
       ok: false,
       reason: "not_configured",
