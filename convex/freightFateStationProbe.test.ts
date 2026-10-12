@@ -26,6 +26,11 @@ function reply(path: string, port: number) {
         head("HTTP/1.1 200 OK", ["Content-Type: audio/x-scpls"]),
         Buffer.from(`[playlist]\nFile1=http://stream.test:${port}/loop.pls\n`),
       ]);
+    case "/list.m3u":
+      return Buffer.concat([
+        head("HTTP/1.1 200 OK", ["Content-Type: audio/x-mpegurl"]),
+        Buffer.from(`#EXTM3U\n#EXTINF:-1,One\nhttp://stream.test:${port}/icy\n#EXTINF:-1,Two\nhttp://stream.test:${port}/live\n`),
+      ]);
     case "/page":
       return Buffer.concat([head("HTTP/1.1 200 OK", ["Content-Type: text/html"]), Buffer.from("<!doctype html><p>Listen live!</p>")]);
     case "/short":
@@ -60,14 +65,25 @@ const probe = (path: string) => probeWith(`http://stream.test:${port}${path}`, l
 
 describe("probeStream", () => {
   test("hears a Shoutcast v1 server and a plain HTTP stream", async () => {
-    expect(await probe("/icy")).toEqual({ ok: true, format: "mp3" });
+    expect(await probe("/icy")).toEqual({ ok: true, format: "mp3", name: "Test" });
     expect(await probe("/live")).toEqual({ ok: true, format: "aac+" });
   });
 
   test("follows a redirect and a playlist one level", async () => {
     expect(await probe("/moved")).toEqual({ ok: true, format: "aac+" });
-    expect(await probe("/station.pls")).toEqual({ ok: true, format: "mp3" });
+    expect(await probe("/station.pls")).toEqual({ ok: true, format: "mp3", name: "Test" });
     expect(await probe("/loop.pls")).toEqual({ ok: false, reason: "stream_not_audio" });
+  });
+
+  test("hands back the stations a playlist of several lists", async () => {
+    expect(await probe("/list.m3u")).toEqual({
+      ok: false,
+      reason: "stream_station_list",
+      stations: [
+        { name: "One", streamUrl: `http://stream.test:${port}/icy` },
+        { name: "Two", streamUrl: `http://stream.test:${port}/live` },
+      ],
+    });
   });
 
   test("names what went wrong", async () => {

@@ -72,6 +72,10 @@ export const REFUSALS = {
   stream_web_page: "That address is a web page, not a stream. Look for the station's direct stream link.",
   stream_not_audio: "That address answered, but not with audio the radio can play.",
   stream_station_list: "That address is a list of several stations. Suggest each station with its own stream address.",
+  station_list_used_up: "This playlist can't be sent today; your 5 suggestions are used up. Try again tomorrow.",
+  station_list_used_up_anonymous:
+    "This playlist can't be sent today; suggestions from visitors are used up. Signing in with a driver gives you 5 of your own.",
+  no_station_name: "No station name found.",
   duplicate_catalog: "That station is already on the dial.",
   duplicate_suggestion: "That station has already been suggested.",
   already_declined: "That station was already suggested and turned down.",
@@ -256,7 +260,7 @@ export type ProbeVerdict =
   | { verdict: "audio"; format: string }
   | { verdict: "hls" }
   | { verdict: "playlist"; next: string | null }
-  | { verdict: "station_list" }
+  | { verdict: "station_list"; stations: ListedStation[] }
   | { verdict: "web_page" }
   | { verdict: "not_audio" };
 
@@ -281,6 +285,13 @@ function sniffBytes(bytes: Uint8Array) {
   }
   return null;
 }
+
+/** One station a playlist of several names, as the picker offers it. */
+export type ListedStation = { name: string; streamUrl: string };
+
+// The most stations a picker lists from one playlist. More than a day's
+// allowance either way; a huge directory is cut here.
+export const MAX_LISTED_STATIONS = 50;
 
 /** Each stream a playlist names, with the title it gives it, in order. */
 function playlistEntries(text: string) {
@@ -331,7 +342,8 @@ function namesSeveralStations(entries: Array<{ url: string; title: string }>) {
 /** What the first bytes of a reply say it is. */
 export function judgeProbe(contentType: string, bytes: Uint8Array): ProbeVerdict {
   const type = contentType.split(";")[0].trim().toLowerCase();
-  const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, 4096));
+  // The probe stops at 16 KB, which holds a playlist of a hundred stations.
+  const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   const trimmed = text.trimStart();
   if (/^#EXTM3U/.test(trimmed) && /#EXT-X-/.test(text)) return { verdict: "hls" };
   if (
@@ -340,7 +352,15 @@ export function judgeProbe(contentType: string, bytes: Uint8Array): ProbeVerdict
     /^\[playlist\]/i.test(trimmed)
   ) {
     const entries = playlistEntries(text);
-    if (namesSeveralStations(entries)) return { verdict: "station_list" };
+    if (namesSeveralStations(entries)) {
+      return {
+        verdict: "station_list",
+        stations: entries.slice(0, MAX_LISTED_STATIONS).map((entry) => ({
+          name: entry.title.slice(0, MAX_NAME_LENGTH),
+          streamUrl: entry.url,
+        })),
+      };
+    }
     return { verdict: "playlist", next: entries[0]?.url ?? null };
   }
   if (type === "text/html" || /^<!doctype html|^<html/i.test(trimmed)) return { verdict: "web_page" };

@@ -7,11 +7,15 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
 import { loadTurnstileScript } from "@/components/turnstile";
 import { api } from "@/convex/_generated/api";
-import { STATE_OPTIONS, validateSuggestion } from "@/convex/freightFateStationRules";
+import { STATE_OPTIONS, validateSuggestion, type ListedStation } from "@/convex/freightFateStationRules";
+import type { ListedOutcome } from "@/convex/freightFateStationVetting";
+import { StationListPicker, stationLabel } from "./station-list-picker";
 
 type Kind = "terrestrial" | "web";
 type Field = "kind" | "name" | "streamUrl" | "callSign" | "state" | "city" | "frequency" | "genre" | "note";
 type Values = Record<Exclude<Field, "kind">, string> & { kind: Kind | "" };
+// What an error can point at: a field, or the first station in the picker.
+type Target = Field | "picks";
 
 const EMPTY: Values = {
   kind: "", name: "", streamUrl: "", callSign: "", state: "", city: "", frequency: "", genre: "", note: "",
@@ -79,6 +83,21 @@ const AFTER: Partial<Record<Field, React.ReactNode>> = {
 
 const OPTIONAL: Field[] = ["city", "frequency", "genre", "note"];
 
+// How a result line says why a picked station was not sent.
+const OUTCOMES: Record<string, string> = {
+  duplicate_catalog: "already on the dial",
+  duplicate_suggestion: "already suggested",
+  already_declined: "already turned down",
+  daily_limit: "daily limit reached",
+  anonymous_limit: "daily limit reached",
+  no_station_name: "no station name found",
+  stream_web_page: "a web page, not a stream",
+  stream_not_audio: "not audio the radio can play",
+  stream_station_list: "another list of stations",
+  stream_address_blocked: "can't be checked",
+  rate_limited: "try again in a moment",
+};
+
 const input =
   "mt-2 w-full rounded-md border bg-white px-3 py-3 text-ink focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2";
 
@@ -142,17 +161,26 @@ export function StationSuggestionClient({ siteKey }: { siteKey?: string }) {
 function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
   const suggestSignedIn = useAction(api.freightFateStationVetting.suggestStationSignedIn);
   const suggestAnonymous = useAction(api.freightFateStationVetting.suggestStationAnonymous);
+  const suggestListedSignedIn = useAction(api.freightFateStationVetting.suggestListedStationsSignedIn);
+  const suggestListedAnonymous = useAction(api.freightFateStationVetting.suggestListedStationsAnonymous);
   const captcha = useHumanCheck(siteKey);
   const [values, setValues] = useState<Values>(EMPTY);
-  const [problem, setProblem] = useState<{ field: Field | null; message: string } | null>(null);
+  const [problem, setProblem] = useState<{ field: Target | null; message: string } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<"idle" | "checking" | "sent">("idle");
   const [sentMessage, setSentMessage] = useState("");
+  // A playlist of several stations: what it lists, how many may go today,
+  // which are ticked, and how each picked one fared once sent.
+  const [list, setList] = useState<{ stations: ListedStation[]; limit: number } | null>(null);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [results, setResults] = useState<ListedOutcome[] | null>(null);
 
   const baseId = useId();
-  const fieldId = (field: Field) => `${baseId}-${field}`;
+  const fieldId = (field: Target) => `${baseId}-${field}`;
+  const checkboxId = (index: number) => (index === 0 ? fieldId("picks") : `${fieldId("picks")}-${index}`);
   const summaryRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (status === "sent") successRef.current?.focus();
@@ -160,9 +188,14 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
 
   function update(field: Field, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
+    // A different address, or an AM/FM station, is no longer this playlist.
+    if (list && (field === "streamUrl" || field === "kind")) {
+      setList(null);
+      setPicked([]);
+    }
     // Switching to online only removes the broadcast fields, so an error on
     // one of them would point at nothing.
-    if (problem && (problem.field === field || (field === "kind" && problem.field && TERRESTRIAL_FIELDS.includes(problem.field)))) {
+    if (problem && (problem.field === field || (field === "kind" && problem.field && TERRESTRIAL_FIELDS.includes(problem.field as Field)))) {
       setProblem(null);
     }
   }
@@ -173,9 +206,53 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
     requestAnimationFrame(() => summaryRef.current?.focus());
   }
 
+  async function sendPicks() {
+    if (!list) return;
+    if (picked.length === 0) {
+      setProblem({ field: "picks", message: "Choose at least one station." });
+      setAttempt((count) => count + 1);
+      requestAnimationFrame(() => summaryRef.current?.focus());
+      return;
+    }
+    if (siteKey && !captcha.token) {
+      fail(
+        "human_check",
+        captcha.broken
+          ? "The human check could not load, so this can't be sent without signing in."
+          : "Confirm you are human using the checkbox, then send again.",
+      );
+      return;
+    }
+    setProblem(null);
+    setStatus("checking");
+    const stations = [...picked].sort((a, b) => a - b).map((index) => list.stations[index]);
+    const shared = { stations, genre: values.genre, note: values.note };
+    try {
+      const result = siteKey
+        ? await suggestListedAnonymous({ ...shared, turnstileToken: captcha.token })
+        : await suggestListedSignedIn(shared);
+      if (result.ok) {
+        setResults(result.results);
+        setStatus("sent");
+        return;
+      }
+      setStatus("idle");
+      captcha.reset();
+      fail(result.reason, result.message);
+    } catch {
+      setStatus("idle");
+      captcha.reset();
+      fail("unreachable", "Your suggestion could not be sent, which usually means the connection dropped. Please try again.");
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (status === "checking") return;
+    if (list) {
+      await sendPicks();
+      return;
+    }
     const form = values.kind === "web"
       ? { kind: "web", name: values.name, streamUrl: values.streamUrl, genre: values.genre, note: values.note }
       : values;
@@ -205,13 +282,52 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
         return;
       }
       setStatus("idle");
+      // That send spent the token either way; the checkbox starts over.
       captcha.reset();
+      if ("stations" in result) {
+        setList({ stations: result.stations, limit: Math.min(result.remaining, result.stations.length) });
+        setPicked([]);
+        setProblem(null);
+        requestAnimationFrame(() => pickerRef.current?.focus());
+        return;
+      }
       fail(result.reason, result.message);
     } catch {
       setStatus("idle");
       captcha.reset();
       fail("unreachable", "Your suggestion could not be sent, which usually means the connection dropped. Please try again.");
     }
+  }
+
+  if (status === "sent" && results) {
+    const sent = results.filter((outcome) => outcome.ok).length;
+    return (
+      <div
+        className="max-w-2xl rounded-lg border border-line bg-soft-green p-6 focus:outline focus:outline-4 focus:outline-offset-2 focus:outline-action"
+        ref={successRef}
+        tabIndex={-1}
+      >
+        <h2 className="text-2xl font-bold text-ink">
+          {sent === 0
+            ? "No stations sent"
+            : sent === results.length
+              ? `${sent} ${sent === 1 ? "station" : "stations"} sent`
+              : `${sent} of ${results.length} stations sent`}
+        </h2>
+        <ul className="mt-3 list-disc space-y-1 pl-6 text-slate-700">
+          {results.map((outcome) => (
+            <li className="break-all" key={outcome.streamUrl}>
+              {stationLabel(outcome)}: {outcome.ok ? "sent" : (OUTCOMES[outcome.reason ?? ""] ?? "not sent")}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3">
+          <a className="font-semibold text-action underline hover:no-underline" href="/freight-fate/suggest-a-station">
+            Suggest another station
+          </a>
+        </p>
+      </div>
+    );
   }
 
   if (status === "sent") {
@@ -346,8 +462,22 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
           ) : null}
         </fieldset>
 
-        {textField("name")}
+        {/* The picked stations carry their own names. */}
+        {list ? null : textField("name")}
         {textField("streamUrl")}
+        {list ? (
+          <StationListPicker
+            checkboxId={checkboxId}
+            headingRef={pickerRef}
+            limit={list.limit}
+            onChange={(next) => {
+              setPicked(next);
+              if (problem?.field === "picks") setProblem(null);
+            }}
+            picked={picked}
+            stations={list.stations}
+          />
+        ) : null}
 
         {values.kind === "terrestrial" ? (
           <>
@@ -405,7 +535,13 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
             className="rounded-md bg-action px-5 py-3 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2 aria-disabled:cursor-not-allowed aria-disabled:bg-slate-500"
             type="submit"
           >
-            {status === "checking" ? "Checking the stream..." : "Send suggestion"}
+            {status === "checking"
+              ? "Checking the stream..."
+              : list
+                ? picked.length === 0
+                  ? "Send stations"
+                  : `Send ${picked.length} ${picked.length === 1 ? "station" : "stations"}`
+                : "Send suggestion"}
           </button>
         </div>
       </div>

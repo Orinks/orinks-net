@@ -25,6 +25,9 @@ import {
   callSignBase,
   isPublicAddress,
   judgeProbe,
+  type ListedStation,
+  MAX_LISTED_STATIONS,
+  MAX_NAME_LENGTH,
   normalizeStreamUrl,
   refuse,
   validateSuggestion,
@@ -46,11 +49,9 @@ const MAX_REDIRECTS = 5;
 const PROBE_USER_AGENT = "FreightFate-StationCheck/1 (+https://orinks.net/freight-fate)";
 
 export type ProbeResult =
-  | { ok: true; format: string }
-  | {
-      ok: false;
-      reason: "stream_address_blocked" | "stream_unreachable" | "stream_web_page" | "stream_not_audio" | "stream_station_list";
-    };
+  | { ok: true; format: string; name?: string }
+  | { ok: false; reason: "stream_address_blocked" | "stream_unreachable" | "stream_web_page" | "stream_not_audio" }
+  | { ok: false; reason: "stream_station_list"; stations: ListedStation[] };
 
 type RawReply = { status: number; headers: Map<string, string>; body: Uint8Array };
 
@@ -165,9 +166,12 @@ export async function probeWith(
     const verdict = judgeProbe(reply.headers.get("content-type") ?? "", reply.body);
     switch (verdict.verdict) {
       case "audio":
-        return reply.body.length >= PROBE_MIN_AUDIO_BYTES
-          ? { ok: true, format: verdict.format }
-          : { ok: false, reason: "stream_unreachable" };
+        if (reply.body.length < PROBE_MIN_AUDIO_BYTES) return { ok: false, reason: "stream_unreachable" };
+        return {
+          ok: true,
+          format: verdict.format,
+          ...(reply.headers.get("icy-name")?.trim() ? { name: reply.headers.get("icy-name")!.trim().slice(0, MAX_NAME_LENGTH) } : {}),
+        };
       case "hls":
         return { ok: true, format: "hls" };
       case "playlist":
@@ -176,7 +180,7 @@ export async function probeWith(
         if (!verdict.next || depth > 0) return { ok: false, reason: "stream_not_audio" };
         return probeWith(verdict.next, resolve, depth + 1, deadline);
       case "station_list":
-        return { ok: false, reason: "stream_station_list" };
+        return { ok: false, reason: "stream_station_list", stations: verdict.stations };
       case "web_page":
         return { ok: false, reason: "stream_web_page" };
       default:
@@ -238,21 +242,40 @@ const formArgs = {
   note: v.optional(v.string()),
 };
 
-type SuggestResult = { ok: true; message: string } | Refusal;
+type SuggestResult =
+  | { ok: true; message: string }
+  | Refusal
+  // A playlist of several stations, offered to the site form's picker.
+  | (Refusal & { reason: "stream_station_list"; stations: ListedStation[]; remaining: number });
 
+type Who = { driverId?: string; driverTokenHash?: string; authSubject?: string; anonymous?: boolean };
+
+/**
+ * One suggestion, checked and stored. A station picked from a playlist
+ * (listed) may arrive without a name, and takes the one its stream announces;
+ * only the first of a picker send spends a rate-limit attempt.
+ */
 async function vetAndRecord(
   ctx: ActionCtx,
-  who: { driverId?: string; driverTokenHash?: string; authSubject?: string; anonymous?: boolean },
+  who: Who,
   input: StationSuggestionInput,
   clientVersion: string | undefined,
+  listed?: { spendAttempt: boolean },
 ): Promise<SuggestResult> {
-  const checked = validateSuggestion(input);
+  const unnamed = listed !== undefined && !(typeof input.name === "string" && input.name.trim());
+  const checked = validateSuggestion(unnamed ? { ...input, name: "unnamed" } : input);
   if (!checked.ok) return checked;
   const suggestion = checked.value;
   const now = Date.now();
   const admitted: { ok: true; driverId: string } | Refusal = await ctx.runMutation(
     internal.freightFateStations.admitSuggestion,
-    { ...who, streamKey: suggestion.streamKey, callSignBase: suggestion.callSignBase, now },
+    {
+      ...who,
+      streamKey: suggestion.streamKey,
+      callSignBase: suggestion.callSignBase,
+      now,
+      ...(listed ? { spendAttempt: listed.spendAttempt } : {}),
+    },
   );
   if (!admitted.ok) return admitted;
 
@@ -272,13 +295,33 @@ async function vetAndRecord(
     ok: false as const,
     reason: "stream_unreachable" as const,
   }));
+  if (!probe.ok && probe.reason === "stream_station_list") {
+    // Only the site form offers a picker, and only for online stations: an
+    // AM or FM station is one station with one call sign.
+    if (listed || suggestion.kind !== "web" || !(who.authSubject !== undefined || who.anonymous)) {
+      return refuse("stream_station_list");
+    }
+    const remaining: number = await ctx.runQuery(internal.freightFateStations.suggestionAllowance, {
+      ...(who.authSubject !== undefined ? { authSubject: who.authSubject } : {}),
+      ...(who.anonymous ? { anonymous: true } : {}),
+      now,
+    });
+    if (remaining <= 0) return refuse(who.anonymous ? "station_list_used_up_anonymous" : "station_list_used_up");
+    return { ...refuse("stream_station_list"), reason: "stream_station_list", stations: probe.stations, remaining };
+  }
   if (!probe.ok && probe.reason !== "stream_unreachable") return refuse(probe.reason);
   const heard = probe.ok;
+  let name = suggestion.name;
+  if (unnamed) {
+    if (!probe.ok || !probe.name) return refuse("no_station_name");
+    name = probe.name;
+  }
 
   const recorded: { ok: true } | Refusal = await ctx.runMutation(
     internal.freightFateStations.recordSuggestion,
     {
       ...suggestion,
+      name,
       driverId: admitted.driverId,
       streamFormat: probe.ok ? probe.format : "unknown",
       ...(heard ? {} : { streamUnheard: true }),
@@ -290,6 +333,71 @@ async function vetAndRecord(
   if (!recorded.ok) return recorded;
   return { ok: true, message: heard ? SUGGESTION_RECEIVED : SUGGESTION_RECEIVED_UNHEARD };
 }
+
+const listArgs = {
+  stations: v.array(v.object({ name: v.string(), streamUrl: v.string() })),
+  genre: v.optional(v.string()),
+  note: v.optional(v.string()),
+};
+
+export type ListedOutcome = { name: string; streamUrl: string; ok: boolean; reason?: string };
+
+/**
+ * The stations picked from one playlist, each a suggestion of its own under
+ * the usual daily allowance. Picks past what is left today are refused
+ * without being checked.
+ */
+async function vetListed(
+  ctx: ActionCtx,
+  who: Who,
+  args: { stations: ListedStation[]; genre?: string; note?: string },
+): Promise<{ ok: true; results: ListedOutcome[] }> {
+  const remaining: number = await ctx.runQuery(internal.freightFateStations.suggestionAllowance, {
+    ...(who.authSubject !== undefined ? { authSubject: who.authSubject } : {}),
+    ...(who.anonymous ? { anonymous: true } : {}),
+    now: Date.now(),
+  });
+  const picks = args.stations.slice(0, MAX_LISTED_STATIONS);
+  const results = await Promise.all(
+    picks.map(async (station, index): Promise<ListedOutcome> => {
+      const outcome = { name: station.name, streamUrl: station.streamUrl };
+      if (index >= remaining) {
+        return { ...outcome, ok: false, reason: who.anonymous ? "anonymous_limit" : "daily_limit" };
+      }
+      const result = await vetAndRecord(
+        ctx,
+        who,
+        { kind: "web", name: station.name, streamUrl: station.streamUrl, genre: args.genre, note: args.note },
+        undefined,
+        { spendAttempt: index === 0 },
+      );
+      return result.ok ? { ...outcome, ok: true } : { ...outcome, ok: false, reason: result.reason };
+    }),
+  );
+  return { ok: true, results };
+}
+
+/** Stations picked from a playlist on the site form, by a signed-in driver. */
+export const suggestListedStationsSignedIn = action({
+  args: listArgs,
+  handler: async (ctx, args): Promise<{ ok: true; results: ListedOutcome[] } | Refusal> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return refuse("driver_not_found");
+    return vetListed(ctx, { authSubject: identity.subject }, args);
+  },
+});
+
+/** The same from a visitor not signed in; one human check covers the send. */
+export const suggestListedStationsAnonymous = action({
+  args: { turnstileToken: v.string(), ...listArgs },
+  handler: async (ctx, args): Promise<{ ok: true; results: ListedOutcome[] } | Refusal> => {
+    const { turnstileToken, ...rest } = args;
+    const check = await humanCheck(turnstileToken);
+    if (check.result === "unconfigured") return refuse("not_configured");
+    if (check.result !== "passed") return refuse("human_check");
+    return vetListed(ctx, { anonymous: true }, rest);
+  },
+});
 
 /** The game's suggestion, authenticated by the driver token it already holds. */
 export const suggestStation = action({
