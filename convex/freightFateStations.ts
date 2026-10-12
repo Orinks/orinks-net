@@ -30,6 +30,7 @@ import {
   ANONYMOUS_SUGGESTER,
   DAILY_SUGGESTION_LIMIT,
   refuse,
+  turnstileSecret,
   type Refusal,
 } from "./freightFateStationRules";
 
@@ -228,7 +229,7 @@ export function communityStationRow(row: Doc<"freightFateStationSuggestions">): 
  */
 export const anonymousSuggestionsOpen = query({
   args: {},
-  handler: async () => Boolean(process.env.TURNSTILE_SECRET_KEY),
+  handler: async () => Boolean(turnstileSecret(process.env.TURNSTILE_SECRET_KEY)),
 });
 
 export const listCommunityStations = query({

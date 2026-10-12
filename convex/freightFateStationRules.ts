@@ -343,3 +343,15 @@ export function isPublicAddress(address: string) {
   if (v6.startsWith("64:ff9b:") || v6.startsWith("2001:db8:")) return false;
   return true;
 }
+
+/**
+ * The secret as this deployment holds it. It was copied in from a `vercel env
+ * pull` file, which can carry the quotes and a written-out "\n" along with the
+ * value; Cloudflare then refuses every visitor, which looks like a failed check.
+ * A Sensitive Vercel variable pulls as the placeholder "[SENSITIVE]", which is
+ * no secret at all.
+ */
+export function turnstileSecret(raw: string | undefined) {
+  const secret = (raw ?? "").trim().replace(/^"|"$/g, "").replace(/(\\n)+$/, "").trim();
+  return /^\[.*\]$/.test(secret) ? "" : secret;
+}

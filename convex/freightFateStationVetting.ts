@@ -27,6 +27,7 @@ import {
   judgeProbe,
   normalizeStreamUrl,
   refuse,
+  turnstileSecret,
   validateSuggestion,
   type Refusal,
   type StationSuggestionInput,
@@ -310,15 +311,6 @@ export const suggestStationSignedIn = action({
 });
 
 const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-
-/**
- * The secret as this deployment holds it. It was copied in from a `vercel env
- * pull` file, which can carry the quotes and a written-out "\n" along with the
- * value; Cloudflare then refuses every visitor, which looks like a failed check.
- */
-export function turnstileSecret(raw: string | undefined) {
-  return (raw ?? "").trim().replace(/^"|"$/g, "").replace(/(\\n)+$/, "").trim();
-}
 
 type HumanCheck = "passed" | "failed" | "misconfigured";
 
