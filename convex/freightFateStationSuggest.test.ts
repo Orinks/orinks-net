@@ -71,6 +71,49 @@ describe("suggesting a station whose stream does not answer", () => {
   });
 });
 
+describe("suggesting stations picked from a playlist", () => {
+  test("sends each pick as its own suggestion, up to the day's allowance", async () => {
+    const t = convexTest(schema, modules);
+    await t.run(async (ctx) => {
+      await ctx.db.insert("freightFateDrivers", {
+        driverId: "treehouse-1",
+        displayName: "Treehouse",
+        visibility: "public",
+        authSubject: SUBJECT,
+        driverTokenHash: "b".repeat(64),
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    });
+    const stations = [
+      ...[1, 2, 3, 4].map((n) => ({ name: `Pick ${n}`, streamUrl: `http://s${n}.example/live` })),
+      // No title in the playlist, and its stream can't be heard to name it.
+      { name: "", streamUrl: "http://s5.example/live" },
+      ...[6, 7].map((n) => ({ name: `Pick ${n}`, streamUrl: `http://s${n}.example/live` })),
+    ];
+    const result = await t
+      .withIdentity({ subject: SUBJECT })
+      .action(api.freightFateStationVetting.suggestListedStationsSignedIn, { stations, genre: "Trance" });
+    expect(result.ok && result.results.map((r) => r.ok || r.reason)).toEqual([
+      true, true, true, true, "no_station_name", "daily_limit", "daily_limit",
+    ]);
+    const rows = await t.run(async (ctx) => ctx.db.query("freightFateStationSuggestions").collect());
+    expect(rows.map((row) => row.name).sort()).toEqual(["Pick 1", "Pick 2", "Pick 3", "Pick 4"]);
+    expect(rows.every((row) => row.kind === "web" && row.genre === "Trance")).toBe(true);
+  });
+
+  test("a signed-out send needs the human check", async () => {
+    const t = convexTest(schema, modules);
+    humanCheckPasses = false;
+    expect(
+      await t.action(api.freightFateStationVetting.suggestListedStationsAnonymous, {
+        turnstileToken: "token",
+        stations: [{ name: "Pick", streamUrl: "http://s1.example/live" }],
+      }),
+    ).toMatchObject({ ok: false, reason: "human_check" });
+  });
+});
+
 describe("suggesting without signing in", () => {
   const anonymous = (t: ReturnType<typeof convexTest>, name: string, streamUrl: string) =>
     t.action(api.freightFateStationVetting.suggestStationAnonymous, {

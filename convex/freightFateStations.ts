@@ -102,15 +102,19 @@ export const admitSuggestion = internalMutation({
     streamKey: v.string(),
     callSignBase: v.optional(v.string()),
     now: v.number(),
+    // False for the second and later stations of one picker send, which the
+    // first already paid the attempt for.
+    spendAttempt: v.optional(v.boolean()),
   },
   handler: async (ctx, args): Promise<{ ok: true; driverId: string } | Refusal> => {
+    const spend = args.spendAttempt !== false;
     if (args.anonymous) {
-      const allowed = await consumeFreightFateWrite(ctx, {
+      const allowed = !spend || (await consumeFreightFateWrite(ctx, {
         scope: "station-suggest",
         driverId: ANONYMOUS_SUGGESTER,
         now: args.now,
         limit: ANONYMOUS_SUGGEST_WRITE_LIMIT,
-      });
+      }));
       if (!allowed) return refuse("rate_limited");
       const today = await ctx.db
         .query("freightFateStationSuggestions")
@@ -124,12 +128,12 @@ export const admitSuggestion = internalMutation({
     }
     const driver = await suggestingDriver(ctx, args);
     if (!driver) return refuse("driver_not_found");
-    const allowed = await consumeFreightFateWrite(ctx, {
+    const allowed = !spend || (await consumeFreightFateWrite(ctx, {
       scope: "station-suggest",
       driverId: driver.driverId,
       now: args.now,
       limit: STATION_SUGGEST_WRITE_LIMIT,
-    });
+    }));
     if (!allowed) return refuse("rate_limited");
     if (args.authSubject === undefined) {
       if (!args.driverTokenHash || !(await driverTokenAccepted(ctx, driver, args.driverTokenHash))) {
@@ -145,6 +149,30 @@ export const admitSuggestion = internalMutation({
     const duplicate = await findDuplicate(ctx, args.streamKey, args.callSignBase);
     if (duplicate) return duplicate;
     return { ok: true, driverId: driver.driverId };
+  },
+});
+
+/** How many more suggestions this driver, or everyone not signed in, may send today. */
+export const suggestionAllowance = internalQuery({
+  args: { authSubject: v.optional(v.string()), anonymous: v.optional(v.boolean()), now: v.number() },
+  handler: async (ctx, args): Promise<number> => {
+    let driverId = ANONYMOUS_SUGGESTER;
+    let limit = ANONYMOUS_DAILY_LIMIT;
+    if (!args.anonymous) {
+      if (args.authSubject === undefined) return 0;
+      const driver = await ctx.db
+        .query("freightFateDrivers")
+        .withIndex("by_auth_subject", (q) => q.eq("authSubject", args.authSubject))
+        .unique();
+      if (!driver) return 0;
+      driverId = driver.driverId;
+      limit = DAILY_SUGGESTION_LIMIT;
+    }
+    const today = await ctx.db
+      .query("freightFateStationSuggestions")
+      .withIndex("by_driver_created", (q) => q.eq("driverId", driverId).gt("createdAt", args.now - DAY_MS))
+      .take(limit);
+    return limit - today.length;
   },
 });
 

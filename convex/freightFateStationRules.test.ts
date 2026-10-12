@@ -135,11 +135,20 @@ describe("judgeProbe", () => {
 
   test("tells a list of stations from one station's mirrors", () => {
     const list = "#EXTM3U\n#EXTINF:-1,Jazz FM\nhttp://a.example:8000/jazz\n#EXTINF:-1,Rock FM\nhttp://a.example:8000/rock\n";
-    expect(judgeProbe("audio/x-mpegurl", text(list))).toEqual({ verdict: "station_list" });
+    expect(judgeProbe("audio/x-mpegurl", text(list))).toEqual({
+      verdict: "station_list",
+      stations: [
+        { name: "Jazz FM", streamUrl: "http://a.example:8000/jazz" },
+        { name: "Rock FM", streamUrl: "http://a.example:8000/rock" },
+      ],
+    });
     const untitled = "http://a.example/one\nhttp://b.example/two\n";
-    expect(judgeProbe("audio/x-mpegurl", text(untitled))).toEqual({ verdict: "station_list" });
+    expect(judgeProbe("audio/x-mpegurl", text(untitled))).toMatchObject({ verdict: "station_list" });
     const pls = "[playlist]\nFile1=http://a.example/one\nTitle1=One\nFile2=http://a.example/two\nTitle2=Two\n";
-    expect(judgeProbe("audio/x-scpls", text(pls))).toEqual({ verdict: "station_list" });
+    expect(judgeProbe("audio/x-scpls", text(pls))).toMatchObject({
+      verdict: "station_list",
+      stations: [{ name: "One" }, { name: "Two" }],
+    });
 
     // The same mount on several servers is one station.
     const mirrors = "[playlist]\nFile1=http://s1.example:8000/live\nFile2=http://s2.example:8010/live/\n";

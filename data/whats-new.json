@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-12-pick-stations-from-a-playlist",
+      "date": "2026-10-12",
+      "project": "Freight Fate",
+      "title": "Pick stations from a playlist when suggesting radio",
+      "body": [
+        "If the stream address you suggest is a playlist of several stations, the form now lists them so you can tick the ones you want, up to your suggestions left for the day. Each has a Preview button that plays 25 seconds of the stream first.",
+        "Each ticked station goes to review on its own, and the form then says which were sent and why any were not."
+      ],
+      "link": {
+        "href": "/freight-fate/suggest-a-station",
+        "label": "Suggest a radio station"
+      }
+    },
+    {
       "id": "2026-10-09-suggest-a-radio-station",
       "date": "2026-10-09",
       "project": "Freight Fate",
