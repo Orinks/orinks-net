@@ -112,6 +112,17 @@ describe("suggesting without signing in", () => {
     expect(sentSecrets).toEqual(["secret"]);
   });
 
+  test("treats a Sensitive variable's placeholder as no secret", async () => {
+    const t = convexTest(schema, modules);
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "[SENSITIVE]");
+    expect(await t.query(api.freightFateStations.anonymousSuggestionsOpen, {})).toBe(false);
+    expect(await anonymous(t, "Treehouse Radio", "http://s6.autopo.st:8515/live")).toMatchObject({
+      ok: false,
+      reason: "not_configured",
+    });
+    expect(sentSecrets).toEqual([]);
+  });
+
   test("blames the site, not the visitor, when Cloudflare refuses the secret", async () => {
     const t = convexTest(schema, modules);
     vi.stubEnv("TURNSTILE_SECRET_KEY", "not-the-secret");
