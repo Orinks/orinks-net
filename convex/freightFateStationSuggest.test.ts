@@ -175,6 +175,11 @@ describe("suggesting without signing in", () => {
     });
   });
 
+  test("an online station sent without a name needs one its stream can't supply", async () => {
+    const t = convexTest(schema, modules);
+    expect(await anonymous(t, "", "http://s6.autopo.st:8515/live")).toMatchObject({ ok: false, reason: "invalid_name" });
+  });
+
   test("everyone not signed in shares one daily allowance", async () => {
     const t = convexTest(schema, modules);
     await t.run(async (ctx) => {

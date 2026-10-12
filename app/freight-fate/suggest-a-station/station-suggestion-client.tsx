@@ -256,7 +256,9 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
     const form = values.kind === "web"
       ? { kind: "web", name: values.name, streamUrl: values.streamUrl, genre: values.genre, note: values.note }
       : values;
-    const checked = validateSuggestion(form);
+    // An online station's name may be left out: the stream supplies one, or a
+    // playlist of several opens the picker.
+    const checked = validateSuggestion(values.kind === "web" && !values.name.trim() ? { ...form, name: "unnamed" } : form);
     if (!checked.ok) {
       fail(checked.reason, checked.message);
       return;
@@ -352,6 +354,8 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
     );
   }
 
+  const optional = (field: Field) => OPTIONAL.includes(field) || (field === "name" && values.kind === "web");
+
   const textField = (field: Exclude<Field, "kind" | "state">, multiline = false) => {
     const invalid = problem?.field === field;
     const hint = HINTS[field];
@@ -365,14 +369,14 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
       id: fieldId(field),
       name: field,
       onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => update(field, event.target.value),
-      required: !OPTIONAL.includes(field),
+      required: !optional(field),
       value: values[field],
     };
     return (
       <div>
         <label className="block font-semibold text-ink" htmlFor={fieldId(field)}>
           {LABELS[field]}
-          {OPTIONAL.includes(field) ? <span className="font-normal text-slate-700"> (optional)</span> : null}
+          {optional(field) ? <span className="font-normal text-slate-700"> (optional)</span> : null}
         </label>
         {hint ? (
           <p className="mt-1 text-sm text-slate-700" id={`${fieldId(field)}-hint`}>

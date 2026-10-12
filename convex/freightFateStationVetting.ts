@@ -251,9 +251,9 @@ type SuggestResult =
 type Who = { driverId?: string; driverTokenHash?: string; authSubject?: string; anonymous?: boolean };
 
 /**
- * One suggestion, checked and stored. A station picked from a playlist
- * (listed) may arrive without a name, and takes the one its stream announces;
- * only the first of a picker send spends a rate-limit attempt.
+ * One suggestion, checked and stored. An online station, or one picked from
+ * a playlist (listed), may arrive without a name and takes the one its stream
+ * announces; only the first of a picker send spends a rate-limit attempt.
  */
 async function vetAndRecord(
   ctx: ActionCtx,
@@ -262,7 +262,9 @@ async function vetAndRecord(
   clientVersion: string | undefined,
   listed?: { spendAttempt: boolean },
 ): Promise<SuggestResult> {
-  const unnamed = listed !== undefined && !(typeof input.name === "string" && input.name.trim());
+  // An online station may come without a name: a playlist of several goes to
+  // the picker, and a single stream takes the name it announces.
+  const unnamed = (listed !== undefined || input.kind === "web") && !(typeof input.name === "string" && input.name.trim());
   const checked = validateSuggestion(unnamed ? { ...input, name: "unnamed" } : input);
   if (!checked.ok) return checked;
   const suggestion = checked.value;
@@ -313,7 +315,7 @@ async function vetAndRecord(
   const heard = probe.ok;
   let name = suggestion.name;
   if (unnamed) {
-    if (!probe.ok || !probe.name) return refuse("no_station_name");
+    if (!probe.ok || !probe.name) return refuse(listed ? "no_station_name" : "invalid_name");
     name = probe.name;
   }
 
