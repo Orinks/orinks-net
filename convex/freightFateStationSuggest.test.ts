@@ -33,7 +33,7 @@ beforeEach(() => {
       if (!String(url).includes("challenges.cloudflare.com")) return new Response("", { status: 503 });
       const secret = new URLSearchParams(String(init?.body)).get("secret") ?? "";
       sentSecrets.push(secret);
-      if (secret !== "secret") return Response.json({ success: false, "error-codes": ["invalid-input-secret"] });
+      if (secret !== "secret") return Response.json({ success: false, "error-codes": ["invalid-input-secret"] }, { status: 400 });
       return Response.json({ success: humanCheckPasses });
     }),
   );

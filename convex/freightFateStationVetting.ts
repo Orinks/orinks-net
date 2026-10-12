@@ -330,14 +330,12 @@ async function humanCheck(token: string, secret: string): Promise<HumanCheck> {
       body: new URLSearchParams({ response: token, secret }),
       signal: AbortSignal.timeout(10_000),
     });
-    if (!response.ok) {
-      console.error(`Turnstile siteverify answered HTTP ${response.status}`);
-      return "failed";
-    }
-    const result = (await response.json()) as { success?: boolean; "error-codes"?: string[] };
-    if (result.success === true) return "passed";
+    // A refusal can come back as HTTP 400 with the reason in the body, so the
+    // body is read whatever the status.
+    const result = (await response.json().catch(() => ({}))) as { success?: boolean; "error-codes"?: string[] };
+    if (response.ok && result.success === true) return "passed";
     const codes = result["error-codes"] ?? [];
-    console.warn(`Turnstile refused the check: ${codes.join(", ") || "no code given"}`);
+    console.warn(`Turnstile refused the check (HTTP ${response.status}): ${codes.join(", ") || "no code given"}`);
     return codes.some((code) => code.includes("secret")) ? "misconfigured" : "failed";
   } catch (error) {
     console.error("Turnstile siteverify could not be reached", error);
