@@ -311,19 +311,37 @@ export const suggestStationSignedIn = action({
 
 const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-/** Cloudflare's answer on the site form's human check; false when it can't be had. */
-async function humanCheckPassed(token: string, secret: string) {
+/**
+ * The secret as this deployment holds it. It was copied in from a `vercel env
+ * pull` file, which can carry the quotes and a written-out "\n" along with the
+ * value; Cloudflare then refuses every visitor, which looks like a failed check.
+ */
+export function turnstileSecret(raw: string | undefined) {
+  return (raw ?? "").trim().replace(/^"|"$/g, "").replace(/(\\n)+$/, "").trim();
+}
+
+type HumanCheck = "passed" | "failed" | "misconfigured";
+
+/** Cloudflare's answer on the site form's human check. */
+async function humanCheck(token: string, secret: string): Promise<HumanCheck> {
   try {
     const response = await fetch(TURNSTILE_VERIFY_URL, {
       method: "POST",
       body: new URLSearchParams({ response: token, secret }),
       signal: AbortSignal.timeout(10_000),
     });
-    if (!response.ok) return false;
-    const result = (await response.json()) as { success?: boolean };
-    return result.success === true;
-  } catch {
-    return false;
+    if (!response.ok) {
+      console.error(`Turnstile siteverify answered HTTP ${response.status}`);
+      return "failed";
+    }
+    const result = (await response.json()) as { success?: boolean; "error-codes"?: string[] };
+    if (result.success === true) return "passed";
+    const codes = result["error-codes"] ?? [];
+    console.warn(`Turnstile refused the check: ${codes.join(", ") || "no code given"}`);
+    return codes.some((code) => code.includes("secret")) ? "misconfigured" : "failed";
+  } catch (error) {
+    console.error("Turnstile siteverify could not be reached", error);
+    return "failed";
   }
 }
 
@@ -336,9 +354,12 @@ export const suggestStationAnonymous = action({
   args: { turnstileToken: v.string(), ...formArgs },
   handler: async (ctx, args): Promise<SuggestResult> => {
     const { turnstileToken, ...form } = args;
-    const secret = process.env.TURNSTILE_SECRET_KEY;
+    const secret = turnstileSecret(process.env.TURNSTILE_SECRET_KEY);
     if (!secret) return refuse("not_configured");
-    if (!turnstileToken || !(await humanCheckPassed(turnstileToken, secret))) return refuse("human_check");
+    if (!turnstileToken) return refuse("human_check");
+    const check = await humanCheck(turnstileToken, secret);
+    if (check === "misconfigured") return refuse("not_configured");
+    if (check === "failed") return refuse("human_check");
     return vetAndRecord(ctx, { anonymous: true }, form, undefined);
   },
 });
