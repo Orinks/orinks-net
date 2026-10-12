@@ -25,12 +25,12 @@ import {
   type ReviewDecision,
 } from "./freightFateReview";
 import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
+import { turnstileSecret } from "./turnstile";
 import {
   ANONYMOUS_DAILY_LIMIT,
   ANONYMOUS_SUGGESTER,
   DAILY_SUGGESTION_LIMIT,
   refuse,
-  turnstileSecret,
   type Refusal,
 } from "./freightFateStationRules";
 

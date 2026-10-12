@@ -1,53 +1,33 @@
 import { NextResponse } from "next/server";
+import { anyApi } from "convex/server";
+import type { HumanCheck } from "@/convex/turnstile";
+import { getConvexClient } from "@/lib/convex";
 import { formatContactEmail, validateContactSubmission } from "@/lib/contact";
 
 export const runtime = "nodejs";
 
-const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const RESEND_SEND_URL = "https://api.resend.com/emails";
 
 /**
- * Cloudflare rejects a token that was already spent or that aged out (they
- * live 300 seconds). Neither is the sender's fault, so they get "try again"
- * rather than "you failed a robot test" — the widget resets and the typed
- * message is still sitting in the form.
+ * The human check runs on Convex, which holds the Turnstile secret for both
+ * this form and the station form, so the key lives in one place.
  */
-const RETRYABLE_TURNSTILE_CODES = new Set(["timeout-or-duplicate", "invalid-input-response"]);
-
-type TurnstileResult = { success: boolean; "error-codes"?: string[] };
-
 async function verifyTurnstile(token: string, remoteIp: string | null) {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const client = getConvexClient();
 
-  if (!secret) {
-    return { ok: false as const, configured: false as const, retryable: false };
+  if (!client) {
+    return { result: "unconfigured" as const };
   }
 
-  const body = new URLSearchParams({ response: token, secret });
-
-  if (remoteIp) {
-    body.set("remoteip", remoteIp);
+  try {
+    return (await client.action(anyApi.turnstile.verifyHumanCheck, {
+      token,
+      ...(remoteIp ? { remoteIp } : {}),
+    })) as HumanCheck;
+  } catch {
+    // Convex unreachable: a retry, not an accusation.
+    return { result: "retry" as const };
   }
-
-  const response = await fetch(TURNSTILE_VERIFY_URL, {
-    body,
-    method: "POST",
-  });
-
-  if (!response.ok) {
-    // Cloudflare itself is unhappy; treat it as retryable rather than
-    // accusing the sender of being a bot.
-    return { ok: false as const, configured: true as const, retryable: true };
-  }
-
-  const result = (await response.json()) as TurnstileResult;
-  const codes = result["error-codes"] ?? [];
-
-  return {
-    ok: result.success === true,
-    configured: true as const,
-    retryable: codes.some((code) => RETRYABLE_TURNSTILE_CODES.has(code)),
-  };
 }
 
 export async function POST(request: Request) {
@@ -81,18 +61,18 @@ export async function POST(request: Request) {
   const remoteIp = forwardedFor?.split(",")[0]?.trim() || null;
   const verification = await verifyTurnstile(token, remoteIp);
 
-  if (!verification.configured) {
+  if (verification.result === "unconfigured") {
     return NextResponse.json(
       { error: "The contact form is not configured yet. Please email orin8722@gmail.com instead." },
       { status: 503 },
     );
   }
 
-  if (!verification.ok) {
+  if (verification.result !== "passed") {
     return NextResponse.json(
       {
         captcha: true,
-        error: verification.retryable
+        error: verification.result === "retry"
           ? "That human check expired. Confirm you are human again, then send."
           : "That human check could not be confirmed. Please try again.",
       },
