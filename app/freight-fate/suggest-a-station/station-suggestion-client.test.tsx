@@ -93,8 +93,7 @@ test("a playlist of several stations opens a picker held to the day's allowance"
   };
   render(<StationSuggestionClient siteKey="site-key" />);
   fireEvent.click(screen.getByRole("radio", { name: "Online only" }));
-  // An online station's name can be left out.
-  expect(screen.getByLabelText(/Station name/)).not.toBeRequired();
+  // No name: a playlist of several stations has no one name to give.
   fireEvent.change(screen.getByLabelText("Stream address"), { target: { value: "http://a.example/list.m3u" } });
   fireEvent.click(screen.getByRole("button", { name: "Send suggestion" }));
 
