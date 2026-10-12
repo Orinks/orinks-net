@@ -34,7 +34,7 @@ import {
   type Refusal,
   type StationSuggestionInput,
 } from "./freightFateStationRules";
-import { STATION_LINK_TTL_MS, signStationClaim, stationFacts, type StationDigestRow } from "./freightFateStations";
+import { STATION_LINK_TTL_MS, signStationBatch, type StationDigestRow } from "./freightFateStations";
 import { escapeHtml } from "./freightFateReview";
 import { humanCheck } from "./turnstile";
 
@@ -483,6 +483,10 @@ export const recheckAcceptedStations = internalAction({
 
 const RESEND_SEND_URL = "https://api.resend.com/emails";
 
+// Where the review page lives. Production's site unless this deployment says
+// otherwise, e.g. a staging deployment pointing at its preview.
+const SITE_URL = "https://www.orinks.net";
+
 export const sendStationDigest = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: boolean; reason?: string; stations?: number }> => {
@@ -491,45 +495,29 @@ export const sendStationDigest = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.CONTACT_FROM_EMAIL;
     const to = process.env.CONTACT_TO_EMAIL;
-    const site = process.env.CONVEX_SITE_URL;
-    if (!apiKey || !from || !to || !site) {
-      console.warn("Freight Fate station digest not sent: email or site URL is not configured.");
+    if (!apiKey || !from || !to) {
+      console.warn("Freight Fate station digest not sent: email is not configured.");
       return { sent: false, reason: "not_configured" };
     }
     const now = Date.now();
-    const expiresAt = now + STATION_LINK_TTL_MS;
-    const text: string[] = [];
-    const html: string[] = [];
-    for (const row of rows) {
-      const link = async (decision: "accepted" | "declined") => {
-        const token = await signStationClaim({ id: row.id, decision, createdAt: row.createdAt, expiresAt });
-        return token ? `${site}/freight-fate/station-review?t=${encodeURIComponent(token)}` : null;
-      };
-      const accept = await link("accepted");
-      const decline = await link("declined");
-      if (!accept || !decline) {
-        console.warn("Freight Fate station digest not sent: the review secret is not configured.");
-        return { sent: false, reason: "not_configured" };
-      }
-      const facts = stationFacts(row);
-      const title = `${row.name}${row.isNew ? ", new since the last digest" : ""}`;
-      text.push([title, ...facts.map(([term, value]) => `${term}: ${value}`), `Accept: ${accept}`, `Decline: ${decline}`].join("\n"));
-      html.push(
-        `<h2>${escapeHtml(row.name)}</h2>` +
-          (row.isNew ? "<p>New since the last digest.</p>" : "") +
-          "<ul>" +
-          facts.map(([term, value]) => `<li>${escapeHtml(term)}: ${escapeHtml(value)}</li>`).join("") +
-          "</ul>" +
-          `<p><a href="${escapeHtml(accept)}">Accept ${escapeHtml(row.name)}</a></p>` +
-          `<p><a href="${escapeHtml(decline)}">Decline ${escapeHtml(row.name)}</a></p>`,
-      );
+    const token = await signStationBatch({ issuedAt: now, expiresAt: now + STATION_LINK_TTL_MS });
+    if (!token) {
+      console.warn("Freight Fate station digest not sent: the review secret is not configured.");
+      return { sent: false, reason: "not_configured" };
     }
-    const intro =
-      `${rows.length} radio station suggestion${rows.length === 1 ? " is" : "s are"} waiting for review. ` +
-      "Each stream answered with playable audio and matched nothing already on the dial. " +
-      "Accept puts it on the dial at players' next launch; Decline keeps it off for good. " +
-      "Links open a confirmation page and expire in 14 days; the next digest carries fresh ones.";
+    const site = (process.env.FREIGHT_FATE_SITE_URL || SITE_URL).replace(/\/+$/, "");
+    const link = `${site}/freight-fate/review-stations?t=${encodeURIComponent(token)}`;
+    const fresh = rows.filter((row) => row.isNew).length;
+    const count = `${rows.length} radio station suggestion${rows.length === 1 ? " is" : "s are"} waiting for review` +
+      (fresh === rows.length ? "." : `, ${fresh} new since the last digest.`);
+    const expiry = "The link expires in 14 days; the next digest carries a fresh one.";
     const subject = `Freight Fate: ${rows.length} station suggestion${rows.length === 1 ? "" : "s"} waiting for review`;
+    const text = [count, `Review them: ${link}`, expiry];
+    const html = [
+      `<p>${escapeHtml(count)}</p>`,
+      `<p><a href="${escapeHtml(link)}">Review ${rows.length} station${rows.length === 1 ? "" : "s"}</a></p>`,
+      `<p>${escapeHtml(expiry)}</p>`,
+    ];
     const response = await fetch(RESEND_SEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -537,8 +525,8 @@ export const sendStationDigest = internalAction({
         from,
         to: [to],
         subject,
-        text: [intro, ...text].join("\n\n"),
-        html: `<p>${escapeHtml(intro)}</p>${html.join("")}`,
+        text: text.join("\n\n"),
+        html: html.join(""),
       }),
     });
     if (!response.ok) {

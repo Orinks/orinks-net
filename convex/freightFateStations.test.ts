@@ -6,7 +6,9 @@ import { api, internal } from "./_generated/api";
 import {
   STATION_DEAD_AFTER,
   STATION_SUGGEST_WRITE_LIMIT,
+  signStationBatch,
   signStationClaim,
+  verifyStationBatch,
   verifyStationClaim,
 } from "./freightFateStations";
 import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
@@ -330,5 +332,42 @@ describe("the station digest and its links", () => {
       });
     expect(await decide("declined")).toMatchObject({ ok: true, name: "Night Owl Radio" });
     expect(await decide("accepted")).toEqual({ ok: false });
+  });
+
+  test("the digest's one link lists and decides every suggestion it covers", async () => {
+    process.env.FREIGHT_FATE_REVIEW_SECRET = "s".repeat(40);
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, webStation, NOW);
+    await suggest(t, terrestrialStation, NOW + 1);
+    // Arrived after the link was signed: the next digest's link covers it.
+    await suggest(t, { ...webStation, name: "Late Show", streamUrl: "https://late.example/", streamKey: "late.example" }, NOW + 50);
+    const token = (await signStationBatch({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 }))!;
+    expect(await verifyStationBatch(token, NOW)).toEqual({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 });
+    expect(await verifyStationBatch(token.replace("stations.", "stations.1"), NOW)).toBeNull();
+    expect(await verifyStationBatch(token, NOW + 120_000)).toBeNull();
+
+    const listed = await t.query(internal.freightFateStations.pendingStationsFor, { issuedAt: NOW + 10 });
+    expect(listed.map((station) => station.name)).toEqual(["Night Owl Radio", "The Cat"]);
+    expect(listed[0].facts).toContainEqual(["Suggested by", "Night Owl (night-owl-1234)"]);
+
+    const all = await t.action(api.freightFateStations.reviewStationBatch, { token });
+    expect(all).toMatchObject({ ok: true });
+    const ids = all.ok ? all.stations.map((station) => station.id) : [];
+    expect(ids).toHaveLength(3);
+    const accepted = await t.action(api.freightFateStations.decideStationBatch, {
+      token, ids: ids.slice(0, 2), decision: "accepted",
+    });
+    expect(accepted).toEqual({ ok: true, decided: ids.slice(0, 2) });
+    const again = await t.action(api.freightFateStations.decideStationBatch, {
+      token, ids, decision: "declined",
+    });
+    expect(again).toEqual({ ok: true, decided: [ids[2]] });
+    expect(await t.action(api.freightFateStations.reviewStationBatch, { token: `${token}0` })).toEqual({ ok: false });
+
+    const late = await t.mutation(internal.freightFateStations.decideStations, {
+      ids, decision: "accepted", issuedAt: NOW, now: NOW + 100,
+    });
+    expect(late).toEqual([]);
   });
 });
