@@ -317,7 +317,10 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
         <ul className="mt-3 list-disc space-y-1 pl-6 text-slate-700">
           {results.map((outcome) => (
             <li className="break-all" key={outcome.streamUrl}>
-              {stationLabel(outcome)}: {outcome.ok ? "sent" : (OUTCOMES[outcome.reason ?? ""] ?? "not sent")}
+              {/* With every one sent, the heading already says so. */}
+              {sent === results.length
+                ? stationLabel(outcome)
+                : `${stationLabel(outcome)}: ${outcome.ok ? "sent" : (OUTCOMES[outcome.reason ?? ""] ?? "not sent")}`}
             </li>
           ))}
         </ul>
@@ -468,6 +471,7 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
         {list ? (
           <StationListPicker
             checkboxId={checkboxId}
+            error={problem?.field === "picks" ? problem.message : undefined}
             headingRef={pickerRef}
             limit={list.limit}
             onChange={(next) => {

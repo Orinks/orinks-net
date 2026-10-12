@@ -103,6 +103,7 @@ test("a playlist of several stations opens a picker held to the day's allowance"
 
   fireEvent.click(screen.getByRole("button", { name: "Send stations" }));
   expect(await screen.findByRole("link", { name: "Choose at least one station." })).toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Jazz FM" })).toHaveAccessibleDescription(/Choose at least one station\./);
 
   fireEvent.click(screen.getByRole("checkbox", { name: "Jazz FM" }));
   fireEvent.click(screen.getByRole("checkbox", { name: "http://a.example/talk" }));

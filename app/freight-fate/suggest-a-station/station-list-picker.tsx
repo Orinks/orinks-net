@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MAX_LISTED_STATIONS, type ListedStation } from "@/convex/freightFateStationRules";
+import type { ListedStation } from "@/convex/freightFateStationRules";
 
 // The picker shown when a suggested address turns out to be a playlist of
 // several stations: one checkbox per station, as many as today's allowance
@@ -16,6 +16,7 @@ export function stationLabel(station: ListedStation) {
 
 export function StationListPicker({
   checkboxId,
+  error,
   headingRef,
   limit,
   onChange,
@@ -24,6 +25,8 @@ export function StationListPicker({
 }: {
   /** The id of station i's checkbox, so the error summary can link the first. */
   checkboxId: (index: number) => string;
+  /** "Choose at least one station." after a send with none ticked. */
+  error?: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   limit: number;
   onChange: (picked: number[]) => void;
@@ -36,6 +39,7 @@ export function StationListPicker({
   // Said only when a box changes the count: the heading already gave the start.
   const [announcement, setAnnouncement] = useState("");
   const preview = usePreview();
+  const errorId = error ? `${checkboxId(0)}-error` : undefined;
 
   function toggle(index: number) {
     const on = picked.includes(index);
@@ -49,15 +53,12 @@ export function StationListPicker({
   }
 
   return (
-    <fieldset className="rounded-lg border border-line-strong p-5">
+    <fieldset aria-describedby={errorId} className="rounded-lg border border-line-strong p-5">
       <legend className="px-1">
         <h2 className="text-xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-sky-600" ref={headingRef} tabIndex={-1}>
           Choose up to {limit} of {stations.length} stations
         </h2>
       </legend>
-      {stations.length >= MAX_LISTED_STATIONS ? (
-        <p className="mt-2 text-slate-700">Showing the first {MAX_LISTED_STATIONS}.</p>
-      ) : null}
       <p aria-hidden="true" className="mt-2 font-semibold text-ink">
         {leftText}
       </p>
@@ -86,6 +87,7 @@ export function StationListPicker({
             <li className="flex flex-wrap items-center gap-3" key={`${index}-${station.streamUrl}`}>
               <label className={`flex min-w-0 flex-1 items-center gap-3 ${unavailable ? "text-slate-500" : "text-ink"}`}>
                 <input
+                  aria-describedby={errorId}
                   aria-disabled={unavailable || undefined}
                   checked={on}
                   className="h-5 w-5 shrink-0 focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2"
@@ -107,6 +109,12 @@ export function StationListPicker({
           );
         })}
       </ul>
+      {error ? (
+        <p className="mt-2 font-semibold text-red-900" id={errorId}>
+          <span className="sr-only">Error: </span>
+          {error}
+        </p>
+      ) : null}
       <p aria-live="polite" className="sr-only">
         {preview.failed}
       </p>
