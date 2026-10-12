@@ -133,6 +133,22 @@ describe("judgeProbe", () => {
     });
   });
 
+  test("tells a list of stations from one station's mirrors", () => {
+    const list = "#EXTM3U\n#EXTINF:-1,Jazz FM\nhttp://a.example:8000/jazz\n#EXTINF:-1,Rock FM\nhttp://a.example:8000/rock\n";
+    expect(judgeProbe("audio/x-mpegurl", text(list))).toEqual({ verdict: "station_list" });
+    const untitled = "http://a.example/one\nhttp://b.example/two\n";
+    expect(judgeProbe("audio/x-mpegurl", text(untitled))).toEqual({ verdict: "station_list" });
+    const pls = "[playlist]\nFile1=http://a.example/one\nTitle1=One\nFile2=http://a.example/two\nTitle2=Two\n";
+    expect(judgeProbe("audio/x-scpls", text(pls))).toEqual({ verdict: "station_list" });
+
+    // The same mount on several servers is one station.
+    const mirrors = "[playlist]\nFile1=http://s1.example:8000/live\nFile2=http://s2.example:8010/live/\n";
+    expect(judgeProbe("audio/x-scpls", text(mirrors))).toEqual({ verdict: "playlist", next: "http://s1.example:8000/live" });
+    // So are several bitrates that all carry the station's name.
+    const bitrates = "#EXTM3U\n#EXTINF:-1,KXYZ\nhttp://a.example/hi\n#EXTINF:-1,KXYZ\nhttp://a.example/lo\n";
+    expect(judgeProbe("audio/x-mpegurl", text(bitrates))).toEqual({ verdict: "playlist", next: "http://a.example/hi" });
+  });
+
   test("calls a web page a web page", () => {
     expect(judgeProbe("text/html; charset=utf-8", text("<!doctype html>"))).toEqual({ verdict: "web_page" });
     expect(judgeProbe("text/plain", text("hello"))).toEqual({ verdict: "not_audio" });
