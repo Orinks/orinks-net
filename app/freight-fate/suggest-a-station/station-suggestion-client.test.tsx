@@ -93,12 +93,13 @@ test("a playlist of several stations opens a picker held to the day's allowance"
   };
   render(<StationSuggestionClient siteKey="site-key" />);
   fireEvent.click(screen.getByRole("radio", { name: "Online only" }));
-  fireEvent.change(screen.getByLabelText("Station name"), { target: { value: "Many" } });
+  // An online station's name can be left out.
+  expect(screen.getByLabelText(/Station name/)).not.toBeRequired();
   fireEvent.change(screen.getByLabelText("Stream address"), { target: { value: "http://a.example/list.m3u" } });
   fireEvent.click(screen.getByRole("button", { name: "Send suggestion" }));
 
   expect(await screen.findByRole("heading", { name: "Choose up to 2 of 3 stations" })).toBeInTheDocument();
-  expect(screen.queryByLabelText("Station name")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/Station name/)).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Select all" })).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Send stations" }));
