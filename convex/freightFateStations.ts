@@ -30,6 +30,7 @@ import {
   ANONYMOUS_DAILY_LIMIT,
   ANONYMOUS_SUGGESTER,
   DAILY_SUGGESTION_LIMIT,
+  MAX_LISTED_STATIONS,
   refuse,
   type Refusal,
 } from "./freightFateStationRules";
@@ -50,6 +51,17 @@ export const STATION_DEAD_AFTER = 3;
 export const STATION_LINK_TTL_MS = 14 * DAY_MS;
 
 // -- the gate -------------------------------------------------------------------
+
+/**
+ * Drivers the daily allowance does not apply to: the owner, adding stations
+ * in bulk. A comma-separated list of driver IDs in this deployment's
+ * environment, e.g. npx convex env set FREIGHT_FATE_UNLIMITED_SUGGESTERS <id> --prod
+ */
+function unlimitedSuggester(driverId: string) {
+  return (process.env.FREIGHT_FATE_UNLIMITED_SUGGESTERS ?? "")
+    .split(",")
+    .some((id) => id.trim() !== "" && id.trim() === driverId);
+}
 
 async function findDuplicate(
   ctx: QueryCtx,
@@ -140,12 +152,14 @@ export const admitSuggestion = internalMutation({
         return refuse("unauthorized");
       }
     }
-    const today = await ctx.db
-      .query("freightFateStationSuggestions")
-      .withIndex("by_driver_created", (q) =>
-        q.eq("driverId", driver.driverId).gt("createdAt", args.now - DAY_MS))
-      .take(DAILY_SUGGESTION_LIMIT);
-    if (today.length >= DAILY_SUGGESTION_LIMIT) return refuse("daily_limit");
+    if (!unlimitedSuggester(driver.driverId)) {
+      const today = await ctx.db
+        .query("freightFateStationSuggestions")
+        .withIndex("by_driver_created", (q) =>
+          q.eq("driverId", driver.driverId).gt("createdAt", args.now - DAY_MS))
+        .take(DAILY_SUGGESTION_LIMIT);
+      if (today.length >= DAILY_SUGGESTION_LIMIT) return refuse("daily_limit");
+    }
     const duplicate = await findDuplicate(ctx, args.streamKey, args.callSignBase);
     if (duplicate) return duplicate;
     return { ok: true, driverId: driver.driverId };
@@ -165,6 +179,7 @@ export const suggestionAllowance = internalQuery({
         .withIndex("by_auth_subject", (q) => q.eq("authSubject", args.authSubject))
         .unique();
       if (!driver) return 0;
+      if (unlimitedSuggester(driver.driverId)) return MAX_LISTED_STATIONS;
       driverId = driver.driverId;
       limit = DAILY_SUGGESTION_LIMIT;
     }
