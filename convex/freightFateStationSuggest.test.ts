@@ -175,7 +175,7 @@ describe("suggesting without signing in", () => {
     });
   });
 
-  test("an online station sent without a name needs one its stream can't supply", async () => {
+  test("a single online station still needs its name", async () => {
     const t = convexTest(schema, modules);
     expect(await anonymous(t, "", "http://s6.autopo.st:8515/live")).toMatchObject({ ok: false, reason: "invalid_name" });
   });
