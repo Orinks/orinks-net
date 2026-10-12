@@ -1,6 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
+// The check itself runs on Convex; here the client calls the same code
+// directly, so Cloudflare's answers still come through the fetch mock below.
+let convexReachable = true;
+vi.mock("@/lib/convex", async () => {
+  const { humanCheck } = await import("@/convex/turnstile");
+  return {
+    getConvexClient: () =>
+      convexReachable
+        ? { action: (_ref: unknown, args: { token: string; remoteIp?: string }) => humanCheck(args.token, args.remoteIp) }
+        : null,
+  };
+});
+
 const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const RESEND_SEND_URL = "https://api.resend.com/emails";
 
@@ -44,6 +57,7 @@ function mockFetch(options: {
 }
 
 beforeEach(() => {
+  convexReachable = true;
   vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
   vi.stubEnv("RESEND_API_KEY", "re_test");
   vi.stubEnv("CONTACT_FROM_EMAIL", "orinks.net <contact@orinks.net>");
@@ -153,6 +167,24 @@ describe("POST /api/contact", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: expect.stringContaining("orin8722@gmail.com"),
     });
+  });
+
+  it("reports a configuration problem when the human check has no secret", async () => {
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "[SENSITIVE]");
+    const fetchMock = mockFetch({});
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(post(valid));
+
+    expect(response.status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a configuration problem when there is no backend to check with", async () => {
+    convexReachable = false;
+    vi.stubGlobal("fetch", mockFetch({}));
+
+    expect((await POST(post(valid))).status).toBe(503);
   });
 
   it("reports a send failure rather than claiming the message went through", async () => {

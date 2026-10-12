@@ -27,13 +27,13 @@ import {
   judgeProbe,
   normalizeStreamUrl,
   refuse,
-  turnstileSecret,
   validateSuggestion,
   type Refusal,
   type StationSuggestionInput,
 } from "./freightFateStationRules";
 import { STATION_LINK_TTL_MS, signStationClaim, stationFacts, type StationDigestRow } from "./freightFateStations";
 import { escapeHtml } from "./freightFateReview";
+import { humanCheck } from "./turnstile";
 
 const PROBE_TIMEOUT_MS = 8_000;
 // The whole probe, redirects and one playlist hop included. The game waits on
@@ -310,31 +310,6 @@ export const suggestStationSignedIn = action({
   },
 });
 
-const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-
-type HumanCheck = "passed" | "failed" | "misconfigured";
-
-/** Cloudflare's answer on the site form's human check. */
-async function humanCheck(token: string, secret: string): Promise<HumanCheck> {
-  try {
-    const response = await fetch(TURNSTILE_VERIFY_URL, {
-      method: "POST",
-      body: new URLSearchParams({ response: token, secret }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    // A refusal can come back as HTTP 400 with the reason in the body, so the
-    // body is read whatever the status.
-    const result = (await response.json().catch(() => ({}))) as { success?: boolean; "error-codes"?: string[] };
-    if (response.ok && result.success === true) return "passed";
-    const codes = result["error-codes"] ?? [];
-    console.warn(`Turnstile refused the check (HTTP ${response.status}): ${codes.join(", ") || "no code given"}`);
-    return codes.some((code) => code.includes("secret")) ? "misconfigured" : "failed";
-  } catch (error) {
-    console.error("Turnstile siteverify could not be reached", error);
-    return "failed";
-  }
-}
-
 /**
  * The site form's suggestion from a visitor who is not signed in. The human
  * check stands in for the driver's sign-in, and every such visitor shares one
@@ -344,12 +319,9 @@ export const suggestStationAnonymous = action({
   args: { turnstileToken: v.string(), ...formArgs },
   handler: async (ctx, args): Promise<SuggestResult> => {
     const { turnstileToken, ...form } = args;
-    const secret = turnstileSecret(process.env.TURNSTILE_SECRET_KEY);
-    if (!secret) return refuse("not_configured");
-    if (!turnstileToken) return refuse("human_check");
-    const check = await humanCheck(turnstileToken, secret);
-    if (check === "misconfigured") return refuse("not_configured");
-    if (check === "failed") return refuse("human_check");
+    const check = await humanCheck(turnstileToken);
+    if (check.result === "unconfigured") return refuse("not_configured");
+    if (check.result !== "passed") return refuse("human_check");
     return vetAndRecord(ctx, { anonymous: true }, form, undefined);
   },
 });
