@@ -48,6 +48,13 @@ function reply(path: string, port: number): Buffer | null {
         head("HTTP/1.1 200 OK", ["Content-Type: application/vnd.apple.mpegurl"]),
         Buffer.from("#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\ngone.aac\n"),
       ]);
+    case "/hls/text.m3u8":
+      return Buffer.concat([
+        head("HTTP/1.1 200 OK", ["Content-Type: application/vnd.apple.mpegurl"]),
+        Buffer.from("#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\ntext.txt\n"),
+      ]);
+    case "/hls/text.txt":
+      return Buffer.concat([head("HTTP/1.1 200 OK", ["Content-Type: text/plain"]), Buffer.alloc(2048, 0x41)]);
     case "/forbidden":
       return head("HTTP/1.1 403 Forbidden", []);
     case "/silent":
@@ -95,7 +102,7 @@ describe("probeStream", () => {
   });
 
   test("follows a redirect and a playlist one level", async () => {
-    expect(await probe("/moved")).toEqual({ ok: true, format: "aac+", playUrl: at("/live") });
+    expect(await probe("/moved")).toEqual({ ok: true, format: "aac+", playUrl: at("/moved") });
     expect(await probe("/station.pls")).toEqual({ ok: true, format: "mp3", name: "Test", playUrl: at("/icy") });
     expect(await probe("/loop.pls")).toEqual({ ok: false, reason: "stream_not_audio" });
   });
@@ -126,6 +133,8 @@ describe("probeStream", () => {
 
   test("hears HLS only when a segment answers, through a master playlist", async () => {
     expect(await probe("/hls/master.m3u8")).toEqual({ ok: true, format: "hls", playUrl: at("/hls/master.m3u8") });
+    // A segment the site's preview would not pass is not a stream that plays.
+    expect(await probe("/hls/text.m3u8")).toEqual({ ok: false, reason: "stream_not_audio" });
     expect(await probe("/hls/dead.m3u8")).toEqual({ ok: false, reason: "stream_unreachable", problem: "http_404" });
   });
 

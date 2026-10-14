@@ -286,6 +286,17 @@ function sniffBytes(bytes: Uint8Array) {
   return null;
 }
 
+/**
+ * The content types the site's preview passes through: audio, the containers
+ * HLS carries it in, an octet stream, or no type at all (some Shoutcast
+ * servers send none). The check holds an HLS segment to the same list, so a
+ * stream it says plays is one the preview can play.
+ */
+export function previewPlayable(contentType: string) {
+  const type = contentType.split(";")[0].trim().toLowerCase();
+  return type === "" || /^(audio\/|video\/|application\/(ogg|mp4|octet-stream)$|binary\/octet-stream$)/.test(type);
+}
+
 /** One station a playlist of several names, as the picker offers it. */
 export type ListedStation = { name: string; streamUrl: string };
 
