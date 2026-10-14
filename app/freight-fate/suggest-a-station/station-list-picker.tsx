@@ -8,6 +8,9 @@ import type { ListedStation } from "@/convex/freightFateStationRules";
 // lets through, and a short listen to each before choosing.
 
 const PREVIEW_MS = 25_000;
+// A preview with no sound by now has failed, even when nothing says so: a
+// stream can hang, or hls.js keep retrying, without an error.
+const SILENCE_MS = 15_000;
 
 /** What a checkbox and a result line call a station: its title, or its address. */
 export function stationLabel(station: ListedStation) {
@@ -144,12 +147,15 @@ export function usePreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState<number | null>(null);
   const [failed, setFailed] = useState("");
 
   function stop() {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
+    if (silenceRef.current) clearTimeout(silenceRef.current);
+    silenceRef.current = null;
     hlsRef.current?.destroy();
     hlsRef.current = null;
     if (audioRef.current) {
@@ -185,6 +191,12 @@ export function usePreview() {
     timerRef.current = setTimeout(() => {
       if (audioRef.current === audio) stop();
     }, PREVIEW_MS);
+    silenceRef.current = setTimeout(() => failure("nothing came through"), SILENCE_MS);
+    audio.addEventListener("playing", () => {
+      if (audioRef.current !== audio) return;
+      if (silenceRef.current) clearTimeout(silenceRef.current);
+      silenceRef.current = null;
+    });
     if (!isHls(station.streamUrl, format) || audio.canPlayType("application/vnd.apple.mpegurl")) {
       audio.src = previewAddress(station.streamUrl);
       audio.play().catch(() => failure());
