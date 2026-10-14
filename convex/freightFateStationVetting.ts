@@ -34,7 +34,13 @@ import {
   type Refusal,
   type StationSuggestionInput,
 } from "./freightFateStationRules";
-import { STATION_LINK_TTL_MS, signStationBatch, type StationDigestRow } from "./freightFateStations";
+import {
+  type ReviewStation,
+  STATION_LINK_TTL_MS,
+  signStationBatch,
+  type StationDigestRow,
+  verifyStationBatch,
+} from "./freightFateStations";
 import { escapeHtml } from "./freightFateReview";
 import { humanCheck } from "./turnstile";
 
@@ -48,9 +54,25 @@ const PROBE_MIN_AUDIO_BYTES = 512;
 const MAX_REDIRECTS = 5;
 const PROBE_USER_AGENT = "FreightFate-StationCheck/1 (+https://orinks.net/freight-fate)";
 
+/**
+ * Why a stream that did not answer with audio failed, for the reviewer:
+ * the name did not resolve, nothing would connect, it connected and said
+ * nothing, or it answered with an HTTP status other than success. A check
+ * that threw or ran out of time says so rather than blame the server.
+ */
+export type ProbeProblem =
+  | "no_address"
+  | "no_connection"
+  | "no_reply"
+  | "too_little_audio"
+  | "too_many_redirects"
+  | "check_failed"
+  | `http_${number}`;
+
 export type ProbeResult =
-  | { ok: true; format: string; name?: string }
-  | { ok: false; reason: "stream_address_blocked" | "stream_unreachable" | "stream_web_page" | "stream_not_audio" }
+  | { ok: true; format: string; name?: string; playUrl: string }
+  | { ok: false; reason: "stream_unreachable"; problem: ProbeProblem }
+  | { ok: false; reason: "stream_address_blocked" | "stream_web_page" | "stream_not_audio" }
   | { ok: false; reason: "stream_station_list"; stations: ListedStation[] };
 
 type RawReply = { status: number; headers: Map<string, string>; body: Uint8Array };
@@ -68,13 +90,14 @@ async function publicAddressFor(hostname: string) {
 }
 
 /** One HTTP/1.0 GET to an already-checked address, cut off at PROBE_MAX_BYTES. */
-function rawGet(url: URL, address: string, timeoutMs: number): Promise<RawReply | null> {
+function rawGet(url: URL, address: string, timeoutMs: number): Promise<RawReply | "no_connection" | "no_reply"> {
   return new Promise((resolve) => {
     const secure = url.protocol === "https:";
     const port = Number(url.port) || (secure ? 443 : 80);
     const chunks: Buffer[] = [];
     let total = 0;
     let settled = false;
+    let connected = false;
     const host = url.hostname.replace(/^\[|\]$/g, "");
     const socket: Socket = secure
       ? tlsConnect({ host: address, port, servername: isIP(host) ? undefined : host })
@@ -84,10 +107,15 @@ function rawGet(url: URL, address: string, timeoutMs: number): Promise<RawReply 
       settled = true;
       clearTimeout(timer);
       socket.destroy();
-      resolve(parseReply(Buffer.concat(chunks)));
+      const reply = parseReply(Buffer.concat(chunks));
+      // A refused connection, a TLS failure, or a connect that never
+      // completed reads as no connection; one that opened and then went
+      // quiet or was cut as no reply.
+      resolve(reply ?? (connected ? "no_reply" : "no_connection"));
     };
     const timer = setTimeout(finish, timeoutMs);
     socket.once(secure ? "secureConnect" : "connect", () => {
+      connected = true;
       socket.write(
         `GET ${url.pathname || "/"}${url.search} HTTP/1.0\r\n` +
           `Host: ${url.host}\r\n` +
@@ -132,6 +160,79 @@ export function probeStream(address: string) {
 
 type Resolver = (hostname: string) => Promise<{ blocked: boolean; address: string | null }>;
 
+type Fetched =
+  | { reply: RawReply; url: URL }
+  | { ok: false; reason: "stream_unreachable"; problem: ProbeProblem }
+  | { ok: false; reason: "stream_address_blocked" };
+
+const unreachable = (problem: ProbeProblem) => ({ ok: false as const, reason: "stream_unreachable" as const, problem });
+
+/** One address fetched through its redirects, each hop to a checked public address. */
+async function fetchFollowing(address: string | URL, resolve: Resolver, deadline: number): Promise<Fetched> {
+  let url: URL;
+  try {
+    url = new URL(address);
+  } catch {
+    return unreachable("no_address");
+  }
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    if (url.protocol !== "http:" && url.protocol !== "https:") return unreachable("no_address");
+    const target = await resolve(url.hostname);
+    if (target.blocked) return { ok: false, reason: "stream_address_blocked" };
+    if (!target.address) return unreachable("no_address");
+    const remaining = Math.min(PROBE_TIMEOUT_MS, deadline - Date.now());
+    if (remaining <= 0) return unreachable("check_failed");
+    const reply = await rawGet(url, target.address, remaining);
+    if (typeof reply === "string") return unreachable(reply);
+    const location = reply.headers.get("location");
+    if (reply.status >= 300 && reply.status < 400 && location) {
+      try {
+        url = new URL(location, url);
+      } catch {
+        return unreachable(`http_${reply.status}`);
+      }
+      continue;
+    }
+    if (reply.status !== 200) return unreachable(`http_${reply.status}`);
+    return { reply, url };
+  }
+  return unreachable("too_many_redirects");
+}
+
+/** The first URI an HLS playlist lists: a variant of a master playlist, or a segment. */
+function firstHlsUri(text: string, base: URL) {
+  for (const line of text.split(/\r?\n/)) {
+    const entry = line.trim();
+    if (!entry || entry.startsWith("#")) continue;
+    try {
+      return { url: new URL(entry, base), master: /#EXT-X-STREAM-INF/.test(text) };
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * An HLS stream plays when its media playlist names a segment that answers
+ * with more than an error page. A master playlist leads to its first variant.
+ */
+async function probeHls(text: string, base: URL, resolve: Resolver, deadline: number): Promise<ProbeResult> {
+  let next = firstHlsUri(text, base);
+  for (let level = 0; next?.master && level < 2; level += 1) {
+    const variant = await fetchFollowing(next.url, resolve, deadline);
+    if (!("reply" in variant)) return variant;
+    next = firstHlsUri(new TextDecoder().decode(variant.reply.body), variant.url);
+  }
+  if (!next || next.master) return { ok: false, reason: "stream_not_audio" };
+  const segment = await fetchFollowing(next.url, resolve, deadline);
+  if (!("reply" in segment)) return segment;
+  const type = segment.reply.headers.get("content-type") ?? "";
+  if (judgeProbe(type, segment.reply.body).verdict === "web_page") return { ok: false, reason: "stream_web_page" };
+  if (segment.reply.body.length < PROBE_MIN_AUDIO_BYTES) return unreachable("too_little_audio");
+  return { ok: true, format: "hls", playUrl: base.href };
+}
+
 /** probeStream with the address check supplied: tests point it at a local server. */
 export async function probeWith(
   address: string,
@@ -139,55 +240,71 @@ export async function probeWith(
   depth: number,
   deadline: number,
 ): Promise<ProbeResult> {
-  let url: URL;
-  try {
-    url = new URL(address);
-  } catch {
-    return { ok: false, reason: "stream_unreachable" };
+  const fetched = await fetchFollowing(address, resolve, deadline);
+  if (!("reply" in fetched)) return fetched;
+  const { reply, url } = fetched;
+  const verdict = judgeProbe(reply.headers.get("content-type") ?? "", reply.body);
+  switch (verdict.verdict) {
+    case "audio":
+      if (reply.body.length < PROBE_MIN_AUDIO_BYTES) return unreachable("too_little_audio");
+      return {
+        ok: true,
+        format: verdict.format,
+        ...(reply.headers.get("icy-name")?.trim() ? { name: reply.headers.get("icy-name")!.trim().slice(0, MAX_NAME_LENGTH) } : {}),
+        playUrl: url.href,
+      };
+    case "hls":
+      return probeHls(new TextDecoder().decode(reply.body), url, resolve, deadline);
+    case "playlist":
+      // The game resolves a playlist at play time; one level is all a
+      // station's playlist ever needs, and it must lead to real audio.
+      if (!verdict.next || depth > 0) return { ok: false, reason: "stream_not_audio" };
+      return probeWith(verdict.next, resolve, depth + 1, deadline);
+    case "station_list":
+      return { ok: false, reason: "stream_station_list", stations: verdict.stations };
+    case "web_page":
+      return { ok: false, reason: "stream_web_page" };
+    default:
+      return { ok: false, reason: "stream_not_audio" };
   }
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    if (url.protocol !== "http:" && url.protocol !== "https:") return { ok: false, reason: "stream_unreachable" };
-    const target = await resolve(url.hostname);
-    if (target.blocked) return { ok: false, reason: "stream_address_blocked" };
-    const remaining = Math.min(PROBE_TIMEOUT_MS, deadline - Date.now());
-    if (!target.address || remaining <= 0) return { ok: false, reason: "stream_unreachable" };
-    const reply = await rawGet(url, target.address, remaining);
-    if (!reply) return { ok: false, reason: "stream_unreachable" };
-    const location = reply.headers.get("location");
-    if (reply.status >= 300 && reply.status < 400 && location) {
-      try {
-        url = new URL(location, url);
-      } catch {
-        return { ok: false, reason: "stream_unreachable" };
+}
+
+/** What the review page says about one stream's check, read by a screen reader. */
+export function describeProbe(probe: ProbeResult) {
+  if (probe.ok) return `Plays (${probe.format.toUpperCase()})`;
+  switch (probe.reason) {
+    case "stream_unreachable":
+      switch (probe.problem) {
+        case "no_address":
+          return "Fails: the address does not lead to a server";
+        case "no_connection":
+          return "Fails: nothing answered. The server may be down, or may block listeners outside its country";
+        case "no_reply":
+          return "Fails: the server sent nothing back";
+        case "too_little_audio":
+          return "Fails: the stream stopped after a moment";
+        case "too_many_redirects":
+          return "Fails: the address redirects too many times";
+        case "check_failed":
+          return "Fails: the check could not finish. Reload the page to try again";
+        case "http_403":
+        case "http_451":
+          return `Fails: the server refused it (error ${probe.problem.slice(5)}). Some stations refuse listeners outside their country`;
+        case "http_404":
+        case "http_410":
+          return `Fails: the server has no stream at this address (error ${probe.problem.slice(5)}), so it is probably dead`;
+        default:
+          return `Fails: the server answered with error ${probe.problem.slice(5)}`;
       }
-      continue;
-    }
-    if (reply.status !== 200) return { ok: false, reason: "stream_unreachable" };
-    const verdict = judgeProbe(reply.headers.get("content-type") ?? "", reply.body);
-    switch (verdict.verdict) {
-      case "audio":
-        if (reply.body.length < PROBE_MIN_AUDIO_BYTES) return { ok: false, reason: "stream_unreachable" };
-        return {
-          ok: true,
-          format: verdict.format,
-          ...(reply.headers.get("icy-name")?.trim() ? { name: reply.headers.get("icy-name")!.trim().slice(0, MAX_NAME_LENGTH) } : {}),
-        };
-      case "hls":
-        return { ok: true, format: "hls" };
-      case "playlist":
-        // The game resolves a playlist at play time; one level is all a
-        // station's playlist ever needs, and it must lead to real audio.
-        if (!verdict.next || depth > 0) return { ok: false, reason: "stream_not_audio" };
-        return probeWith(verdict.next, resolve, depth + 1, deadline);
-      case "station_list":
-        return { ok: false, reason: "stream_station_list", stations: verdict.stations };
-      case "web_page":
-        return { ok: false, reason: "stream_web_page" };
-      default:
-        return { ok: false, reason: "stream_not_audio" };
-    }
+    case "stream_web_page":
+      return "Fails: the address is a web page, not a stream";
+    case "stream_not_audio":
+      return "Fails: the address answers, but not with audio";
+    case "stream_address_blocked":
+      return "Fails: the address points at a private network";
+    case "stream_station_list":
+      return "Fails: the address lists several stations";
   }
-  return { ok: false, reason: "stream_unreachable" };
 }
 
 // -- the shipped catalog -------------------------------------------------------------
@@ -295,10 +412,7 @@ async function vetAndRecord(
   // player: it may play fine for them and only turn this server away. An
   // answer that is clearly not a station (a web page, a private address,
   // something that is not audio) is still refused on the spot.
-  const probe: ProbeResult = await probeStream(suggestion.streamUrl).catch(() => ({
-    ok: false as const,
-    reason: "stream_unreachable" as const,
-  }));
+  const probe: ProbeResult = await probeStream(suggestion.streamUrl).catch(() => unreachable("check_failed"));
   if (!probe.ok && probe.reason === "stream_station_list") {
     // Only the site form offers a picker, and only for online stations: an
     // AM or FM station is one station with one call sign.
@@ -444,6 +558,54 @@ export const suggestStationAnonymous = action({
   },
 });
 
+// -- the review page's check ------------------------------------------------------------
+
+export type StationCheck = {
+  id: Id<"freightFateStationSuggestions">;
+  ok: boolean;
+  text: string;
+  /** Where the audio is once redirects and a playlist are followed. */
+  playUrl?: string;
+  format?: string;
+};
+
+const REVIEW_CHECK_PARALLEL = 12;
+
+/**
+ * Every station the review link covers, checked again now, so the page can
+ * say which streams play from here and why the rest do not. A stream heard
+ * for the first time loses its "did not answer" mark.
+ */
+export const checkStationBatch = action({
+  args: { token: v.string() },
+  handler: async (ctx, args): Promise<{ ok: false } | { ok: true; checks: StationCheck[] }> => {
+    const claim = await verifyStationBatch(args.token, Date.now());
+    if (!claim) return { ok: false };
+    const stations: ReviewStation[] = await ctx.runQuery(internal.freightFateStations.pendingStationsFor, {
+      issuedAt: claim.issuedAt,
+    });
+    const checks: StationCheck[] = [];
+    for (let start = 0; start < stations.length; start += REVIEW_CHECK_PARALLEL) {
+      checks.push(
+        ...(await Promise.all(
+          stations.slice(start, start + REVIEW_CHECK_PARALLEL).map(async (station): Promise<StationCheck> => {
+            const probe: ProbeResult = await probeStream(station.streamUrl).catch(() => unreachable("check_failed"));
+            if (!probe.ok) return { id: station.id, ok: false, text: describeProbe(probe) };
+            await ctx.runMutation(internal.freightFateStations.recordStationCheck, {
+              id: station.id,
+              ok: true,
+              format: probe.format,
+              now: Date.now(),
+            });
+            return { id: station.id, ok: true, text: describeProbe(probe), playUrl: probe.playUrl, format: probe.format };
+          }),
+        )),
+      );
+    }
+    return { ok: true, checks };
+  },
+});
+
 // -- the nightly re-check ---------------------------------------------------------------
 
 const RECHECK_BATCH = 200;
@@ -457,10 +619,7 @@ export const recheckAcceptedStations = internalAction({
     for (let start = 0; start < rows.length; start += RECHECK_PARALLEL) {
       await Promise.all(
         rows.slice(start, start + RECHECK_PARALLEL).map(async (row) => {
-          const probe: ProbeResult = await probeStream(row.streamUrl).catch(() => ({
-            ok: false as const,
-            reason: "stream_unreachable" as const,
-          }));
+          const probe: ProbeResult = await probeStream(row.streamUrl).catch(() => unreachable("check_failed"));
           await ctx.runMutation(internal.freightFateStations.recordStationCheck, {
             id: row.id,
             ok: probe.ok,

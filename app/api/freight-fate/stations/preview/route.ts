@@ -2,6 +2,7 @@ import { lookup } from "node:dns/promises";
 import { isIP, Socket } from "node:net";
 import { connect as tlsConnect } from "node:tls";
 import { isPublicAddress } from "@/convex/freightFateStationRules";
+import { absolutePlaylist } from "@/lib/hls-playlist";
 
 export const runtime = "nodejs";
 export const maxDuration = 40;
@@ -12,11 +13,21 @@ export const maxDuration = 40;
 // address, only audio, and only for a preview's worth. Raw sockets, like the
 // suggestion check's probe, because Node's HTTP client rejects a Shoutcast v1
 // server's "ICY 200 OK".
+//
+// An HLS station comes through here a piece at a time: the page plays it
+// with hls.js, which asks for each playlist and segment by its own address.
+// A playlist goes back with every address in it pointed through this route,
+// so each piece comes from the site whether hls.js or Safari asks for it.
 const PREVIEW_SECONDS = 25;
 const PREVIEW_MAX_BYTES = 2 * 1024 * 1024;
 const CONNECT_TIMEOUT_MS = 8_000;
 const MAX_HEAD_BYTES = 16 * 1024;
 const MAX_REDIRECTS = 3;
+const MAX_PLAYLIST_BYTES = 256 * 1024;
+// Audio, and the containers HLS carries it in: MPEG-TS, fragmented MP4, or
+// a bare octet stream.
+const PLAYABLE = /^(audio\/|application\/ogg$|video\/(mp2t|mp4)$|application\/octet-stream$)/;
+const HLS_PLAYLIST = /^(application\/(vnd\.apple\.mpegurl|x-mpegurl)|audio\/(x-)?mpegurl)$/;
 
 /** The first public address the host resolves to, or null when any is private. */
 async function publicAddress(hostname: string) {
@@ -78,6 +89,30 @@ function open(url: URL, address: string) {
   });
 }
 
+/** The rest of a small reply, or null past MAX_PLAYLIST_BYTES or a slow server. */
+function readAll({ socket, rest }: Reply) {
+  return new Promise<string | null>((resolve) => {
+    const chunks = [rest];
+    let total = rest.length;
+    const done = (text: string | null) => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(text);
+    };
+    const timer = setTimeout(() => done(null), CONNECT_TIMEOUT_MS);
+    socket.on("data", (chunk: Buffer) => {
+      chunks.push(chunk);
+      total += chunk.length;
+      if (total > MAX_PLAYLIST_BYTES) done(null);
+    });
+    socket.once("end", () => done(Buffer.concat(chunks).toString("utf8")));
+    socket.once("error", () => done(null));
+    socket.resume();
+  });
+}
+
+const previewPath = (address: string) => `/api/freight-fate/stations/preview?url=${encodeURIComponent(address)}`;
+
 const refused = (status: number) => new Response(null, { status, headers: { "cache-control": "no-store" } });
 
 export async function GET(request: Request) {
@@ -106,8 +141,20 @@ export async function GET(request: Request) {
   }
 
   const type = (reply?.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  if (!reply || reply.status !== 200 || !/^(audio\/|application\/ogg$)/.test(type)) {
+  if (!reply || reply.status !== 200) {
     reply?.socket.destroy();
+    return refused(502);
+  }
+  // A playlist served as anything but a playlist type still starts #EXTM3U.
+  if (HLS_PLAYLIST.test(type) || (reply.rest.length > 0 && reply.rest.subarray(0, 7).toString("latin1") === "#EXTM3U")) {
+    const text = await readAll(reply);
+    if (text === null || !text.trimStart().startsWith("#EXTM3U")) return refused(502);
+    return new Response(absolutePlaylist(text, url, previewPath), {
+      headers: { "cache-control": "no-store", "content-type": "application/vnd.apple.mpegurl" },
+    });
+  }
+  if (!PLAYABLE.test(type)) {
+    reply.socket.destroy();
     return refused(502);
   }
 

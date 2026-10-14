@@ -4,6 +4,7 @@ import { useAction } from "convex/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { ReviewStation } from "@/convex/freightFateStations";
+import type { StationCheck } from "@/convex/freightFateStationVetting";
 import {
   stationLabel,
   usePreview,
@@ -11,7 +12,9 @@ import {
 
 // The owner's review of suggested stations, opened from the daily digest's
 // one link: tick stations, listen to any of them, then accept or decline the
-// ticked ones together. What is left unticked keeps waiting.
+// ticked ones together. What is left unticked keeps waiting. Each stream is
+// checked again on opening, so the page says which ones play from the
+// server and why the rest do not.
 
 type Decision = "accepted" | "declined";
 
@@ -24,6 +27,12 @@ const button =
 export function StationReviewClient({ token }: { token: string }) {
   const load = useAction(api.freightFateStations.reviewStationBatch);
   const decideBatch = useAction(api.freightFateStations.decideStationBatch);
+  const checkBatch = useAction(api.freightFateStationVetting.checkStationBatch);
+  const [checks, setChecks] = useState<Map<string, StationCheck> | null>(null);
+  const [checkSummary, setCheckSummary] = useState("");
+  // What the live region says. Filled a moment after the list is up, since a
+  // region that mounts already holding text is not read.
+  const [announced, setAnnounced] = useState("");
   const [stations, setStations] = useState<ReviewStation[] | null>(null);
   const [state, setState] = useState<
     "loading" | "ready" | "expired" | "failed"
@@ -54,10 +63,26 @@ export function StationReviewClient({ token }: { token: string }) {
         }
       })
       .catch(() => live && setState("failed"));
+    checkBatch({ token })
+      .then((result) => {
+        if (!live || !result.ok) return;
+        setChecks(new Map(result.checks.map((check) => [check.id, check])));
+        const plays = result.checks.filter((check) => check.ok).length;
+        setCheckSummary(
+          `Stream check finished: ${plays} of ${plural(result.checks.length)} ${plays === 1 ? "plays" : "play"}.`,
+        );
+      })
+      .catch(() => live && setCheckSummary("The stream check did not finish. Reload the page to run it again."));
     return () => {
       live = false;
     };
-  }, [load, token]);
+  }, [load, checkBatch, token]);
+
+  useEffect(() => {
+    if (state !== "ready" || !checkSummary) return;
+    const timer = setTimeout(() => setAnnounced(checkSummary), 100);
+    return () => clearTimeout(timer);
+  }, [state, checkSummary]);
 
   const empty = state === "ready" && stations?.length === 0;
   useEffect(() => {
@@ -186,6 +211,7 @@ export function StationReviewClient({ token }: { token: string }) {
             const on = picked.includes(station.id);
             const label = stationLabel(station);
             const playing = preview.playing === index;
+            const check = checks?.get(station.id);
             return (
               <li key={station.id}>
                 <div className="flex flex-wrap items-center gap-3">
@@ -215,7 +241,13 @@ export function StationReviewClient({ token }: { token: string }) {
                   <button
                     className="rounded-md border border-line-strong px-3 py-1 text-sm font-semibold text-ink hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2"
                     onClick={() =>
-                      playing ? preview.stop() : preview.play(index, station)
+                      playing
+                        ? preview.stop()
+                        : preview.play(
+                            index,
+                            { name: station.name, streamUrl: check?.playUrl ?? station.streamUrl },
+                            check?.format,
+                          )
                     }
                     type="button"
                   >
@@ -229,9 +261,11 @@ export function StationReviewClient({ token }: { token: string }) {
                     .filter(([term]) => station.name || term !== "Stream")
                     .map(([term, value]) => (
                       <p className="break-all" key={term}>
-                        {term}: {value}
+                        {/* Once checked here, the suggestion-time note on the stream is out of date. */}
+                        {term}: {term === "Stream" && check ? station.streamUrl : value}
                       </p>
                     ))}
+                  <p>Stream check: {check ? check.text : checks ? "Not checked" : "Checking…"}</p>
                 </div>
               </li>
             );
@@ -239,6 +273,9 @@ export function StationReviewClient({ token }: { token: string }) {
         </ul>
         <p aria-live="polite" className="sr-only">
           {preview.failed}
+        </p>
+        <p aria-live="polite" className="sr-only">
+          {announced}
         </p>
       </fieldset>
       <div className="mt-6 flex flex-wrap gap-4">

@@ -19,6 +19,7 @@
     "@clerk/themes": "^2.4.57",
     "ableplayer": "^5.0.0",
     "convex": "^1.45.0",
+    "hls.js": "1.7.3",
     "jquery": "^3.7.1",
     "next": "^15.3.0",
     "obscenity": "^0.4.6",
