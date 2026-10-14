@@ -22,7 +22,13 @@ beforeAll(async () => {
       const head = (status: string, headers: string[]) => Buffer.from(`${status}\r\n${headers.join("\r\n")}\r\n\r\n`);
       if (path === "/icy") socket.end(Buffer.concat([head("ICY 200 OK", ["content-type: audio/mpeg"]), MP3]));
       else if (path === "/moved") socket.end(head("HTTP/1.1 302 Found", [`Location: http://127.0.0.1:${port}/icy`, "Content-Length: 0"]));
-      else if (path === "/page") socket.end(Buffer.concat([head("HTTP/1.1 200 OK", ["Content-Type: text/html"]), Buffer.from("<p>hi</p>")]));
+      else if (path === "/chunked.m3u8") {
+        // Chunked despite the HTTP/1.0 request, and closed without a clean end.
+        const body = "#EXTM3U\n#EXTINF:10,\nseg1.ts\n";
+        socket.write(head("HTTP/1.1 200 OK", ["Content-Type: application/vnd.apple.mpegurl", "Transfer-Encoding: chunked"]));
+        socket.write(`${body.length.toString(16)}\r\n${body}\r\n0\r\n\r\n`);
+        socket.destroy();
+      } else if (path === "/page") socket.end(Buffer.concat([head("HTTP/1.1 200 OK", ["Content-Type: text/html"]), Buffer.from("<p>hi</p>")]));
       else socket.end(head("HTTP/1.1 404 Not Found", ["Content-Length: 0"]));
     });
     socket.on("error", () => {});
@@ -48,9 +54,21 @@ describe("station preview", () => {
     }
   });
 
-  test("refuses anything that is not audio", async () => {
-    expect((await preview("/page")).status).toBe(502);
-    expect((await preview("/missing")).status).toBe(502);
+  test("refuses anything that is not audio, and says why", async () => {
+    const page = await preview("/page");
+    expect(page.status).toBe(502);
+    expect(page.headers.get("x-preview-problem")).toBe("the station's server sent text/html instead of audio");
+    const missing = await preview("/missing");
+    expect(missing.status).toBe(502);
+    expect(missing.headers.get("x-preview-problem")).toBe("the station's server answered with error 404");
+  });
+
+  test("hands back an HLS playlist with each piece pointed through the preview", async () => {
+    const response = await preview("/chunked.m3u8");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe(
+      `#EXTM3U\n#EXTINF:10,\n/api/freight-fate/stations/preview?url=${encodeURIComponent(`http://127.0.0.1:${port}/seg1.ts`)}\n`,
+    );
   });
 
   test("never connects to a private address", async () => {

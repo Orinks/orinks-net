@@ -297,6 +297,27 @@ export function previewPlayable(contentType: string) {
   return type === "" || /^(audio\/|video\/|application\/(ogg|mp4|octet-stream)$|binary\/octet-stream$)/.test(type);
 }
 
+/**
+ * The body of a chunked HTTP reply, as far as it arrived. Some servers chunk
+ * even an HTTP/1.0 request's reply, and the size lines would otherwise sit
+ * in front of the "#EXTM3U" a playlist is known by.
+ */
+export function dechunk(body: Uint8Array) {
+  const bytes = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  const parts: Buffer[] = [];
+  let at = 0;
+  while (at < bytes.length) {
+    const lineEnd = bytes.indexOf("\r\n", at);
+    if (lineEnd === -1) break;
+    const size = parseInt(bytes.subarray(at, lineEnd).toString("latin1").split(";")[0].trim(), 16);
+    if (!Number.isFinite(size) || size <= 0) break;
+    const start = lineEnd + 2;
+    parts.push(bytes.subarray(start, Math.min(start + size, bytes.length)));
+    at = start + size + 2;
+  }
+  return new Uint8Array(Buffer.concat(parts));
+}
+
 /** One station a playlist of several names, as the picker offers it. */
 export type ListedStation = { name: string; streamUrl: string };
 

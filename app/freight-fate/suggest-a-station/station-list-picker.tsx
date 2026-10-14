@@ -167,12 +167,17 @@ export function usePreview() {
     setFailed("");
     const audio = new Audio();
     audioRef.current = audio;
-    const failure = () => {
+    // Why, when the site's route said; otherwise the browser's own reason.
+    const failure = async (fallback?: string, piece = previewAddress(station.streamUrl)) => {
       if (audioRef.current !== audio) return;
       stop();
-      setFailed(`${stationLabel(station)} didn't play.`);
+      const problem = await fetch(piece, { method: "HEAD" })
+        .then((response) => (response.ok ? null : response.headers.get("x-preview-problem")))
+        .catch(() => null);
+      const why = problem ?? fallback;
+      setFailed(`${stationLabel(station)} didn't play${why ? `: ${why}` : ""}.`);
     };
-    audio.addEventListener("error", failure);
+    audio.addEventListener("error", () => failure());
     audio.addEventListener("ended", () => {
       if (audioRef.current === audio) stop();
     });
@@ -182,27 +187,38 @@ export function usePreview() {
     }, PREVIEW_MS);
     if (!isHls(station.streamUrl, format) || audio.canPlayType("application/vnd.apple.mpegurl")) {
       audio.src = previewAddress(station.streamUrl);
-      audio.play().catch(failure);
+      audio.play().catch(() => failure());
       return;
     }
     import("hls.js")
       .then(({ default: Hls }) => {
         if (audioRef.current !== audio) return;
-        if (!Hls.isSupported()) return failure();
+        if (!Hls.isSupported()) return failure("this browser can't play this kind of stream");
         // The route points every address in a playlist back through itself,
         // so only the first request needs sending there.
         const hls = new Hls({});
         hlsRef.current = hls;
         hls.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) failure();
+          if (!data.fatal) return;
+          const code = data.response?.code;
+          // The piece that failed, already an address through the route.
+          const piece = data.frag?.url ?? data.context?.url;
+          failure(
+            data.type === Hls.ErrorTypes.NETWORK_ERROR
+              ? `part of the stream would not load${code ? ` (error ${code})` : ""}`
+              : data.type === Hls.ErrorTypes.MEDIA_ERROR
+                ? "the browser could not decode it"
+                : undefined,
+            piece,
+          );
         });
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          audio.play().catch(failure);
+          audio.play().catch(() => failure());
         });
         hls.loadSource(previewAddress(station.streamUrl));
         hls.attachMedia(audio);
       })
-      .catch(failure);
+      .catch(() => failure());
   }
 
   // Nothing keeps playing once the picker is gone.

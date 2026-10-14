@@ -1,7 +1,7 @@
 import { lookup } from "node:dns/promises";
 import { isIP, Socket } from "node:net";
 import { connect as tlsConnect } from "node:tls";
-import { isPublicAddress, previewPlayable } from "@/convex/freightFateStationRules";
+import { dechunk, isPublicAddress, previewPlayable } from "@/convex/freightFateStationRules";
 import { absolutePlaylist } from "@/lib/hls-playlist";
 
 export const runtime = "nodejs";
@@ -86,31 +86,53 @@ function open(url: URL, address: string) {
   });
 }
 
-/** The rest of a small reply, or null past MAX_PLAYLIST_BYTES or a slow server. */
-function readAll({ socket, rest }: Reply) {
+/**
+ * The rest of a small reply, or null past MAX_PLAYLIST_BYTES or a slow
+ * server. It ends at Content-Length, or when the server closes, which a CDN
+ * may do without a clean TLS end.
+ */
+function readAll({ socket, rest, headers }: Reply) {
   return new Promise<string | null>((resolve) => {
     const chunks = [rest];
     let total = rest.length;
-    const done = (text: string | null) => {
+    let settled = false;
+    const length = Number(headers.get("content-length"));
+    const chunked = /chunked/i.test(headers.get("transfer-encoding") ?? "");
+    const done = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       socket.destroy();
-      resolve(text);
+      if (!ok) return resolve(null);
+      const body = Buffer.concat(chunks);
+      resolve(Buffer.from(chunked ? dechunk(body) : body).toString("utf8"));
     };
-    const timer = setTimeout(() => done(null), CONNECT_TIMEOUT_MS);
+    const timer = setTimeout(() => done(false), CONNECT_TIMEOUT_MS);
+    const enough = () => length > 0 && !chunked && total >= length;
     socket.on("data", (chunk: Buffer) => {
       chunks.push(chunk);
       total += chunk.length;
-      if (total > MAX_PLAYLIST_BYTES) done(null);
+      if (total > MAX_PLAYLIST_BYTES) done(false);
+      else if (enough()) done(true);
     });
-    socket.once("end", () => done(Buffer.concat(chunks).toString("utf8")));
-    socket.once("error", () => done(null));
+    socket.once("end", () => done(true));
+    socket.once("close", () => done(total > 0));
+    socket.once("error", () => done(total > 0));
+    if (enough()) return done(true);
     socket.resume();
   });
 }
 
 const previewPath = (address: string) => `/api/freight-fate/stations/preview?url=${encodeURIComponent(address)}`;
 
-const refused = (status: number) => new Response(null, { status, headers: { "cache-control": "no-store" } });
+/** A refusal, with why in a header the page reads to say why a preview did not play. */
+const refused = (status: number, problem?: string) => {
+  if (problem) console.warn(`Station preview: ${problem}`);
+  return new Response(null, {
+    status,
+    headers: { "cache-control": "no-store", ...(problem ? { "x-preview-problem": problem } : {}) },
+  });
+};
 
 export async function GET(request: Request) {
   let url: URL;
@@ -139,26 +161,22 @@ export async function GET(request: Request) {
 
   const type = (reply?.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
   if (!reply || reply.status !== 200) {
-    // Logged so a preview that fails where the check passed can be traced.
-    console.warn(`Station preview: ${url.host} answered ${reply ? reply.status : "nothing"}.`);
     reply?.socket.destroy();
-    return refused(502);
+    return refused(502, reply ? `the station's server answered with error ${reply.status}` : "the station's server did not answer");
   }
   // A playlist served as anything but a playlist type still starts #EXTM3U.
   if (HLS_PLAYLIST.test(type) || (reply.rest.length > 0 && reply.rest.subarray(0, 7).toString("latin1") === "#EXTM3U")) {
     const text = await readAll(reply);
     if (text === null || !text.trimStart().startsWith("#EXTM3U")) {
-      console.warn(`Station preview: ${url.host} sent a playlist that could not be read.`);
-      return refused(502);
+      return refused(502, "the station's playlist could not be read");
     }
     return new Response(absolutePlaylist(text, url, previewPath), {
       headers: { "cache-control": "no-store", "content-type": "application/vnd.apple.mpegurl" },
     });
   }
   if (!previewPlayable(type)) {
-    console.warn(`Station preview: ${url.host} sent ${type}, which is not audio.`);
     reply.socket.destroy();
-    return refused(502);
+    return refused(502, `the station's server sent ${type || "something"} instead of audio`);
   }
 
   const { socket, rest } = reply;
