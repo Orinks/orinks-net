@@ -7,12 +7,13 @@ import { freightFateEventFragment } from "@/lib/freight-fate-fragments";
 import { PageHeader } from "@/components/PageHeader";
 import { getFreightFateDriverProfile, normalizeFreightFateDriverId } from "@/lib/freight-fate-online";
 
-export type ProfileSection = "overview" | "road-journal" | "achievements";
+export type ProfileSection = "overview" | "road-journal" | "achievements" | "places";
 export type JournalCursor = { occurredAt: number; eventId: string };
 export type AchievementCursor = { sortAt: number; achievementKey: string };
 type Event = { _id: string; eventId: string; eventType: string; summary: string; occurredAt: number };
 type Achievement = { _id: string; achievementKey: string; label: string; description?: string; category?: string; earnedAt: number };
 type AccountAchievement = Omit<Achievement, "earnedAt"> & { earnedAt?: number };
+type VisitedState = { state: string; cities: string[] };
 const inlineLinkClass = "font-semibold text-action underline";
 
 function Time({ value }: { value: number }) {
@@ -28,6 +29,7 @@ function ProfileNav({ driverId, section }: { driverId: string; section: ProfileS
     ["overview", root, "Profile overview"],
     ["road-journal", `${root}/road-journal`, "Road journal"],
     ["achievements", `${root}/achievements`, "Achievements"],
+    ["places", `${root}/places`, "Places visited"],
   ] as const;
   return (
     <nav aria-label="Freight Fate profile sections" className="border-b border-line-strong pb-4">
@@ -106,6 +108,30 @@ function AchievementDetail({ item }: { item: { description?: string; category?: 
       {item.description ? <p>{item.description}</p> : null}
       {item.category ? <p className="text-sm text-slate-600"><strong>Category:</strong> {item.category}</p> : null}
     </>
+  );
+}
+
+// Each state is a heading, so a screen reader user can jump to one by name;
+// its cities follow on one line. A snapshot projected before the list existed
+// carries the counts without it, and fills in at the career's next backup.
+function PlacesVisited({ snapshot }: { snapshot: { visitedPlaces?: VisitedState[]; citiesVisited?: number } | null }) {
+  if (!snapshot) return <p>No current career has been shared yet.</p>;
+  const places = snapshot.visitedPlaces;
+  if (!places) {
+    return snapshot.citiesVisited
+      ? <p>The list appears the next time this career is backed up.</p>
+      : <p>No deliveries yet.</p>;
+  }
+  if (!places.length) return <p>No deliveries yet.</p>;
+  return (
+    <ul className="space-y-4">
+      {places.map((place) => (
+        <li className="min-w-0 [overflow-wrap:anywhere]" key={place.state}>
+          <h3 className="text-lg font-bold">{place.state}</h3>
+          {place.cities.length ? <p>{place.cities.join(", ")}</p> : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -297,6 +323,13 @@ export async function DriverProfileView({ driverId: raw, section, cursor, achiev
               ) : null}
             </nav>
           ) : null}
+        </section>
+      ) : null}
+
+      {section === "places" ? (
+        <section className="py-4">
+          <h2 className="mb-4 text-2xl font-bold text-ink" id="places-heading">Places visited</h2>
+          <PlacesVisited snapshot={snapshot} />
         </section>
       ) : null}
 

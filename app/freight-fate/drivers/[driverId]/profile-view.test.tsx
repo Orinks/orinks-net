@@ -181,12 +181,35 @@ describe("driver profile routes", () => {
     expect(document.body.textContent).toContain("No achievements yet.");
   });
 
-  test.each(["overview", "road-journal", "achievements"] as const)("marks only the current %s route", async (section) => {
+  test.each(["overview", "road-journal", "achievements", "places"] as const)("marks only the current %s route", async (section) => {
     const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section })));
     const current = document.querySelectorAll('nav[aria-label="Freight Fate profile sections"] a[aria-current="page"]');
     expect(current).toHaveLength(1);
     expect(current[0].getAttribute("href")).toBe(section === "overview" ? "/freight-fate/drivers/road-star-1234" : `/freight-fate/drivers/road-star-1234/${section}`);
     expect(document.querySelector("h1")?.getAttribute("tabindex")).toBe("-1");
+  });
+
+  test("lists the places visited as one heading per state with its cities", async () => {
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: { ...completeProfile.snapshot, visitedPlaces: [
+      { state: "Illinois", cities: ["Chicago", "Peoria"] },
+      { state: "Texas", cities: ["Waco"] },
+    ] } });
+    const document = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "places" })));
+    expect(Array.from(document.querySelectorAll("h2"), (heading) => heading.textContent)).toEqual(["Places visited"]);
+    const states = Array.from(document.querySelectorAll("section li"));
+    expect(states.map((item) => [item.querySelector("h3")?.textContent, item.querySelector("p")?.textContent]))
+      .toEqual([["Illinois", "Chicago, Peoria"], ["Texas", "Waco"]]);
+  });
+
+  test("says when the places list is still to come or empty", async () => {
+    const before = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "places" })));
+    expect(before.querySelector("section")?.textContent).toBe("Places visitedThe list appears the next time this career is backed up.");
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: { ...completeProfile.snapshot, citiesVisited: 0, statesVisited: 0, visitedPlaces: [] } });
+    const empty = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "places" })));
+    expect(empty.querySelector("section")?.textContent).toBe("Places visitedNo deliveries yet.");
+    getProfile.mockResolvedValue({ ...completeProfile, snapshot: null });
+    const unshared = documentFor(renderToStaticMarkup(await DriverProfileView({ driverId: "road-star-1234", section: "places" })));
+    expect(unshared.querySelector("section")?.textContent).toBe("Places visitedNo current career has been shared yet.");
   });
 
   test("shows a complete achievement page with undated imports and accessible pagination", async () => {

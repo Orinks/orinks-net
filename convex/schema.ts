@@ -596,6 +596,12 @@ export default defineSchema({
     lifetimeEarnings: v.optional(v.number()),
     citiesVisited: v.optional(v.number()),
     statesVisited: v.optional(v.number()),
+    // The cities behind those two counts, grouped by state, both in
+    // alphabetical order. Absent until the career's next verified upload.
+    visitedPlaces: v.optional(v.array(v.object({
+      state: v.string(),
+      cities: v.array(v.string()),
+    }))),
     longestHaulMiles: v.optional(v.number()),
     safetyRecord: v.optional(v.object({
       citations: v.number(),

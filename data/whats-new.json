@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-14-places-visited-on-driver-profiles",
+      "date": "2026-10-14",
+      "project": "Freight Fate",
+      "title": "See which cities and states a driver has delivered to",
+      "body": [
+        "Each Freight Fate driver profile now has a Places visited page. Every state the career has delivered to is a heading, with its cities listed under it, so you can jump to a state by name.",
+        "A driver's list appears the next time their career is backed up."
+      ],
+      "link": {
+        "href": "/freight-fate/drivers",
+        "label": "Browse Freight Fate drivers"
+      }
+    },
+    {
       "id": "2026-10-12-pick-stations-from-a-playlist",
       "date": "2026-10-12",
       "project": "Freight Fate",
