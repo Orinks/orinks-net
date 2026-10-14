@@ -29,6 +29,7 @@ beforeEach(() => {
   state.actions = {
     "freightFateStations:reviewStationBatch": async () => ({ ok: true, stations }),
     "freightFateStations:decideStationBatch": decide,
+    "freightFateStationVetting:checkStationBatch": () => new Promise(() => {}),
   };
 });
 
@@ -65,4 +66,25 @@ test("an expired link says so", async () => {
   state.actions["freightFateStations:reviewStationBatch"] = async () => ({ ok: false });
   render(<StationReviewClient token="old" />);
   expect(await screen.findByRole("heading", { name: "This review link does not work" })).toBeInTheDocument();
+});
+
+test("shows each stream's check, and says when the check is done", async () => {
+  state.actions["freightFateStationVetting:checkStationBatch"] = async () => ({
+    ok: true,
+    checks: [
+      { id: "a", ok: true, text: "Plays (mp3)", playUrl: "https://s.example/live", format: "mp3" },
+      { id: "b", ok: false, text: "Fails: the server refused it (error 403)" },
+      { id: "c", ok: true, text: "Plays (HLS)", playUrl: "https://l.example/live", format: "hls" },
+    ],
+  });
+  render(<StationReviewClient token="tok" />);
+  expect(await screen.findByText("Stream check finished: 2 of 3 stations play.")).toBeInTheDocument();
+  expect(screen.getByText("Stream check: Plays (mp3)")).toBeInTheDocument();
+  expect(screen.getByText("Stream check: Fails: the server refused it (error 403)")).toBeInTheDocument();
+});
+
+test("a station waits on its check while it runs", async () => {
+  render(<StationReviewClient token="tok" />);
+  await screen.findByRole("heading", { name: "3 stations waiting" });
+  expect(screen.getAllByText("Stream check: Checking…")).toHaveLength(3);
 });

@@ -122,9 +122,27 @@ export function StationListPicker({
   );
 }
 
-/** One station playing at a time, through the site, for twenty-five seconds. */
+const previewAddress = (address: string) =>
+  `/api/freight-fate/stations/preview?url=${encodeURIComponent(address)}`;
+
+/** HLS by its own say-so, or by the address it was suggested under. */
+function isHls(address: string, format?: string) {
+  if (format) return format === "hls";
+  try {
+    return new URL(address).pathname.toLowerCase().endsWith(".m3u8");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * One station playing at a time, through the site, for twenty-five seconds.
+ * HLS plays natively only in Safari, so elsewhere hls.js plays it, its
+ * playlists and segments all coming through the same route.
+ */
 export function usePreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState<number | null>(null);
   const [failed, setFailed] = useState("");
@@ -132,6 +150,8 @@ export function usePreview() {
   function stop() {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
+    hlsRef.current?.destroy();
+    hlsRef.current = null;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.removeAttribute("src");
@@ -141,10 +161,11 @@ export function usePreview() {
     setPlaying(null);
   }
 
-  function play(index: number, station: ListedStation) {
+  /** Plays station i; format, when the check knows it, says whether it is HLS. */
+  function play(index: number, station: ListedStation, format?: string) {
     stop();
     setFailed("");
-    const audio = new Audio(`/api/freight-fate/stations/preview?url=${encodeURIComponent(station.streamUrl)}`);
+    const audio = new Audio();
     audioRef.current = audio;
     const failure = () => {
       if (audioRef.current !== audio) return;
@@ -155,11 +176,33 @@ export function usePreview() {
     audio.addEventListener("ended", () => {
       if (audioRef.current === audio) stop();
     });
-    audio.play().catch(failure);
     setPlaying(index);
     timerRef.current = setTimeout(() => {
       if (audioRef.current === audio) stop();
     }, PREVIEW_MS);
+    if (!isHls(station.streamUrl, format) || audio.canPlayType("application/vnd.apple.mpegurl")) {
+      audio.src = previewAddress(station.streamUrl);
+      audio.play().catch(failure);
+      return;
+    }
+    import("hls.js")
+      .then(({ default: Hls }) => {
+        if (audioRef.current !== audio) return;
+        if (!Hls.isSupported()) return failure();
+        // The route points every address in a playlist back through itself,
+        // so only the first request needs sending there.
+        const hls = new Hls({});
+        hlsRef.current = hls;
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) failure();
+        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          audio.play().catch(failure);
+        });
+        hls.loadSource(previewAddress(station.streamUrl));
+        hls.attachMedia(audio);
+      })
+      .catch(failure);
   }
 
   // Nothing keeps playing once the picker is gone.
