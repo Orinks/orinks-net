@@ -3,7 +3,10 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 
 // The stand-in stream lives on 127.0.0.1, which the real rule refuses.
 let publicAddresses = true;
-vi.mock("@/convex/freightFateStationRules", () => ({ isPublicAddress: () => publicAddresses }));
+vi.mock("@/convex/freightFateStationRules", async (original) => ({
+  ...(await original<typeof import("@/convex/freightFateStationRules")>()),
+  isPublicAddress: () => publicAddresses,
+}));
 
 const { GET } = await import("./route");
 

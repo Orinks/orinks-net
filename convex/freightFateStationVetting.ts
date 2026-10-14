@@ -29,6 +29,7 @@ import {
   MAX_LISTED_STATIONS,
   MAX_NAME_LENGTH,
   normalizeStreamUrl,
+  previewPlayable,
   refuse,
   validateSuggestion,
   type Refusal,
@@ -217,7 +218,13 @@ function firstHlsUri(text: string, base: URL) {
  * An HLS stream plays when its media playlist names a segment that answers
  * with more than an error page. A master playlist leads to its first variant.
  */
-async function probeHls(text: string, base: URL, resolve: Resolver, deadline: number): Promise<ProbeResult> {
+async function probeHls(
+  text: string,
+  base: URL,
+  address: string,
+  resolve: Resolver,
+  deadline: number,
+): Promise<ProbeResult> {
   let next = firstHlsUri(text, base);
   for (let level = 0; next?.master && level < 2; level += 1) {
     const variant = await fetchFollowing(next.url, resolve, deadline);
@@ -229,8 +236,9 @@ async function probeHls(text: string, base: URL, resolve: Resolver, deadline: nu
   if (!("reply" in segment)) return segment;
   const type = segment.reply.headers.get("content-type") ?? "";
   if (judgeProbe(type, segment.reply.body).verdict === "web_page") return { ok: false, reason: "stream_web_page" };
+  if (!previewPlayable(type)) return { ok: false, reason: "stream_not_audio" };
   if (segment.reply.body.length < PROBE_MIN_AUDIO_BYTES) return unreachable("too_little_audio");
-  return { ok: true, format: "hls", playUrl: base.href };
+  return { ok: true, format: "hls", playUrl: address };
 }
 
 /** probeStream with the address check supplied: tests point it at a local server. */
@@ -251,10 +259,13 @@ export async function probeWith(
         ok: true,
         format: verdict.format,
         ...(reply.headers.get("icy-name")?.trim() ? { name: reply.headers.get("icy-name")!.trim().slice(0, MAX_NAME_LENGTH) } : {}),
-        playUrl: url.href,
+        // The address before its redirects: a CDN can tie the address it
+        // redirects to to the server that asked, here the check's and not
+        // the preview's.
+        playUrl: address,
       };
     case "hls":
-      return probeHls(new TextDecoder().decode(reply.body), url, resolve, deadline);
+      return probeHls(new TextDecoder().decode(reply.body), url, address, resolve, deadline);
     case "playlist":
       // The game resolves a playlist at play time; one level is all a
       // station's playlist ever needs, and it must lead to real audio.
