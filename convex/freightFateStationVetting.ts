@@ -28,6 +28,7 @@ import {
   type ListedStation,
   MAX_LISTED_STATIONS,
   MAX_NAME_LENGTH,
+  dechunk,
   normalizeStreamUrl,
   previewPlayable,
   refuse,
@@ -147,10 +148,11 @@ function parseReply(raw: Buffer): RawReply | null {
     const colon = line.indexOf(":");
     if (colon > 0) headers.set(line.slice(0, colon).trim().toLowerCase(), line.slice(colon + 1).trim());
   }
+  const body = new Uint8Array(raw.subarray(headEnd + (split === -1 ? 2 : 4)));
   return {
     status: Number(status[1]),
     headers,
-    body: new Uint8Array(raw.subarray(headEnd + (split === -1 ? 2 : 4))),
+    body: /chunked/i.test(headers.get("transfer-encoding") ?? "") ? dechunk(body) : body,
   };
 }
 
