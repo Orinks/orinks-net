@@ -640,6 +640,25 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_window", ["windowStart"]),
+  // Leftovers from the removed Mastodon sharing: kept in the schema only so
+  // freightFateMastodonPurge can revoke each stored grant at its instance
+  // and delete the rows. Drop both tables once they are empty.
+  freightFateMastodonApps: defineTable({
+    instanceHost: v.string(),
+    clientId: v.string(),
+    clientSecret: v.string(),
+    scopes: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_host", ["instanceHost"]),
+  freightFateMastodonLinks: defineTable({
+    driverId: v.string(),
+    instanceHost: v.string(),
+    accessToken: v.string(),
+    handle: v.string(),
+    createdAt: v.number(),
+    lastPostedAt: v.optional(v.number()),
+    lastEventId: v.optional(v.string()),
+  }).index("by_driver_id", ["driverId"]),
   // Radio stations players suggest for Freight Fate's dial. A suggestion is
   // stored only after its stream answered with audio the game can play and
   // it matched nothing already on the dial or already suggested
