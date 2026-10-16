@@ -641,8 +641,8 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_window", ["windowStart"]),
   // Leftovers from the removed Mastodon sharing: kept in the schema only so
-  // freightFateMastodonPurge can revoke each stored grant at its instance
-  // and delete the rows. Drop both tables once they are empty.
+  // freightFateMastodonPurge can delete the rows. Drop both tables once
+  // they are empty.
   freightFateMastodonApps: defineTable({
     instanceHost: v.string(),
     clientId: v.string(),

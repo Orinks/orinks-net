@@ -89,12 +89,12 @@ crons.daily(
   {},
 );
 
-// Leftover Mastodon grants from the removed sharing feature: revoked at each
-// instance and deleted. Does nothing once the tables are empty.
+// Leftover Mastodon tokens from the removed sharing feature, deleted without
+// contacting any Mastodon server. Does nothing once the tables are empty.
 crons.interval(
-  "revoke and drop leftover Mastodon links",
+  "drop leftover Mastodon tokens",
   { hours: 1 },
-  internal.freightFateMastodonPurge.purgeMastodonLinks,
+  internal.freightFateMastodonPurge.purgeMastodonRows,
   {},
 );
 

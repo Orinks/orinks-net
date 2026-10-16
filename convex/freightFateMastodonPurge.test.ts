@@ -8,15 +8,16 @@ import { PURGE_BATCH } from "./freightFateMastodonPurge";
 const modules = import.meta.glob("./**/*.ts");
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 describe("leftover Mastodon purge", () => {
-  test("revokes each grant at its instance, then deletes links and apps", async () => {
+  test("deletes every link and app without contacting any server", async () => {
+    vi.useFakeTimers();
     const t = convexTest(schema, modules);
-    const fetchMock = vi.fn(async () => new Response("{}"));
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    const count = PURGE_BATCH + 3;
     await t.run(async (ctx) => {
       await ctx.db.insert("freightFateMastodonApps", {
         instanceHost: "mastodon.example",
@@ -24,10 +25,10 @@ describe("leftover Mastodon purge", () => {
         clientSecret: "client-secret",
         createdAt: 1,
       });
-      for (let i = 0; i < count; i += 1) {
+      for (let i = 0; i < PURGE_BATCH + 3; i += 1) {
         await ctx.db.insert("freightFateMastodonLinks", {
           driverId: `driver-${i}`,
-          instanceHost: i === 0 ? "orphan.example" : "mastodon.example",
+          instanceHost: "mastodon.example",
           accessToken: `token-${i}`,
           handle: `@d${i}@mastodon.example`,
           createdAt: 1,
@@ -35,57 +36,24 @@ describe("leftover Mastodon purge", () => {
       }
     });
 
-    const result = await t.action(internal.freightFateMastodonPurge.purgeMastodonLinks, {});
-
-    expect(result).toEqual({ links: count, apps: 1 });
-    // The orphan link has no app to revoke with, so it is only deleted.
-    expect(fetchMock).toHaveBeenCalledTimes(count - 1);
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("https://mastodon.example/oauth/revoke");
-    expect(JSON.parse(init.body as string)).toMatchObject({
-      client_id: "client-id",
-      client_secret: "client-secret",
+    expect(await t.mutation(internal.freightFateMastodonPurge.purgeMastodonRows, {})).toEqual({
+      links: PURGE_BATCH,
+      apps: 0,
     });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    expect(fetchMock).not.toHaveBeenCalled();
     await t.run(async (ctx) => {
       expect(await ctx.db.query("freightFateMastodonLinks").first()).toBeNull();
       expect(await ctx.db.query("freightFateMastodonApps").first()).toBeNull();
     });
   });
 
-  test("a failed revoke still deletes the row", async () => {
-    const t = convexTest(schema, modules);
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("instance down");
-    }));
-    await t.run(async (ctx) => {
-      await ctx.db.insert("freightFateMastodonApps", {
-        instanceHost: "mastodon.example",
-        clientId: "client-id",
-        clientSecret: "client-secret",
-        createdAt: 1,
-      });
-      await ctx.db.insert("freightFateMastodonLinks", {
-        driverId: "driver-1",
-        instanceHost: "mastodon.example",
-        accessToken: "token-1",
-        handle: "@d1@mastodon.example",
-        createdAt: 1,
-      });
-    });
-
-    const result = await t.action(internal.freightFateMastodonPurge.purgeMastodonLinks, {});
-
-    expect(result).toEqual({ links: 1, apps: 1 });
-  });
-
   test("does nothing once the tables are empty", async () => {
     const t = convexTest(schema, modules);
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    expect(await t.action(internal.freightFateMastodonPurge.purgeMastodonLinks, {})).toEqual({
+    expect(await t.mutation(internal.freightFateMastodonPurge.purgeMastodonRows, {})).toEqual({
       links: 0,
       apps: 0,
     });
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
