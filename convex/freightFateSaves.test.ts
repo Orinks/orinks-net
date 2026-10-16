@@ -955,6 +955,11 @@ describe("validated private cloud revisions", () => {
       damageFreeRate: 75,
       citiesVisited: 3,
       statesVisited: 3,
+      visitedPlaces: [
+        { state: "Colorado", cities: ["Denver"] },
+        { state: "Illinois", cities: ["Chicago"] },
+        { state: "Wisconsin", cities: ["Milwaukee"] },
+      ],
       longestHaulMiles: 875.4,
       lifetimeEarnings: 21_500,
       netWorth: 9_000,

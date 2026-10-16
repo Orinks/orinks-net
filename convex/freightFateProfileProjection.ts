@@ -24,6 +24,26 @@ function roundOne(value: number) {
   return Math.round(value * 10) / 10;
 }
 
+// The cities a career has delivered to, grouped under their states. States
+// and the cities inside each run alphabetically, so a reader can find one by
+// name. A label is "City, State"; the state is the part after the last comma.
+export function placesByState(cities: string[], cityLabels: Record<string, string>) {
+  const byState = new Map<string, string[]>();
+  for (const city of cities) {
+    const label = cityLabels[city];
+    const comma = label.lastIndexOf(", ");
+    if (comma < 0) continue;
+    const state = label.slice(comma + 2);
+    const name = label.slice(0, comma);
+    const names = byState.get(state) ?? [];
+    if (!names.includes(name)) names.push(name);
+    byState.set(state, names);
+  }
+  return [...byState.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "en-US"))
+    .map(([state, names]) => ({ state, cities: names.sort((a, b) => a.localeCompare(b, "en-US")) }));
+}
+
 export function levelForXp(xp: number) {
   const thresholds = invariants.levelXp as number[];
   let level = 1;
@@ -161,6 +181,7 @@ export function buildVerifiedProfileSnapshot(args: {
   const states = knownCities
     ? new Set(knownCities.map((city) => cityLabels[city].split(", ").at(-1)))
     : undefined;
+  const visitedPlaces = knownCities ? placesByState(knownCities, cityLabels) : undefined;
   const fleetTiers = invariants.fleetTiers as Array<{ minLevel: number; label: string }>;
   const fleetTier = businessStatus === "company_driver"
     ? fleetTiers.filter((tier) => level >= tier.minLevel).at(-1)?.label
@@ -217,7 +238,11 @@ export function buildVerifiedProfileSnapshot(args: {
       damageFreeRate: roundOne(damageFree * 100 / deliveries),
     }),
     ...(longestHaul === undefined ? {} : { longestHaulMiles: longestHaul }),
-    ...(knownCities ? { citiesVisited: knownCities.length, statesVisited: states!.size } : {}),
+    ...(knownCities ? {
+      citiesVisited: knownCities.length,
+      statesVisited: states!.size,
+      visitedPlaces: visitedPlaces!,
+    } : {}),
     truckName: truckLabels[args.payload.truck as string],
     ...(businessStatus ? { truckIsCarrierAssigned: businessStatus === "company_driver" } : {}),
     employmentStatus,
@@ -261,6 +286,7 @@ export function publicVerifiedSnapshot(
     damageFreeRate: snapshot.damageFreeRate,
     citiesVisited: snapshot.citiesVisited,
     statesVisited: snapshot.statesVisited,
+    visitedPlaces: snapshot.visitedPlaces,
     longestHaulMiles: snapshot.longestHaulMiles,
     safetyRecord: snapshot.safetyRecord ? {
       citations: snapshot.safetyRecord.citations,

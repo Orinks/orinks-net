@@ -89,4 +89,13 @@ crons.daily(
   {},
 );
 
+// Leftover Mastodon tokens from the removed sharing feature, deleted without
+// contacting any Mastodon server. Does nothing once the tables are empty.
+crons.interval(
+  "drop leftover Mastodon tokens",
+  { hours: 1 },
+  internal.freightFateMastodonPurge.purgeMastodonRows,
+  {},
+);
+
 export default crons;

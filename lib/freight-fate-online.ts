@@ -273,31 +273,6 @@ export async function postFreightFateCareerMilestone(input: {
   });
 }
 
-export async function postFreightFateMastodonShare(input: {
-  driverId: string; driverToken: string; eventId: string; occurredAt: number;
-  payload: unknown; clientVersion?: string;
-}) {
-  const client = getConvexClient();
-  if (!client) return null;
-  return client.action(anyApi.freightFateMastodon.shareNotableDelivery, {
-    driverId: normalizeFreightFateDriverId(input.driverId),
-    driverTokenHash: hashFreightFateToken(input.driverToken),
-    eventId: normalizeFreightFateEventText(input.eventId, "Event ID", 96),
-    occurredAt: input.occurredAt, payload: input.payload,
-    ...(input.clientVersion === undefined ? {} : { clientVersion: input.clientVersion }),
-    now: Date.now(),
-  });
-}
-
-export async function getFreightFateMastodonStatus(input: { driverId: string; driverToken: string }) {
-  const client = getConvexClient();
-  if (!client) return null;
-  return client.query(anyApi.freightFateMastodon.statusForGame, {
-    driverId: normalizeFreightFateDriverId(input.driverId),
-    driverTokenHash: hashFreightFateToken(input.driverToken),
-  });
-}
-
 export const FREIGHT_FATE_UPDATES_SNAPSHOT_TAG = "freight-fate-public-updates";
 
 // How long a page of the public feed may be reused. Unlike the presence board
