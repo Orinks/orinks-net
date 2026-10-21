@@ -52,7 +52,7 @@ describe("station announcements", () => {
       body: [
         "Radio Paradise, an online station playing eclectic rock.",
         "The River, WXRV 92.5 FM, from Haverhill, Massachusetts.",
-        "They are on the dial the next time you start the game.",
+        "They will be on the dial the next time you start the game.",
       ],
       link: { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
     });
@@ -61,7 +61,7 @@ describe("station announcements", () => {
   test("a single station is named, its call sign not repeated, and a big day is counted", () => {
     const [single] = stationNewsEntries([kexp]);
     expect(single.title).toBe("KEXP joins Freight Fate's radio");
-    expect(single.body).toEqual(["KEXP, from Washington.", "It is on the dial the next time you start the game."]);
+    expect(single.body).toEqual(["KEXP, from Washington.", "It will be on the dial the next time you start the game."]);
 
     const many = stationNewsEntries([river, paradise, { ...kexp, acceptedAt: OCT_20_MORNING }]);
     expect(many[0].title).toBe("3 new stations join Freight Fate's radio");

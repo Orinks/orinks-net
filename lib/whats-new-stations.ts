@@ -71,7 +71,7 @@ export function stationNewsEntries(stations: StationNews[]): WhatsNewEntry[] {
         title: stationTitle(sorted.map((station) => station.name)),
         body: [
           ...sorted.map(stationLine),
-          `${sorted.length === 1 ? "It is" : "They are"} on the dial the next time you start the game.`,
+          `${sorted.length === 1 ? "It will be" : "They will be"} on the dial the next time you start the game.`,
         ],
         link: { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
       };
