@@ -2,6 +2,19 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-21-accepted-stations-on-whats-new",
+      "date": "2026-10-21",
+      "project": "Freight Fate",
+      "title": "Accepted radio stations appear on What's New",
+      "body": [
+        "When suggested stations are accepted for Freight Fate's radio, this page names them the same day, with each station's call sign and home city where it has one. The RSS feed carries them too."
+      ],
+      "link": {
+        "href": "/freight-fate/suggest-a-station",
+        "label": "Suggest a radio station"
+      }
+    },
+    {
       "id": "2026-10-14-places-visited-on-driver-profiles",
       "date": "2026-10-14",
       "project": "Freight Fate",

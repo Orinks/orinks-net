@@ -1,6 +1,12 @@
 import { PageHeader } from "@/components/PageHeader";
 import { RecentUpdates } from "@/components/RecentUpdates";
-import { formatAnnouncementDate, getWhatsNewEntries, type WhatsNewEntry } from "@/lib/whats-new";
+import {
+  formatAnnouncementDate,
+  getWhatsNewEntries,
+  mergeWhatsNewEntries,
+  type WhatsNewEntry,
+} from "@/lib/whats-new";
+import { getStationNewsEntries } from "@/lib/whats-new-stations";
 
 export const metadata = {
   title: "What's New",
@@ -40,10 +46,11 @@ function Announcement({ entry }: { entry: WhatsNewEntry }) {
   );
 }
 
-export default function WhatsNewPage() {
+export default async function WhatsNewPage() {
   // getWhatsNewEntries throws on malformed data, so a bad entry fails the
-  // build — and CI — before any deploy reaches dev or main.
-  const entries = getWhatsNewEntries();
+  // build — and CI — before any deploy reaches dev or main. Stations the
+  // owner accepts join between deploys, one announcement per day.
+  const entries = mergeWhatsNewEntries(getWhatsNewEntries(), await getStationNewsEntries());
   const expanded = entries.slice(0, EXPANDED_COUNT);
   const older = entries.slice(EXPANDED_COUNT);
 

@@ -11,6 +11,35 @@ export type WhatsNewEntry = {
   link?: { href: string; label: string };
 };
 
+function validateEntry(entry: WhatsNewEntry, seen: Set<string>) {
+  // Date-prefixed slug format keeps anchors URL-safe and can never collide
+  // with the page's own section ids (a11y review).
+  if (!entry.id || !/^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/.test(entry.id) || seen.has(entry.id)) {
+    throw new Error(`whats-new.json: missing, malformed, or duplicate id "${entry.id}"`);
+  }
+  seen.add(entry.id);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || Number.isNaN(Date.parse(entry.date))) {
+    throw new Error(`whats-new.json: entry "${entry.id}" has an invalid date "${entry.date}"`);
+  }
+  if (!entry.project?.trim() || !entry.title?.trim()) {
+    throw new Error(`whats-new.json: entry "${entry.id}" needs a project and a title`);
+  }
+  if (!Array.isArray(entry.body) || entry.body.length === 0 || entry.body.some((p) => !p.trim())) {
+    throw new Error(`whats-new.json: entry "${entry.id}" needs non-empty body paragraphs`);
+  }
+  if (entry.link) {
+    if (!entry.link.href?.trim() || !entry.link.label?.trim()) {
+      throw new Error(`whats-new.json: entry "${entry.id}" has a link without href or label`);
+    }
+    // Link-text quality is a BUILD gate, not just a test gate — the same
+    // rules the vitest suite checks (a11y review: descriptive links).
+    const label = entry.link.label.trim();
+    if (label.length < 15 || /^(click here|here|read more|learn more|more|link)$/i.test(label)) {
+      throw new Error(`whats-new.json: entry "${entry.id}" needs descriptive link text, got "${label}"`);
+    }
+  }
+}
+
 /**
  * Loads and VALIDATES the curated announcements. Throwing here is the point:
  * the /whats-new page calls this at build time, so a malformed entry fails
@@ -24,35 +53,32 @@ export function getWhatsNewEntries(): WhatsNewEntry[] {
     throw new Error("whats-new.json: entries must be a non-empty array");
   }
   const seen = new Set<string>();
-  for (const entry of entries) {
-    // Date-prefixed slug format keeps anchors URL-safe and can never collide
-    // with the page's own section ids (a11y review).
-    if (!entry.id || !/^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/.test(entry.id) || seen.has(entry.id)) {
-      throw new Error(`whats-new.json: missing, malformed, or duplicate id "${entry.id}"`);
-    }
-    seen.add(entry.id);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || Number.isNaN(Date.parse(entry.date))) {
-      throw new Error(`whats-new.json: entry "${entry.id}" has an invalid date "${entry.date}"`);
-    }
-    if (!entry.project?.trim() || !entry.title?.trim()) {
-      throw new Error(`whats-new.json: entry "${entry.id}" needs a project and a title`);
-    }
-    if (!Array.isArray(entry.body) || entry.body.length === 0 || entry.body.some((p) => !p.trim())) {
-      throw new Error(`whats-new.json: entry "${entry.id}" needs non-empty body paragraphs`);
-    }
-    if (entry.link) {
-      if (!entry.link.href?.trim() || !entry.link.label?.trim()) {
-        throw new Error(`whats-new.json: entry "${entry.id}" has a link without href or label`);
-      }
-      // Link-text quality is a BUILD gate, not just a test gate — the same
-      // rules the vitest suite checks (a11y review: descriptive links).
-      const label = entry.link.label.trim();
-      if (label.length < 15 || /^(click here|here|read more|learn more|more|link)$/i.test(label)) {
-        throw new Error(`whats-new.json: entry "${entry.id}" needs descriptive link text, got "${label}"`);
-      }
-    }
-  }
+  for (const entry of entries) validateEntry(entry, seen);
+  return newestFirst(entries);
+}
+
+function newestFirst(entries: WhatsNewEntry[]) {
   return [...entries].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+}
+
+/**
+ * The curated entries plus generated ones (accepted radio stations), newest
+ * first. A generated entry goes through the same checks; one that fails them,
+ * or whose id a curated entry already uses, is left out rather than taking
+ * the page down at runtime.
+ */
+export function mergeWhatsNewEntries(curated: WhatsNewEntry[], generated: WhatsNewEntry[]) {
+  const seen = new Set(curated.map((entry) => entry.id));
+  const extra = generated.filter((entry) => {
+    try {
+      validateEntry(entry, seen);
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  });
+  return newestFirst([...curated, ...extra]);
 }
 
 /** "2026-07-08" → "July 8, 2026" (UTC; entries are dates, not moments). */
@@ -75,8 +101,11 @@ function escapeXml(value: string): string {
  * RSS 2.0 feed for /whats-new/feed.xml, built from the same validated
  * entries — so the feed inherits the announcement deploy gate for free.
  */
-export function whatsNewFeedXml(siteName: string, siteUrl: string): string {
-  const entries = getWhatsNewEntries();
+export function whatsNewFeedXml(
+  siteName: string,
+  siteUrl: string,
+  entries: WhatsNewEntry[] = getWhatsNewEntries(),
+): string {
   const items = entries
     .map((entry) => {
       const link = `${siteUrl}/whats-new#${entry.id}`;

@@ -149,6 +149,11 @@ const STATES: Record<string, string> = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
+/** "OH" reads as Ohio; an unknown code comes back as it was given. */
+export function stateName(code: string) {
+  return STATES[code] ?? code;
+}
+
 export const STATE_OPTIONS = Object.entries(STATES)
   .map(([code, name]) => ({ code, name }))
   .sort((a, b) => a.name.localeCompare(b.name));

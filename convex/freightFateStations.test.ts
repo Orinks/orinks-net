@@ -205,6 +205,27 @@ describe("the community station list", () => {
     expect((await t.query(api.freightFateStations.listCommunityStations, {})).stations).toHaveLength(1);
   });
 
+  test("the What's New list names accepted stations still on the dial, and nothing about who suggested them", async () => {
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, terrestrialStation);
+    expect(await t.query(api.freightFateStations.listStationNews, {})).toEqual([]);
+    const row = await onlyRow(t);
+    await t.mutation(internal.freightFateStations.decideStationSuggestion, {
+      id: row._id, decision: "accepted", createdAt: row.createdAt, now: NOW + 1,
+    });
+    const [news] = await t.query(api.freightFateStations.listStationNews, {});
+    expect(news).toMatchObject({ kind: "terrestrial", callSign: "KWSC-FM", city: "Wayne", state: "Nebraska", acceptedAt: NOW + 1 });
+    expect(news).not.toHaveProperty("driverId");
+    expect(news).not.toHaveProperty("note");
+    expect(news).not.toHaveProperty("streamUrl");
+
+    for (let night = 0; night < STATION_DEAD_AFTER; night += 1) {
+      await t.mutation(internal.freightFateStations.recordStationCheck, { id: row._id, ok: false, now: NOW + night });
+    }
+    expect(await t.query(api.freightFateStations.listStationNews, {})).toEqual([]);
+  });
+
   test("a stream the check never heard is not dropped for staying out of reach, and is marked heard once it answers", async () => {
     const t = setup();
     await seedDriver(t);
