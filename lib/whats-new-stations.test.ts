@@ -2,15 +2,11 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ query: vi.fn() }));
 
-vi.mock("next/cache", () => ({
-  unstable_cache: (fn: () => unknown) => fn,
-}));
-
 vi.mock("@/lib/convex", () => ({
   getConvexClient: () => ({ query: mocks.query }),
 }));
 
-import { getStationNewsEntries, stationNewsEntries, type StationNews } from "./whats-new-stations";
+import { getStationNewsEntries, stationNewsEntries, type StationBatch, type StationNews } from "./whats-new-stations";
 import { getWhatsNewEntries, mergeWhatsNewEntries, whatsNewFeedXml } from "./whats-new";
 
 // 9 PM in New York on October 20 is already October 21 in UTC; the owner's
@@ -22,7 +18,6 @@ const OCT_18 = Date.parse("2026-10-18T18:00:00Z");
 const river: StationNews = {
   name: "The River",
   kind: "terrestrial",
-  acceptedAt: OCT_20_EVENING,
   callSign: "WXRV",
   frequency: "92.5 FM",
   city: "Haverhill",
@@ -31,16 +26,17 @@ const river: StationNews = {
 const paradise: StationNews = {
   name: "Radio Paradise",
   kind: "web",
-  acceptedAt: OCT_20_MORNING,
   genre: "eclectic rock",
 };
-const kexp: StationNews = { name: "KEXP", kind: "terrestrial", acceptedAt: OCT_18, callSign: "KEXP", state: "Washington" };
+const kexp: StationNews = { name: "KEXP", kind: "terrestrial", callSign: "KEXP", state: "Washington" };
+
+const batch = (createdAt: number, ...stations: StationNews[]): StationBatch => ({ createdAt, stations });
 
 beforeEach(() => mocks.query.mockReset());
 
 describe("station announcements", () => {
-  test("one entry per day the owner accepted stations, newest first", () => {
-    const entries = stationNewsEntries([kexp, river, paradise]);
+  test("one entry per accepted batch, dated by the owner's day, newest first", () => {
+    const entries = stationNewsEntries([batch(OCT_18, kexp), batch(OCT_20_EVENING, river, paradise)]);
     expect(entries.map((entry) => entry.id)).toEqual([
       "2026-10-20-new-radio-stations",
       "2026-10-18-new-radio-stations",
@@ -59,17 +55,25 @@ describe("station announcements", () => {
   });
 
   test("a single station is named, its call sign not repeated, and a big day is counted", () => {
-    const [single] = stationNewsEntries([kexp]);
+    const [single] = stationNewsEntries([batch(OCT_18, kexp)]);
     expect(single.title).toBe("KEXP joins Freight Fate's radio");
     expect(single.body).toEqual(["KEXP, from Washington.", "It will be on the dial the next time you start the game."]);
 
-    const many = stationNewsEntries([river, paradise, { ...kexp, acceptedAt: OCT_20_MORNING }]);
+    const many = stationNewsEntries([batch(OCT_20_MORNING, river, paradise, kexp)]);
     expect(many[0].title).toBe("3 new stations join Freight Fate's radio");
+  });
+
+  test("a second batch on the same day is its own entry with its own id", () => {
+    const entries = stationNewsEntries([batch(OCT_20_EVENING, river), batch(OCT_20_MORNING, paradise)]);
+    expect(entries.map((entry) => [entry.id, entry.title])).toEqual([
+      ["2026-10-20-new-radio-stations-2", "The River joins Freight Fate's radio"],
+      ["2026-10-20-new-radio-stations", "Radio Paradise joins Freight Fate's radio"],
+    ]);
   });
 
   test("generated entries pass the curated checks and reach the page order and the feed", () => {
     const curated = getWhatsNewEntries();
-    const merged = mergeWhatsNewEntries(curated, stationNewsEntries([river, kexp]));
+    const merged = mergeWhatsNewEntries(curated, stationNewsEntries([batch(OCT_20_EVENING, river), batch(OCT_18, kexp)]));
     expect(merged).toHaveLength(curated.length + 2);
     for (let i = 1; i < merged.length; i++) {
       expect(merged[i - 1].date >= merged[i].date).toBe(true);
@@ -81,7 +85,7 @@ describe("station announcements", () => {
 
   test("an id a curated entry already uses is left out", () => {
     const curated = getWhatsNewEntries();
-    const clash = { ...stationNewsEntries([kexp])[0], id: curated[0].id };
+    const clash = { ...stationNewsEntries([batch(OCT_18, kexp)])[0], id: curated[0].id };
     expect(mergeWhatsNewEntries(curated, [clash])).toHaveLength(curated.length);
   });
 
@@ -89,7 +93,7 @@ describe("station announcements", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.query.mockRejectedValueOnce(new Error("no such function"));
     expect(await getStationNewsEntries()).toEqual([]);
-    mocks.query.mockResolvedValueOnce([kexp]);
+    mocks.query.mockResolvedValueOnce([batch(OCT_18, kexp)]);
     expect((await getStationNewsEntries()).map((entry) => entry.id)).toEqual(["2026-10-18-new-radio-stations"]);
   });
 });

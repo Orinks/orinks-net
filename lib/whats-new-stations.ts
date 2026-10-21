@@ -1,13 +1,11 @@
-import { unstable_cache } from "next/cache";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
 import type { WhatsNewEntry } from "@/lib/whats-new";
 
-/** One accepted station, as freightFateStations.listStationNews returns it. */
+/** One accepted station, as the announcement recorded it. */
 export type StationNews = {
   name: string;
   kind: "terrestrial" | "web";
-  acceptedAt: number;
   callSign?: string;
   frequency?: string;
   city?: string;
@@ -15,13 +13,12 @@ export type StationNews = {
   genre?: string;
 };
 
-// The owner's day, the same clock the visitor counter keeps: stations
-// accepted in one evening's review share one announcement.
-const SITE_TIME_ZONE = "America/New_York";
+/** One accepted batch, as freightFateStationNews.listStationNews returns it. */
+export type StationBatch = { createdAt: number; stations: StationNews[] };
 
-// Matches the community station list's snapshot: an accepted station shows
-// up here about when the game first downloads it.
-const STATION_NEWS_SECONDS = 600;
+// Announcements are dated by the owner's day, the same clock the visitor
+// counter keeps, so an evening review is not dated tomorrow.
+const SITE_TIME_ZONE = "America/New_York";
 
 function siteDate(ms: number) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -53,19 +50,22 @@ function stationTitle(names: string[]) {
   return `${names.length} new stations join Freight Fate's radio`;
 }
 
-/** One announcement per day the owner accepted stations, newest first. */
-export function stationNewsEntries(stations: StationNews[]): WhatsNewEntry[] {
-  const byDay = new Map<string, StationNews[]>();
-  for (const station of stations) {
-    const date = siteDate(station.acceptedAt);
-    byDay.set(date, [...(byDay.get(date) ?? []), station]);
-  }
-  return [...byDay.entries()]
-    .sort(([a], [b]) => (a < b ? 1 : -1))
-    .map(([date, day]) => {
-      const sorted = [...day].sort((a, b) => a.name.localeCompare(b.name));
+/**
+ * One announcement per accepted batch, newest first. A second batch on the
+ * same day gets "-2" on its id, a third "-3", in the order they were accepted.
+ */
+export function stationNewsEntries(batches: StationBatch[]): WhatsNewEntry[] {
+  const perDay = new Map<string, number>();
+  return [...batches]
+    .filter((batch) => batch.stations.length > 0)
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .map((batch) => {
+      const date = siteDate(batch.createdAt);
+      const count = (perDay.get(date) ?? 0) + 1;
+      perDay.set(date, count);
+      const sorted = [...batch.stations].sort((a, b) => a.name.localeCompare(b.name));
       return {
-        id: `${date}-new-radio-stations`,
+        id: count === 1 ? `${date}-new-radio-stations` : `${date}-new-radio-stations-${count}`,
         date,
         project: "Freight Fate",
         title: stationTitle(sorted.map((station) => station.name)),
@@ -75,28 +75,22 @@ export function stationNewsEntries(stations: StationNews[]): WhatsNewEntry[] {
         ],
         link: { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
       };
-    });
+    })
+    .reverse();
 }
-
-async function readStationNews(): Promise<StationNews[]> {
-  const client = getConvexClient();
-  if (!client) return [];
-  return client.query(anyApi.freightFateStations.listStationNews, {});
-}
-
-const cachedStationNews = unstable_cache(readStationNews, ["freight-fate-station-news"], {
-  revalidate: STATION_NEWS_SECONDS,
-});
 
 /**
- * The station announcements, or none when the backend is unreachable: the
- * curated entries must still render, and a failed read is not cached.
+ * The station announcements, read fresh on every request so a batch shows up
+ * as soon as it is accepted, or none when the backend is unreachable: the
+ * curated entries must still render.
  */
 export async function getStationNewsEntries(): Promise<WhatsNewEntry[]> {
+  const client = getConvexClient();
+  if (!client) return [];
   try {
-    return stationNewsEntries(await cachedStationNews());
+    return stationNewsEntries(await client.query(anyApi.freightFateStationNews.listStationNews, {}));
   } catch (error) {
-    console.error("What's New could not read the accepted stations", error);
+    console.error("What's New could not read the station announcements", error);
     return [];
   }
 }

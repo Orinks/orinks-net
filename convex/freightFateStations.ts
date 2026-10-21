@@ -26,6 +26,7 @@ import {
   type ReviewDecision,
 } from "./freightFateReview";
 import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
+import { recordStationNews } from "./freightFateStationNews";
 import { turnstileSecret } from "./turnstile";
 import {
   ANONYMOUS_DAILY_LIMIT,
@@ -33,7 +34,6 @@ import {
   DAILY_SUGGESTION_LIMIT,
   MAX_LISTED_STATIONS,
   refuse,
-  stateName,
   type Refusal,
 } from "./freightFateStationRules";
 
@@ -293,33 +293,6 @@ export const listCommunityStations = query({
   },
 });
 
-/**
- * What the site's What's New page says about accepted stations: the public
- * facts of each station still on the dial, and when it was accepted. Never
- * who suggested it or the note they left.
- */
-export const listStationNews = query({
-  args: {},
-  handler: async (ctx) => {
-    const rows = await ctx.db
-      .query("freightFateStationSuggestions")
-      .withIndex("by_status", (q) => q.eq("status", "accepted"))
-      .collect();
-    return rows
-      .filter((row) => row.decidedAt !== undefined && (row.failedChecks ?? 0) < STATION_DEAD_AFTER)
-      .map((row) => ({
-        name: row.name,
-        kind: row.kind,
-        acceptedAt: row.decidedAt!,
-        ...(row.callSign ? { callSign: row.callSign } : {}),
-        ...(row.frequency ? { frequency: row.frequency } : {}),
-        ...(row.city ? { city: row.city } : {}),
-        ...(row.state ? { state: stateName(row.state) } : {}),
-        ...(row.genre ? { genre: row.genre } : {}),
-      }));
-  },
-});
-
 // -- the nightly re-check -------------------------------------------------------------
 
 export const stationsToRecheck = internalQuery({
@@ -561,6 +534,7 @@ export const decideStationSuggestion = internalMutation({
       return { ok: false as const };
     }
     await decide(ctx, row, args.decision, args.now);
+    if (args.decision === "accepted") await recordStationNews(ctx, [row], args.now);
     return { ok: true as const, name: row.name, kind: row.kind };
   },
 });
@@ -628,14 +602,16 @@ export const decideStations = internalMutation({
     now: v.number(),
   },
   handler: async (ctx, args) => {
-    const decided: Array<Id<"freightFateStationSuggestions">> = [];
+    const decided: Array<Doc<"freightFateStationSuggestions">> = [];
     for (const id of args.ids.slice(0, MAX_BATCH_DECISION)) {
       const row = await ctx.db.get(id);
       if (!row || row.status !== "pending" || row.createdAt > args.issuedAt) continue;
       await decide(ctx, row, args.decision, args.now);
-      decided.push(id);
+      decided.push(row);
     }
-    return decided;
+    // One What's New announcement per accepted batch, written with it.
+    if (args.decision === "accepted") await recordStationNews(ctx, decided, args.now);
+    return decided.map((row) => row._id);
   },
 });
 

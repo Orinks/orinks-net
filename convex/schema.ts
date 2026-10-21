@@ -719,4 +719,24 @@ export default defineSchema({
     .index("by_call_sign_base", ["callSignBase"])
     .index("by_driver_created", ["driverId", "createdAt"])
     .index("by_status_checked", ["status", "lastCheckedAt"]),
+  // One row per batch of station suggestions the owner accepted, written in
+  // the same mutation as the acceptance (freightFateStationNews.ts). The
+  // site's What's New page turns each into an announcement. The station
+  // facts are a copy taken at acceptance, so the announcement says what was
+  // accepted even if the suggestion row changes later.
+  freightFateStationNews: defineTable({
+    createdAt: v.number(),
+    stations: v.array(
+      v.object({
+        id: v.id("freightFateStationSuggestions"),
+        name: v.string(),
+        kind: v.union(v.literal("terrestrial"), v.literal("web")),
+        callSign: v.optional(v.string()),
+        frequency: v.optional(v.string()),
+        city: v.optional(v.string()),
+        state: v.optional(v.string()),
+        genre: v.optional(v.string()),
+      }),
+    ),
+  }).index("by_created", ["createdAt"]),
 });

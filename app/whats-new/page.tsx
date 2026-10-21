@@ -8,10 +8,10 @@ import {
 } from "@/lib/whats-new";
 import { getStationNewsEntries } from "@/lib/whats-new-stations";
 
-// Rendered per visit so a station accepted after the last deploy is never
-// stuck behind a copy built before the backend had it; the station read
-// itself is cached for ten minutes. The curated entries are validated when
-// the module loads, which `next build` does, so they stay a build gate.
+// Each accepted batch of radio stations is recorded as an announcement when
+// it is accepted, and the page reads those per request so the entry is there
+// on the next load. The curated entries are validated when the module loads,
+// which `next build` does, so they stay a build gate.
 export const dynamic = "force-dynamic";
 const curatedEntries = getWhatsNewEntries();
 
@@ -54,7 +54,6 @@ function Announcement({ entry }: { entry: WhatsNewEntry }) {
 }
 
 export default async function WhatsNewPage() {
-  // Stations the owner accepts join between deploys, one announcement per day.
   const entries = mergeWhatsNewEntries(curatedEntries, await getStationNewsEntries());
   const expanded = entries.slice(0, EXPANDED_COUNT);
   const older = entries.slice(EXPANDED_COUNT);
