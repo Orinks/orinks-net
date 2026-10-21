@@ -33,6 +33,7 @@ import {
   DAILY_SUGGESTION_LIMIT,
   MAX_LISTED_STATIONS,
   refuse,
+  stateName,
   type Refusal,
 } from "./freightFateStationRules";
 
@@ -289,6 +290,33 @@ export const listCommunityStations = query({
         .filter((row) => (row.failedChecks ?? 0) < STATION_DEAD_AFTER)
         .map(communityStationRow),
     };
+  },
+});
+
+/**
+ * What the site's What's New page says about accepted stations: the public
+ * facts of each station still on the dial, and when it was accepted. Never
+ * who suggested it or the note they left.
+ */
+export const listStationNews = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query("freightFateStationSuggestions")
+      .withIndex("by_status", (q) => q.eq("status", "accepted"))
+      .collect();
+    return rows
+      .filter((row) => row.decidedAt !== undefined && (row.failedChecks ?? 0) < STATION_DEAD_AFTER)
+      .map((row) => ({
+        name: row.name,
+        kind: row.kind,
+        acceptedAt: row.decidedAt!,
+        ...(row.callSign ? { callSign: row.callSign } : {}),
+        ...(row.frequency ? { frequency: row.frequency } : {}),
+        ...(row.city ? { city: row.city } : {}),
+        ...(row.state ? { state: stateName(row.state) } : {}),
+        ...(row.genre ? { genre: row.genre } : {}),
+      }));
   },
 });
 
