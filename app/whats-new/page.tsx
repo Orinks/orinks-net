@@ -8,6 +8,13 @@ import {
 } from "@/lib/whats-new";
 import { getStationNewsEntries } from "@/lib/whats-new-stations";
 
+// Rendered per visit so a station accepted after the last deploy is never
+// stuck behind a copy built before the backend had it; the station read
+// itself is cached for ten minutes. The curated entries are validated when
+// the module loads, which `next build` does, so they stay a build gate.
+export const dynamic = "force-dynamic";
+const curatedEntries = getWhatsNewEntries();
+
 export const metadata = {
   title: "What's New",
   description:
@@ -47,10 +54,8 @@ function Announcement({ entry }: { entry: WhatsNewEntry }) {
 }
 
 export default async function WhatsNewPage() {
-  // getWhatsNewEntries throws on malformed data, so a bad entry fails the
-  // build — and CI — before any deploy reaches dev or main. Stations the
-  // owner accepts join between deploys, one announcement per day.
-  const entries = mergeWhatsNewEntries(getWhatsNewEntries(), await getStationNewsEntries());
+  // Stations the owner accepts join between deploys, one announcement per day.
+  const entries = mergeWhatsNewEntries(curatedEntries, await getStationNewsEntries());
   const expanded = entries.slice(0, EXPANDED_COUNT);
   const older = entries.slice(EXPANDED_COUNT);
 
