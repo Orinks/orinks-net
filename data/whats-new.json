@@ -7,7 +7,7 @@
       "project": "Freight Fate",
       "title": "Accepted radio stations appear on What's New",
       "body": [
-        "When suggested stations are accepted for Freight Fate's radio, this page names them the same day, with each station's call sign and home city where it has one. The RSS feed carries them too."
+        "When a batch of suggested stations is accepted for Freight Fate's radio, this page names them right away, with each station's call sign and home city where it has one. The RSS feed carries them too."
       ],
       "link": {
         "href": "/freight-fate/suggest-a-station",
