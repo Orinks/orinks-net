@@ -2,16 +2,6 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
-      "id": "2026-10-22-freight-fate-asks-what-a-stop-is-for",
-      "date": "2026-10-22",
-      "project": "Freight Fate",
-      "title": "Freight Fate asks what a stop is for before planning it",
-      "body": [
-        "While you drive, T now opens a short list: fuel, a break, sleep, fuel and sleep, or food and coffee. Each choice says how far away its stop is, and Enter plans that stop. A driver who needs diesel no longer gets a sleep stop.",
-        "It arrives in the next Freight Fate Career 1.9 build."
-      ]
-    },
-    {
       "id": "2026-10-21-accepted-stations-on-whats-new",
       "date": "2026-10-21",
       "project": "Freight Fate",
