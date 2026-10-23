@@ -43,3 +43,9 @@ one a screen reader user sits through. Do not describe what the page already
 does ("this list updates itself", "refreshes automatically"), restate a
 heading, or explain something the controls make obvious. If a line tells the
 reader nothing they need, delete it.
+
+## Branches and pull requests
+
+Pull requests are disabled on this repository (owner rule, 2026-10-23).
+Never open one, or try to. Commit to `dev` and push it directly; `main` is
+the release branch.

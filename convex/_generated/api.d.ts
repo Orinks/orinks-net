@@ -28,6 +28,7 @@ import type * as freightFateSaveActions from "../freightFateSaveActions.js";
 import type * as freightFateSaves from "../freightFateSaves.js";
 import type * as freightFateSharedProfileSigning from "../freightFateSharedProfileSigning.js";
 import type * as freightFateSharedProfileValidation from "../freightFateSharedProfileValidation.js";
+import type * as freightFateStationAdmin from "../freightFateStationAdmin.js";
 import type * as freightFateStationNews from "../freightFateStationNews.js";
 import type * as freightFateStationPlacement from "../freightFateStationPlacement.js";
 import type * as freightFateStationRules from "../freightFateStationRules.js";
@@ -81,6 +82,7 @@ declare const fullApi: ApiFromModules<{
   freightFateSaves: typeof freightFateSaves;
   freightFateSharedProfileSigning: typeof freightFateSharedProfileSigning;
   freightFateSharedProfileValidation: typeof freightFateSharedProfileValidation;
+  freightFateStationAdmin: typeof freightFateStationAdmin;
   freightFateStationNews: typeof freightFateStationNews;
   freightFateStationPlacement: typeof freightFateStationPlacement;
   freightFateStationRules: typeof freightFateStationRules;
