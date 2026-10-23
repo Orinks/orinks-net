@@ -1,0 +1,85 @@
+// Corrections to station suggestions after the owner has decided them.
+// Internal-only: run them from the Convex dashboard or the CLI, e.g.
+//
+//   npx convex run --prod freightFateStationAdmin:findStations '{"text":"sleep radio"}'
+//   npx convex run --prod freightFateStationAdmin:makeWebStation '{"id":"<id>"}'
+//
+// findStations looks a station up by name or call sign and gives the id the
+// other tools take.
+import { internalMutation, internalQuery } from "./_generated/server";
+import { v } from "convex/values";
+
+/** Suggestions whose name or call sign contains the text, any status. */
+export const findStations = internalQuery({
+  args: { text: v.string() },
+  handler: async (ctx, args) => {
+    const needle = args.text.trim().toLowerCase();
+    if (!needle) throw new Error("Give part of a station's name or call sign.");
+    const rows = await ctx.db.query("freightFateStationSuggestions").collect();
+    return rows
+      .filter(
+        (row) =>
+          row.name.toLowerCase().includes(needle) ||
+          (row.callSign ?? "").toLowerCase().includes(needle),
+      )
+      .map((row) => ({
+        id: row._id,
+        name: row.name,
+        kind: row.kind,
+        status: row.status,
+        callSign: row.callSign ?? null,
+        frequency: row.frequency ?? null,
+        city: row.city ?? null,
+        state: row.state ?? null,
+        streamUrl: row.streamUrl,
+      }));
+  },
+});
+
+/**
+ * Turns a station suggested as AM or FM into web radio: for a stream that has
+ * no licensed transmitter, or not the one it claimed. Drops the call sign,
+ * frequency, place and any transmitter found for it, so the game plays it
+ * everywhere, and corrects the station's What's New announcement the same
+ * way. The stream, name, genre and decision stay as they were.
+ */
+export const makeWebStation = internalMutation({
+  args: { id: v.id("freightFateStationSuggestions") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    if (!row) throw new Error(`No station suggestion with id "${args.id}".`);
+    if (row.kind === "web") return { changed: false, name: row.name, announcements: 0 };
+
+    await ctx.db.patch(row._id, {
+      kind: "web",
+      callSign: undefined,
+      callSignBase: undefined,
+      frequency: undefined,
+      frequencyMhz: undefined,
+      city: undefined,
+      state: undefined,
+      lat: undefined,
+      lon: undefined,
+      rangeMiles: undefined,
+      placement: undefined,
+      placementCheckedAt: undefined,
+    });
+
+    let announcements = 0;
+    for (const news of await ctx.db.query("freightFateStationNews").collect()) {
+      if (!news.stations.some((station) => station.id === row._id)) continue;
+      const stations = news.stations.map((station) => {
+        if (station.id !== row._id) return station;
+        return {
+          id: station.id,
+          name: station.name,
+          kind: "web" as const,
+          ...(station.genre ? { genre: station.genre } : {}),
+        };
+      });
+      await ctx.db.patch(news._id, { stations });
+      announcements += 1;
+    }
+    return { changed: true, name: row.name, announcements };
+  },
+});
