@@ -111,6 +111,48 @@ export const forceRename = internalMutation({
   },
 });
 
+// Hand a driver to a different Clerk account. The setup page finds a driver
+// by the signed-in account's Clerk subject, so a player who deletes their
+// account and signs up again cannot reach their own driver any more — while
+// the game keeps posting to it with a device token that still works. Without
+// this the only answer was to throw the career away. Internal only:
+//
+//   npx convex run freightFateAdmin:reassignDriver <json> --prod
+//
+// where <json> is {"driverId":"<id>","authSubject":"user_..."}. Accounts
+// deleted from here on take their driver with them
+// (convex/accountDeletion.ts), so this is for the rows that predate that.
+export const reassignDriver = internalMutation({
+  args: {
+    driverId: v.string(),
+    authSubject: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", args.driverId))
+      .unique();
+
+    if (!driver) {
+      throw new Error(`No driver with id "${args.driverId}".`);
+    }
+
+    // One driver per account, as provisionDriver assumes: a second row under
+    // the same subject would make every by_auth_subject lookup throw.
+    const held = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_auth_subject", (q) => q.eq("authSubject", args.authSubject))
+      .unique();
+    if (held && held._id !== driver._id) {
+      throw new Error(`That account already owns driver "${held.driverId}".`);
+    }
+
+    await ctx.db.patch(driver._id, { authSubject: args.authSubject, updatedAt: Date.now() });
+
+    return { driverId: driver.driverId, displayName: driver.displayName };
+  },
+});
+
 // Set or clear a driver's save-tamper flag. This is now the ONLY way one is
 // raised: upload screening rejects a bad save and keeps the payload
 // (listRejectedUploads below), but never brands the account, because the
