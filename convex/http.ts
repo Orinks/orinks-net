@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { api } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { clerkWebhook } from "./accountDeletion";
 import { decideFromPage, reviewPage } from "./freightFateReview";
 import { answerPresencePost } from "./freightFateRequest";
 import { decideStationFromPage, stationReviewPage } from "./freightFateStations";
@@ -25,5 +26,10 @@ http.route({
     answerPresencePost(request, (args) => ctx.runMutation(api.freightFate.updatePresence, args)),
   ),
 });
+
+// Clerk's account events. Only user.deleted is acted on: it is the one thing
+// the site cannot learn any other way, and until it arrived a deleted account
+// left its driver, saves and journal behind (convex/accountDeletion.ts).
+http.route({ path: "/clerk/webhook", method: "POST", handler: clerkWebhook });
 
 export default http;

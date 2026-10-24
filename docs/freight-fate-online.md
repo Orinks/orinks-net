@@ -157,3 +157,37 @@ Move the private value into the secrets manager, never commit it, and add the
 reported raw public key to the game's `PUBLIC_KEYS` map before signing with the
 new key ID. Old public keys stay in the game while private revisions using them
 remain restorable.
+
+## Account deletion
+
+Deleting an orinks.net account removed the Clerk user and nothing else, so
+the driver it owned stayed on the live board, kept accepting posts from a
+device token that nobody could revoke any more, and went on holding its
+display name against every other account — a player who deleted an account
+could not reuse their own name on the next one.
+
+Clerk's `user.deleted` webhook now does the cascade. It posts to the Convex
+HTTP endpoint `/clerk/webhook` (signature verified in
+`convex/accountDeletion.ts`; svix's scheme is HMAC-SHA256 over
+`<svix-id>.<svix-timestamp>.<body>`, base64, with a five-minute tolerance) and
+runs `purgeAccount`: the driver row and every row keyed by its `driverId`
+(device tokens, presence, both halves of the beat, cloud saves and their
+content, rejected uploads, integrity observations, journal events,
+achievements, meaningful-play operations, the public projection, station
+suggestions) plus the Midnight Signal `triviaPlayers` row with
+its runs and achievements. Ten-minute activation rows are left to expire.
+
+- **Env:** `CLERK_WEBHOOK_SIGNING_SECRET` (Convex env, the `whsec_…` value
+  Clerk shows for the endpoint). Without it the endpoint answers 503 rather
+  than trusting an unverified delete.
+- **Endpoint:** add it in the Clerk dashboard under Webhooks, subscribed to
+  `user.deleted`, pointing at
+  `https://<deployment>.convex.site/clerk/webhook`.
+- **Backfill** for an account deleted before this shipped, whose driver row
+  still carries the dead Clerk subject (find it in the `authSubject` column):
+  `npx convex run accountDeletion:purgeDeletedAccount
+  '{"authSubject":"user_..."}' --prod`.
+- **Rescue** instead of purge, when the player wants the career kept on a new
+  account: `npx convex run freightFateAdmin:reassignDriver
+  '{"driverId":"<id>","authSubject":"user_..."}' --prod` hands the driver to
+  the new Clerk subject, after which the setup page can rename it as usual.
