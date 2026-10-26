@@ -101,4 +101,35 @@ describe("station corrections", () => {
     const again = await t.mutation(internal.freightFateStationAdmin.makeWebStation, { id: ids[0] });
     expect(again).toEqual({ changed: false, name: "Sleep Radio", announcements: 0 });
   });
+
+  test("setStreamUrl moves a pending suggestion to the new address", async () => {
+    const t = convexTest(schema, modules);
+    const id = await t.run((ctx) => ctx.db.insert("freightFateStationSuggestions", fake));
+    const result = await t.mutation(internal.freightFateStationAdmin.setStreamUrl, {
+      id, streamUrl: " http://Sleep.example:8000/tv.mp3 ",
+    });
+    expect(result).toMatchObject({ status: "pending", from: fake.streamUrl, to: "http://Sleep.example:8000/tv.mp3" });
+    const row = await t.run((ctx) => ctx.db.get(id));
+    expect(row).toMatchObject({
+      streamUrl: "http://Sleep.example:8000/tv.mp3",
+      streamKey: "sleep.example:8000/tv.mp3",
+      streamUnheard: true,
+      status: "pending",
+    });
+  });
+
+  test("setStreamUrl refuses a stream another suggestion has, and a non-web address", async () => {
+    const t = convexTest(schema, modules);
+    const [id] = await t.run(async (ctx) =>
+      Promise.all([fake, other].map((row) => ctx.db.insert("freightFateStationSuggestions", row))),
+    );
+    await expect(
+      t.mutation(internal.freightFateStationAdmin.setStreamUrl, { id, streamUrl: "https://owl.example/live/" }),
+    ).rejects.toThrow(/Night Owl Radio/);
+    await expect(
+      t.mutation(internal.freightFateStationAdmin.setStreamUrl, { id, streamUrl: "ftp://sleep.example/x" }),
+    ).rejects.toThrow(/http/);
+    const row = await t.run((ctx) => ctx.db.get(id));
+    expect(row?.streamUrl).toBe(fake.streamUrl);
+  });
 });

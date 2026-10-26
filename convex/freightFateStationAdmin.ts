@@ -3,11 +3,13 @@
 //
 //   npx convex run --prod freightFateStationAdmin:findStations '{"text":"sleep radio"}'
 //   npx convex run --prod freightFateStationAdmin:makeWebStation '{"id":"<id>"}'
+//   npx convex run --prod freightFateStationAdmin:setStreamUrl '{"id":"<id>","streamUrl":"http://..."}'
 //
 // findStations looks a station up by name or call sign and gives the id the
 // other tools take.
 import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import { normalizeStreamUrl } from "./freightFateStationRules";
 
 /** Suggestions whose name or call sign contains the text, any status. */
 export const findStations = internalQuery({
@@ -81,5 +83,46 @@ export const makeWebStation = internalMutation({
       announcements += 1;
     }
     return { changed: true, name: row.name, announcements };
+  },
+});
+
+/**
+ * Points a suggestion at a new stream address, for a station that moved or
+ * was suggested with the wrong one. The review page checks the new address
+ * when it loads; an accepted station is re-checked overnight.
+ */
+export const setStreamUrl = internalMutation({
+  args: { id: v.id("freightFateStationSuggestions"), streamUrl: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    if (!row) throw new Error(`No station suggestion with id "${args.id}".`);
+    const streamUrl = args.streamUrl.trim();
+    let parsed: URL;
+    try {
+      parsed = new URL(streamUrl);
+    } catch {
+      throw new Error(`"${streamUrl}" is not a web address.`);
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("A stream address starts with http:// or https://.");
+    }
+    const streamKey = normalizeStreamUrl(streamUrl);
+    const clash = (
+      await ctx.db
+        .query("freightFateStationSuggestions")
+        .withIndex("by_stream_key", (q) => q.eq("streamKey", streamKey))
+        .collect()
+    ).find((other) => other._id !== row._id);
+    if (clash) throw new Error(`"${clash.name}" (${clash.status}) already has that stream.`);
+
+    await ctx.db.patch(row._id, {
+      streamUrl,
+      streamKey,
+      // Nobody has heard the new address yet. The nightly re-check of an
+      // accepted station clears this and records the format it hears.
+      streamUnheard: true,
+      failedChecks: 0,
+    });
+    return { name: row.name, status: row.status, from: row.streamUrl, to: streamUrl };
   },
 });
