@@ -1,0 +1,14 @@
+[
+  {
+    "context": {
+      "seconds": 10
+    },
+    "file": "coin-dash-99-10.hkrun",
+    "outcome": {
+      "coins": 8,
+      "missed": 2
+    },
+    "run_id": "274dd90c9ca0f4d98527120149c61d439ecdfdbf2e7da923443be5b15d87b3ed",
+    "seed": "99"
+  }
+]

@@ -35,6 +35,7 @@ import type * as freightFateStationPlacement from "../freightFateStationPlacemen
 import type * as freightFateStationRules from "../freightFateStationRules.js";
 import type * as freightFateStationVetting from "../freightFateStationVetting.js";
 import type * as freightFateStations from "../freightFateStations.js";
+import type * as games from "../games.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
 import type * as mutators from "../mutators.js";
@@ -90,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   freightFateStationRules: typeof freightFateStationRules;
   freightFateStationVetting: typeof freightFateStationVetting;
   freightFateStations: typeof freightFateStations;
+  games: typeof games;
   http: typeof http;
   moderation: typeof moderation;
   mutators: typeof mutators;

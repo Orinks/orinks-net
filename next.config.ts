@@ -23,6 +23,11 @@ export function presenceRewrites(convexUrl = process.env.CONVEX_URL ?? process.e
 }
 
 const nextConfig: NextConfig = {
+  // Hearken games' published rules modules are read from disk by the games
+  // route (lib/games/service.ts), so they ship with that function.
+  outputFileTracingIncludes: {
+    "/api/games/[game]/[...path]": ["./hearken-rules/**/*.wasm"],
+  },
   // beforeFiles, because an ordinary rewrite never shadows a route that exists.
   async rewrites() {
     return { beforeFiles: presenceRewrites(), afterFiles: [], fallback: [] };
