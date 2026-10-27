@@ -78,8 +78,7 @@ Things a handler should know:
 - A record's value is at most 8 KB. `ahead` counts at most 1000, so past that
   a rank reads as 1001.
 
-## Previews
+## Deploying
 
-`dev` previews build against the staging Convex deployment and do not deploy
-it, so `convex/games.ts` and its tables reach staging only when the backend
-is deployed there by hand. `main` deploys production as usual.
+Pushes to `dev` build a frontend preview only. The Convex functions and
+tables in `convex/games.ts` go out with `main`, like the rest of the backend.
