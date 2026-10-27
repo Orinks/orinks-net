@@ -16,7 +16,7 @@ type ClaimResult =
 export type ClaimFn = (input: { userCode: string; displayName?: string }) => Promise<ClaimResult>;
 
 const MESSAGES: Record<string, string> = {
-  unknown_code: "That code was not recognised, or it has expired. Codes last ten minutes. Ask the game for a new one.",
+  unknown_code: "That code was not recognised, or it has expired. Codes last ten minutes. Start connecting again in the game to hear a new code.",
   not_signed_in: "Sign in first, then enter your code again.",
   no_player: "Choose a player name, then enter your code again.",
   rate_limited: "Too many attempts. Wait a minute, then try again.",
@@ -160,12 +160,12 @@ export default function ConnectClient({
         </div>
       ) : (
         <form className="max-w-xl space-y-5 rounded border border-line bg-white p-5" noValidate onSubmit={onSubmit}>
-          <h2 className="text-2xl font-bold text-ink">{needsName ? "Choose a player name and connect" : "Enter the code"}</h2>
+          <h2 className="text-2xl font-bold text-ink">
+            {needsName ? "Choose a player name" : initialCode ? "Check your code" : "Enter your code"}
+          </h2>
 
           {initialCode ? (
-            <p className="text-slate-800">
-              We received a code from your game: {initialCode}. Check it matches the one the game spoke.
-            </p>
+            <p className="text-slate-800">Your game sent {initialCode}.</p>
           ) : null}
 
           <div className="space-y-2">
@@ -219,6 +219,9 @@ export default function ConnectClient({
                   setName(event.target.value);
                   if (nameError) {
                     setNameError(null);
+                    // A name error may also be in the alert, which the code
+                    // field reads as its description.
+                    setError(null);
                   }
                 }}
                 ref={nameRef}
@@ -283,8 +286,10 @@ export function ConnectGate({ initialCode, titles }: { initialCode: string; titl
     }
   }, [isSignedIn]);
 
+  // A status region only until the form takes over, which has its own: two
+  // at once can drop or reorder what is announced.
   const statusDiv = (
-    <div aria-atomic="true" className="sr-only" role="status">
+    <div aria-atomic="true" className="sr-only" role={isSignedIn && resolved ? undefined : "status"}>
       {accountStatus}
     </div>
   );
@@ -302,14 +307,13 @@ export function ConnectGate({ initialCode, titles }: { initialCode: string; titl
       <>
         {statusDiv}
         <Section title="Sign in to continue">
-          <p>Sign in, or create an account, then enter the code your game is speaking.</p>
           <AccountControls />
         </Section>
       </>
     );
   }
   return (
-    <div aria-label="Connect a game" ref={regionRef} role="region" tabIndex={-1}>
+    <div aria-label="Game connection" ref={regionRef} role="region" tabIndex={-1}>
       {statusDiv}
       {!resolved ? (
         <p className="text-slate-800">Checking your account…</p>

@@ -17,7 +17,7 @@ export function GamesProviders({ children }: { children: ReactNode }) {
   if (!client) {
     return (
       <Section title="Connecting games is unavailable">
-        <p>Games cannot be connected here.</p>
+        <p>Try again later.</p>
       </Section>
     );
   }
