@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { createService, publishedRules } from "@/lib/hearken-online";
 import type { PublishedRules } from "@/lib/hearken-online";
 import { getConvexClient } from "@/lib/convex";
+import { site } from "@/lib/site";
 import { convexRecords } from "./records";
 import { GAMES, type GameDefinition } from "./registry";
 import { convexStores, gamesServerSecret, type GameStores } from "./stores";
@@ -61,7 +62,14 @@ export function serviceFor(id: string, origin: string): Service | null {
   const game = GAMES[id];
   const service = buildService(game, {
     rules: rulesFolder(id),
-    stores: convexStores({ client, secret, game: id, connectUrl: `${origin}/games/connect` }),
+    // The live site names itself, so a first request to a deployment URL
+    // cannot make every game speak that host; previews use their own.
+    stores: convexStores({
+      client,
+      secret,
+      game: id,
+      connectUrl: `${process.env.VERCEL_ENV === "production" ? site.url : origin}/games/connect`,
+    }),
     records: convexRecords(client, secret, id),
   });
   services.set(id, service);

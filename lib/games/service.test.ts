@@ -57,6 +57,12 @@ function memory() {
     put: async (c, k, r) => {
       records.set(`${c}/${k}`, { key: k, playerId: r.playerId ?? null, order: r.order ?? null, value: r.value });
     },
+    putBest: async (c, k, r) => {
+      const old = records.get(`${c}/${k}`);
+      if (old && (old.order ?? 0) >= r.order) return false;
+      records.set(`${c}/${k}`, { key: k, playerId: r.playerId ?? null, order: r.order, value: r.value });
+      return true;
+    },
     list: async (c) =>
       [...records.entries()]
         .filter(([k]) => k.startsWith(`${c}/`))
@@ -77,7 +83,7 @@ const dash: GameDefinition = {
       expect: () => ({ rules: "coin-dash", seed: run.seed, context: run.context }),
       async accept({ player, verified }) {
         const coins = (verified.outcome as { coins: number }).coins;
-        await records.put("best", player.id, { value: { name: player.name, coins }, order: coins, playerId: player.id });
+        await records.putBest("best", player.id, { value: { name: player.name, coins }, order: coins, playerId: player.id });
         return { coins, rank: (await records.ahead("best", coins)) + 1 };
       },
       async read() {

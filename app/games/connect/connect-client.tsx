@@ -264,7 +264,7 @@ export function ConnectGate({ initialCode, titles }: { initialCode: string; titl
   const resolved = isAuthenticated && me !== undefined;
   const claimActivation = useMutation(api.games.claimActivation);
   const claim = useCallback<ClaimFn>(
-    (input) => claimActivation({ ...input, now: Date.now() }) as Promise<ClaimResult>,
+    (input) => claimActivation(input) as Promise<ClaimResult>,
     [claimActivation],
   );
 

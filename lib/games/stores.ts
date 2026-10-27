@@ -31,8 +31,7 @@ export function convexStores(input: {
   const now = () => Date.now();
   return {
     accounts: {
-      player: (token) =>
-        client.mutation(anyApi.games.playerForToken, { secret, game, tokenHash: hashSecret(token), now: now() }),
+      player: (token) => client.query(anyApi.games.playerForToken, { secret, game, tokenHash: hashSecret(token) }),
       async startActivation() {
         const started = await client.mutation(anyApi.games.startActivation, { secret, game, now: now() });
         return {
@@ -52,8 +51,8 @@ export function convexStores(input: {
         }),
     },
     runs: {
-      claim: (key, record) =>
-        client.mutation(anyApi.games.claimRun, {
+      async claim(key, record): Promise<Claim> {
+        const answer = await client.mutation(anyApi.games.claimRun, {
           secret,
           game,
           key,
@@ -61,10 +60,22 @@ export function convexStores(input: {
           kind: record.kind,
           staleMs: STALE_CLAIM_MS,
           now: now(),
-        }) as Promise<Claim>,
+        });
+        if (answer.claimed) return answer;
+        // A finished run's reply comes back as JSON text (see completeRun);
+        // no reply at all means another request is still working on it.
+        const { player, replyJson } = answer.existing;
+        return { claimed: false, existing: replyJson === undefined ? { player } : { player, reply: JSON.parse(replyJson) } };
+      },
       async complete(key, claim, reply) {
         if (!claim.claimed) return;
-        await client.mutation(anyApi.games.completeRun, { secret, game, key, nonce: claim.nonce, reply: reply ?? null });
+        await client.mutation(anyApi.games.completeRun, {
+          secret,
+          game,
+          key,
+          nonce: claim.nonce,
+          replyJson: JSON.stringify(reply ?? null),
+        });
       },
       async release(key, claim) {
         if (!claim.claimed) return;

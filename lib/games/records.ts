@@ -10,9 +10,20 @@ export type GameRecord<T = unknown> = { key: string; playerId: string | null; or
 export interface GameRecords {
   get<T = unknown>(collection: string, key: string): Promise<GameRecord<T> | null>;
   put(collection: string, key: string, record: { value: unknown; order?: number; playerId?: string }): Promise<void>;
+  /**
+   * Keeps the record only if its order beats the stored one (higher, or
+   * lower with `ascending`), checked and written in one step. Answers
+   * whether it was kept.
+   */
+  putBest(
+    collection: string,
+    key: string,
+    record: { value: unknown; order: number; playerId?: string },
+    options?: { ascending?: boolean },
+  ): Promise<boolean>;
   /** Highest `order` first, or lowest with `ascending`. At most 100. */
   list<T = unknown>(collection: string, options?: { limit?: number; ascending?: boolean }): Promise<GameRecord<T>[]>;
-  /** How many records order ahead of `order`: a rank is this plus one. */
+  /** How many records order ahead of `order`, counting at most 1000: a rank is this plus one. */
   ahead(collection: string, order: number, options?: { ascending?: boolean }): Promise<number>;
 }
 
@@ -31,6 +42,18 @@ export function convexRecords(client: ConvexHttpClient, secret: string, game: st
         now: Date.now(),
       });
     },
+    putBest: (collection, key, record, options = {}) =>
+      client.mutation(anyApi.games.putBest, {
+        secret,
+        game,
+        collection,
+        key,
+        value: record.value ?? null,
+        order: record.order,
+        playerId: record.playerId,
+        ascending: options.ascending,
+        now: Date.now(),
+      }),
     list: (collection, options = {}) =>
       client.query(anyApi.games.listRecords, {
         secret,

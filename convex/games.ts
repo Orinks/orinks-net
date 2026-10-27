@@ -15,6 +15,7 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { formatUserCode, mintUserCode, normalizeUserCode } from "./freightFateActivation";
 import { sameText } from "./freightFateReview";
@@ -29,7 +30,11 @@ export const CONNECT_CLAIM_LIMIT = 10;
 // Each connect mints a token. Past this many for one game, the oldest is
 // dropped: a player reinstalling every week should not pile up tokens.
 export const MAX_TOKENS_PER_GAME = 10;
-export const MAX_RECORD_BYTES = 16 * 1024;
+export const MAX_RECORD_BYTES = 8 * 1024;
+// A reply too long to keep is answered in full once and as null on a repeat.
+export const MAX_REPLY_BYTES = 64 * 1024;
+// The most records countAbove reads: past this, a rank reads as "1000 or more".
+export const MAX_COUNTED = 1000;
 const SWEEP_BATCH = 200;
 
 function serverSecret() {
@@ -104,9 +109,9 @@ export const consumeRateLimit = mutation({
 // ---- Players and tokens ------------------------------------------------
 
 /** The player a game's token belongs to, for that game only. */
-export const playerForToken = mutation({
+export const playerForToken = query({
   // The route sends the token's hash, never the token (lib/games/stores.ts).
-  args: { secret: v.string(), game: v.string(), tokenHash: v.string(), now: v.number() },
+  args: { secret: v.string(), game: v.string(), tokenHash: v.string() },
   handler: async (ctx, args) => {
     requireServer(args.secret);
     checkGame(args.game);
@@ -123,10 +128,6 @@ export const playerForToken = mutation({
       .unique();
     if (!player) {
       return null;
-    }
-    // Coarse, so a busy player does not write on every run.
-    if (!row.lastUsedAt || args.now - row.lastUsedAt > 60 * 60_000) {
-      await ctx.db.patch(row._id, { lastUsedAt: args.now });
     }
     return { id: player.playerId, name: player.displayName };
   },
@@ -238,8 +239,12 @@ export const pollActivation = mutation({
  * the rate limiter's count is kept.
  */
 export const claimActivation = mutation({
-  args: { userCode: v.string(), displayName: v.optional(v.string()), now: v.number() },
+  args: { userCode: v.string(), displayName: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    // The server's clock, never the browser's: a caller choosing `now` could
+    // claim an expired code or spend tomorrow's rate limit today. Date.now()
+    // is fixed for the length of a mutation.
+    const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return { ok: false as const, code: "not_signed_in" as const };
@@ -251,7 +256,7 @@ export const claimActivation = mutation({
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "games_claim",
       driverId: identity.subject,
-      now: args.now,
+      now: now,
       limit: CONNECT_CLAIM_LIMIT,
     });
     if (!allowed) {
@@ -264,7 +269,7 @@ export const claimActivation = mutation({
           .withIndex("by_user_code", (q) => q.eq("userCode", code))
           .unique()
       : null;
-    if (!row || row.status !== "pending" || row.expiresAt <= args.now) {
+    if (!row || row.status !== "pending" || row.expiresAt <= now) {
       return { ok: false as const, code: "unknown_code" as const };
     }
     let playerId = player?.playerId;
@@ -287,15 +292,14 @@ export const claimActivation = mutation({
         authSubject: identity.subject,
         displayName: name,
         nameKey: name.toLowerCase(),
-        createdAt: args.now,
+        createdAt: now,
       });
     }
-    // The browser's clock: clamped to the row's own server-stamped window.
     await ctx.db.patch(row._id, {
       status: "claimed",
       playerId,
       expiresAt: Math.min(
-        args.now + CONNECT_COLLECTION_MS,
+        now + CONNECT_COLLECTION_MS,
         row.createdAt + CONNECT_TTL_MS + CONNECT_COLLECTION_MS,
       ),
     });
@@ -333,7 +337,7 @@ export const claimRun = mutation({
       return {
         claimed: false as const,
         existing: existing.done
-          ? { player: existing.playerId, reply: existing.reply ?? null }
+          ? { player: existing.playerId, replyJson: existing.replyJson ?? "null" }
           : { player: existing.playerId },
       };
     }
@@ -364,12 +368,21 @@ async function ownClaim(ctx: MutationCtx, game: string, key: string, nonce: stri
 }
 
 export const completeRun = mutation({
-  args: { secret: v.string(), game: v.string(), key: v.string(), nonce: v.string(), reply: v.any() },
+  args: {
+    secret: v.string(),
+    game: v.string(),
+    key: v.string(),
+    nonce: v.string(),
+    // The handler's reply as JSON text, so any JSON a handler returns can
+    // be kept, including keys Convex refuses in a document.
+    replyJson: v.string(),
+  },
   handler: async (ctx, args) => {
     requireServer(args.secret);
     const row = await ownClaim(ctx, args.game, args.key, args.nonce);
     if (row) {
-      await ctx.db.patch(row._id, { done: true, reply: args.reply ?? null });
+      const replyJson = args.replyJson.length <= MAX_REPLY_BYTES ? args.replyJson : "null";
+      await ctx.db.patch(row._id, { done: true, replyJson });
     }
   },
 });
@@ -454,6 +467,46 @@ export const putRecord = mutation({
   },
 });
 
+/**
+ * Writes a record only if its order beats the one stored (higher, or lower
+ * with `ascending`), in one transaction, so two runs arriving together
+ * cannot leave the worse one. Answers whether it was written.
+ */
+export const putBest = mutation({
+  args: {
+    secret: v.string(),
+    game: v.string(),
+    collection: v.string(),
+    key: v.string(),
+    playerId: v.optional(v.string()),
+    order: v.number(),
+    ascending: v.optional(v.boolean()),
+    value: v.any(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    checkGame(args.game);
+    checkRecord(args.collection, args.key, args.value);
+    const row = await ctx.db
+      .query("gamesRecords")
+      .withIndex("by_key", (q) =>
+        q.eq("game", args.game).eq("collection", args.collection).eq("key", args.key),
+      )
+      .unique();
+    const fields = { playerId: args.playerId, order: args.order, value: args.value ?? null, updatedAt: args.now };
+    if (row) {
+      const stored = row.order;
+      const better = stored === undefined || (args.ascending ? args.order < stored : args.order > stored);
+      if (!better) return false;
+      await ctx.db.patch(row._id, fields);
+    } else {
+      await ctx.db.insert("gamesRecords", { game: args.game, collection: args.collection, key: args.key, ...fields });
+    }
+    return true;
+  },
+});
+
 /** A collection's records by their order, highest first unless asked. */
 export const listRecords = query({
   args: {
@@ -496,7 +549,7 @@ export const countAbove = query({
         const scoped = q.eq("game", args.game).eq("collection", args.collection);
         return args.ascending ? scoped.lt("order", args.order) : scoped.gt("order", args.order);
       })
-      .take(10_000);
+      .take(MAX_COUNTED);
     return rows.length;
   },
 });
@@ -513,6 +566,10 @@ export const sweepExpiredActivations = internalMutation({
       .take(SWEEP_BATCH);
     for (const row of expired) {
       await ctx.db.delete(row._id);
+    }
+    // A full batch means more are waiting: carry on now, not in an hour.
+    if (expired.length === SWEEP_BATCH) {
+      await ctx.scheduler.runAfter(0, internal.games.sweepExpiredActivations, { now });
     }
     return { deleted: expired.length };
   },

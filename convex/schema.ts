@@ -109,7 +109,6 @@ export default defineSchema({
     game: v.string(),
     playerId: v.string(),
     createdAt: v.number(),
-    lastUsedAt: v.optional(v.number()),
   })
     .index("by_token_hash", ["tokenHash"])
     .index("by_player_game", ["playerId", "game"]),
@@ -135,7 +134,7 @@ export default defineSchema({
     claimedAt: v.number(),
     nonce: v.string(),
     done: v.boolean(),
-    reply: v.optional(v.any()),
+    replyJson: v.optional(v.string()),
   }).index("by_game_key", ["game", "key"]),
   // What a game's handler keeps from verified runs: a JSON value under
   // (game, collection, key), ordered by `order` when it has one.

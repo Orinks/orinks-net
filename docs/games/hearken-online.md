@@ -55,10 +55,8 @@ wickets: {
       async accept({ player, verified }) {
         const score = verified.outcome.score;
         const board = `daily:${today()}`;
-        const best = await records.get<{ score: number }>(board, player.id);
-        if (!best || score > best.value.score) {
-          await records.put(board, player.id, { value: { name: player.name, score }, order: score, playerId: player.id });
-        }
+        // Kept only if it beats the player's stored score, in one step.
+        await records.putBest(board, player.id, { value: { name: player.name, score }, order: score, playerId: player.id });
         return { score, rank: (await records.ahead(board, score)) + 1 };
       },
       read: async ({ path }) => ({ top: (await records.list(`daily:${path[0] ?? today()}`)).map((r) => r.value) }),
@@ -69,6 +67,16 @@ wickets: {
 
 `lib/games/service.test.ts` runs a game like this end to end against a real
 rules module.
+
+Things a handler should know:
+
+- `accept` may, rarely, run twice for one run: if saving its reply fails, the
+  run can be sent again a couple of minutes later. `putBest`, or anything
+  keyed by `verified.run_id`, makes that harmless.
+- Pass `playerId` on any record that belongs to a player, so deleting the
+  account deletes it.
+- A record's value is at most 8 KB. `ahead` counts at most 1000, so past that
+  a rank reads as 1001.
 
 ## Previews
 
