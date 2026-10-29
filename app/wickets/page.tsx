@@ -23,7 +23,12 @@ export default function WicketsPage() {
       <Section title="Games">
         <p>
           Wicket&apos;s has games to suit every player, from the cozy Lantern Lake and Rooftop
-          Garden to high action like Neon Rail and Freewheel (based on Cyclepath).
+          Garden to high action like Neon Rail and Freewheel (loosely based on Cyclepath).
+        </p>
+        <p>
+          For a slower pace there are puzzle and table games: Belfry (based on Mastermind),
+          Safecracker, Fireside Patience (Klondike solitaire) and Riverboat Dice (based on the dice
+          game Skunk).
         </p>
         <p>
           We also have seasonal surprises in store. If you want that seasonal kick all year round,
@@ -42,7 +47,6 @@ export default function WicketsPage() {
           <li>Music: in some games, the music answers how you play.</li>
           <li>Unlockables: music, feats and achievements. There&apos;s always something to unlock.</li>
           <li>Tutorials: every game has an interactive tutorial. No manual required.</li>
-          <li>Variety: puzzle and table games alongside the action and relaxing ones.</li>
           <li>Challenges and events: daily, weekly and monthly, for every game.</li>
           <li>Records: your best scores and runs. Online leaderboards are coming later.</li>
           <li>
