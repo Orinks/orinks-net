@@ -462,6 +462,16 @@ export default defineSchema({
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
+  // The drivers board and the driver directory, computed together at most
+  // once a minute for the game's public reads (convex/freightFatePublicReads.ts).
+  // One row, keyed "public". Every poller in the same minute reads this one
+  // document, so the read cost tracks the clock, not the number of games.
+  freightFatePublicSnapshots: defineTable({
+    key: v.string(),
+    asOf: v.number(),
+    board: v.any(),
+    directory: v.any(),
+  }).index("by_key", ["key"]),
   // Cloud saves: one metadata row per uploaded revision, content bytes in a
   // separate table so listing revisions never reads the blobs. A "slot" is
   // (driverId, saveName) — the game has one local save file per profile name

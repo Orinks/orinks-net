@@ -21,6 +21,7 @@ import type * as freightFateProfileCatalog from "../freightFateProfileCatalog.js
 import type * as freightFateProfileMigration from "../freightFateProfileMigration.js";
 import type * as freightFateProfileMigrationData from "../freightFateProfileMigrationData.js";
 import type * as freightFateProfileProjection from "../freightFateProfileProjection.js";
+import type * as freightFatePublicReads from "../freightFatePublicReads.js";
 import type * as freightFateRateLimit from "../freightFateRateLimit.js";
 import type * as freightFateRequest from "../freightFateRequest.js";
 import type * as freightFateReview from "../freightFateReview.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   freightFateProfileMigration: typeof freightFateProfileMigration;
   freightFateProfileMigrationData: typeof freightFateProfileMigrationData;
   freightFateProfileProjection: typeof freightFateProfileProjection;
+  freightFatePublicReads: typeof freightFatePublicReads;
   freightFateRateLimit: typeof freightFateRateLimit;
   freightFateRequest: typeof freightFateRequest;
   freightFateReview: typeof freightFateReview;
