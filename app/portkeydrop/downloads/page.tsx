@@ -3,7 +3,11 @@ import { ReleaseDownloads } from "@/components/ReleaseDownloads";
 import { Section } from "@/components/Section";
 import { portkeyDropMaintainerNote } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
+// Rebuilt at most every five minutes rather than on every visit. A published
+// release purges the release data it reads (app/api/notifications/send), so a
+// new build still shows up straight away; the interval only bounds anything
+// that skipped that notification.
+export const revalidate = 300;
 
 export const metadata = {
   title: "PortkeyDrop Downloads",
