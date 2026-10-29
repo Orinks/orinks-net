@@ -500,6 +500,10 @@ export function downloadAssetLabel(assetName: string) {
     return `Linux ZIP archive${architecture}`;
   }
 
+  if ((normalized.includes("windows") || normalized.includes("win64") || normalized.includes("win32")) && normalized.endsWith(".zip")) {
+    return `Windows ZIP archive${architecture}`;
+  }
+
   if (normalized.endsWith(".zip")) {
     return `ZIP archive${architecture}`;
   }

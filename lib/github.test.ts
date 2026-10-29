@@ -32,6 +32,7 @@ vi.mock("next/cache", () => ({
 }));
 
 import {
+  downloadAssetLabel,
   getLatestStableRelease,
   getReleaseGroups,
   getReleases,
@@ -40,6 +41,14 @@ import {
   stripSnapshotPreamble,
   withGitHubFallback,
 } from "./github";
+
+describe("download labels", () => {
+  test("names the platform on every Wicket's package", () => {
+    expect(downloadAssetLabel("wickets-1.1.0-windows-x64.zip")).toBe("Windows ZIP archive x64");
+    expect(downloadAssetLabel("wickets-1.1.0-macos-arm64.zip")).toBe("macOS ZIP archive ARM64");
+    expect(downloadAssetLabel("wickets-1.1.0-linux-x64.tar.gz")).toBe("Linux tarball x64");
+  });
+});
 
 describe("snapshot preamble", () => {
   const preamble =
