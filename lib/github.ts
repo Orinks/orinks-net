@@ -57,6 +57,7 @@ const githubHeaders = (accept = "application/vnd.github+json") => {
 const repoOwners: Record<string, string> = {
   PortkeyDrop: "Nick6489",
   "Freight-Fate": "orinks-games",
+  wickets: "orinks-games",
 };
 
 export function repoSlug(repo: string) {

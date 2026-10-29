@@ -31,6 +31,7 @@ export const gamesNav = [
   { href: "/freight-fate", label: "Freight Fate" },
   { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
+  { href: "/wickets", label: "Wicket's" },
 ];
 
 export const socialLinks = [
@@ -103,6 +104,29 @@ export const saltwake: ProjectPage = {
     { href: "https://github.com/Orinks/saltwake", label: "GitHub repository" },
     { href: "https://github.com/Orinks/saltwake/issues", label: "Report an issue" },
   ],
+};
+
+export const wickets: ProjectPage = {
+  href: "/wickets",
+  title: "Wicket's",
+  tagline: "Light a lamp. Pick a game. Stay a while.",
+  summary:
+    "Welcome to Wicket's. Step into an all-inclusive Parlor where all the games have extensive accessibility for the blind and visually impaired.",
+  audience:
+    "Wicket's offers a variety of games to suit every player. From the cozy Lantern Lake and Rooftop Garden, to high action like Neon Rail and Freewheel (Cyclepath). We also have seasonal surprises in store, but if you prefer that seasonal kick all-year round, we also have a selection of games that stay open. These include traditional hits like Winter Wonderland or Harvest Feast, or less traditional like Dragon Dance.",
+  features: [
+    "An optional story mode: can't figure out what you want to do? Mabel and the other characters will take you on a tour of various things to do through a growing story. Daily, you will be presented with a list of activities that can either be swapped for another, or skipped for that day.",
+    "A dynamic musical score that changes based on the game. Not all games have this.",
+    "Unlockables: From music, to feats and achievements, there's always something to unlock.",
+    "Tutorials: every game has an interactive tutorial on offer. No documentation required.",
+    "Puzzle and table games add variety.",
+    "Challenges and events for every game. Daily, weekly, and monthly events.",
+    "Records: best scores and runs. Online posting and leaderboards to come later.",
+    "Works with your screen reader, with per-game options in Settings, and US or metric units.",
+  ],
+  status: "Version 1.1.0 is out for Windows, macOS (Apple Silicon) and Linux.",
+  downloadsHref: "/wickets/downloads",
+  links: [{ href: "https://github.com/orinks-games/wickets/releases", label: "Wicket's releases on GitHub" }],
 };
 
 export const gameSummaries: GameSummary[] = [
@@ -258,5 +282,6 @@ export function getProject(href: string) {
 export function getGame(href: string) {
   if (href === freightFate.href) return freightFate;
   if (href === saltwake.href) return saltwake;
+  if (href === wickets.href) return wickets;
   return undefined;
 }
