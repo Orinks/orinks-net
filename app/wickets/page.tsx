@@ -67,7 +67,7 @@ export default function WicketsPage() {
       <Section title="Credits">
         <p>
           Made by Orinks, with the assistance of an agentic coder. Sound synthesis powered by
-          Klang.
+          genny and Klang.
         </p>
       </Section>
     </>
