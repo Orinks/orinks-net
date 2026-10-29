@@ -44,7 +44,7 @@ export default function WicketsPage() {
             cast take you on a tour of the parlor through a growing story. Each day brings a list
             of activities you can swap for another or skip for the day.
           </li>
-          <li>Music: in some games, the music answers how you play.</li>
+          <li>Music: a dynamic score that changes as you play, in some games.</li>
           <li>Unlockables: music, feats and achievements. There&apos;s always something to unlock.</li>
           <li>Tutorials: every game has an interactive tutorial. No manual required.</li>
           <li>Challenges and events: daily, weekly and monthly, for every game.</li>
