@@ -65,8 +65,61 @@ export function repoSlug(repo: string) {
 
 export const githubReleasesCacheTag = "github-releases";
 
+// How long a release lookup is reused. A published release revalidates the
+// tag at once (app/api/notifications/send), so this only bounds how late a
+// release that skipped the notification shows up; a minute made every page
+// that lists releases call GitHub again sixty times an hour.
+export const GITHUB_RELEASES_REVALIDATE_SECONDS = 600;
+
+// After GitHub refuses or fails a lookup, this instance waits this long before
+// asking about the same thing again. Without it, an unauthenticated burst that
+// earned a rate-limit 403 was retried on every render, and every retry was
+// refused too -- costing CPU and keeping the limit tripped.
+export const GITHUB_FAILURE_BACKOFF_MS = 5 * 60_000;
+
+const failedUntil = new Map<string, number>();
+const lastGood = new Map<string, unknown>();
+
+/** Run a GitHub lookup, answering with the last good result while it fails.
+ *
+ * A failure hands back the most recent answer this instance had for the same
+ * key, so a page keeps its download links through a GitHub outage instead of
+ * losing them. With nothing to fall back on it throws, which leaves the Data
+ * Cache's own stale entry in place. Either way the key then backs off, so the
+ * next render does not knock on a door that just said no.
+ */
+export async function withGitHubFallback<T>(key: string, load: () => Promise<T>, now = Date.now()): Promise<T> {
+  const blockedUntil = failedUntil.get(key);
+  if (blockedUntil !== undefined && now < blockedUntil) {
+    if (lastGood.has(key)) {
+      return lastGood.get(key) as T;
+    }
+    throw new Error(`GitHub lookup ${key} is waiting out a recent failure`);
+  }
+
+  try {
+    const value = await load();
+    failedUntil.delete(key);
+    lastGood.set(key, value);
+    return value;
+  } catch (error) {
+    failedUntil.set(key, now + GITHUB_FAILURE_BACKOFF_MS);
+    if (lastGood.has(key)) {
+      console.warn(`GitHub lookup ${key} failed; serving the last good answer`, error);
+      return lastGood.get(key) as T;
+    }
+    throw error;
+  }
+}
+
+/** Test hook: forget every remembered answer and backoff. */
+export function resetGitHubFallbackForTests() {
+  failedUntil.clear();
+  lastGood.clear();
+}
+
 const getCachedReleases = unstable_cache(
-  async (repo: string): Promise<GitHubRelease[]> => {
+  async (repo: string): Promise<GitHubRelease[]> => withGitHubFallback(`releases:${repo}`, async () => {
     const response = await fetch(`https://api.github.com/repos/${repoSlug(repo)}/releases?per_page=20`, {
       headers: githubHeaders(),
       cache: "no-store",
@@ -77,13 +130,13 @@ const getCachedReleases = unstable_cache(
     }
 
     return response.json() as Promise<GitHubRelease[]>;
-  },
+  }),
   [githubReleasesCacheTag],
-  { revalidate: 60, tags: [githubReleasesCacheTag] },
+  { revalidate: GITHUB_RELEASES_REVALIDATE_SECONDS, tags: [githubReleasesCacheTag] },
 );
 
 const getCachedLatestStable = unstable_cache(
-  async (repo: string): Promise<GitHubRelease | null> => {
+  async (repo: string): Promise<GitHubRelease | null> => withGitHubFallback(`latest:${repo}`, async () => {
     // GitHub's own "latest" endpoint, not the first full release on a page of
     // recent ones. Freight Fate publishes a preview snapshot every night, and
     // on 2026-09-20 the 21st of them pushed v1.8.8.1 out of the 20-release
@@ -108,9 +161,9 @@ const getCachedLatestStable = unstable_cache(
     }
 
     return response.json() as Promise<GitHubRelease>;
-  },
+  }),
   [githubReleasesCacheTag],
-  { revalidate: 60, tags: [githubReleasesCacheTag] },
+  { revalidate: GITHUB_RELEASES_REVALIDATE_SECONDS, tags: [githubReleasesCacheTag] },
 );
 
 export const githubRenderedMarkdownCacheTag = "github-rendered-markdown";
