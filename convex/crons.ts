@@ -98,4 +98,12 @@ crons.interval(
   {},
 );
 
+// Connect codes for Hearken games that nobody entered.
+crons.interval(
+  "drop expired game connect codes",
+  { hours: 1 },
+  internal.games.sweepExpiredActivations,
+  {},
+);
+
 export default crons;

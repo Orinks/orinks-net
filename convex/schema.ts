@@ -91,6 +91,65 @@ const triviaQuestionSnapshot = v.union(
 );
 
 export default defineSchema({
+  // Hearken games' verified runs (convex/games.ts). One player per
+  // orinks.net account, shared by every game; tokens are per game.
+  gamesPlayers: defineTable({
+    playerId: v.string(),
+    authSubject: v.string(),
+    displayName: v.string(),
+    // displayName lowercased, so names stay unique ignoring case.
+    nameKey: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_player_id", ["playerId"])
+    .index("by_auth_subject", ["authSubject"])
+    .index("by_name_key", ["nameKey"]),
+  gamesTokens: defineTable({
+    tokenHash: v.string(),
+    game: v.string(),
+    playerId: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_player_game", ["playerId", "game"]),
+  gamesActivations: defineTable({
+    game: v.string(),
+    deviceCodeHash: v.string(),
+    userCode: v.string(),
+    status: v.union(v.literal("pending"), v.literal("claimed")),
+    playerId: v.optional(v.string()),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_device_code", ["deviceCodeHash"])
+    .index("by_user_code", ["userCode"])
+    .index("by_expires_at", ["expiresAt"]),
+  // One row per run a game accepted (or is working on): what makes a repeat
+  // answer from the stored reply, and a copy count once.
+  gamesRuns: defineTable({
+    game: v.string(),
+    key: v.string(),
+    playerId: v.string(),
+    kind: v.string(),
+    claimedAt: v.number(),
+    nonce: v.string(),
+    done: v.boolean(),
+    replyJson: v.optional(v.string()),
+  }).index("by_game_key", ["game", "key"]),
+  // What a game's handler keeps from verified runs: a JSON value under
+  // (game, collection, key), ordered by `order` when it has one.
+  gamesRecords: defineTable({
+    game: v.string(),
+    collection: v.string(),
+    key: v.string(),
+    playerId: v.optional(v.string()),
+    order: v.optional(v.number()),
+    value: v.any(),
+    updatedAt: v.number(),
+  })
+    .index("by_key", ["game", "collection", "key"])
+    .index("by_order", ["game", "collection", "order"])
+    .index("by_player", ["playerId"]),
   buildNotificationSubscriptions: defineTable({
     endpoint: v.string(),
     expirationTime: v.optional(v.number()),
@@ -403,6 +462,16 @@ export default defineSchema({
   })
     .index("by_driver_id", ["driverId"])
     .index("by_updated", ["updatedAt"]),
+  // The drivers board and the driver directory, computed together at most
+  // once a minute for the game's public reads (convex/freightFatePublicReads.ts).
+  // One row, keyed "public". Every poller in the same minute reads this one
+  // document, so the read cost tracks the clock, not the number of games.
+  freightFatePublicSnapshots: defineTable({
+    key: v.string(),
+    asOf: v.number(),
+    board: v.any(),
+    directory: v.any(),
+  }).index("by_key", ["key"]),
   // Cloud saves: one metadata row per uploaded revision, content bytes in a
   // separate table so listing revisions never reads the blobs. A "slot" is
   // (driverId, saveName) — the game has one local save file per profile name

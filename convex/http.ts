@@ -3,6 +3,7 @@ import { api } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { clerkWebhook } from "./accountDeletion";
 import { decideFromPage, reviewPage } from "./freightFateReview";
+import { answerBoardGet, answerDirectoryGet } from "./freightFatePublicReads";
 import { answerPresencePost } from "./freightFateRequest";
 import { decideStationFromPage, stationReviewPage } from "./freightFateStations";
 
@@ -26,6 +27,12 @@ http.route({
     answerPresencePost(request, (args) => ctx.runMutation(api.freightFate.updatePresence, args)),
   ),
 });
+
+// The game's public reads: the drivers board (same path as the heartbeat,
+// GET instead of POST) and the driver directory. Builds from before these
+// existed still poll orinks.net, whose routes answer as they always have.
+http.route({ path: "/freight-fate/presence", method: "GET", handler: answerBoardGet });
+http.route({ path: "/freight-fate/directory", method: "GET", handler: answerDirectoryGet });
 
 // Clerk's account events. Only user.deleted is acted on: it is the one thing
 // the site cannot learn any other way, and until it arrived a deleted account

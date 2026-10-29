@@ -21,6 +21,7 @@ import type * as freightFateProfileCatalog from "../freightFateProfileCatalog.js
 import type * as freightFateProfileMigration from "../freightFateProfileMigration.js";
 import type * as freightFateProfileMigrationData from "../freightFateProfileMigrationData.js";
 import type * as freightFateProfileProjection from "../freightFateProfileProjection.js";
+import type * as freightFatePublicReads from "../freightFatePublicReads.js";
 import type * as freightFateRateLimit from "../freightFateRateLimit.js";
 import type * as freightFateRequest from "../freightFateRequest.js";
 import type * as freightFateReview from "../freightFateReview.js";
@@ -35,6 +36,7 @@ import type * as freightFateStationPlacement from "../freightFateStationPlacemen
 import type * as freightFateStationRules from "../freightFateStationRules.js";
 import type * as freightFateStationVetting from "../freightFateStationVetting.js";
 import type * as freightFateStations from "../freightFateStations.js";
+import type * as games from "../games.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
 import type * as mutators from "../mutators.js";
@@ -76,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   freightFateProfileMigration: typeof freightFateProfileMigration;
   freightFateProfileMigrationData: typeof freightFateProfileMigrationData;
   freightFateProfileProjection: typeof freightFateProfileProjection;
+  freightFatePublicReads: typeof freightFatePublicReads;
   freightFateRateLimit: typeof freightFateRateLimit;
   freightFateRequest: typeof freightFateRequest;
   freightFateReview: typeof freightFateReview;
@@ -90,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   freightFateStationRules: typeof freightFateStationRules;
   freightFateStationVetting: typeof freightFateStationVetting;
   freightFateStations: typeof freightFateStations;
+  games: typeof games;
   http: typeof http;
   moderation: typeof moderation;
   mutators: typeof mutators;

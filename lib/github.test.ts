@@ -36,7 +36,9 @@ import {
   getReleaseGroups,
   getReleases,
   renderMarkdown,
+  resetGitHubFallbackForTests,
   stripSnapshotPreamble,
+  withGitHubFallback,
 } from "./github";
 
 describe("snapshot preamble", () => {
@@ -70,20 +72,21 @@ describe("GitHub response caching", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     cacheStore.clear();
+    resetGitHubFallbackForTests();
   });
 
   test("persists release and rendered-note responses with bounded revalidation", () => {
     expect(cacheCalls).toEqual([
       {
         keyParts: ["github-releases"],
-        revalidate: 60,
+        revalidate: 600,
         tags: ["github-releases"],
       },
       {
         // The latest-stable lookup shares the releases tag so one
         // revalidation still refreshes both halves of the downloads page.
         keyParts: ["github-releases"],
-        revalidate: 60,
+        revalidate: 600,
         tags: ["github-releases"],
       },
       {
@@ -152,6 +155,7 @@ describe("finding the stable release behind a wall of snapshots", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     cacheStore.clear();
+    resetGitHubFallbackForTests();
   });
 
   const release = (tag: string, prerelease: boolean) => ({
@@ -274,5 +278,51 @@ describe("finding the stable release behind a wall of snapshots", () => {
     ]);
     const groups = await getReleaseGroups("Freight-Fate");
     expect(groups.nightlies.map((r) => r.tag_name)).toEqual(["1.9-tester-20261008"]);
+  });
+});
+
+describe("riding out a GitHub failure", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    cacheStore.clear();
+    resetGitHubFallbackForTests();
+  });
+
+  test("a failed lookup hands back the last good answer and stops asking for five minutes", async () => {
+    const load = vi.fn<() => Promise<string>>()
+      .mockResolvedValueOnce("v1")
+      .mockRejectedValue(new Error("403"));
+    const start = 1_000_000;
+
+    expect(await withGitHubFallback("releases:Spectra", load, start)).toBe("v1");
+    expect(await withGitHubFallback("releases:Spectra", load, start + 1_000)).toBe("v1");
+    expect(load).toHaveBeenCalledTimes(2);
+
+    // Inside the backoff nothing is fetched at all.
+    expect(await withGitHubFallback("releases:Spectra", load, start + 60_000)).toBe("v1");
+    expect(load).toHaveBeenCalledTimes(2);
+
+    // Past it, GitHub is asked again.
+    expect(await withGitHubFallback("releases:Spectra", load, start + 1_000 + 5 * 60_000)).toBe("v1");
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  test("with nothing to fall back on the failure is thrown, then held off", async () => {
+    const load = vi.fn<() => Promise<string>>().mockRejectedValue(new Error("403"));
+
+    await expect(withGitHubFallback("latest:saltwake", load, 0)).rejects.toThrow("403");
+    await expect(withGitHubFallback("latest:saltwake", load, 1_000)).rejects.toThrow("waiting out");
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  test("a release list that failed to refresh keeps the page's downloads", async () => {
+    const releases = [{ tag_name: "v1.0.0", name: "v1.0.0", prerelease: false, assets: [] }];
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(releases), { status: 200 }))
+      .mockResolvedValueOnce(new Response("rate limited", { status: 403 }));
+
+    expect(await getReleases("Spectra")).toEqual(releases);
+    cacheStore.clear();
+    expect(await getReleases("Spectra")).toEqual(releases);
   });
 });

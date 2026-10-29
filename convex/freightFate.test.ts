@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { ConvexError } from "convex/values";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import invariants from "../data/freight-fate-profile-invariants.json";
@@ -2274,5 +2274,86 @@ describe("presence over the HTTP router", () => {
 
     const signOff = await beat(t, token, { driverId, activity: "", detail: "" });
     expect(await signOff.json()).toEqual({ ok: true, cleared: true });
+  });
+});
+
+describe("the game's public reads over the HTTP router", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function beat(t: ReturnType<typeof setup>, token: string, body: Record<string, unknown>) {
+    return t.fetch("/freight-fate/presence", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "user-agent": "FreightFate/v1.9.0",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  test("the board and the directory answer with the shapes orinks.net's routes send, cacheable for thirty seconds", async () => {
+    const t = setup();
+    const { driverId, token } = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now: Date.now(),
+    });
+    expect((await beat(t, token, { driverId, activity: "Hauling reefer", detail: "I-70" })).status).toBe(200);
+
+    const boardReply = await t.fetch("/freight-fate/presence", { method: "GET" });
+    expect(boardReply.status).toBe(200);
+    expect(boardReply.headers.get("cache-control")).toBe("public, max-age=30");
+    const board = await boardReply.json();
+    expect(typeof board.asOf).toBe("number");
+    expect(board.drivers).toEqual([
+      expect.objectContaining({ driverId, displayName: "Rig Hauler", activity: "Hauling reefer", detail: "I-70" }),
+    ]);
+    expect(typeof board.drivers[0].updatedAt).toBe("number");
+
+    const directoryReply = await t.fetch("/freight-fate/directory", { method: "GET" });
+    expect(directoryReply.status).toBe(200);
+    expect(directoryReply.headers.get("cache-control")).toBe("public, max-age=30");
+    const directory = await directoryReply.json();
+    expect(directory.asOf).toBe(board.asOf);
+    expect(directory.drivers).toEqual([
+      expect.objectContaining({ driverId, displayName: "Rig Hauler", onDuty: true, activity: "Hauling reefer" }),
+    ]);
+  });
+
+  test("polls inside a minute share one snapshot, and the first poll after it rebuilds", async () => {
+    const start = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"], now: start });
+    const t = setup();
+    const first = await provisionWithComputer(t, SUBJECT, {
+      displayName: "Rig Hauler",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now: start,
+    });
+    await beat(t, first.token, { driverId: first.driverId, activity: "Hauling", detail: "I-70" });
+    const before = await (await t.fetch("/freight-fate/presence", { method: "GET" })).json();
+    expect(before.drivers.map((d: { driverId: string }) => d.driverId)).toEqual([first.driverId]);
+
+    const second = await provisionWithComputer(t, OTHER, {
+      displayName: "Night Owl",
+      visibility: "public",
+      expandedSharingConsent: true,
+      now: start,
+    });
+    await beat(t, second.token, { driverId: second.driverId, activity: "Hauling", detail: "I-80" });
+
+    vi.setSystemTime(start + 30_000);
+    const reused = await (await t.fetch("/freight-fate/presence", { method: "GET" })).json();
+    expect(reused.asOf).toBe(before.asOf);
+    expect(reused.drivers).toHaveLength(1);
+
+    vi.setSystemTime(start + 61_000);
+    const rebuilt = await (await t.fetch("/freight-fate/directory", { method: "GET" })).json();
+    expect(rebuilt.asOf).toBe(start + 61_000);
+    expect(rebuilt.drivers.filter((d: { onDuty: boolean }) => d.onDuty)).toHaveLength(2);
   });
 });

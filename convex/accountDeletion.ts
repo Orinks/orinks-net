@@ -18,6 +18,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { sameText } from "./freightFateReview";
 import { getPlayerBySubject } from "./triviaRuntime";
+import { purgeGamesPlayer } from "./games";
 
 /**
  * Every row keyed by this driverId, the driver row included. Two tables are
@@ -78,7 +79,7 @@ async function purgeTriviaPlayer(ctx: MutationCtx, authSubject: string) {
   return deleted + 1;
 }
 
-/** Everything the site stores for one Clerk account, across both games. */
+/** Everything the site stores for one Clerk account, in every game. */
 export async function purgeAccount(ctx: MutationCtx, authSubject: string) {
   const driver = await ctx.db
     .query("freightFateDrivers")
@@ -89,6 +90,7 @@ export async function purgeAccount(ctx: MutationCtx, authSubject: string) {
     driverId: driver?.driverId ?? null,
     freightFateRows: driver ? await purgeDriver(ctx, driver.driverId) : 0,
     triviaRows: await purgeTriviaPlayer(ctx, authSubject),
+    gamesRows: await purgeGamesPlayer(ctx, authSubject),
   };
 }
 

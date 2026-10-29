@@ -909,63 +909,65 @@ export const migrateLegacyPresence = internalMutation({
  * cached snapshot behind the site and the game's own board endpoint. Anything
  * a browser watches continuously wants getLivePresenceBoard.
  */
+export async function readPresenceBoard(ctx: QueryCtx, args: { now: number }) {
+  // The wider window, because a paused game's last beat vouches for it
+  // that long; a driving game's beat only counts for the heartbeat window,
+  // checked per row below. The sweep clears dead beats a minute after the
+  // heartbeat window, so the extra range holds paused drivers and little else.
+  const fresh = await ctx.db
+    .query("freightFatePresenceBeats")
+    .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
+    .order("desc")
+    .take(MAX_BOARD_ROWS);
+
+  // Only drivers who chose the public listing appear on the board.
+  const drivers = [];
+  for (const beat of fresh) {
+    const row = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+      .unique();
+    if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
+      continue;
+    }
+    // Still beating but nothing has changed in half an hour: a parked
+    // truck with the game left running, not a live driver.
+    if ((row.changedAt ?? beat.updatedAt) < args.now - PRESENCE_IDLE_MS) {
+      continue;
+    }
+    const driver = await ctx.db
+      .query("freightFateDrivers")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+      .unique();
+    if (
+      !driver ||
+      !freightFateProfilePubliclyListed(driver) ||
+      driver.integrityFlag
+    ) {
+      continue;
+    }
+    drivers.push({
+      driverId: beat.driverId,
+      // Safety net for names stored before write-time screening existed.
+      displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+      activity: row.activity,
+      detail: row.detail,
+      // The heartbeat clock, which is what the game's own drivers list
+      // shows and has always meant "last heard from".
+      updatedAt: beat.updatedAt,
+      // When the status itself last moved, which is what the website shows.
+      changedAt: row.changedAt ?? beat.updatedAt,
+    });
+  }
+
+  return { drivers, asOf: args.now };
+}
+
 export const getPresenceBoard = query({
   args: {
     now: v.number(),
   },
-  handler: async (ctx, args) => {
-    // The wider window, because a paused game's last beat vouches for it
-    // that long; a driving game's beat only counts for the heartbeat window,
-    // checked per row below. The sweep clears dead beats a minute after the
-    // heartbeat window, so the extra range holds paused drivers and little else.
-    const fresh = await ctx.db
-      .query("freightFatePresenceBeats")
-      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
-      .order("desc")
-      .take(MAX_BOARD_ROWS);
-
-    // Only drivers who chose the public listing appear on the board.
-    const drivers = [];
-    for (const beat of fresh) {
-      const row = await ctx.db
-        .query("freightFatePresence")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
-        .unique();
-      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
-        continue;
-      }
-      // Still beating but nothing has changed in half an hour: a parked
-      // truck with the game left running, not a live driver.
-      if ((row.changedAt ?? beat.updatedAt) < args.now - PRESENCE_IDLE_MS) {
-        continue;
-      }
-      const driver = await ctx.db
-        .query("freightFateDrivers")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
-        .unique();
-      if (
-        !driver ||
-        !freightFateProfilePubliclyListed(driver) ||
-        driver.integrityFlag
-      ) {
-        continue;
-      }
-      drivers.push({
-        driverId: beat.driverId,
-        // Safety net for names stored before write-time screening existed.
-        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
-        activity: row.activity,
-        detail: row.detail,
-        // The heartbeat clock, which is what the game's own drivers list
-        // shows and has always meant "last heard from".
-        updatedAt: beat.updatedAt,
-        // When the status itself last moved, which is what the website shows.
-        changedAt: row.changedAt ?? beat.updatedAt,
-      });
-    }
-
-    return { drivers, asOf: args.now };
-  },
+  handler: readPresenceBoard,
 });
 
 /** The board as a browser subscribes to it: one index scan, no clock.
@@ -1042,70 +1044,72 @@ export const MAX_DIRECTORY_ROWS = 200;
  * clocks named different drivers. Never subscribe to it: it takes a clock
  * and opens driver rows, both of which the live board was built to avoid.
  */
+export async function readDriverDirectory(ctx: QueryCtx, args: { now: number }) {
+  // Who is on duty right now, by the board's own rules.
+  const onDuty = new Map<string, { activity: string; detail: string; changedAt: number }>();
+  const fresh = await ctx.db
+    .query("freightFatePresenceBeats")
+    .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
+    .order("desc")
+    .take(MAX_BOARD_ROWS);
+  for (const beat of fresh) {
+    const row = await ctx.db
+      .query("freightFatePresence")
+      .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
+      .unique();
+    if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
+      continue;
+    }
+    const changedAt = row.changedAt ?? beat.updatedAt;
+    if (changedAt < args.now - PRESENCE_IDLE_MS) {
+      continue;
+    }
+    onDuty.set(beat.driverId, { activity: row.activity, detail: row.detail, changedAt });
+  }
+
+  // Everyone with a public profile, most recently off duty first. Rows
+  // with no stamp sort first in the index and so come out last here.
+  const candidates = await ctx.db
+    .query("freightFateDrivers")
+    .withIndex("by_last_on_duty")
+    .order("desc")
+    .take(MAX_DIRECTORY_ROWS);
+
+  const drivers = [];
+  for (const driver of candidates) {
+    if (!boardListing(driver).listed) {
+      continue;
+    }
+    const live = onDuty.get(driver.driverId);
+    drivers.push({
+      driverId: driver.driverId,
+      displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
+      onDuty: live !== undefined,
+      ...(live ? { activity: live.activity, detail: live.detail, changedAt: live.changedAt } : {}),
+      ...(driver.lastOnDutyAt !== undefined ? { lastOnDutyAt: driver.lastOnDutyAt } : {}),
+    });
+  }
+
+  drivers.sort((a, b) => {
+    if (a.onDuty !== b.onDuty) {
+      return a.onDuty ? -1 : 1;
+    }
+    const aStamp = a.lastOnDutyAt ?? -1;
+    const bStamp = b.lastOnDutyAt ?? -1;
+    if (aStamp !== bStamp) {
+      return bStamp - aStamp;
+    }
+    return a.displayName.localeCompare(b.displayName, "en-US") || a.driverId.localeCompare(b.driverId);
+  });
+
+  return { drivers, asOf: args.now };
+}
+
 export const getDriverDirectory = query({
   args: {
     now: v.number(),
   },
-  handler: async (ctx, args) => {
-    // Who is on duty right now, by the board's own rules.
-    const onDuty = new Map<string, { activity: string; detail: string; changedAt: number }>();
-    const fresh = await ctx.db
-      .query("freightFatePresenceBeats")
-      .withIndex("by_updated", (q) => q.gte("updatedAt", args.now - PRESENCE_IDLE_MS))
-      .order("desc")
-      .take(MAX_BOARD_ROWS);
-    for (const beat of fresh) {
-      const row = await ctx.db
-        .query("freightFatePresence")
-        .withIndex("by_driver_id", (q) => q.eq("driverId", beat.driverId))
-        .unique();
-      if (!row || beat.updatedAt < args.now - presenceWindowMs(row.activity)) {
-        continue;
-      }
-      const changedAt = row.changedAt ?? beat.updatedAt;
-      if (changedAt < args.now - PRESENCE_IDLE_MS) {
-        continue;
-      }
-      onDuty.set(beat.driverId, { activity: row.activity, detail: row.detail, changedAt });
-    }
-
-    // Everyone with a public profile, most recently off duty first. Rows
-    // with no stamp sort first in the index and so come out last here.
-    const candidates = await ctx.db
-      .query("freightFateDrivers")
-      .withIndex("by_last_on_duty")
-      .order("desc")
-      .take(MAX_DIRECTORY_ROWS);
-
-    const drivers = [];
-    for (const driver of candidates) {
-      if (!boardListing(driver).listed) {
-        continue;
-      }
-      const live = onDuty.get(driver.driverId);
-      drivers.push({
-        driverId: driver.driverId,
-        displayName: maskDisplayName(driver.displayName, driver.driverId, "Driver"),
-        onDuty: live !== undefined,
-        ...(live ? { activity: live.activity, detail: live.detail, changedAt: live.changedAt } : {}),
-        ...(driver.lastOnDutyAt !== undefined ? { lastOnDutyAt: driver.lastOnDutyAt } : {}),
-      });
-    }
-
-    drivers.sort((a, b) => {
-      if (a.onDuty !== b.onDuty) {
-        return a.onDuty ? -1 : 1;
-      }
-      const aStamp = a.lastOnDutyAt ?? -1;
-      const bStamp = b.lastOnDutyAt ?? -1;
-      if (aStamp !== bStamp) {
-        return bStamp - aStamp;
-      }
-      return a.displayName.localeCompare(b.displayName, "en-US") || a.driverId.localeCompare(b.driverId);
-    });
-
-    return { drivers, asOf: args.now };
-  },
+  handler: readDriverDirectory,
 });
 
 export const setProfileSharing = mutation({

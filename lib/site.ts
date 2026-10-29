@@ -31,6 +31,7 @@ export const gamesNav = [
   { href: "/freight-fate", label: "Freight Fate" },
   { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
+  { href: "/wickets", label: "Wicket's" },
 ];
 
 export const socialLinks = [
@@ -104,6 +105,7 @@ export const saltwake: ProjectPage = {
     { href: "https://github.com/Orinks/saltwake/issues", label: "Report an issue" },
   ],
 };
+
 
 export const gameSummaries: GameSummary[] = [
   {

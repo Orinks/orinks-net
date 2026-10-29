@@ -2,6 +2,19 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-10-29-wickets-released",
+      "date": "2026-10-29",
+      "project": "Wicket's",
+      "title": "Wicket's is out",
+      "body": [
+        "Wicket's, a parlor of games you play by ear, is out for Windows, macOS and Linux. Light a lamp. Pick a game. Stay a while."
+      ],
+      "link": {
+        "href": "/wickets",
+        "label": "Read about Wicket's"
+      }
+    },
+    {
       "id": "2026-10-21-accepted-stations-on-whats-new",
       "date": "2026-10-21",
       "project": "Freight Fate",
