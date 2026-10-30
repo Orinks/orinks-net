@@ -25,6 +25,7 @@ import {
   callSignBase,
   isPublicAddress,
   judgeProbe,
+  looksLikeHomepage,
   type ListedStation,
   MAX_LISTED_STATIONS,
   MAX_NAME_LENGTH,
@@ -441,6 +442,7 @@ async function vetAndRecord(
     return { ...refuse("stream_station_list"), reason: "stream_station_list", stations: probe.stations, remaining };
   }
   if (!probe.ok && probe.reason !== "stream_unreachable") return refuse(probe.reason);
+  if (!probe.ok && looksLikeHomepage(suggestion.streamUrl)) return refuse("stream_web_page");
   const heard = probe.ok;
   let name = suggestion.name;
   if (unnamed) {

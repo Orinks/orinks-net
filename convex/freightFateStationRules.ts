@@ -128,6 +128,24 @@ export function normalizeStreamUrl(url: string) {
   return path ? `${host}/${path}` : host;
 }
 
+/**
+ * An address that names a site rather than a stream: no port of its own and
+ * no path beyond the front page or a page file. A stream server listens on a
+ * port of its own or names a mount, so when one of these cannot be heard it
+ * is a station's website (one that turns the check away), not its stream.
+ */
+export function looksLikeHomepage(address: string) {
+  let url: URL;
+  try {
+    url = new URL(address);
+  } catch {
+    return false;
+  }
+  if (url.port || url.search) return false;
+  const path = url.pathname.replace(/\/+$/, "");
+  return path === "" || /\.(?:s?html?|php|aspx?|jsp)$/i.test(path);
+}
+
 // Ported from call_sign_base: WNYC-FM, "WNYC FM" and WNYC are one station.
 export function callSignBase(callSign: string) {
   return callSign.replace(/-/g, " ").trim().split(/\s+/)[0]?.toUpperCase() ?? "";

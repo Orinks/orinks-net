@@ -69,6 +69,32 @@ describe("suggesting a station whose stream does not answer", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ status: "pending", streamUnheard: true, streamFormat: "unknown", catalogChecked: false });
   });
+
+  test.each(["https://www.kxyz.com", "https://www.kxyz.com/", "http://kxyz.com/index.php"])(
+    "is refused as a web page when the address is a site's front page (%s)",
+    async (streamUrl) => {
+      const t = convexTest(schema, modules);
+      await t.run(async (ctx) => {
+        await ctx.db.insert("freightFateDrivers", {
+          driverId: "treehouse-1",
+          displayName: "Treehouse",
+          visibility: "public",
+          authSubject: SUBJECT,
+          driverTokenHash: "b".repeat(64),
+          createdAt: 1,
+          updatedAt: 1,
+        });
+      });
+      const result = await t.withIdentity({ subject: SUBJECT }).action(api.freightFateStationVetting.suggestStationSignedIn, {
+        kind: "web",
+        name: "KXYZ",
+        streamUrl,
+      });
+      expect(result).toMatchObject({ ok: false, reason: "stream_web_page", message: REFUSALS.stream_web_page });
+      const rows = await t.run(async (ctx) => ctx.db.query("freightFateStationSuggestions").collect());
+      expect(rows).toHaveLength(0);
+    },
+  );
 });
 
 describe("suggesting stations picked from a playlist", () => {
