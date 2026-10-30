@@ -44,6 +44,12 @@ export function StationReviewClient({ token }: { token: string }) {
   // Bumped with each fix's announcement, so the same words twice are read twice.
   const [said, setSaid] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
+  // Filled after mount: a status region that mounts already holding text is not read.
+  const [loadingText, setLoadingText] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setLoadingText("Loading the suggestions…"), 100);
+    return () => clearTimeout(timer);
+  }, []);
   const [error, setError] = useState("");
   // Bumped on every refusal, so pressing again re-announces the same error.
   const [attempt, setAttempt] = useState(0);
@@ -122,15 +128,12 @@ export function StationReviewClient({ token }: { token: string }) {
       const held = new Set<string>(result.held);
       const verb = decision === "accepted" ? "Accepted" : "Declined";
       const skipped = picked.length - decided.size - held.size;
-      const heldNames = stations.filter((station) => held.has(station.id)).map((station) => station.name);
+      // Why a held station was skipped is on its call sign line.
+      const heldNames = stations.filter((station) => held.has(station.id)).map(stationLabel);
       setMessage(
         [
-          decided.size > 0 || held.size === 0 ? `${verb} ${plural(decided.size)}.` : "",
-          heldNames.length === 1
-            ? `Not accepted: ${heldNames[0]}. The FCC lists no station with its call sign.`
-            : heldNames.length > 1
-              ? `${plural(heldNames.length)} not accepted: the FCC lists no station with their call signs.`
-              : "",
+          decided.size > 0 ? `${verb} ${plural(decided.size)}.` : "",
+          heldNames.length > 0 ? `Not accepted: ${heldNames.join(", ")}.` : "",
           skipped > 0 ? `${plural(skipped)} had already been decided.` : "",
         ]
           .filter(Boolean)
@@ -163,22 +166,28 @@ export function StationReviewClient({ token }: { token: string }) {
     preview.stop();
     const updated = outcome.station;
     setStations((list) => list && list.map((station) => (station.id === updated.id ? updated : station)));
+    // Focus lands on the station's Edit button, which names it already.
     if (outcome.kind === "web") {
       setEditing(null);
-      announce(`${stationLabel(updated)} is web radio now.`);
+      announce("Web radio now.");
       return false;
     }
     setChecks((map) => new Map(map ?? []).set(updated.id, outcome.check));
-    announce(`${stationLabel(updated)}: ${outcome.check.text}`);
-    // A new address that does not play keeps the form open for another try.
-    if (outcome.check.ok) setEditing(null);
-    return !outcome.check.ok;
+    // A new address that does not play keeps the form open for another try,
+    // and the form says why next to the address.
+    if (!outcome.check.ok) {
+      setMessage("");
+      return true;
+    }
+    setEditing(null);
+    announce(outcome.check.text);
+    return false;
   }
 
-  if (state === "loading") return <p role="status">Loading the suggestions…</p>;
+  if (state === "loading") return <p role="status">{loadingText}</p>;
   if (state === "failed") {
     return (
-      <p className="max-w-2xl text-slate-700">
+      <p className="max-w-2xl text-slate-700" role="alert">
         The suggestions could not be loaded. Reload the page to try again.
       </p>
     );
@@ -313,6 +322,7 @@ export function StationReviewClient({ token }: { token: string }) {
                   <StationFix
                     label={label}
                     onDone={fixed}
+                    onSlow={() => announce("Checking the stream…")}
                     onToggle={(open) => setEditing(open ? station.id : null)}
                     open={editing === station.id}
                     station={station}
@@ -360,10 +370,7 @@ export function StationReviewClient({ token }: { token: string }) {
       </div>
       <p className="mt-3 font-semibold text-red-900" id={errorId} role="alert">
         {error ? (
-          <span key={attempt}>
-            <span className="sr-only">Error: </span>
-            {error}
-          </span>
+          <span key={attempt}>{error}</span>
         ) : null}
       </p>
     </div>

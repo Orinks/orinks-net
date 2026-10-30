@@ -743,7 +743,7 @@ export const decideStationBatch = action({
 
 /** The facts the reviewer judges, as plain lines. Shared with the digest. */
 export function stationFacts(row: StationDigestRow) {
-  const kind = row.kind === "terrestrial" ? "Terrestrial" : "Web radio";
+  const kind = row.kind === "terrestrial" ? "AM or FM" : "Web radio";
   const where = [row.city, row.state].filter(Boolean).join(", ");
   const facts: Array<[string, string]> = [
     ["Type", kind],
@@ -758,13 +758,13 @@ export function stationFacts(row: StationDigestRow) {
     facts.push([
       "Call sign",
       row.callSignUnlicensed
-        ? `${row.callSign}. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio.`
+        ? `${row.callSign}. The FCC lists no station with this call sign.`
         : row.callSign,
     ]);
   }
   if (row.frequency) facts.push(["Frequency", row.frequency]);
   if (where) facts.push(["Where", where]);
-  if (row.genre) facts.push(["Format", row.genre]);
+  if (row.genre) facts.push(["Genre", row.genre]);
   if (row.note) facts.push(["Note", row.note]);
   facts.push([
     "Suggested by",

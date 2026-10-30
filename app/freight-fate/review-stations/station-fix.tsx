@@ -25,6 +25,7 @@ export function StationFix({
   open,
   onToggle,
   onDone,
+  onSlow,
 }: {
   token: string;
   station: ReviewStation;
@@ -33,6 +34,8 @@ export function StationFix({
   onToggle: (open: boolean) => void;
   /** Says what changed; true keeps the form open (a new address that did not play). */
   onDone: (outcome: FixOutcome) => boolean | void;
+  /** A save still waiting on its stream check after a moment. */
+  onSlow: () => void;
 }) {
   const changeStream = useAction(api.freightFateStationVetting.changeStationStream);
   const makeWeb = useAction(api.freightFateStations.makeStationWebFromReview);
@@ -70,18 +73,26 @@ export function StationFix({
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (working) return;
-    if (!address.trim()) return refuse("Give the stream address.");
+    if (!address.trim()) return refuse("Enter a stream address.");
     setWorking("address");
     setError("");
+    // The check can take up to 20 seconds; say so once if it is slow.
+    const slow = setTimeout(onSlow, 2000);
     try {
       const result = await changeStream({ token, id: station.id, streamUrl: address });
       if ("expired" in result) return void onDone({ kind: "expired" });
       if (!result.ok) return refuse(result.problem);
       const keepOpen = onDone({ kind: "address", station: result.station, check: result.check });
-      if (keepOpen) inputRef.current?.focus();
+      if (keepOpen) {
+        // Saved, but it did not play: the reason sits with the address.
+        refuse(result.check.text);
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
     } catch {
       refuse("That did not go through. Try again.");
     } finally {
+      clearTimeout(slow);
       setWorking(null);
     }
   }
@@ -113,7 +124,7 @@ export function StationFix({
         <form
           className="mt-3 space-y-3"
           onKeyDown={(event) => {
-            if (event.key === "Escape") {
+            if (event.key === "Escape" && !working) {
               event.preventDefault();
               onToggle(false);
             }
@@ -148,9 +159,12 @@ export function StationFix({
             </button>
             {station.kind === "terrestrial" ? (
               <button aria-disabled={working !== null || undefined} className={small} onClick={web} type="button">
-                {working === "web" ? "Saving…" : "Make web radio"}
+                {working === "web" ? "Making web radio…" : "Make web radio"}
               </button>
             ) : null}
+            <button className={small} onClick={() => !working && onToggle(false)} type="button">
+              Cancel
+            </button>
           </div>
         </form>
       ) : null}

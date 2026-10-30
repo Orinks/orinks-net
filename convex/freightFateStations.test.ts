@@ -330,7 +330,7 @@ describe("the station digest and its links", () => {
     const [station] = await t.query(internal.freightFateStations.pendingStationsFor, { issuedAt: NOW + 10 });
     expect(station.facts).toContainEqual([
       "Call sign",
-      "KWSC-FM. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio.",
+      "KWSC-FM. The FCC lists no station with this call sign.",
     ]);
     const token = (await signStationBatch({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 }))!;
     expect(

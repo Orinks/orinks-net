@@ -69,7 +69,7 @@ test("a station held for its call sign stays waiting", async () => {
   fireEvent.click(screen.getByRole("checkbox", { name: "The Cat" }));
   fireEvent.click(screen.getByRole("button", { name: "Accept 2 stations" }));
   expect(
-    await screen.findByText("Accepted 1 station. Not accepted: The Cat. The FCC lists no station with its call sign."),
+    await screen.findByText("Accepted 1 station. Not accepted: The Cat."),
   ).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "2 stations waiting" })).toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: "The Cat" })).not.toBeChecked();
@@ -125,8 +125,9 @@ test("edits a station's stream address, and keeps the form open when it does not
   change.mockResolvedValueOnce({ ok: true, station: moved, check: { id: "b", ok: false, text: "Fails: nothing answered" } });
   fireEvent.change(input, { target: { value: "https://c.example/new" } });
   fireEvent.click(screen.getByRole("button", { name: "Save address" }));
-  expect(await screen.findByText("The Cat: Fails: nothing answered")).toBeInTheDocument();
+  expect(await screen.findByText("Fails: nothing answered")).toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "Stream address" })).toHaveFocus();
+  expect(screen.getByRole("textbox", { name: "Stream address" })).toHaveAccessibleDescription("Fails: nothing answered");
 
   change.mockResolvedValueOnce({
     ok: true,
@@ -134,7 +135,7 @@ test("edits a station's stream address, and keeps the form open when it does not
     check: { id: "b", ok: true, text: "Plays (MP3)", playUrl: "https://c.example/new", format: "mp3" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Save address" }));
-  expect(await screen.findByText("The Cat: Plays (MP3)")).toBeInTheDocument();
+  expect(await screen.findByText("Plays (MP3)")).toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "Stream address" })).toBeNull();
   expect(screen.getByRole("button", { name: editOf("The Cat") })).toHaveFocus();
   expect(change).toHaveBeenLastCalledWith({ token: "tok", id: "b", streamUrl: "https://c.example/new" });
@@ -152,8 +153,18 @@ test("makes an AM or FM station web radio", async () => {
   fireEvent.click(screen.getByRole("button", { name: editOf("The Cat") }));
   expect(screen.getAllByRole("textbox", { name: "Stream address" })).toHaveLength(1);
   fireEvent.click(screen.getByRole("button", { name: "Make web radio" }));
-  expect(await screen.findByText("The Cat is web radio now.")).toBeInTheDocument();
+  expect(await screen.findByText("Web radio now.")).toBeInTheDocument();
   expect(screen.getAllByText("Type: Web radio")).toHaveLength(3);
   expect(screen.queryByRole("button", { name: "Make web radio" })).toBeNull();
   await waitFor(() => expect(screen.getByRole("button", { name: editOf("The Cat") })).toHaveFocus());
+});
+
+test("Cancel closes the form and returns to Edit", async () => {
+  state.actions["freightFateStationVetting:changeStationStream"] = vi.fn();
+  state.actions["freightFateStations:makeStationWebFromReview"] = vi.fn();
+  render(<StationReviewClient token="tok" />);
+  fireEvent.click(await screen.findByRole("button", { name: editOf("The Cat") }));
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("textbox", { name: "Stream address" })).toBeNull();
+  expect(screen.getByRole("button", { name: editOf("The Cat") })).toHaveFocus();
 });
