@@ -23,13 +23,17 @@ const SUBJECT = "user_2suggestTest";
 
 let humanCheckPasses = true;
 let sentSecrets: string[] = [];
+// What the FCC's licence query answers; null for a query that is down.
+let fccReply: string | null = null;
 
 beforeEach(() => {
   humanCheckPasses = true;
   sentSecrets = [];
+  fccReply = null;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("fcc.gov") && fccReply !== null) return new Response(fccReply);
       if (!String(url).includes("challenges.cloudflare.com")) return new Response("", { status: 503 });
       const secret = new URLSearchParams(String(init?.body)).get("secret") ?? "";
       sentSecrets.push(secret);
@@ -95,6 +99,36 @@ describe("suggesting a station whose stream does not answer", () => {
       expect(rows).toHaveLength(0);
     },
   );
+});
+
+describe("suggesting an AM or FM station", () => {
+  const terrestrial = (t: ReturnType<typeof convexTest>) =>
+    t.action(api.freightFateStationVetting.suggestStationAnonymous, {
+      turnstileToken: "token",
+      kind: "terrestrial",
+      name: "Made Up FM",
+      streamUrl: "http://s6.autopo.st:8515/live",
+      callSign: "KZZQ",
+      frequency: "99.9 FM",
+      state: "CO",
+    });
+  const held = async (t: ReturnType<typeof convexTest>) => {
+    const [row] = await t.run(async (ctx) => ctx.db.query("freightFateStationSuggestions").collect());
+    return row.placement === "not_found";
+  };
+
+  test("is held for review when the FCC lists no such call sign", async () => {
+    const t = convexTest(schema, modules);
+    fccReply = "";
+    expect(await terrestrial(t)).toMatchObject({ ok: true });
+    expect(await held(t)).toBe(true);
+  });
+
+  test("is not held when the FCC query is down", async () => {
+    const t = convexTest(schema, modules);
+    expect(await terrestrial(t)).toMatchObject({ ok: true });
+    expect(await held(t)).toBe(false);
+  });
 });
 
 describe("suggesting stations picked from a playlist", () => {

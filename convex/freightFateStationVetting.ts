@@ -45,6 +45,7 @@ import {
   verifyStationBatch,
 } from "./freightFateStations";
 import { escapeHtml } from "./freightFateReview";
+import { fccLicenses } from "./freightFateStationPlacement";
 import { humanCheck } from "./turnstile";
 
 const PROBE_TIMEOUT_MS = 8_000;
@@ -464,6 +465,13 @@ async function vetAndRecord(
     name = probe.name;
   }
 
+  // An AM or FM station whose call sign the FCC does not list is still
+  // taken, but held: the review page will not accept it as broadcast radio.
+  const licensed =
+    suggestion.kind === "terrestrial" && suggestion.callSign
+      ? await fccLicenses({ callSign: suggestion.callSign, state: suggestion.state, frequency: suggestion.frequency })
+      : null;
+
   const recorded: { ok: true } | Refusal = await ctx.runMutation(
     internal.freightFateStations.recordSuggestion,
     {
@@ -473,6 +481,7 @@ async function vetAndRecord(
       streamFormat: probe.ok ? probe.format : "unknown",
       ...(heard ? {} : { streamUnheard: true }),
       catalogChecked: catalog !== null,
+      ...(licensed === false ? { placement: "not_found" as const, placementCheckedAt: now } : {}),
       ...(clientVersion ? { clientVersion } : {}),
       now,
     },

@@ -36,7 +36,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 test("accepts the ticked stations and leaves the rest waiting", async () => {
-  decide.mockResolvedValue({ ok: true, decided: ["a", "c"] });
+  decide.mockResolvedValue({ ok: true, decided: ["a", "c"], held: [] });
   render(<StationReviewClient token="tok" />);
   expect(await screen.findByRole("heading", { name: "3 stations waiting" })).toBeInTheDocument();
 
@@ -54,12 +54,25 @@ test("accepts the ticked stations and leaves the rest waiting", async () => {
 });
 
 test("select all, then decline everything, ends on nothing waiting", async () => {
-  decide.mockResolvedValue({ ok: true, decided: ["a", "b"] });
+  decide.mockResolvedValue({ ok: true, decided: ["a", "b"], held: [] });
   render(<StationReviewClient token="tok" />);
   fireEvent.click(await screen.findByRole("button", { name: "Select all" }));
   fireEvent.click(screen.getByRole("button", { name: "Decline 3 stations" }));
   expect(await screen.findByRole("heading", { name: "Nothing is waiting for review" })).toHaveFocus();
   expect(screen.getByText("Declined 2 stations. 1 station had already been decided.")).toBeInTheDocument();
+});
+
+test("a station held for its call sign stays waiting", async () => {
+  decide.mockResolvedValue({ ok: true, decided: ["a"], held: ["b"] });
+  render(<StationReviewClient token="tok" />);
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Night Owl Radio" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "The Cat" }));
+  fireEvent.click(screen.getByRole("button", { name: "Accept 2 stations" }));
+  expect(
+    await screen.findByText("Accepted 1 station. Not accepted: The Cat. The FCC lists no station with its call sign."),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "2 stations waiting" })).toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "The Cat" })).not.toBeChecked();
 });
 
 test("an expired link says so", async () => {

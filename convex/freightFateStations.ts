@@ -212,6 +212,8 @@ export const recordSuggestion = internalMutation({
     city: v.optional(v.string()),
     state: v.optional(v.string()),
     catalogChecked: v.boolean(),
+    placement: v.optional(v.literal("not_found")),
+    placementCheckedAt: v.optional(v.number()),
     clientVersion: v.optional(v.string()),
     now: v.number(),
   },
@@ -410,6 +412,7 @@ export type StationDigestRow = {
   city: string | null;
   state: string | null;
   catalogChecked: boolean;
+  callSignUnlicensed: boolean;
   isNew: boolean;
 };
 
@@ -438,6 +441,7 @@ async function digestRow(
     city: row.city ?? null,
     state: row.state ?? null,
     catalogChecked: row.catalogChecked,
+    callSignUnlicensed: heldForCallSign(row),
     isNew: row.notifiedAt === undefined,
   };
 }
@@ -509,6 +513,15 @@ export const getStationReviewRow = internalQuery({
   },
 });
 
+/**
+ * An AM or FM suggestion whose call sign the FCC does not list. Accepting
+ * skips it: it waits until it is made web radio
+ * (freightFateStationAdmin:makeWebStation) or declined.
+ */
+export function heldForCallSign(row: Doc<"freightFateStationSuggestions">) {
+  return row.status === "pending" && row.kind === "terrestrial" && row.placement === "not_found";
+}
+
 async function decide(
   ctx: MutationCtx,
   row: Doc<"freightFateStationSuggestions">,
@@ -533,6 +546,7 @@ export const decideStationSuggestion = internalMutation({
     if (!row || row.status !== "pending" || row.createdAt !== args.createdAt) {
       return { ok: false as const };
     }
+    if (args.decision === "accepted" && heldForCallSign(row)) return { ok: false as const, held: true as const, name: row.name };
     await decide(ctx, row, args.decision, args.now);
     if (args.decision === "accepted") await recordStationNews(ctx, [row], args.now);
     return { ok: true as const, name: row.name, kind: row.kind };
@@ -603,15 +617,20 @@ export const decideStations = internalMutation({
   },
   handler: async (ctx, args) => {
     const decided: Array<Doc<"freightFateStationSuggestions">> = [];
+    const held: Array<Id<"freightFateStationSuggestions">> = [];
     for (const id of args.ids.slice(0, MAX_BATCH_DECISION)) {
       const row = await ctx.db.get(id);
       if (!row || row.status !== "pending" || row.createdAt > args.issuedAt) continue;
+      if (args.decision === "accepted" && heldForCallSign(row)) {
+        held.push(row._id);
+        continue;
+      }
       await decide(ctx, row, args.decision, args.now);
       decided.push(row);
     }
     // One What's New announcement per accepted batch, written with it.
     if (args.decision === "accepted") await recordStationNews(ctx, decided, args.now);
-    return decided.map((row) => row._id);
+    return { decided: decided.map((row) => row._id), held };
   },
 });
 
@@ -635,15 +654,24 @@ export const decideStationBatch = action({
     ids: v.array(v.id("freightFateStationSuggestions")),
     decision: v.union(v.literal("accepted"), v.literal("declined")),
   },
-  handler: async (ctx, args): Promise<{ ok: false } | { ok: true; decided: Array<Id<"freightFateStationSuggestions">> }> => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    | { ok: false }
+    | { ok: true; decided: Array<Id<"freightFateStationSuggestions">>; held: Array<Id<"freightFateStationSuggestions">> }
+  > => {
     const now = Date.now();
     const claim = await verifyStationBatch(args.token, now);
     if (!claim) return { ok: false };
-    const decided: Array<Id<"freightFateStationSuggestions">> = await ctx.runMutation(
-      internal.freightFateStations.decideStations,
-      { ids: args.ids, decision: args.decision, issuedAt: claim.issuedAt, now },
-    );
-    return { ok: true, decided };
+    const result: { decided: Array<Id<"freightFateStationSuggestions">>; held: Array<Id<"freightFateStationSuggestions">> } =
+      await ctx.runMutation(internal.freightFateStations.decideStations, {
+        ids: args.ids,
+        decision: args.decision,
+        issuedAt: claim.issuedAt,
+        now,
+      });
+    return { ok: true, ...result };
   },
 });
 
@@ -662,7 +690,14 @@ export function stationFacts(row: StationDigestRow) {
         : `${row.streamUrl} (${row.streamFormat})`,
     ],
   ];
-  if (row.callSign) facts.push(["Call sign", row.callSign]);
+  if (row.callSign) {
+    facts.push([
+      "Call sign",
+      row.callSignUnlicensed
+        ? `${row.callSign}. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio with the admin command.`
+        : row.callSign,
+    ]);
+  }
   if (row.frequency) facts.push(["Frequency", row.frequency]);
   if (where) facts.push(["Where", where]);
   if (row.genre) facts.push(["Format", row.genre]);
@@ -729,6 +764,12 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     now: Date.now(),
   });
   if (!result.ok) {
+    if ("held" in result) {
+      return page(
+        `Not accepted: ${result.name}`,
+        "<p>The FCC lists no station with its call sign. Decline it, or make it web radio with the admin command.</p>",
+      );
+    }
     return page("Already decided", "<p>This suggestion is no longer waiting for review.</p>");
   }
   if (claim.decision === "declined") {

@@ -321,6 +321,32 @@ describe("the station digest and its links", () => {
     expect(await page.text()).toContain("Accept Night Owl Radio?");
   });
 
+  test("an AM or FM station the FCC does not list is held when accepted, and can still be declined", async () => {
+    process.env.FREIGHT_FATE_REVIEW_SECRET = "s".repeat(40);
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, { ...terrestrialStation, placement: "not_found", placementCheckedAt: NOW });
+    const row = await onlyRow(t);
+    const [station] = await t.query(internal.freightFateStations.pendingStationsFor, { issuedAt: NOW + 10 });
+    expect(station.facts).toContainEqual([
+      "Call sign",
+      "KWSC-FM. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio with the admin command.",
+    ]);
+    const token = (await signStationBatch({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 }))!;
+    expect(
+      await t.action(api.freightFateStations.decideStationBatch, { token, ids: [row._id], decision: "accepted" }),
+    ).toEqual({ ok: true, decided: [], held: [row._id] });
+    expect(
+      await t.mutation(internal.freightFateStations.decideStationSuggestion, {
+        id: row._id, decision: "accepted", createdAt: row.createdAt, now: NOW + 1,
+      }),
+    ).toEqual({ ok: false, held: true, name: "The Cat" });
+    expect((await onlyRow(t)).status).toBe("pending");
+    expect(
+      await t.action(api.freightFateStations.decideStationBatch, { token, ids: [row._id], decision: "declined" }),
+    ).toEqual({ ok: true, decided: [row._id], held: [] });
+  });
+
   test("decideStationSuggestion refuses a second decision", async () => {
     const t = setup();
     await seedDriver(t);
@@ -358,16 +384,16 @@ describe("the station digest and its links", () => {
     const accepted = await t.action(api.freightFateStations.decideStationBatch, {
       token, ids: ids.slice(0, 2), decision: "accepted",
     });
-    expect(accepted).toEqual({ ok: true, decided: ids.slice(0, 2) });
+    expect(accepted).toEqual({ ok: true, decided: ids.slice(0, 2), held: [] });
     const again = await t.action(api.freightFateStations.decideStationBatch, {
       token, ids, decision: "declined",
     });
-    expect(again).toEqual({ ok: true, decided: [ids[2]] });
+    expect(again).toEqual({ ok: true, decided: [ids[2]], held: [] });
     expect(await t.action(api.freightFateStations.reviewStationBatch, { token: `${token}0` })).toEqual({ ok: false });
 
     const late = await t.mutation(internal.freightFateStations.decideStations, {
       ids, decision: "accepted", issuedAt: NOW, now: NOW + 100,
     });
-    expect(late).toEqual([]);
+    expect(late).toEqual({ decided: [], held: [] });
   });
 });

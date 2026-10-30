@@ -115,13 +115,25 @@ export function StationReviewClient({ token }: { token: string }) {
         return;
       }
       const decided = new Set<string>(result.decided);
+      const held = new Set<string>(result.held);
       const verb = decision === "accepted" ? "Accepted" : "Declined";
-      const skipped = picked.length - decided.size;
+      const skipped = picked.length - decided.size - held.size;
+      const heldNames = stations.filter((station) => held.has(station.id)).map((station) => station.name);
       setMessage(
-        `${verb} ${plural(decided.size)}.` +
-          (skipped > 0 ? ` ${plural(skipped)} had already been decided.` : ""),
+        [
+          decided.size > 0 || held.size === 0 ? `${verb} ${plural(decided.size)}.` : "",
+          heldNames.length === 1
+            ? `Not accepted: ${heldNames[0]}. The FCC lists no station with its call sign.`
+            : heldNames.length > 1
+              ? `${plural(heldNames.length)} not accepted: the FCC lists no station with their call signs.`
+              : "",
+          skipped > 0 ? `${plural(skipped)} had already been decided.` : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
       );
-      setStations(stations.filter((station) => !picked.includes(station.id)));
+      // A held station stays on the list, waiting like the unticked ones.
+      setStations(stations.filter((station) => !picked.includes(station.id) || held.has(station.id)));
       setPicked([]);
     } catch {
       setError("That did not go through. Try again.");

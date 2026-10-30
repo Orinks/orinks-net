@@ -191,6 +191,28 @@ async function queryFcc(service: Service, callSign: string): Promise<Transmitter
   return text.split(/\r?\n/).flatMap((line) => parseFccRow(line) ?? []);
 }
 
+async function findTransmitter(wanted: { callSign: string; state?: string; frequency?: string }) {
+  for (const service of servicesFor(wanted.frequency)) {
+    const site = pickTransmitter(await queryFcc(service, callSignBase(wanted.callSign)), wanted);
+    if (site) return site;
+  }
+  return null;
+}
+
+/**
+ * Whether the FCC licenses a station with this call sign, asked when an AM or
+ * FM station is suggested so a made-up one waits for the owner. Null when the
+ * query is down, which says nothing either way.
+ */
+export async function fccLicenses(wanted: { callSign: string; state?: string; frequency?: string }) {
+  try {
+    return (await findTransmitter(wanted)) !== null;
+  } catch (error) {
+    console.warn(`Call sign check for ${wanted.callSign} not done: ${String(error)}`);
+    return null;
+  }
+}
+
 /** Ask the FCC where one accepted station's transmitter is, and record it. */
 export const placeStation = internalAction({
   args: { id: v.id("freightFateStationSuggestions") },
@@ -199,10 +221,7 @@ export const placeStation = internalAction({
     if (!row) return { placed: false };
     let site: Transmitter | null = null;
     try {
-      for (const service of servicesFor(row.frequency)) {
-        site = pickTransmitter(await queryFcc(service, callSignBase(row.callSign)), row);
-        if (site) break;
-      }
+      site = await findTransmitter(row);
     } catch (error) {
       // The query being down is not "the FCC does not list it": leave the
       // row unmarked so the next re-check asks again.
