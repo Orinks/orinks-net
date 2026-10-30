@@ -330,7 +330,7 @@ describe("the station digest and its links", () => {
     const [station] = await t.query(internal.freightFateStations.pendingStationsFor, { issuedAt: NOW + 10 });
     expect(station.facts).toContainEqual([
       "Call sign",
-      "KWSC-FM. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio with the admin command.",
+      "KWSC-FM. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio.",
     ]);
     const token = (await signStationBatch({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 }))!;
     expect(
@@ -345,6 +345,38 @@ describe("the station digest and its links", () => {
     expect(
       await t.action(api.freightFateStations.decideStationBatch, { token, ids: [row._id], decision: "declined" }),
     ).toEqual({ ok: true, decided: [row._id], held: [] });
+  });
+
+  test("the review page changes a stream address and makes a station web radio", async () => {
+    process.env.FREIGHT_FATE_REVIEW_SECRET = "s".repeat(40);
+    const t = setup();
+    await seedDriver(t);
+    await suggest(t, { ...terrestrialStation, placement: "not_found", placementCheckedAt: NOW });
+    await suggest(t, { ...webStation, streamUrl: "https://other.example/live", streamKey: "other.example/live" });
+    const rows = await t.run(async (ctx) => ctx.db.query("freightFateStationSuggestions").collect());
+    const cat = rows.find((row) => row.name === "The Cat")!;
+
+    const change = (streamUrl: string, issuedAt = NOW + 10) =>
+      t.mutation(internal.freightFateStations.reviewChangeStream, { id: cat._id, issuedAt, streamUrl });
+    expect(await change("www.thecat.example")).toEqual({ ok: false, problem: "That is not a web address." });
+    expect(await change("https://other.example/live")).toEqual({
+      ok: false,
+      problem: "Night Owl Radio (pending) already has that stream.",
+    });
+    expect(await change("https://x.example/", NOW - 10)).toMatchObject({ ok: false });
+    const changed = await change(" https://icecast.example/thecat2 ");
+    expect(changed).toMatchObject({ ok: true, station: { streamUrl: "https://icecast.example/thecat2", held: true } });
+
+    const token = (await signStationBatch({ issuedAt: NOW + 100, expiresAt: NOW + 60_000 }))!;
+    expect(await t.action(api.freightFateStations.makeStationWebFromReview, { token: `${token}0`, id: cat._id })).toEqual({
+      ok: false,
+      expired: true,
+    });
+    const web = await t.action(api.freightFateStations.makeStationWebFromReview, { token, id: cat._id });
+    expect(web).toMatchObject({ ok: true, station: { kind: "web", held: false } });
+    expect(
+      await t.action(api.freightFateStations.decideStationBatch, { token, ids: [cat._id], decision: "accepted" }),
+    ).toEqual({ ok: true, decided: [cat._id], held: [] });
   });
 
   test("decideStationSuggestion refuses a second decision", async () => {

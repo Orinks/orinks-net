@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { ReviewStation } from "@/convex/freightFateStations";
 import type { StationCheck } from "@/convex/freightFateStationVetting";
+import { type FixOutcome, StationFix } from "./station-fix";
 import {
   stationLabel,
   usePreview,
@@ -40,6 +41,9 @@ export function StationReviewClient({ token }: { token: string }) {
   const [picked, setPicked] = useState<string[]>([]);
   const [working, setWorking] = useState<Decision | null>(null);
   const [message, setMessage] = useState("");
+  // Bumped with each fix's announcement, so the same words twice are read twice.
+  const [said, setSaid] = useState(0);
+  const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   // Bumped on every refusal, so pressing again re-announces the same error.
   const [attempt, setAttempt] = useState(0);
@@ -143,6 +147,34 @@ export function StationReviewClient({ token }: { token: string }) {
     }
   }
 
+  // Set a moment after focus moves, so the focus announcement does not cut it off.
+  function announce(text: string) {
+    setTimeout(() => {
+      setMessage(text);
+      setSaid((count) => count + 1);
+    }, 100);
+  }
+
+  function fixed(outcome: FixOutcome) {
+    if (outcome.kind === "expired") {
+      setState("expired");
+      return false;
+    }
+    preview.stop();
+    const updated = outcome.station;
+    setStations((list) => list && list.map((station) => (station.id === updated.id ? updated : station)));
+    if (outcome.kind === "web") {
+      setEditing(null);
+      announce(`${stationLabel(updated)} is web radio now.`);
+      return false;
+    }
+    setChecks((map) => new Map(map ?? []).set(updated.id, outcome.check));
+    announce(`${stationLabel(updated)}: ${outcome.check.text}`);
+    // A new address that does not play keeps the form open for another try.
+    if (outcome.check.ok) setEditing(null);
+    return !outcome.check.ok;
+  }
+
   if (state === "loading") return <p role="status">Loading the suggestions…</p>;
   if (state === "failed") {
     return (
@@ -198,7 +230,7 @@ export function StationReviewClient({ token }: { token: string }) {
         className={message ? "mb-6 font-semibold text-ink" : "sr-only"}
         role="status"
       >
-        {message}
+        <span key={said}>{message}</span>
       </p>
       <fieldset className="rounded-lg border border-line-strong p-5">
         <legend className="px-1">
@@ -278,6 +310,14 @@ export function StationReviewClient({ token }: { token: string }) {
                       </p>
                     ))}
                   <p>Stream check: {check ? check.text : checks ? "Not checked" : "Checking…"}</p>
+                  <StationFix
+                    label={label}
+                    onDone={fixed}
+                    onToggle={(open) => setEditing(open ? station.id : null)}
+                    open={editing === station.id}
+                    station={station}
+                    token={token}
+                  />
                 </div>
               </li>
             );

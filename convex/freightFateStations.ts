@@ -27,6 +27,7 @@ import {
 } from "./freightFateReview";
 import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
 import { recordStationNews } from "./freightFateStationNews";
+import { changeStreamUrl, makeWeb } from "./freightFateStationAdmin";
 import { turnstileSecret } from "./turnstile";
 import {
   ANONYMOUS_DAILY_LIMIT,
@@ -588,8 +589,72 @@ export type ReviewStation = {
   id: Id<"freightFateStationSuggestions">;
   name: string;
   streamUrl: string;
+  kind: "terrestrial" | "web";
+  /** Accept skips it until it is made web radio (heldForCallSign). */
+  held: boolean;
   facts: Array<[string, string]>;
 };
+
+async function reviewStation(ctx: QueryCtx, row: Doc<"freightFateStationSuggestions">): Promise<ReviewStation> {
+  return {
+    id: row._id,
+    name: row.name,
+    streamUrl: row.streamUrl,
+    kind: row.kind,
+    held: heldForCallSign(row),
+    facts: stationFacts(await digestRow(ctx, row)),
+  };
+}
+
+/** A suggestion the review link covers and that still waits, or null. */
+async function reviewable(ctx: QueryCtx, id: Id<"freightFateStationSuggestions">, issuedAt: number) {
+  const row = await ctx.db.get(id);
+  return row && row.status === "pending" && row.createdAt <= issuedAt ? row : null;
+}
+
+type ReviewFix = { ok: true; station: ReviewStation } | { ok: false; problem: string };
+const GONE = "This suggestion is no longer waiting for review. Reload the page.";
+
+/** A new stream address for a suggestion on the review page. */
+export const reviewChangeStream = internalMutation({
+  args: { id: v.id("freightFateStationSuggestions"), issuedAt: v.number(), streamUrl: v.string() },
+  handler: async (ctx, args): Promise<ReviewFix> => {
+    const row = await reviewable(ctx, args.id, args.issuedAt);
+    if (!row) return { ok: false, problem: GONE };
+    const changed = await changeStreamUrl(ctx, row, args.streamUrl);
+    if (!changed.ok) return changed;
+    return { ok: true, station: await reviewStation(ctx, (await ctx.db.get(row._id))!) };
+  },
+});
+
+/** The review page's copy of one suggestion, after the stream check wrote to it. */
+export const reviewStationRow = internalQuery({
+  args: { id: v.id("freightFateStationSuggestions") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    return row ? reviewStation(ctx, row) : null;
+  },
+});
+
+export const reviewMakeWeb = internalMutation({
+  args: { id: v.id("freightFateStationSuggestions"), issuedAt: v.number() },
+  handler: async (ctx, args): Promise<ReviewFix> => {
+    const row = await reviewable(ctx, args.id, args.issuedAt);
+    if (!row) return { ok: false, problem: GONE };
+    await makeWeb(ctx, row);
+    return { ok: true, station: await reviewStation(ctx, (await ctx.db.get(row._id))!) };
+  },
+});
+
+/** Turns a suggestion on the review page into web radio, so Accept takes it. */
+export const makeStationWebFromReview = action({
+  args: { token: v.string(), id: v.id("freightFateStationSuggestions") },
+  handler: async (ctx, args): Promise<{ ok: false; expired: true } | ReviewFix> => {
+    const claim = await verifyStationBatch(args.token, Date.now());
+    if (!claim) return { ok: false, expired: true };
+    return ctx.runMutation(internal.freightFateStations.reviewMakeWeb, { id: args.id, issuedAt: claim.issuedAt });
+  },
+});
 
 export const pendingStationsFor = internalQuery({
   args: { issuedAt: v.number() },
@@ -601,8 +666,7 @@ export const pendingStationsFor = internalQuery({
     const stations: ReviewStation[] = [];
     for (const row of pending) {
       if (row.createdAt > args.issuedAt) continue;
-      const digest = await digestRow(ctx, row);
-      stations.push({ id: row._id, name: row.name, streamUrl: row.streamUrl, facts: stationFacts(digest) });
+      stations.push(await reviewStation(ctx, row));
     }
     return stations.sort((a, b) => a.name.localeCompare(b.name));
   },
@@ -694,7 +758,7 @@ export function stationFacts(row: StationDigestRow) {
     facts.push([
       "Call sign",
       row.callSignUnlicensed
-        ? `${row.callSign}. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio with the admin command.`
+        ? `${row.callSign}. The FCC lists no station with this call sign, so Accept skips it. Decline it, or make it web radio.`
         : row.callSign,
     ]);
   }
@@ -767,7 +831,7 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     if ("held" in result) {
       return page(
         `Not accepted: ${result.name}`,
-        "<p>The FCC lists no station with its call sign. Decline it, or make it web radio with the admin command.</p>",
+        "<p>The FCC lists no station with its call sign. Decline it, or make it web radio from the review page in the latest station digest.</p>",
       );
     }
     return page("Already decided", "<p>This suggestion is no longer waiting for review.</p>");

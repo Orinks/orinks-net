@@ -643,6 +643,43 @@ export const checkStationBatch = action({
   },
 });
 
+/**
+ * A new stream address for one suggestion on the review page, checked at
+ * once. An address that does not play from here is kept all the same: the
+ * reviewer has heard it, or will decide on it.
+ */
+export const changeStationStream = action({
+  args: { token: v.string(), id: v.id("freightFateStationSuggestions"), streamUrl: v.string() },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: false; expired: true } | { ok: false; problem: string } | { ok: true; station: ReviewStation; check: StationCheck }> => {
+    const claim = await verifyStationBatch(args.token, Date.now());
+    if (!claim) return { ok: false, expired: true };
+    const changed: { ok: true; station: ReviewStation } | { ok: false; problem: string } = await ctx.runMutation(
+      internal.freightFateStations.reviewChangeStream,
+      { id: args.id, issuedAt: claim.issuedAt, streamUrl: args.streamUrl },
+    );
+    if (!changed.ok) return changed;
+    const probe: ProbeResult = await probeStream(changed.station.streamUrl).catch(() => unreachable("check_failed"));
+    if (!probe.ok) {
+      return { ok: true, station: changed.station, check: { id: args.id, ok: false, text: describeProbe(probe) } };
+    }
+    await ctx.runMutation(internal.freightFateStations.recordStationCheck, {
+      id: args.id,
+      ok: true,
+      format: probe.format,
+      now: Date.now(),
+    });
+    const station: ReviewStation | null = await ctx.runQuery(internal.freightFateStations.reviewStationRow, { id: args.id });
+    return {
+      ok: true,
+      station: station ?? changed.station,
+      check: { id: args.id, ok: true, text: describeProbe(probe), playUrl: probe.playUrl, format: probe.format },
+    };
+  },
+});
+
 // -- the nightly re-check ---------------------------------------------------------------
 
 const RECHECK_BATCH = 200;
