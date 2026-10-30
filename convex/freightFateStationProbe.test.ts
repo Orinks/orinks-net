@@ -57,6 +57,17 @@ function reply(path: string, port: number): Buffer | null {
       return Buffer.concat([head("HTTP/1.1 200 OK", ["Content-Type: text/plain"]), Buffer.alloc(2048, 0x41)]);
     case "/forbidden":
       return head("HTTP/1.1 403 Forbidden", []);
+    case "/challenge":
+      // A station's homepage behind bot protection, as the check sees it.
+      return Buffer.concat([
+        head("HTTP/1.1 403 Forbidden", ["Content-Type: text/html; charset=UTF-8"]),
+        Buffer.from(`<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>${"<p>Checking your browser</p>".repeat(60)}</body></html>`),
+      ]);
+    case "/icecast-forbidden":
+      return Buffer.concat([
+        head("HTTP/1.0 403 Forbidden", ["Content-Type: text/html"]),
+        Buffer.from("<html><head><title>Error 403</title></head><body><b>403 - Forbidden</b></body></html>"),
+      ]);
     case "/silent":
       return null;
     case "/page":
@@ -123,6 +134,8 @@ describe("probeStream", () => {
     expect(await probe("/short")).toEqual({ ok: false, reason: "stream_unreachable", problem: "too_little_audio" });
     expect(await probe("/missing")).toEqual({ ok: false, reason: "stream_unreachable", problem: "http_404" });
     expect(await probe("/forbidden")).toEqual({ ok: false, reason: "stream_unreachable", problem: "http_403" });
+    expect(await probe("/challenge")).toEqual({ ok: false, reason: "stream_web_page" });
+    expect(await probe("/icecast-forbidden")).toEqual({ ok: false, reason: "stream_unreachable", problem: "http_403" });
     expect(await probe("/silent", 300)).toEqual({ ok: false, reason: "stream_unreachable", problem: "no_reply" });
     expect(await probeWith("http://nowhere.test/", local, 0, Date.now() + 1000)).toEqual({
       ok: false,

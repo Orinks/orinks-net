@@ -54,6 +54,11 @@ const PROBE_BUDGET_MS = 20_000;
 const PROBE_MAX_BYTES = 16 * 1024;
 // Enough bytes to be audio rather than an error page that sniffed lucky.
 const PROBE_MIN_AUDIO_BYTES = 512;
+// An error reply this big and written in HTML is a site's page, not a stream
+// server's error. A station's homepage behind bot protection answers 403 or
+// 503 with a page of several kilobytes; Icecast and Shoutcast say 403 or 404
+// in a page of a few hundred bytes, and those keep their status.
+const WEB_PAGE_ERROR_BYTES = 1024;
 const MAX_REDIRECTS = 5;
 const PROBE_USER_AGENT = "FreightFate-StationCheck/1 (+https://orinks.net/freight-fate)";
 
@@ -167,7 +172,7 @@ type Resolver = (hostname: string) => Promise<{ blocked: boolean; address: strin
 type Fetched =
   | { reply: RawReply; url: URL }
   | { ok: false; reason: "stream_unreachable"; problem: ProbeProblem }
-  | { ok: false; reason: "stream_address_blocked" };
+  | { ok: false; reason: "stream_address_blocked" | "stream_web_page" };
 
 const unreachable = (problem: ProbeProblem) => ({ ok: false as const, reason: "stream_unreachable" as const, problem });
 
@@ -197,7 +202,15 @@ async function fetchFollowing(address: string | URL, resolve: Resolver, deadline
       }
       continue;
     }
-    if (reply.status !== 200) return unreachable(`http_${reply.status}`);
+    if (reply.status !== 200) {
+      if (
+        reply.body.length >= WEB_PAGE_ERROR_BYTES &&
+        judgeProbe(reply.headers.get("content-type") ?? "", reply.body).verdict === "web_page"
+      ) {
+        return { ok: false, reason: "stream_web_page" };
+      }
+      return unreachable(`http_${reply.status}`);
+    }
     return { reply, url };
   }
   return unreachable("too_many_redirects");
