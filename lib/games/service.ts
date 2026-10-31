@@ -6,6 +6,7 @@ import { createService, publishedRules } from "@/lib/hearken-online";
 import type { PublishedRules } from "@/lib/hearken-online";
 import { getConvexClient } from "@/lib/convex";
 import { site } from "@/lib/site";
+import { clientIp } from "@/lib/client-ip";
 import { convexRecords } from "./records";
 import { GAMES, type GameDefinition } from "./registry";
 import { convexStores, gamesServerSecret, type GameStores } from "./stores";
@@ -42,9 +43,9 @@ export function buildService(
     ...parts.stores,
     handlers: game.handlers(parts.records),
     basePath: `/api/games/${game.id}`,
-    // Vercel puts the caller's address first and is the only proxy, so the
-    // first entry is the one it saw (as the Freight Fate routes read it).
-    clientKey: (request) => (request.headers.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || "unknown",
+    // The address the platform's edge saw (lib/client-ip.ts), as the Freight
+    // Fate routes read it.
+    clientKey: (request) => clientIp(request) ?? "unknown",
     log: (event) => console.warn("games", game.id, event),
   });
 }

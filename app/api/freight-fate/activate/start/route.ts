@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { ConvexError } from "convex/values";
 import { startFreightFateActivation } from "@/lib/freight-fate-online";
+import { clientIp } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
 
 function clientKey(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for") ?? "";
-  return forwarded.split(",")[0]?.trim() || "unknown";
+  return clientIp(request) ?? "unknown";
 }
 
 // The game may name the computer it is connecting. Anything unreadable is

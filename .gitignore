@@ -19,3 +19,7 @@ video-stack.en.vtt
 # clerk configuration (can include secrets)
 /.clerk/
 .env*
+/dist/
+.vinext/
+.cloudflare/
+/.dev.vars

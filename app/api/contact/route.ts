@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp } from "@/lib/client-ip";
 import { anyApi } from "convex/server";
 import type { HumanCheck } from "@/convex/turnstile";
 import { getConvexClient } from "@/lib/convex";
@@ -57,8 +58,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const remoteIp = forwardedFor?.split(",")[0]?.trim() || null;
+  const remoteIp = clientIp(request);
   const verification = await verifyTurnstile(token, remoteIp);
 
   if (verification.result === "unconfigured") {

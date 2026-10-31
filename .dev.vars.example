@@ -1,0 +1,18 @@
+# Runtime values for the local Workers preview (`npm run build:vinext` then
+# `npm run start:vinext`). Copy to .dev.vars, which is gitignored. Only names
+# declared in cloudflare.config.ts reach the Worker.
+CONVEX_URL=""
+VISITOR_COUNTER_ENV="cloudflare-local"
+CLERK_SECRET_KEY=""
+GITHUB_TOKEN=""
+LASTFM_API_KEY=""
+LASTFM_USERNAME=""
+SPOTIFY_CLIENT_ID=""
+SPOTIFY_CLIENT_SECRET=""
+SPOTIFY_REFRESH_TOKEN=""
+SPOTIFY_REDIRECT_URI=""
+SPOTIFY_LOGIN_KEY=""
+VAPID_PRIVATE_KEY=""
+RESEND_API_KEY=""
+GAMES_SERVER_SECRET=""
+BUILD_NOTIFICATION_TOKEN=""

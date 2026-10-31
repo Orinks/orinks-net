@@ -34,6 +34,8 @@ async function publicAddress(hostname: string) {
   return addresses[0].address;
 }
 
+const onWorkers = typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+
 type Reply = { status: number; headers: Map<string, string>; socket: Socket; rest: Buffer };
 
 /** One GET to the address that was checked, read up to the end of its head. */
@@ -42,8 +44,14 @@ function open(url: URL, address: string) {
     const secure = url.protocol === "https:";
     const host = url.hostname.replace(/^\[|\]$/g, "");
     const port = Number(url.port) || (secure ? 443 : 80);
+    // On Cloudflare Workers, node:tls checks the certificate against the host
+    // it dials and ignores `servername`, so dialing the checked address fails
+    // every https stream with a name mismatch. There the hostname is dialed
+    // instead; a Worker cannot reach private networks in any case, so the
+    // public-address check above still stands for what it guards.
+    const tlsHost = onWorkers && !isIP(host) ? host : address;
     const socket: Socket = secure
-      ? tlsConnect({ host: address, port, servername: isIP(host) ? undefined : host })
+      ? tlsConnect({ host: tlsHost, port, servername: isIP(host) ? undefined : host })
       : new Socket().connect(port, address);
     let head = Buffer.alloc(0);
     const fail = () => {
