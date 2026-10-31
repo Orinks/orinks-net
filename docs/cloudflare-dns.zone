@@ -1,0 +1,38 @@
+; orinks.net DNS records to import into Cloudflare (DNS > Records > Import and
+; Export > Import DNS records). BIND format; Cloudflare reads the
+; cf_tags=cf-proxied:false comments and imports these as "DNS only".
+;
+; Copied read-only from Vercel DNS (`vercel dns ls orinks.net`) and checked
+; against public DNS on 2026-10-31. Nothing secret here: these records are
+; public by design.
+;
+; NOT included, on purpose:
+;   - orinks.net / www.orinks.net (Vercel ALIAS records). At cutover these come
+;     from the Worker's custom domains instead (Cloudflare creates them).
+;   - "*" ALIAS cname.vercel-dns-016.com. Vercel's default wildcard; it only
+;     pointed unknown subdomains at Vercel. Nothing else uses it.
+;   - Vercel's default apex ALIAS cca5d574f1d775e4.vercel-dns-017.com.
+;
+; Everything below must stay DNS only (grey cloud). Clerk refuses proxied
+; CNAMEs, and mail records cannot be proxied anyway.
+
+$ORIGIN orinks.net.
+$TTL 300
+
+; Resend (contact form email, sending domain send.orinks.net via Amazon SES)
+send.orinks.net.               300 IN TXT   "v=spf1 include:amazonses.com ~all"
+send.orinks.net.               300 IN MX    10 feedback-smtp.us-east-1.amazonses.com.
+resend._domainkey.orinks.net.  300 IN TXT   "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMcnuZtOa+13ynLGLBfsgUlIhui9IDq01S5cYfmvhUy5g0WvktxILIwc37axdMuuauJm2pN1l8TngmleT9SPEFo9NTPYjFhx2naRLb3+MsugyYKKblB72BcAmMju8cbEljoe65V8Vw3xp0vdpQ4vwP1aMePtBu/Aj1GnzkHA6KoQIDAQAB"
+
+; Clerk (sign-in: frontend API, account portal, email sending and DKIM)
+clerk.orinks.net.              300 IN CNAME frontend-api.clerk.services. ; cf_tags=cf-proxied:false
+accounts.orinks.net.           300 IN CNAME accounts.clerk.services. ; cf_tags=cf-proxied:false
+clkmail.orinks.net.            300 IN CNAME mail.820699ghwl6q.clerk.services. ; cf_tags=cf-proxied:false
+clk._domainkey.orinks.net.     300 IN CNAME dkim1.820699ghwl6q.clerk.services. ; cf_tags=cf-proxied:false
+clk2._domainkey.orinks.net.    300 IN CNAME dkim2.820699ghwl6q.clerk.services. ; cf_tags=cf-proxied:false
+
+; CAA (Vercel's defaults). Cloudflare adds its own certificate authorities
+; automatically for Universal SSL when CAA records exist.
+orinks.net.                    300 IN CAA   0 issue "letsencrypt.org"
+orinks.net.                    300 IN CAA   0 issue "pki.goog"
+orinks.net.                    300 IN CAA   0 issue "sectigo.com"
