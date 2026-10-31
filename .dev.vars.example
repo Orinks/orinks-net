@@ -2,7 +2,7 @@
 # `npm run start:vinext`). Copy to .dev.vars, which is gitignored. Only names
 # declared in cloudflare.config.ts reach the Worker.
 CONVEX_URL=""
-VISITOR_COUNTER_ENV="cloudflare-local"
+FREIGHT_FATE_MUSIC_BLOB_URL=""
 CLERK_SECRET_KEY=""
 GITHUB_TOKEN=""
 LASTFM_API_KEY=""
