@@ -116,7 +116,7 @@ export default function WicketsPage() {
 
       <Section title="Download and play">
         <p>
-          Wicket&apos;s is free for noncommercial use and available for <strong>Windows, macOS
+          Wicket&apos;s is free to play and available for <strong>Windows, macOS
           on Apple Silicon, and Linux</strong>.
         </p>
         <p>Download the package for your system, unpack it, and open the game.</p>
