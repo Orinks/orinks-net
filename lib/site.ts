@@ -119,7 +119,7 @@ export const gameSummaries: GameSummary[] = [
     href: "/games/space-colony-defense/index.html",
     title: "Space Colony Defense",
     summary:
-      "An audio game for blind and visually impaired players: a playable Syngen prototype built around wave-based colony defense, spatial enemy cues, lane combat, and between-wave resource decisions.",
+      "An audio game based around a mash-up of Space Invaders-style games and resource management games.",
     primaryHref: "/games/space-colony-defense/game.html",
     primaryLabel: "Play preview",
     links: [
