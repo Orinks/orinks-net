@@ -42,7 +42,9 @@ export default defineConfig(({ mode }) => {
       // Keep this at or below the date the installed workerd supports.
       compatibilityDate: "2026-10-23",
       compatibilityFlags: ["nodejs_compat"],
-      workersDev: true,
+      // The production Worker is served only on orinks.net / www.orinks.net;
+      // a workers.dev copy would be one more indexable mirror of the site.
+      workersDev: !production,
       // No per-version preview URLs: each would be one more public copy of
       // the site for crawlers to find.
       previewUrls: false,
