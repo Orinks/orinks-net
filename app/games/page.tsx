@@ -11,7 +11,7 @@ export default function GamesPage() {
     <>
       <PageHeader
         title="Games"
-        intro="Audio games for blind and visually impaired players, in the browser and on the desktop, about trucking, music trivia, watersports, and colony defense."
+        intro="Games in the browser and on the desktop, about trucking, music trivia, watersports, and colony defense."
       />
       <div className="grid gap-4 py-8 md:grid-cols-2">
         {gameSummaries.map((game) => (
