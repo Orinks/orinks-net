@@ -49,7 +49,7 @@ test("keyboard skip navigation and route links remain usable", async ({ page }) 
   await expect(page.locator("main")).toBeFocused();
 });
 
-test("landing page leads with one heading, the 1.9 download and flat feature headings", async ({ page }) => {
+test("landing page leads with one heading, the 1.9 download, and overview headings", async ({ page }) => {
   await page.goto("/freight-fate");
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1, name: "Freight Fate" })).toBeVisible();
@@ -57,14 +57,14 @@ test("landing page leads with one heading, the 1.9 download and flat feature hea
   const download = page.getByRole("link", { name: "Downloads", exact: true });
   await expect(download).toHaveCount(1);
   await expect(download).toHaveAttribute("href", "/freight-fate/downloads");
-  for (const name of ["Hear the road", "Made for screen readers", "Community and source"]) {
+  for (const name of ["Driving and freight", "Career and radio", "Community and source"]) {
     await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
   }
   await expect(page.locator("main h3")).toHaveCount(0);
   // The live sections come before the pitch, so a returning player reaches them first.
   const h2s = await page.locator("main h2").allTextContents();
   expect(h2s.indexOf("Driver updates")).toBeGreaterThan(-1);
-  expect(h2s.indexOf("Driver updates")).toBeLessThan(h2s.indexOf("Hear the road"));
+  expect(h2s.indexOf("Driver updates")).toBeLessThan(h2s.indexOf("Driving and freight"));
   expect(h2s.at(-1)).toBe("Community and source");
 });
 

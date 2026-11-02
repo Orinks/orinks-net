@@ -11,7 +11,7 @@ export default function ProjectsPage() {
     <>
       <PageHeader
         title="Projects"
-        intro="Software by Orinks."
+        intro="Desktop apps for weather, file transfers, internet radio, clocks, and API documentation."
       />
       <div className="grid gap-4 py-8 md:grid-cols-2">
         {projectSummaries.map((project) => (

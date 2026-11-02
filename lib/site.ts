@@ -69,9 +69,9 @@ export type GameSummary = {
 export const freightFate: ProjectPage = {
   href: "/freight-fate",
   title: "Freight Fate",
-  tagline: "A trucking game.",
+  tagline: "A Class 8 trucking simulator across more than 600 American cities.",
   summary:
-    "Freight Fate is a trucking game. Drive a Class 8 truck between more than 600 American cities on mapped highways and streets. Take your first load and build a trucking career.",
+    "Freight Fate is a Class 8 trucking simulator across more than 600 American cities. Drive mapped highways and streets, take your first load, and build a trucking career.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [
@@ -177,7 +177,7 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/portkeydrop",
     title: "PortkeyDrop",
-    tagline: "A file transfer client.",
+    tagline: "A desktop file transfer client for SFTP, FTP, FTPS, and WebDAV.",
     summary:
       "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
     status: "Stable releases and nightly builds are available.",
@@ -221,11 +221,10 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiclock",
     title: "AccessiClock",
-    tagline: "A planned desktop clock.",
-    summary: "A clock application for Windows. Coming soon.",
+    tagline: "A planned Windows desktop clock.",
+    summary: "AccessiClock is a planned Windows desktop clock that is in development.",
     status: "In development.",
-    audience:
-      "Planned for Windows.",
+    audience: "Planned for Windows desktop users.",
     features: [
             "Downloads will be added after the first public build is ready.",
     ],
@@ -235,7 +234,7 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/spectra",
     title: "Spectra",
-    tagline: "An OpenAPI documentation browser and REST client.",
+    tagline: "An OpenAPI documentation browser and REST client for opening specifications and sending requests.",
     summary:
       "Open an OpenAPI 3 or Swagger 2 spec from a file or URL, browse its endpoints by tag, and send requests from the keyboard.",
     status: "Available for Windows as a portable ZIP.",
