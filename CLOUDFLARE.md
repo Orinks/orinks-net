@@ -223,8 +223,8 @@ retry rule (`isTransientConvexFailure`):
   `npx vinext-cloudflare deploy --skip-build --env preview`. No Convex.
 - `--build-only` stops after the build.
 
-It runs from `.github/workflows/cloudflare-deploy.yml`: every push to main
-deploys production, and "Run workflow" deploys either target by hand
+It runs from `.github/workflows/cloudflare-deploy.yml`: every push to dev
+deploys the preview Worker, every push to main deploys production, and "Run workflow" deploys either target by hand
 (production only from main). The Vercel Git integration is disconnected, so
 this workflow is the only pipeline that deploys the Convex backend. The
 workflow needs repository secrets `CLOUDFLARE_API_TOKEN`, `CONVEX_DEPLOY_KEY`
