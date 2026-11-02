@@ -89,8 +89,6 @@ export const saltwake: ProjectPage = {
   summary:
     "Saltwake is an audio watersports roguelite for blind and visually impaired players, for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
   status: "Stable releases and developer snapshots are available.",
-  audience:
-    "Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
   features: [
     "Six watersports contests driven by stereo-panned sound cues with spoken twins: racing, slalom, diving, storm runs, fishing, and rescue tows.",
     "A roguelite structure that never wastes a run: branching sea charts, per-run boons, four regions with bosses, and a wreck that banks half your salvage while the story keeps everything.",
@@ -159,7 +157,6 @@ export const projectSummaries: ProjectPage[] = [
     summary:
       "AccessiWeather brings forecasts, alerts, and detailed weather data into one open-source desktop app for Windows, macOS, and Linux. Everything lives in clearly separated sections, so you can jump straight to what you need.",
     status: "Stable releases and nightly builds are available.",
-    audience: "Tested with NVDA, JAWS, and VoiceOver.",
     features: [
       "Current conditions, daily and hourly forecasts, and severe weather alerts, organized into focused sections that don't get in your way.",
       "US and international coverage from the National Weather Service, Open-Meteo, and Pirate Weather, with an Automatic mode that fuses the best sources for your region.",
@@ -179,13 +176,12 @@ export const projectSummaries: ProjectPage[] = [
     title: "PortkeyDrop",
     tagline: "A desktop file transfer client for SFTP, FTP, FTPS, and WebDAV.",
     summary:
-      "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
+      "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer.",
     status: "Stable releases and nightly builds are available.",
-    audience: "Tested with NVDA, JAWS, and VoiceOver.",
     maintainerNote: portkeyDropMaintainerNote,
     features: [
       "One client for SFTP, FTP, FTPS, and WebDAV, so there's no juggling separate apps.",
-      "Dual-pane layout for local and remote files, with clear labels and full keyboard navigation throughout.",
+      "Dual-pane layout for local and remote files.",
       "Quick Connect and Site Manager keep your saved servers a keystroke away.",
       "Connection passwords are stored in your system's secure keyring, never written to disk in plaintext.",
       "Transfer progress, queue, and errors are shown as plain, readable status text, so you always know where things stand.",

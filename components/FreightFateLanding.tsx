@@ -42,7 +42,6 @@ export function FreightFatePitch({ project }: FreightFateLandingProps) {
       <Section title="Career and radio">
         <p>Start with a company truck or as an owner-operator, unlock freight endorsements, plan around legal hours, and manage inspections, carrier records, and insurance.</p>
         <p>Thousands of real radio stations come into range and fade as you travel. The game also has its own stations with original songs, and you can play a personal playlist or music the game composes as you drive.</p>
-        <p>Menus and driving information support NVDA, JAWS, VoiceOver, Orca, and Speech Dispatcher on Linux; NVDA and JAWS support braille displays, and the game supports keyboard and controller input.</p>
       </Section>
 
       <Section title="Community and source">
