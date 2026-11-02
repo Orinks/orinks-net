@@ -43,7 +43,7 @@ const features: Feature[] = [
     body: "Tune into thousands of real radio stations that come into range and fade as you travel. Freight Fate also has its own stations with original songs. Bring a personal playlist or listen to music the game composes as you drive.",
   },
   {
-    title: "Made for screen readers",
+    title: "Speech, braille, and controls",
     body: "Menus and driving information work with NVDA, JAWS, VoiceOver, Orca, and Speech Dispatcher on Linux. Spoken messages also appear as text. Use a keyboard or controller and reassign supported driving controls. NVDA and JAWS can send messages to a braille display. Learn game sounds lets you hear each cue and its explanation before driving.",
   },
 ];

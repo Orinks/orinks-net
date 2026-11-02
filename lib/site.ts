@@ -69,9 +69,9 @@ export type GameSummary = {
 export const freightFate: ProjectPage = {
   href: "/freight-fate",
   title: "Freight Fate",
-  tagline: "An audio trucking game for blind and visually impaired players.",
+  tagline: "A trucking game.",
   summary:
-    "Freight Fate is an audio trucking game for blind and visually impaired players. Drive a Class 8 truck between more than 600 American cities on mapped highways and streets. Take your first load and build a trucking career.",
+    "Freight Fate is a trucking game. Drive a Class 8 truck between more than 600 American cities on mapped highways and streets. Take your first load and build a trucking career.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [
@@ -87,10 +87,10 @@ export const saltwake: ProjectPage = {
   title: "Saltwake",
   tagline: "A watersports roguelite where the sea remembers.",
   summary:
-    "Saltwake is an audio-first watersports roguelite for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues, all played by ear. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
+    "Saltwake is a watersports roguelite for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
   status: "Stable releases and developer snapshots are available.",
   audience:
-    "Designed for screen reader users first. Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
+    "Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
   features: [
     "Six watersports contests driven by stereo-panned sound cues with spoken twins: racing, slalom, diving, storm runs, fishing, and rescue tows.",
     "A roguelite structure that never wastes a run: branching sea charts, per-run boons, four regions with bosses, and a wreck that banks half your salvage while the story keeps everything.",
@@ -112,7 +112,7 @@ export const gameSummaries: GameSummary[] = [
     href: "/midnight-signal",
     title: "The Midnight Signal",
     summary:
-      "A music trivia roguelite broadcast from somewhere past channel 99. Survive the rounds, recover the master tapes, and keep the signal warm. Plays right in the browser, built screen-reader-first.",
+      "A music trivia roguelite broadcast from somewhere past channel 99. Survive the rounds, recover the master tapes, and keep the signal warm. Plays right in the browser.",
     primaryHref: "/midnight-signal",
     primaryLabel: "Play now",
     links: [],
@@ -177,7 +177,7 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/portkeydrop",
     title: "PortkeyDrop",
-    tagline: "A keyboard-first file transfer client that works the way you do.",
+    tagline: "A file transfer client.",
     summary:
       "PortkeyDrop is a desktop client for SFTP, FTP, FTPS, and WebDAV. Connect to your servers, move files, and track every transfer without ever reaching for a mouse.",
     status: "Stable releases and nightly builds are available.",
@@ -221,15 +221,13 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/accessiclock",
     title: "AccessiClock",
-    tagline: "A planned accessible desktop clock.",
-    summary: "An accessible clock application for Windows. Coming soon.",
+    tagline: "A planned desktop clock.",
+    summary: "A clock application for Windows. Coming soon.",
     status: "In development.",
     audience:
-      "Planned for users who want a straightforward clock experience that works naturally with screen readers and the keyboard.",
+      "Planned for Windows.",
     features: [
-      "Screen reader-first time and clock surfaces.",
-      "A quiet desktop workflow for common clock tasks.",
-      "Downloads will be added after the first public build is ready.",
+            "Downloads will be added after the first public build is ready.",
     ],
     downloadsHref: "/accessiclock/downloads",
     links: [{ href: "https://github.com/Orinks", label: "Orinks on GitHub" }],
@@ -237,7 +235,7 @@ export const projectSummaries: ProjectPage[] = [
   {
     href: "/spectra",
     title: "Spectra",
-    tagline: "A screen-reader-first OpenAPI documentation browser and REST client.",
+    tagline: "An OpenAPI documentation browser and REST client.",
     summary:
       "Open an OpenAPI 3 or Swagger 2 spec from a file or URL, browse its endpoints by tag, and send requests from the keyboard.",
     status: "Available for Windows as a portable ZIP.",

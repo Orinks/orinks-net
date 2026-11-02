@@ -7,7 +7,7 @@
       "project": "Wicket's",
       "title": "Wicket's is out",
       "body": [
-        "Wicket's, a parlor of games you play by ear, is out for Windows, macOS and Linux. Light a lamp. Pick a game. Stay a while."
+        "Wicket's, a parlor of games, is out for Windows, macOS and Linux. Light a lamp. Pick a game. Stay a while."
       ],
       "link": {
         "href": "/wickets",
@@ -75,7 +75,7 @@
       "project": "Spectra",
       "title": "Spectra 0.2.0 is out for Windows",
       "body": [
-        "Spectra, the screen-reader-first OpenAPI browser and REST client, now has a Windows download: a portable ZIP you extract and run.",
+        "Spectra, the OpenAPI browser and REST client, now has a Windows download: a portable ZIP you extract and run.",
         "Version 0.2.0 adds a Base URL field that fills in from the spec's servers when it loads, so each request only needs its path. If the base URL is missing, Send says so and moves focus to the field."
       ],
       "link": {
@@ -146,7 +146,7 @@
       "project": "PortkeyDrop",
       "title": "PortkeyDrop has a new maintainer",
       "body": [
-        "PortkeyDrop, the keyboard-first file transfer client that started here, has been handed to Nick6489, who now maintains it and leads its development. The project has moved to Nick6489's account on GitHub, and that is where issues and new releases live from now on.",
+        "PortkeyDrop, the file transfer client that started here, has been handed to Nick6489, who now maintains it and leads its development. The project has moved to Nick6489's account on GitHub, and that is where issues and new releases live from now on.",
         "The PortkeyDrop page and its downloads stay on orinks.net and read from the new repository, so existing links keep working. Browser build notifications for PortkeyDrop have been retired along with the move."
       ],
       "link": {

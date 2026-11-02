@@ -11,7 +11,7 @@ export default function GamesPage() {
     <>
       <PageHeader
         title="Games"
-        intro="Games built around spatial sound, keyboard play, and screen reader-friendly status updates."
+        intro="Games with spatial sound, keyboard play, and status updates."
       />
       <div className="grid gap-4 py-8 md:grid-cols-2">
         {gameSummaries.map((game) => (

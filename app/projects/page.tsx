@@ -11,7 +11,7 @@ export default function ProjectsPage() {
     <>
       <PageHeader
         title="Projects"
-        intro="Accessible software by Orinks, designed for screen reader users and the visually impaired."
+        intro="Software by Orinks."
       />
       <div className="grid gap-4 py-8 md:grid-cols-2">
         {projectSummaries.map((project) => (

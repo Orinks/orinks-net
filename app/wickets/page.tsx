@@ -4,13 +4,13 @@ import { Section } from "@/components/Section";
 
 export const metadata = {
   title: "Wicket's",
-  description: "A collection of games you play by ear, built for blind and visually impaired players. Explore action games, puzzles, relaxing activities and table games.",
+  description: "A collection of games. Explore action games, puzzles, relaxing activities and table games.",
 };
 
 export default function WicketsPage() {
   return (
     <>
-      <PageHeader title="Wicket's" intro="A collection of games you play by ear." />
+      <PageHeader title="Wicket's" intro="A collection of games." />
       <Section>
         <p>
           Paddle toward distant chimes on a moonlit lake. Weave through traffic in a speeding
@@ -19,9 +19,7 @@ export default function WicketsPage() {
         </p>
         <p>
           Wicket&apos;s brings action games, puzzles, relaxing activities, and table games into
-          one welcoming parlor. Built for blind and visually impaired players, it uses
-          directional sound and screen-reader speech to tell you what&apos;s happening. Play
-          with a keyboard or controller, with no need to see the screen.
+          one parlor. Play with a keyboard or controller.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <ButtonLink href="/wickets/downloads">Download Wicket&apos;s</ButtonLink>

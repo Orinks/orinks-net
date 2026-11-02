@@ -9,12 +9,12 @@ export const metadata = {
 export default function GameModsPage() {
   return (
     <>
-      <PageHeader title="Game Mods" intro="Accessible game mods by Orinks." />
+      <PageHeader title="Game Mods" intro="Game mods by Orinks." />
       <Section>
         <h2>
           <Link href="/eurofly-enhanced-mod">Eurofly Enhanced Mod</Link>
         </h2>
-        <p>An enhanced accessibility mod for the Eurofly audio game.</p>
+        <p>Changes to the Eurofly flight simulator.</p>
       </Section>
     </>
   );

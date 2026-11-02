@@ -34,8 +34,7 @@ export function TitleScreen(props: TitleScreenProps) {
       <p className="mt-3 leading-7 text-amber-50">
         A late-night music quiz show that has been broadcasting since 1963 and
         never officially ended. Answer trivia, survive the rounds, and recover
-        the master tapes. Fully playable with a screen reader — the host speaks,
-        and everything he says is also text.
+        the master tapes. The host speaks, and everything he says is also text.
       </p>
       <form
         className="mt-6"
