@@ -41,6 +41,9 @@ export type GitHubActivityItem = {
 const githubHeaders = (accept = "application/vnd.github+json") => {
   const headers: Record<string, string> = {
     Accept: accept,
+    // GitHub refuses requests without a User-Agent (403). Node's fetch adds
+    // one on its own; the Workers runtime does not.
+    "User-Agent": "orinks.net",
     "X-GitHub-Api-Version": "2022-11-28",
   };
 

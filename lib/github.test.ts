@@ -108,6 +108,18 @@ describe("GitHub response caching", () => {
     ]);
   });
 
+  test("sends a User-Agent, which GitHub requires and the Workers runtime does not add", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    await getReleases("Spectra");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: expect.objectContaining({ "User-Agent": "orinks.net" }) }),
+    );
+  });
+
   test("keeps upstream requests private to the cache fill", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify([]), { status: 200 }),
