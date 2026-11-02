@@ -10,7 +10,7 @@ Next.js port of orinks.net away from WordPress.
 - Tailwind CSS
 - Convex for persistent site data
 - GitHub release data for project downloads
-- Vercel hosting
+- Cloudflare Workers hosting (built with vinext)
 
 ## Development
 
@@ -23,29 +23,22 @@ Run `npx convex dev` to connect the project to a Convex development deployment. 
 
 ## Production
 
-Production is hosted on Vercel. Pushes to `main` create production deployments for `orinks.net`.
+Production runs on Cloudflare Workers: the `orinks-net` Worker serves `www.orinks.net`, and Cloudflare redirects the apex `orinks.net` to it. DNS is on Cloudflare. See `CLOUDFLARE.md` for the build, the Worker's secrets and how the move from Vercel was done.
 
 ## Deploy
 
-Vercel is connected to the GitHub repository and creates deployments automatically:
-
-- `main` deploys to production.
-- `dev` and pull requests deploy as previews.
-- GitHub Actions runs lint, typecheck, and build validation only.
-
-The Convex backend follows the same split, and it is `CONVEX_DEPLOY_KEY` that decides it: the Production scope holds a production deploy key, and the Preview scope holds a **preview** deploy key, which builds a fresh deployment named for the branch and cannot write to production. So a preview is a preview all the way down, and schema changes reach live data only from `main`.
-
-This is worth stating because it was not always true. The Preview scope previously held a *production* key, which meant every push to `dev` deployed Convex functions straight to production while the site itself was only a preview. If Convex ever deploys somewhere unexpected, check which kind of key that scope holds first.
-
-Leave `CONVEX_URL` and `NEXT_PUBLIC_CONVEX_URL` unset in the Preview scope so the deploy can fill them in; see `.env.example`.
-
-Convex deployments need `CONVEX_DEPLOY_KEY` configured in Vercel or the build pipeline. The build command runs Convex before the Next.js build so the functions are deployed with the site, and names the URL variable explicitly rather than relying on framework detection — the client must be built against whichever deployment the key just targeted:
+Pushes to `main` run `.github/workflows/cloudflare-deploy.yml`, which deploys the Convex functions to production and builds and uploads the Worker in one step (`scripts/cloudflare-build.mjs --target production`):
 
 ```powershell
-npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npm run build"
+npx convex deploy --typecheck try --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd "npx vite build --mode production"
+npx vinext-cloudflare deploy --skip-build --env production
 ```
 
-`vercel.json` wraps this in a check for `CONVEX_DEPLOY_KEY` so a build without one still runs `npm run build` alone.
+The URL variable is named explicitly so the client is built against whichever deployment the key just targeted, and a production run without `CONVEX_DEPLOY_KEY` fails instead of shipping the site without its backend. This workflow is the only thing that deploys the Convex backend; Vercel's Git integration is disconnected, so `dev` and other branches no longer get preview deployments. A preview Worker (`orinks-net-preview` on workers.dev, never touches Convex) can be deployed from any branch with "Run workflow" and target `preview`.
+
+GitHub Actions CI (`ci.yml`) still runs lint, typecheck and build validation on `dev` and `main`.
+
+`vercel.json` and `scripts/vercel-build.mjs` are kept for now in case the site has to go back to Vercel.
 
 ### Freight Fate music download
 

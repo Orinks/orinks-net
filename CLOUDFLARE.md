@@ -1,13 +1,15 @@
 # Cloudflare Workers build
 
-This branch runs the site's frontend on Cloudflare Workers with
+orinks.net runs on Cloudflare Workers with
 [vinext](https://github.com/cloudflare/vinext), Cloudflare's recommended Next.js
 adapter. Convex and Clerk are unchanged. `next dev` / `next build` and the
-Vercel build keep working as before; the Workers build sits alongside them.
+Vercel build still work, but Vercel no longer deploys anything.
 
 A preview Worker is deployed at
 https://orinks-net-preview.orinks.workers.dev (free plan, not indexed, its own
-visit-counter key). orinks.net itself is still on Vercel.
+visit-counter key). The production Worker `orinks-net` serves
+www.orinks.net and orinks.net (custom domains; the apex redirects to www) and
+has no workers.dev address. orinks.net moved from Vercel on 2026-11-02.
 
 ## Targets
 
@@ -221,19 +223,14 @@ retry rule (`isTransientConvexFailure`):
   `npx vinext-cloudflare deploy --skip-build --env preview`. No Convex.
 - `--build-only` stops after the build.
 
-It runs from `.github/workflows/cloudflare-deploy.yml`, which is
-`workflow_dispatch` only (production is accepted only from main), so nothing
-deploys on push yet. The workflow needs repository secrets
-`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CONVEX_DEPLOY_KEY` and
-repository variables `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`,
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
-
-At cutover, add `push: branches: [main]` to that workflow and disconnect the
-Vercel Git integration in the same change, so exactly one pipeline deploys
-the Convex backend. Until then Vercel's main build keeps deploying Convex.
-
-The production Convex functions were not deployed from this branch: the
-branch changes no file under `convex/`.
+It runs from `.github/workflows/cloudflare-deploy.yml`: every push to main
+deploys production, and "Run workflow" deploys either target by hand
+(production only from main). The Vercel Git integration is disconnected, so
+this workflow is the only pipeline that deploys the Convex backend. The
+workflow needs repository secrets `CLOUDFLARE_API_TOKEN`, `CONVEX_DEPLOY_KEY`
+and repository variables `CLOUDFLARE_ACCOUNT_ID`, `NEXT_PUBLIC_CONVEX_URL`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`,
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
 
 ## DNS
 
@@ -264,13 +261,18 @@ the site directly.
 
 ## Cutover checklist
 
+Steps 1-7 were done on 2026-11-02. The push subscriptions made under the old
+VAPID key stopped working with the new key, so subscribers have to turn build
+notifications on again.
+
+
 1. Add orinks.net to Cloudflare (free plan), import `docs/cloudflare-dns.zone`,
    and check every record is DNS only. Nothing changes until the nameservers do.
 2. Buy Workers Paid ($5/month) so server-rendered pages are not held to 10 ms of CPU.
 3. Collect the production secrets (see above) and do the first production
    upload with `--secrets-file` (outside the repo).
 4. Smoke-test `https://orinks-net.orinks.workers.dev` (it is indexed-mode, so
-   do this quickly or keep `workersDev` off for production afterwards).
+   do this quickly; `workersDev` is off for production after cutover).
 5. Attach `www.orinks.net` and `orinks.net` as Worker custom domains, add the
    apex redirect rule.
 6. Switch the nameservers at DreamHost to the two Cloudflare gives.
