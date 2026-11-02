@@ -4,7 +4,7 @@ import { Section } from "@/components/Section";
 
 export const metadata = {
   title: "Wicket's",
-  description: "A collection of action games, puzzles, relaxing activities, and table games for Windows, macOS, and Linux.",
+  description: "A collection of audio games for blind and visually impaired players: action games, puzzles, relaxing activities, and table games for Windows, macOS, and Linux.",
 };
 
 export default function WicketsPage() {
@@ -12,7 +12,7 @@ export default function WicketsPage() {
     <>
       <PageHeader
         title="Wicket's"
-        intro="A collection of action games, puzzles, relaxing activities, and table games for Windows, macOS, and Linux."
+        intro="A collection of audio games for blind and visually impaired players: action games, puzzles, relaxing activities, and table games for Windows, macOS, and Linux."
       />
       <Section>
         <p>

@@ -69,9 +69,9 @@ export type GameSummary = {
 export const freightFate: ProjectPage = {
   href: "/freight-fate",
   title: "Freight Fate",
-  tagline: "A Class 8 trucking simulator across more than 600 American cities.",
+  tagline: "An audio trucking game for blind and visually impaired players: a Class 8 simulator across more than 600 American cities.",
   summary:
-    "Freight Fate is a Class 8 trucking simulator across more than 600 American cities. Drive mapped highways and streets, take your first load, and build a trucking career.",
+    "Freight Fate is an audio trucking game for blind and visually impaired players: a Class 8 simulator across more than 600 American cities. Drive mapped highways and streets, take your first load, and build a trucking career.",
   downloadsHref: "/freight-fate/downloads",
   manualHref: "/freight-fate/user-manual",
   links: [
@@ -87,7 +87,7 @@ export const saltwake: ProjectPage = {
   title: "Saltwake",
   tagline: "A watersports roguelite where the sea remembers.",
   summary:
-    "Saltwake is a watersports roguelite for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
+    "Saltwake is an audio watersports roguelite for blind and visually impaired players, for Windows, macOS, and Linux. You wash up at Greywater Quay with no memory and a habit of not drowning, then set out on tides: runs across open water full of boat races, jet ski slaloms, free dives, storm crossings, fishing, and rescues. Every run deepens a novel-scale story about a drowned town, a lost ferry, and the debt the sea is waiting for you to settle.",
   status: "Stable releases and developer snapshots are available.",
   audience:
     "Speech is delivered through Prism, which works with NVDA, JAWS, SAPI, VoiceOver, and Speech Dispatcher, and the whole game is played from the keyboard.",
@@ -112,7 +112,7 @@ export const gameSummaries: GameSummary[] = [
     href: "/midnight-signal",
     title: "The Midnight Signal",
     summary:
-      "A music trivia roguelite broadcast from somewhere past channel 99. Survive the rounds, recover the master tapes, and keep the signal warm. Plays right in the browser.",
+      "An audio music trivia roguelite for blind and visually impaired players, broadcast from somewhere past channel 99. Survive the rounds, recover the master tapes, and keep the signal warm. Plays right in the browser.",
     primaryHref: "/midnight-signal",
     primaryLabel: "Play now",
     links: [],
@@ -121,7 +121,7 @@ export const gameSummaries: GameSummary[] = [
     href: "/games/space-colony-defense/index.html",
     title: "Space Colony Defense",
     summary:
-      "A playable Syngen prototype built around wave-based colony defense, spatial enemy cues, lane combat, and between-wave resource decisions.",
+      "An audio game for blind and visually impaired players: a playable Syngen prototype built around wave-based colony defense, spatial enemy cues, lane combat, and between-wave resource decisions.",
     primaryHref: "/games/space-colony-defense/game.html",
     primaryLabel: "Play preview",
     links: [

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s - The Midnight Signal",
   },
   description:
-    "A music trivia roguelite broadcast from somewhere past channel 99.",
+    "An audio music trivia roguelite for blind and visually impaired players, broadcast from somewhere past channel 99.",
 };
 
 export default function MidnightSignalLayout({ children }: { children: ReactNode }) {
