@@ -1,22 +1,25 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Attaches Clerk auth context site-wide. It does NOT protect any routes on its
-// own — every page stays publicly reachable; it just makes the session
-// available to components that ask for it. Static assets are excluded.
+// Clerk is client-only on this site: no page or API route calls `auth()` on
+// the server, and every page stays publicly reachable. Sign-in state comes
+// from the Clerk browser SDK through ClerkProvider, which does not need this
+// middleware.
 //
-// The extension list must cover every static file type served from public/,
-// not just the web-page ones. Nothing reads auth on a media request, so an
-// extension missing here buys nothing and costs a session check — and the
-// Midnight Signal host alone is 800+ clips, replayed all run long.
+// It runs only on the account pages, where it keeps the session cookie fresh
+// on a full page load. It must not run site-wide: Clerk adds request headers
+// to every response it touches, and the Worker treats any middleware request
+// header override as uncacheable. Site-wide, that turned every page into a
+// per-request render with `private, no-store` and skipped the ISR cache, even
+// pages marked static or `revalidate`.
 //
-// /api is excluded too. Clerk is client-only here: nothing under app/api reads
-// a Clerk session, and the game endpoints authenticate with their own bearer
-// tokens, so running the session check on a route the desktop client polls is
-// pure cost. An API route that ever needs `auth()` has to be added back.
+// A route that ever needs `auth()` on the server has to be added here.
 export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    "/((?!_next|api(?:/|$)|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|avif|png|gif|svg|ico|ttf|woff2?|otf|eot|csv|docx?|xlsx?|pdf|txt|xml|zip|7z|gz|tar|rar|exe|msi|dmg|apk|mp3|wav|ogg|opus|m4a|aac|flac|mp4|webm|mov|webmanifest)).*)",
+    "/activate/:path*",
+    "/games/connect/:path*",
+    "/freight-fate/online/setup/:path*",
+    "/freight-fate/suggest-a-station/:path*",
   ],
 };
