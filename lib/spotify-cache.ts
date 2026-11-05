@@ -30,6 +30,7 @@ function memoryStore(): SpotifyCacheStore {
 
 let override: SpotifyCacheStore | null = null;
 let fallback: SpotifyCacheStore | null = null;
+let announced = false;
 
 async function workerKv(): Promise<KvNamespaceLike | null> {
   try {
@@ -48,7 +49,13 @@ async function workerKv(): Promise<KvNamespaceLike | null> {
 export async function getSpotifyCacheStore(): Promise<SpotifyCacheStore> {
   if (override) return override;
   const kv = await workerKv();
-  if (kv) return kv;
+  if (kv) {
+    if (!announced) console.info("Spotify cache: using Worker KV (VINEXT_KV_CACHE).");
+    announced = true;
+    return kv;
+  }
+  if (!announced) console.warn("Spotify cache: Worker KV unavailable; using in-memory fallback.");
+  announced = true;
   fallback ??= memoryStore();
   return fallback;
 }
