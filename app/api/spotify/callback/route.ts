@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
   <body>
     <main>
       <h1>Spotify authorized</h1>
-      <p>Add this value to Vercel Production as <code>SPOTIFY_REFRESH_TOKEN</code>, then redeploy.</p>
+      <p>Set this value as the Cloudflare Worker secret <code>SPOTIFY_REFRESH_TOKEN</code>, then redeploy.</p>
       <p><label for="refresh-token">Refresh token</label></p>
       <textarea id="refresh-token" rows="8" cols="80" readonly>${escapedRefreshToken}</textarea>
     </main>

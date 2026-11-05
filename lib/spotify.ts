@@ -73,6 +73,9 @@ async function spotifyFetch<T>(url: string, init: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    const path = new URL(url).pathname;
+    console.error(`Spotify request to ${path} failed: ${response.status} ${body.slice(0, 500)}`);
     throw new Error(`Spotify request failed: ${response.status}`);
   }
 
@@ -104,17 +107,10 @@ async function getSpotifyAccessToken() {
     return token.access_token;
   }
 
-  const token = await spotifyFetch<SpotifyTokenResponse>(SPOTIFY_ACCOUNTS_URL, {
-    body: new URLSearchParams({ grant_type: "client_credentials" }),
-    cache: "no-store",
-    headers: {
-      Authorization: createSpotifyAuthHeader(credentials.clientId, credentials.clientSecret),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    method: "POST",
-  });
-
-  return token.access_token;
+  // App-only (client credentials) tokens cannot read playlist items under
+  // Spotify's Development Mode rules, so a user refresh token is required.
+  console.error("SPOTIFY_REFRESH_TOKEN is not set; skipping Spotify playlist updates.");
+  return null;
 }
 
 async function getPlaylistTrackUpdates(accessToken: string, playlist: (typeof playlists)[number]) {
@@ -122,10 +118,10 @@ async function getPlaylistTrackUpdates(accessToken: string, playlist: (typeof pl
     "total,items(added_at,item(name,type,external_urls.spotify,artists(name)))";
   const items: SpotifyPlaylistItem[] = [];
 
-  for (let offset = 0; ; offset += 100) {
+  for (let offset = 0; ; offset += 50) {
     const params = new URLSearchParams({
       fields,
-      limit: "100",
+      limit: "50",
       market: "US",
       offset: offset.toString(),
     });
@@ -192,7 +188,15 @@ export async function getSpotifyPlaylistTrackUpdates() {
   );
 
   return results
-    .filter((result) => result.status === "fulfilled")
-    .flatMap((result) => result.value.tracks)
+    .flatMap((result, index) => {
+      if (result.status === "fulfilled") {
+        return result.value.tracks;
+      }
+
+      const playlist = updatePlaylists[index];
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      console.error(`Spotify playlist ${playlist?.id} (${playlist?.title}) failed: ${reason}`);
+      return [];
+    })
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
