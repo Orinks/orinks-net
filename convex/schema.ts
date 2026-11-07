@@ -466,6 +466,8 @@ export default defineSchema({
     // deploy, which is the safe direction to be wrong in.
     displayName: v.optional(v.string()),
     listed: v.optional(v.boolean()),
+    // A guest driver (no account): shown, but with no profile to open.
+    guest: v.optional(v.boolean()),
     // Legacy: the heartbeat clock used to live here. Kept optional so rows
     // written by the previous deploy still validate; nothing reads it.
     updatedAt: v.optional(v.number()),

@@ -169,6 +169,10 @@ function DriverRows({
           // Keyed by driver so React keeps a focused row's element alive when
           // the rows around it are added, removed or re-sorted.
           <li key={driver.driverId}>
+            {driver.guest ? (
+              // A guest has no profile, so its name is not a link.
+              driver.displayName
+            ) : (
             <Link
               href={`/freight-fate/drivers/${driver.driverId}`}
               data-driver-id={driver.driverId}
@@ -186,6 +190,7 @@ function DriverRows({
             >
               {driver.displayName}
             </Link>
+            )}
             {`: ${line}`}
           </li>
         );

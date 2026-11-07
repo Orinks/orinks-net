@@ -12,7 +12,7 @@ import {
   normalizeDisplayName,
 } from "./freightFate";
 import { screenDisplayName } from "./moderation";
-import { guestDriver, mergeGuestInto, provenGuest } from "./freightFateGuests";
+import { guestDriver, provenGuest, retireGuest } from "./freightFateGuests";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -103,8 +103,8 @@ export const startActivation = mutation({
   // replaces its entry instead of taking another slot on the list.
   //
   // guestDriverId and guestTokenHash: a guest connecting an account, so its
-  // journal and achievements can follow it. A pair that does not prove a
-  // guest is ignored and the connection goes ahead as an ordinary one.
+  // guest can be retired once the account is connected. A pair that does not
+  // prove a guest is ignored and the connection goes ahead as an ordinary one.
   args: {
     clientKey: v.string(),
     now: v.number(),
@@ -437,23 +437,16 @@ export const redeemActivation = mutation({
       row.machineKey,
     );
     await ctx.db.delete(row._id);
-    // A guest connecting an account that already had a driver: the guest's
-    // journal and achievements move to it and the guest is gone. Done here,
-    // not at claim, so the guest's token keeps working until this computer
-    // actually holds the account's.
-    const guestMoved =
-      row.guestDriverId !== undefined && row.guestDriverId !== row.driverId
-        ? await mergeGuestInto(ctx, row.guestDriverId, row.driverId)
-        : false;
+    // A guest connecting an account that already had a driver: the guest is
+    // gone. Done here, not at claim, so the guest's token keeps working until
+    // this computer actually holds the account's.
+    if (row.guestDriverId !== undefined && row.guestDriverId !== row.driverId) {
+      await retireGuest(ctx, row.guestDriverId, row.driverId);
+    }
     // displayName goes back so the game can say who it connected as; that
     // spoken name is the only thing standing between a claimed-by-a-stranger
     // code and a player who never notices.
-    return {
-      driverId: row.driverId,
-      token,
-      displayName: driver.displayName,
-      ...(guestMoved ? { guestMoved: true } : {}),
-    };
+    return { driverId: row.driverId, token, displayName: driver.displayName };
   },
 });
 

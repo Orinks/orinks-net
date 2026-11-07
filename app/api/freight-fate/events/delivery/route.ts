@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       eventId: normalizeFreightFateEventText(body.eventId, "Event ID", 96),
     });
     if (!result) return NextResponse.json({ error: "Freight Fate online is not configured." }, { status: 503 });
-    if (!result.ok) return NextResponse.json({ error: result.reason }, { status: result.reason === "rate_limited" ? 429 : result.reason === "sharing_not_enabled" ? 403 : 401 });
+    if (!result.ok) return NextResponse.json({ error: result.reason }, { status: result.reason === "rate_limited" ? 429 : result.reason === "sharing_not_enabled" || result.reason === "account_required" ? 403 : 401 });
     return NextResponse.json(result);
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid delivery event." }, { status: 400 }); }
 }

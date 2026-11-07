@@ -580,8 +580,8 @@ export async function startFreightFateActivation(input: {
   // row so that connecting the same PC again replaces its entry instead of
   // spending another slot on the ten-computer list.
   machineKey?: string;
-  // A guest connecting an account: its driver id and token, so its journal
-  // and achievements follow it to the account.
+  // A guest connecting an account: its driver id and token, so the guest is
+  // retired once the account holds this computer.
   guest?: { driverId: string; driverToken: string };
 }) {
   const client = getConvexClient();
@@ -638,21 +638,12 @@ export async function pollFreightFateActivation(input: { deviceCode: string }) {
   if (!redeemed) {
     return { status: "expired" } as const;
   }
-  const ready: {
-    status: "ready";
-    driverId: string;
-    token: string;
-    displayName: string;
-    guestMoved?: true;
-  } = {
+  return {
     status: "ready",
     driverId: redeemed.driverId,
     token: redeemed.token,
     displayName: redeemed.displayName,
-  };
-  // Only when it happened, so an ordinary connection answers as it always has.
-  if (redeemed.guestMoved === true) ready.guestMoved = true;
-  return ready;
+  } as const;
 }
 
 // Guest drivers (convex/freightFateGuests.ts). The name always comes from

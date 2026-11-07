@@ -335,6 +335,10 @@ async function authenticatedSharingDriver(ctx: MutationCtx, args: {
   if (!freightFateProfileLinkVisible(driver)) {
     return { error: "sharing_not_enabled" as const };
   }
+  // The journal and achievements are a profile's, and profiles need an account.
+  if (driver.guest) {
+    return { error: "account_required" as const };
+  }
   return { driver };
 }
 
@@ -616,6 +620,9 @@ export const recordDriverEvent = mutation({
     if (!freightFateProfileLinkVisible(driver)) {
       return { ok: false as const, reason: "sharing_not_enabled" };
     }
+    if (driver.guest) {
+      return { ok: false as const, reason: "account_required" };
+    }
 
     const existingEvent = await ctx.db
       .query("freightFateDriverEvents")
@@ -670,6 +677,8 @@ function boardListing(driver: Doc<"freightFateDrivers">) {
       driver.visibility === "public" &&
       driver.sharingConsentVersion === SHARING_CONSENT_VERSION &&
       !driver.integrityFlag,
+    // Guests are on the board but have no profile to link to.
+    guest: driver.guest === true,
   };
 }
 
@@ -775,6 +784,7 @@ export const updatePresence = mutation({
       shown ||
       existing.displayName !== listing.displayName ||
       existing.listed !== listing.listed ||
+      (existing.guest ?? false) !== listing.guest ||
       existing.changedAt === undefined
     ) {
       await ctx.db.patch(existing._id, {
@@ -957,6 +967,7 @@ export async function readPresenceBoard(ctx: QueryCtx, args: { now: number }) {
       updatedAt: beat.updatedAt,
       // When the status itself last moved, which is what the website shows.
       changedAt: row.changedAt ?? beat.updatedAt,
+      ...(driver.guest ? { guest: true } : {}),
     });
   }
 
@@ -1014,6 +1025,7 @@ export const getLivePresenceBoard = query({
           activity: row.activity,
           detail: row.detail,
           changedAt: row.changedAt as number,
+          ...(row.guest ? { guest: true } : {}),
         })),
     };
   },
@@ -1077,7 +1089,8 @@ export async function readDriverDirectory(ctx: QueryCtx, args: { now: number }) 
 
   const drivers = [];
   for (const driver of candidates) {
-    if (!boardListing(driver).listed) {
+    // The directory lists profiles, and only accounts have one.
+    if (!boardListing(driver).listed || driver.guest) {
       continue;
     }
     const live = onDuty.get(driver.driverId);
@@ -1310,7 +1323,8 @@ export const getDriverProfile = query({
       return null;
     }
 
-    if (!freightFateProfileLinkVisible(driver)) {
+    // Profiles need an account: a guest is on the board and nowhere else.
+    if (!freightFateProfileLinkVisible(driver) || driver.guest) {
       return null;
     }
 

@@ -28,18 +28,15 @@ async function makeGuest(t: T, name = "Copper Fox 12", clientKey = "203.0.113.5"
   return { ...made, tokenHash: await sha256(made.token) };
 }
 
-async function shareAndPost(t: T, guest: { driverId: string; tokenHash: string }) {
-  await t.mutation(api.freightFate.setProfileSharing, {
+async function share(t: T, guest: { driverId: string; tokenHash: string }) {
+  return await t.mutation(api.freightFate.setProfileSharing, {
     driverId: guest.driverId, driverTokenHash: guest.tokenHash, enabled: true, now: NOW,
   });
-  await t.mutation(api.freightFate.recordDriverEvent, {
-    driverId: guest.driverId, driverTokenHash: guest.tokenHash, eventId: "guest-delivery-1",
-    eventType: "delivery_completed", summary: "Steel coils to Denver.", occurredAt: NOW, now: NOW,
-  });
-  await t.mutation(api.freightFate.publishAchievementEarned, {
-    driverId: guest.driverId, driverTokenHash: guest.tokenHash, eventId: "guest-ach-1",
-    achievementKey: FREIGHT_FATE_ACHIEVEMENT_IDS[0], name: "First", description: "First one.",
-    earnedAt: NOW, now: NOW,
+}
+
+async function goOnDuty(t: T, guest: { driverId: string; tokenHash: string }) {
+  return await t.mutation(api.freightFate.updatePresence, {
+    driverId: guest.driverId, driverTokenHash: guest.tokenHash, activity: "Driving", detail: "I-80", now: NOW,
   });
 }
 
@@ -56,7 +53,9 @@ async function connect(t: T, guest: { driverId: string; tokenHash: string }, dis
   return { claimed, redeemed };
 }
 
-type Table = "freightFateDriverEvents" | "freightFateAchievements" | "freightFateDrivers" | "freightFateDeviceTokens";
+type Table =
+  | "freightFateDriverEvents" | "freightFateAchievements" | "freightFateDrivers" | "freightFateDeviceTokens"
+  | "freightFatePresence";
 async function rows<N extends Table>(t: T, table: N): Promise<Doc<N>[]> {
   return await t.run(async (ctx) => (await ctx.db.query(table).collect()) as Doc<N>[]);
 }
@@ -96,12 +95,47 @@ describe("createGuest", () => {
     await expect(makeGuest(t, "Copper Fox 50")).rejects.toThrow();
   });
 
-  test("guests can share to the board like any driver", async () => {
+});
+
+describe("what a guest gets", () => {
+  test("a place on the drivers board, marked as a guest", async () => {
     const t = setup();
     const guest = await makeGuest(t);
-    await shareAndPost(t, guest);
-    expect(await rows(t, "freightFateDriverEvents")).toHaveLength(2);
-    expect(await rows(t, "freightFateAchievements")).toHaveLength(1);
+    expect(await share(t, guest)).toMatchObject({ ok: true });
+    expect(await goOnDuty(t, guest)).toMatchObject({ ok: true });
+    const board = await t.query(api.freightFate.getLivePresenceBoard, {});
+    expect(board.drivers).toEqual([
+      expect.objectContaining({ driverId: guest.driverId, displayName: "Copper Fox 12", guest: true }),
+    ]);
+  });
+
+  test("no profile and no directory entry", async () => {
+    const t = setup();
+    const guest = await makeGuest(t);
+    await share(t, guest);
+    await goOnDuty(t, guest);
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId: guest.driverId, now: NOW })).toBeNull();
+    const directory = await t.query(api.freightFate.getDriverDirectory, { now: NOW });
+    expect(JSON.stringify(directory)).not.toContain(guest.driverId);
+  });
+
+  test("no road journal and no achievements", async () => {
+    const t = setup();
+    const guest = await makeGuest(t);
+    await share(t, guest);
+    const event = await t.mutation(api.freightFate.recordDriverEvent, {
+      driverId: guest.driverId, driverTokenHash: guest.tokenHash, eventId: "guest-delivery-1",
+      eventType: "delivery_completed", summary: "Steel coils to Denver.", occurredAt: NOW, now: NOW,
+    });
+    expect(event).toMatchObject({ ok: false, reason: "account_required" });
+    const achievement = await t.mutation(api.freightFate.publishAchievementEarned, {
+      driverId: guest.driverId, driverTokenHash: guest.tokenHash, eventId: "guest-ach-1",
+      achievementKey: FREIGHT_FATE_ACHIEVEMENT_IDS[0], name: "First", description: "First one.",
+      earnedAt: NOW, now: NOW,
+    });
+    expect(achievement).toMatchObject({ ok: false });
+    expect(await rows(t, "freightFateDriverEvents")).toHaveLength(0);
+    expect(await rows(t, "freightFateAchievements")).toHaveLength(0);
   });
 });
 
@@ -138,72 +172,69 @@ describe("renameGuest", () => {
 });
 
 describe("connecting an account", () => {
-  test("an account with no driver adopts the guest, keeping everything", async () => {
+  test("an account with no driver adopts the guest, which can then have a profile", async () => {
     const t = setup();
     const guest = await makeGuest(t);
-    await shareAndPost(t, guest);
+    await share(t, guest);
     const { claimed, redeemed } = await connect(t, guest);
     expect(claimed).toEqual({ ok: true });
     expect(redeemed).toMatchObject({ driverId: guest.driverId, displayName: "Copper Fox 12" });
-    expect(redeemed).not.toHaveProperty("guestMoved");
     const [driver] = await rows(t, "freightFateDrivers");
     expect(driver.authSubject).toBe(SUBJECT);
     expect(driver.guest).toBeUndefined();
     expect(driver.visibility).toBe("public");
-    expect(await rows(t, "freightFateDriverEvents")).toHaveLength(2);
+    if (!redeemed || !("token" in redeemed)) throw new Error("not redeemed");
+    const event = await t.mutation(api.freightFate.recordDriverEvent, {
+      driverId: guest.driverId, driverTokenHash: await sha256(redeemed.token as string), eventId: "d-1",
+      eventType: "delivery_completed", summary: "Steel coils to Denver.", occurredAt: NOW, now: NOW + 3000,
+    });
+    expect(event).toMatchObject({ ok: true });
+    expect(await t.query(api.freightFate.getDriverProfile, { driverId: guest.driverId, now: NOW })).not.toBeNull();
   });
 
-  test("an account with a driver takes the guest's journal and achievements", async () => {
+  test("the board stops marking an adopted guest", async () => {
+    const t = setup();
+    const guest = await makeGuest(t);
+    await share(t, guest);
+    await goOnDuty(t, guest);
+    const { redeemed } = await connect(t, guest);
+    if (!redeemed || !("token" in redeemed)) throw new Error("not redeemed");
+    await t.mutation(api.freightFate.updatePresence, {
+      driverId: guest.driverId, driverTokenHash: await sha256(redeemed.token as string), activity: "Driving",
+      detail: "I-80", now: NOW + 3000,
+    });
+    const board = await t.query(api.freightFate.getLivePresenceBoard, {});
+    expect(board.drivers[0]).not.toHaveProperty("guest");
+  });
+
+  test("an account with a driver retires the guest", async () => {
     const t = setup();
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFate.provisionDriver, {
       displayName: "Road Star", visibility: "public", expandedSharingConsent: true, now: NOW,
     });
     const guest = await makeGuest(t);
-    await shareAndPost(t, guest);
+    await share(t, guest);
+    await goOnDuty(t, guest);
     const { claimed, redeemed } = await connect(t, guest);
     expect(claimed).toEqual({ ok: true });
-    expect(redeemed).toMatchObject({ displayName: "Road Star", guestMoved: true });
+    expect(redeemed).toMatchObject({ displayName: "Road Star" });
     const drivers = await rows(t, "freightFateDrivers");
-    expect(drivers).toHaveLength(1);
+    expect(drivers.map((d) => d.displayName)).toEqual(["Road Star"]);
     const accountId = drivers[0].driverId;
-    const events = await rows(t, "freightFateDriverEvents");
-    expect(events).toHaveLength(2);
-    expect(events.every((e) => e.driverId === accountId)).toBe(true);
-    const achievements = await rows(t, "freightFateAchievements");
-    expect(achievements.map((a) => a.driverId)).toEqual([accountId]);
-    // Only the account's new token is left: the guest's stopped working.
+    // Only the account's new token is left, and the guest is off the board.
     const devices = await rows(t, "freightFateDeviceTokens");
     expect(devices.map((d) => d.driverId)).toEqual([accountId]);
+    expect(await rows(t, "freightFatePresence")).toHaveLength(0);
   });
 
-  test("an achievement the account already has stays the account's", async () => {
-    const t = setup();
-    await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFate.provisionDriver, {
-      displayName: "Road Star", visibility: "public", expandedSharingConsent: true, now: NOW,
-    });
-    const accountId = (await rows(t, "freightFateDrivers"))[0].driverId;
-    await t.run(async (ctx) => {
-      await ctx.db.insert("freightFateAchievements", {
-        driverId: accountId, achievementKey: FREIGHT_FATE_ACHIEVEMENT_IDS[0], earnedAt: NOW - 99, createdAt: NOW - 99,
-      });
-    });
-    const guest = await makeGuest(t);
-    await shareAndPost(t, guest);
-    await connect(t, guest);
-    const achievements = await rows(t, "freightFateAchievements");
-    expect(achievements).toHaveLength(1);
-    expect(achievements[0].earnedAt).toBe(NOW - 99);
-  });
-
-  test("a first-run account that types a name still gets the guest's history", async () => {
+  test("a first-run account that types a name retires the guest too", async () => {
     const t = setup();
     const guest = await makeGuest(t);
-    await shareAndPost(t, guest);
     const { claimed, redeemed } = await connect(t, guest, "Night Hauler");
     expect(claimed).toEqual({ ok: true });
-    expect(redeemed).toMatchObject({ displayName: "Night Hauler", guestMoved: true });
-    expect(await rows(t, "freightFateDrivers")).toHaveLength(1);
-    expect(await rows(t, "freightFateDriverEvents")).toHaveLength(2);
+    expect(redeemed).toMatchObject({ displayName: "Night Hauler" });
+    const drivers = await rows(t, "freightFateDrivers");
+    expect(drivers.map((d) => d.displayName)).toEqual(["Night Hauler"]);
   });
 
   test("a code started without the guest's token connects as usual", async () => {

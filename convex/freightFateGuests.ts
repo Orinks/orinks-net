@@ -2,30 +2,27 @@
 //
 // A guest is an ordinary freightFateDrivers row with `guest: true` and no
 // authSubject, signed in by an ordinary device token. Everything the game
-// already does with a token (the board, profile sharing, the road journal,
-// achievements) works for it unchanged. Two things differ:
+// already does with a token for the board (presence, Profile sharing as the
+// consent switch) works for it unchanged. What differs:
 //
 // - The name is never typed. The route picks it from Hearken's word lists
 //   (lib/hearken-online/names.js), like "Copper Fox 12", and this module only
 //   accepts names of that shape. A guest can ask for another one.
-// - No cloud backups: those are for restoring on another computer, which
-//   needs an account (convex/freightFateSaves.ts refuses guests).
+// - The drivers board only. Profiles, the road journal, achievements and
+//   cloud backups need an account (owner ruling, 2026-11-07), so those calls
+//   answer account_required, the directory skips guests, and the board marks
+//   them so the site does not link a profile.
 //
 // Connecting an account from the game proves the guest with its token when
 // it asks for a code. Claiming that code adopts the guest row when the
-// account has no driver yet; when it has one, redeeming moves the guest's
-// journal and achievements across and deletes the guest (mergeGuestInto).
+// account has no driver yet; when it has one, redeeming deletes the guest
+// (retireGuest).
 
 import { ConvexError, v } from "convex/values";
 import { mutation } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
-import {
-  acceptDriverToken,
-  displayNameTaken,
-  mintDeviceTokenRow,
-  pruneDriverEvents,
-} from "./freightFate";
+import { acceptDriverToken, displayNameTaken, mintDeviceTokenRow } from "./freightFate";
 
 // The shape of a word-list guest name, as lib/hearken-online/names.js makes
 // them. The route checks the words themselves with isGuestName.
@@ -154,59 +151,20 @@ export const renameGuest = mutation({
 });
 
 /**
- * Move a guest's public history onto an account's driver and delete the
- * guest. Journal entries and achievements move (one already on the account
- * stays as it is); the guest's computers, presence and counters go, since the
- * computer that connected has just been given the account's token.
+ * Delete a guest whose computer has just connected an account that already
+ * had a driver. A guest has nothing to carry over (no profile, journal,
+ * achievements or backups), so its computers, presence and counters go with
+ * it; the computer that connected now holds the account's token.
  */
-export async function mergeGuestInto(ctx: MutationCtx, guestId: string, accountDriverId: string) {
+export async function retireGuest(ctx: MutationCtx, guestId: string, accountDriverId: string) {
   const guest = await guestDriver(ctx, guestId);
   if (!guest || guestId === accountDriverId) return false;
-  const account = await ctx.db
-    .query("freightFateDrivers")
-    .withIndex("by_driver_id", (q) => q.eq("driverId", accountDriverId))
-    .unique();
-  if (!account) return false;
-
-  const events = await ctx.db
-    .query("freightFateDriverEvents")
-    .withIndex("by_driver", (q) => q.eq("driverId", guestId))
-    .collect();
-  for (const event of events) {
-    const clash = await ctx.db
-      .query("freightFateDriverEvents")
-      .withIndex("by_driver_event", (q) => q.eq("driverId", accountDriverId).eq("eventId", event.eventId))
-      .unique();
-    if (clash) await ctx.db.delete(event._id);
-    else await ctx.db.patch(event._id, { driverId: accountDriverId });
-  }
-  if (events.length > 0) await pruneDriverEvents(ctx, accountDriverId);
-
-  const achievements = await ctx.db
-    .query("freightFateAchievements")
-    .withIndex("by_driver", (q) => q.eq("driverId", guestId))
-    .collect();
-  for (const achievement of achievements) {
-    const clash = await ctx.db
-      .query("freightFateAchievements")
-      .withIndex("by_driver_achievement", (q) =>
-        q.eq("driverId", accountDriverId).eq("achievementKey", achievement.achievementKey),
-      )
-      .unique();
-    if (clash) await ctx.db.delete(achievement._id);
-    else await ctx.db.patch(achievement._id, { driverId: accountDriverId });
-  }
-
   const leftovers = await Promise.all([
     ctx.db.query("freightFateDeviceTokens").withIndex("by_driver_id", (q) => q.eq("driverId", guestId)).collect(),
     ctx.db.query("freightFatePresence").withIndex("by_driver_id", (q) => q.eq("driverId", guestId)).collect(),
     ctx.db.query("freightFatePresenceBeats").withIndex("by_driver_id", (q) => q.eq("driverId", guestId)).collect(),
   ]);
   for (const row of leftovers.flat()) await ctx.db.delete(row._id);
-
-  if ((guest.lastOnDutyAt ?? 0) > (account.lastOnDutyAt ?? 0)) {
-    await ctx.db.patch(account._id, { lastOnDutyAt: guest.lastOnDutyAt });
-  }
   await ctx.db.delete(guest._id);
   return true;
 }

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (!result.ok) return NextResponse.json({ error: result.reason }, {
       status: result.reason === "rate_limited"
         ? 429
-        : result.reason === "sharing_not_enabled"
+        : result.reason === "sharing_not_enabled" || result.reason === "account_required"
           ? 403
           : result.reason === "invalid_achievement" ? 422 : 401,
     });
