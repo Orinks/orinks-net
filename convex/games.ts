@@ -12,7 +12,7 @@
 // Convex functions, and without the gate anyone could write a record the
 // replay never checked. Only claimActivation (the browser, signed in with
 // Clerk) and getMyGamesPlayer are callable without it.
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -129,7 +129,9 @@ export const playerForToken = query({
     if (!player) {
       return null;
     }
-    return { id: player.playerId, name: player.displayName };
+    return player.testerGames?.includes(args.game)
+      ? { id: player.playerId, name: player.displayName, tester: true }
+      : { id: player.playerId, name: player.displayName };
   },
 });
 
@@ -597,3 +599,47 @@ export async function purgeGamesPlayer(ctx: MutationCtx, authSubject: string) {
   await ctx.db.delete(player._id);
   return deleted + 1;
 }
+
+// ---- Testers -------------------------------------------------------------
+//
+// A tester sees a game's unreleased content early: the game reads
+// /api/games/<game>/tester once connected (lib/games/service.ts). Internal
+// only: the "Game testers" workflow runs these, or the Convex dashboard, e.g.
+//
+//   npx convex run games:setTester '{"name":"Orinks","game":"wickets"}'
+
+/** Makes the player with this orinks.net name a tester of `game`, or not. */
+export const setTester = internalMutation({
+  args: { name: v.string(), game: v.string(), tester: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    checkGame(args.game);
+    const key = normalizePlayerName(args.name).toLowerCase();
+    const player = await ctx.db
+      .query("gamesPlayers")
+      .withIndex("by_name_key", (q) => q.eq("nameKey", key))
+      .first();
+    if (!player) {
+      throw new ConvexError({
+        code: "no_player" as const,
+        message: `Nobody is called "${args.name}". They connect a game once to get a name.`,
+      });
+    }
+    const others = (player.testerGames ?? []).filter((g) => g !== args.game);
+    const on = args.tester ?? true;
+    await ctx.db.patch(player._id, { testerGames: on ? [...others, args.game] : others });
+    return { name: player.displayName, game: args.game, tester: on };
+  },
+});
+
+/** The names of everyone testing `game`. */
+export const listTesters = internalQuery({
+  args: { game: v.string() },
+  handler: async (ctx, args) => {
+    checkGame(args.game);
+    const players = await ctx.db.query("gamesPlayers").collect();
+    return players
+      .filter((p) => p.testerGames?.includes(args.game))
+      .map((p) => p.displayName)
+      .sort();
+  },
+});

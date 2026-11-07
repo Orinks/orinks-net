@@ -24,6 +24,7 @@ function memory() {
   const players = new Map([
     ["ada-token-0000000000000000", { id: "p1", name: "Ada" }],
     ["bo-token-00000000000000000", { id: "p2", name: "Bo" }],
+    ["cy-token-00000000000000000", { id: "p3", name: "Cy", tester: true }],
   ]);
   const claims = new Map<string, { player: string; nonce: string; reply?: unknown }>();
   const records = new Map<string, GameRecord>();
@@ -132,5 +133,30 @@ describe("the games service", () => {
   test("a game with no modules published refuses every run", async () => {
     const rules = rulesFolder("nothing-here", fixtures);
     expect(await rules.builds()).toEqual([]);
+  });
+
+  test("a game asks whether its player is a tester", async () => {
+    const { service: s } = await service();
+    const ask = async (token?: string) =>
+      (
+        await s.fetch(
+          new Request(`${base}/tester`, { headers: token ? { authorization: `Bearer ${token}` } : {} }),
+        )
+      ).json();
+    expect(await ask("cy-token-00000000000000000")).toEqual({ tester: true });
+    expect(await ask("ada-token-0000000000000000")).toEqual({ tester: false });
+    expect(await ask()).toEqual({ tester: false });
+  });
+
+  test("nothing can be sent as a tester run", async () => {
+    const { service: s, build } = await service();
+    const res = await s.fetch(
+      new Request(`${base}/runs?kind=tester`, {
+        method: "POST",
+        headers: { authorization: "Bearer cy-token-00000000000000000", "content-type": "application/octet-stream" },
+        body: runFile(build) as BodyInit,
+      }),
+    );
+    expect(res.status).toBe(422);
   });
 });

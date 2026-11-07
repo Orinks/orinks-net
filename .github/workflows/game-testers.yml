@@ -1,0 +1,59 @@
+name: Game testers
+
+# Flags an orinks.net account as a tester of one Hearken game, so the game
+# opens its unreleased content for them (convex/games.ts, setTester). Run it
+# from the Actions tab: type the player's orinks.net name, as the game says
+# it in Settings, Online account. "list" shows who is testing and changes
+# nothing. Works on the live site's Convex deployment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: The player's orinks.net name (leave empty for list)
+        type: string
+        required: false
+      action:
+        description: What to do
+        type: choice
+        options:
+          - add
+          - remove
+          - list
+        default: add
+      game:
+        description: Which game
+        type: string
+        default: wickets
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game-testers
+  cancel-in-progress: false
+
+jobs:
+  testers:
+    name: ${{ inputs.action }} ${{ inputs.name }} for ${{ inputs.game }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Change the testers
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          NAME: ${{ inputs.name }}
+          ACTION: ${{ inputs.action }}
+          GAME: ${{ inputs.game }}
+        run: node scripts/game-testers.mjs

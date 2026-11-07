@@ -100,6 +100,9 @@ export default defineSchema({
     // displayName lowercased, so names stay unique ignoring case.
     nameKey: v.string(),
     createdAt: v.number(),
+    // Games this player tests unreleased content for (games:setTester).
+    // The game asks after connecting and opens what its build holds back.
+    testerGames: v.optional(v.array(v.string())),
   })
     .index("by_player_id", ["playerId"])
     .index("by_auth_subject", ["authSubject"])
