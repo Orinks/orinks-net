@@ -7,7 +7,7 @@ import { isGuestName } from "@/lib/hearken-online";
 import type { Accounts, Claim, Player } from "@/lib/hearken-online";
 import { memoryRecords, recordsBoards } from "@/lib/wickets-online";
 import { GAMES } from "./registry";
-import { buildService } from "./service";
+import { buildService, withTester } from "./service";
 import type { GameStores } from "./stores";
 
 const SEED_SECRET = "a test seed secret, at least thirty-two characters";
@@ -144,5 +144,24 @@ describe("Wicket's", () => {
     expect(top.you).toEqual({ rank: 1, score: 40, held: false });
     // The guest's token no longer works.
     expect((await post(service, "start?kind=belfry-daily", guest.token)).status).toBe(401);
+  });
+
+  test("the tester read sits beside its boards, which still open by date", async () => {
+    const { service } = wickets();
+    const { token } = await (await post(service, "activate/guest")).json();
+    expect(await (await get(service, "tester", token)).json()).toEqual({ tester: false });
+    expect((await get(service, "belfry-daily/top", token)).status).toBe(200);
+
+    let open = false;
+    const gated = new Proxy({ a: { expect() {}, accept() {} } } as unknown as Record<string, never>, {
+      has: (t, k) => k !== "a" || open,
+      getOwnPropertyDescriptor: (t, k) => (k !== "a" || open ? Reflect.getOwnPropertyDescriptor(t, k) : undefined),
+      get: (t, k) => (k !== "a" || open ? Reflect.get(t, k) : undefined),
+    });
+    const handlers = withTester(gated);
+    expect(Object.keys(handlers)).toEqual(["tester"]);
+    open = true;
+    expect(Object.keys(handlers)).toEqual(["tester", "a"]);
+    expect(Object.hasOwn(handlers, "a")).toBe(true);
   });
 });
