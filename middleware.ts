@@ -19,6 +19,7 @@ export const config = {
   matcher: [
     "/activate/:path*",
     "/games/connect/:path*",
+    "/games/testers/:path*",
     "/freight-fate/online/setup/:path*",
     "/freight-fate/suggest-a-station/:path*",
   ],

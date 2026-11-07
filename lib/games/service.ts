@@ -3,7 +3,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createService, publishedRules } from "@/lib/hearken-online";
-import type { PublishedRules } from "@/lib/hearken-online";
+import { refuse } from "@/lib/hearken-online";
+import type { Handler, Player, PublishedRules } from "@/lib/hearken-online";
 import { getConvexClient } from "@/lib/convex";
 import { site } from "@/lib/site";
 import { clientIp } from "@/lib/client-ip";
@@ -34,6 +35,23 @@ export function rulesFolder(game: string, root = process.cwd()): PublishedRules 
   };
 }
 
+/**
+ * GET /api/games/<game>/tester: whether the connected player tests the game
+ * (convex/games.ts, setTester), so it can open what it holds back. Every
+ * game has it; a player who is not connected is not a tester.
+ */
+export const testerHandler: Handler = {
+  expect() {
+    throw refuse("not-a-run", "Nothing is sent here.");
+  },
+  accept() {
+    return null;
+  },
+  read({ player }) {
+    return { tester: (player as (Player & { tester?: boolean }) | null)?.tester === true };
+  },
+};
+
 export function buildService(
   game: GameDefinition,
   parts: { rules: PublishedRules; stores: GameStores; records: Parameters<GameDefinition["handlers"]>[0] },
@@ -41,7 +59,7 @@ export function buildService(
   return createService({
     rules: parts.rules,
     ...parts.stores,
-    handlers: game.handlers(parts.records),
+    handlers: { tester: testerHandler, ...game.handlers(parts.records) },
     basePath: `/api/games/${game.id}`,
     // The address the platform's edge saw (lib/client-ip.ts), as the Freight
     // Fate routes read it.

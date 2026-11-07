@@ -13,5 +13,9 @@ export type GameDefinition = {
   handlers(records: GameRecords): Record<string, Handler<any>>;
 };
 
-export const GAMES: Record<string, GameDefinition> = {};
+export const GAMES: Record<string, GameDefinition> = {
+  // Wicket's connects for its testers (the tester read in service.ts); its
+  // ranked challenges join later.
+  wickets: { id: "wickets", title: "Wicket's", handlers: () => ({}) },
+};
 

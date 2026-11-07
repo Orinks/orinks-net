@@ -12,7 +12,7 @@
 // Convex functions, and without the gate anyone could write a record the
 // replay never checked. Only claimActivation (the browser, signed in with
 // Clerk) and getMyGamesPlayer are callable without it.
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -129,7 +129,9 @@ export const playerForToken = query({
     if (!player) {
       return null;
     }
-    return { id: player.playerId, name: player.displayName };
+    return player.testerGames?.includes(args.game)
+      ? { id: player.playerId, name: player.displayName, tester: true }
+      : { id: player.playerId, name: player.displayName };
   },
 });
 
@@ -597,3 +599,92 @@ export async function purgeGamesPlayer(ctx: MutationCtx, authSubject: string) {
   await ctx.db.delete(player._id);
   return deleted + 1;
 }
+
+// ---- Testers -------------------------------------------------------------
+//
+// A tester sees a game's unreleased content early: the game reads
+// /api/games/<game>/tester once connected (lib/games/service.ts). The owner
+// flags players on the testers page (/games/testers, adminSetTester below);
+// the "Game testers" workflow and the Convex dashboard run the internal
+// ones, e.g.
+//
+//   npx convex run games:setTester '{"name":"Orinks","game":"wickets"}'
+
+type TesterChange = { ok: true; name: string; game: string; tester: boolean } | { ok: false; code: "no_player" };
+
+async function changeTester(ctx: MutationCtx, name: string, game: string, tester: boolean): Promise<TesterChange> {
+  checkGame(game);
+  const key = normalizePlayerName(name).toLowerCase();
+  const player = await ctx.db
+    .query("gamesPlayers")
+    .withIndex("by_name_key", (q) => q.eq("nameKey", key))
+    .first();
+  if (!player) {
+    return { ok: false, code: "no_player" };
+  }
+  const others = (player.testerGames ?? []).filter((g) => g !== game);
+  await ctx.db.patch(player._id, { testerGames: tester ? [...others, game] : others });
+  return { ok: true, name: player.displayName, game, tester };
+}
+
+async function testersOf(ctx: QueryCtx, game: string) {
+  checkGame(game);
+  const players = await ctx.db.query("gamesPlayers").collect();
+  return players
+    .filter((p) => p.testerGames?.includes(game))
+    .map((p) => p.displayName)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/** Makes the player with this orinks.net name a tester of `game`, or not. */
+export const setTester = internalMutation({
+  args: { name: v.string(), game: v.string(), tester: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const done = await changeTester(ctx, args.name, args.game, args.tester ?? true);
+    if (!done.ok) {
+      throw new ConvexError({
+        code: "no_player" as const,
+        message: `Nobody is called "${args.name}". They connect a game once to get a name.`,
+      });
+    }
+    return { name: done.name, game: done.game, tester: done.tester };
+  },
+});
+
+/** The names of everyone testing `game`. */
+export const listTesters = internalQuery({
+  args: { game: v.string() },
+  handler: async (ctx, args) => testersOf(ctx, args.game),
+});
+
+// The testers page (/games/testers) is for the site's owner: the signed-in
+// account's verified email must be one of GAMES_ADMIN_EMAILS (comma
+// separated), or the site's contact address when that is unset.
+const OWNER_EMAIL = "orin8722@gmail.com";
+
+export function isGamesAdmin(identity: { email?: string; emailVerified?: boolean } | null) {
+  if (!identity?.email || identity.emailVerified === false) return false;
+  const admins = (process.env.GAMES_ADMIN_EMAILS || OWNER_EMAIL)
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(identity.email.toLowerCase());
+}
+
+/** The testers page's list: null for anyone who may not see it. */
+export const adminListTesters = query({
+  args: { game: v.string() },
+  handler: async (ctx, args) => {
+    if (!isGamesAdmin(await ctx.auth.getUserIdentity())) return null;
+    return testersOf(ctx, args.game);
+  },
+});
+
+/** Adds or removes a tester from the testers page. */
+export const adminSetTester = mutation({
+  args: { name: v.string(), game: v.string(), tester: v.boolean() },
+  handler: async (ctx, args): Promise<TesterChange | { ok: false; code: "forbidden" }> => {
+    if (!isGamesAdmin(await ctx.auth.getUserIdentity())) return { ok: false, code: "forbidden" };
+    return changeTester(ctx, args.name, args.game, args.tester);
+  },
+});
