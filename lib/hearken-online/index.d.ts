@@ -33,12 +33,22 @@ export interface PublishedRules {
   builds(): Promise<string[]>;
 }
 
-export function publishedRules(list: { bytes: Uint8Array; build?: string }[]): PublishedRules;
+export function publishedRules(
+  list: ({ bytes: Uint8Array; build?: string } | { module: WebAssembly.Module; build: string })[],
+): PublishedRules;
 
 export interface Player {
   id: string;
   name: string;
+  /** A guest: no account, a name the server picked. */
+  guest?: boolean;
 }
+
+export const GUEST_ADJECTIVES: readonly string[];
+export const GUEST_NOUNS: readonly string[];
+/** A name such as "Copper Fox 12", from the word lists. */
+export function guestName(): string;
+export function isGuestName(name: unknown): boolean;
 
 /** What a run file says about itself, before it is verified. */
 export interface RunInfo {
@@ -85,7 +95,7 @@ export interface Handler<Outcome = unknown> {
 
 export interface Accounts {
   player(token: string): Promise<Player | null>;
-  startActivation(input: { clientKey: string; machine?: string }): Promise<{
+  startActivation(input: { clientKey: string; machine?: string; guest?: Player }): Promise<{
     device_code: string;
     user_code: string;
     verify_url?: string;
@@ -93,8 +103,15 @@ export interface Accounts {
     interval: number;
   }>;
   pollActivation(deviceCode: string): Promise<
-    { status: "pending" } | { status: "expired" } | { status: "ready"; token: string; name?: string | null }
+    | { status: "pending" }
+    | { status: "expired" }
+    /** `linked`: the guest this account took over, whose tokens no longer work. */
+    | { status: "ready"; token: string; name?: string | null; linked?: string }
   >;
+  /** A new guest. Without it, the service has no guests. */
+  createGuest?(input: { clientKey: string }): Promise<{ token: string; name: string; player: Player }>;
+  /** Another name for a guest, or null for a player who is not one. */
+  renameGuest?(player: Player): Promise<string | null>;
 }
 
 export type Claim = { claimed: true; nonce: string } | { claimed: false; existing?: { player?: string; reply?: unknown } };
@@ -119,10 +136,14 @@ export interface ServiceOptions {
   replay?: (rules: Rules, run: Uint8Array, expected: Expected) => Promise<unknown>;
   clientKey?: (request: Request) => string;
   log?: (event: object) => void;
+  /** A guest connected an account: move the guest's results to it. */
+  onLink?: (input: { guest: string; player: Player | null }) => Promise<void>;
   limits?: Partial<{
     runsPerMinute: number;
     activationsPerMinute: number;
     pollsPerMinute: number;
+    guestsPerDay: number;
+    renamesPerHour: number;
   }>;
 }
 

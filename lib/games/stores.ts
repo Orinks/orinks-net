@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
+import { guestName } from "@/lib/hearken-online";
 import type { Accounts, Claim, Limiter, Runs } from "@/lib/hearken-online";
 
 export function hashSecret(value: string) {
@@ -32,8 +33,13 @@ export function convexStores(input: {
   return {
     accounts: {
       player: (token) => client.query(anyApi.games.playerForToken, { secret, game, tokenHash: hashSecret(token) }),
-      async startActivation() {
-        const started = await client.mutation(anyApi.games.startActivation, { secret, game, now: now() });
+      async startActivation({ guest }) {
+        const started = await client.mutation(anyApi.games.startActivation, {
+          secret,
+          game,
+          now: now(),
+          guestId: guest?.guest ? guest.id : undefined,
+        });
         return {
           device_code: started.deviceCode,
           user_code: started.userCode,
@@ -49,6 +55,19 @@ export function convexStores(input: {
           deviceCodeHash: hashSecret(deviceCode),
           now: now(),
         }),
+      // Guests: the name is picked here, from Hearken's word lists, and
+      // never typed by a player.
+      async createGuest() {
+        const name = guestName();
+        const made = await client.mutation(anyApi.games.createGuest, { secret, game, name, now: now() });
+        return { token: made.token, name, player: { id: made.playerId, name, guest: true } };
+      },
+      async renameGuest(player) {
+        if (!player.guest) return null;
+        const name = guestName();
+        const done = await client.mutation(anyApi.games.renameGuest, { secret, game, playerId: player.id, name });
+        return done ? name : null;
+      },
     },
     runs: {
       async claim(key, record): Promise<Claim> {

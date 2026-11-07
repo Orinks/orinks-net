@@ -91,6 +91,30 @@ async function nameTaken(ctx: QueryCtx, name: string, exceptSubject: string) {
   return rows.some((row) => row.authSubject !== exceptSubject);
 }
 
+async function guestById(ctx: QueryCtx, playerId: string) {
+  return ctx.db
+    .query("gamesGuests")
+    .withIndex("by_player_id", (q) => q.eq("playerId", playerId))
+    .unique();
+}
+
+async function issueToken(ctx: MutationCtx, game: string, playerId: string, now: number) {
+  const tokens = await ctx.db
+    .query("gamesTokens")
+    .withIndex("by_player_game", (q) => q.eq("playerId", playerId).eq("game", game))
+    .collect();
+  tokens.sort((a, b) => a.createdAt - b.createdAt);
+  for (const old of tokens.slice(0, Math.max(0, tokens.length - MAX_TOKENS_PER_GAME + 1))) {
+    await ctx.db.delete(old._id);
+  }
+  const token = randomHex(32);
+  await ctx.db.insert("gamesTokens", { tokenHash: await sha256Hex(token), game, playerId, createdAt: now });
+  return token;
+}
+
+// The shape of a server-picked guest name, as names.js makes them.
+const GUEST_NAME = /^[A-Z][a-z]+ [A-Z][a-z]+ [1-9][0-9]?$/;
+
 // ---- Rate limits -------------------------------------------------------
 
 export const consumeRateLimit = mutation({
@@ -126,10 +150,14 @@ export const playerForToken = query({
       .query("gamesPlayers")
       .withIndex("by_player_id", (q) => q.eq("playerId", row.playerId))
       .unique();
-    if (!player) {
-      return null;
+    if (player) {
+      return { id: player.playerId, name: player.displayName };
     }
-    return { id: player.playerId, name: player.displayName };
+    const guest = await guestById(ctx, row.playerId);
+    if (guest && guest.game === args.game) {
+      return { id: guest.playerId, name: guest.displayName, guest: true };
+    }
+    return null;
   },
 });
 
@@ -149,7 +177,8 @@ export const getMyGamesPlayer = query({
 // ---- Connecting a game -------------------------------------------------
 
 export const startActivation = mutation({
-  args: { secret: v.string(), game: v.string(), now: v.number() },
+  // `guestId`: a guest connecting an account, so its results can follow it.
+  args: { secret: v.string(), game: v.string(), now: v.number(), guestId: v.optional(v.string()) },
   handler: async (ctx, args) => {
     requireServer(args.secret);
     checkGame(args.game);
@@ -174,6 +203,7 @@ export const startActivation = mutation({
       deviceCodeHash: await sha256Hex(deviceCode),
       userCode,
       status: "pending",
+      guestId: args.guestId,
       createdAt: args.now,
       expiresAt: args.now + CONNECT_TTL_MS,
     });
@@ -213,21 +243,19 @@ export const pollActivation = mutation({
     if (!player) {
       return { status: "expired" as const };
     }
-    const tokens = await ctx.db
-      .query("gamesTokens")
-      .withIndex("by_player_game", (q) => q.eq("playerId", player.playerId).eq("game", args.game))
-      .collect();
-    tokens.sort((a, b) => a.createdAt - b.createdAt);
-    for (const old of tokens.slice(0, Math.max(0, tokens.length - MAX_TOKENS_PER_GAME + 1))) {
-      await ctx.db.delete(old._id);
+    const token = await issueToken(ctx, args.game, player.playerId, args.now);
+    // A guest who connected an account becomes it: its tokens stop working
+    // and the route moves its results (onLink).
+    const guest = row.guestId ? await guestById(ctx, row.guestId) : null;
+    if (guest && guest.game === args.game) {
+      const old = await ctx.db
+        .query("gamesTokens")
+        .withIndex("by_player_game", (q) => q.eq("playerId", guest.playerId).eq("game", args.game))
+        .collect();
+      for (const t of old) await ctx.db.delete(t._id);
+      await ctx.db.delete(guest._id);
+      return { status: "ready" as const, token, name: player.displayName, linked: guest.playerId };
     }
-    const token = randomHex(32);
-    await ctx.db.insert("gamesTokens", {
-      tokenHash: await sha256Hex(token),
-      game: args.game,
-      playerId: player.playerId,
-      createdAt: args.now,
-    });
     return { status: "ready" as const, token, name: player.displayName };
   },
 });
@@ -304,6 +332,39 @@ export const claimActivation = mutation({
       ),
     });
     return { ok: true as const, game: row.game };
+  },
+});
+
+// ---- Guests --------------------------------------------------------------
+
+/** A new guest for one game, under the name the route picked. */
+export const createGuest = mutation({
+  args: { secret: v.string(), game: v.string(), name: v.string(), now: v.number() },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    checkGame(args.game);
+    if (!GUEST_NAME.test(args.name)) {
+      throw new ConvexError({ code: "bad_name" as const });
+    }
+    const playerId = `g_${randomHex(8)}`;
+    await ctx.db.insert("gamesGuests", { playerId, game: args.game, displayName: args.name, createdAt: args.now });
+    const token = await issueToken(ctx, args.game, playerId, args.now);
+    return { token, playerId };
+  },
+});
+
+/** Another name for a guest. Answers false for anyone who is not one. */
+export const renameGuest = mutation({
+  args: { secret: v.string(), game: v.string(), playerId: v.string(), name: v.string() },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    if (!GUEST_NAME.test(args.name)) {
+      throw new ConvexError({ code: "bad_name" as const });
+    }
+    const guest = await guestById(ctx, args.playerId);
+    if (!guest || guest.game !== args.game) return false;
+    await ctx.db.patch(guest._id, { displayName: args.name });
+    return true;
   },
 });
 

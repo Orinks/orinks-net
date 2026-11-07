@@ -104,6 +104,14 @@ export default defineSchema({
     .index("by_player_id", ["playerId"])
     .index("by_auth_subject", ["authSubject"])
     .index("by_name_key", ["nameKey"]),
+  // A player with no account, for one game, named by the server from word
+  // lists (lib/hearken-online/names.js). Its playerId starts "g_".
+  gamesGuests: defineTable({
+    playerId: v.string(),
+    game: v.string(),
+    displayName: v.string(),
+    createdAt: v.number(),
+  }).index("by_player_id", ["playerId"]),
   gamesTokens: defineTable({
     tokenHash: v.string(),
     game: v.string(),
@@ -118,6 +126,8 @@ export default defineSchema({
     userCode: v.string(),
     status: v.union(v.literal("pending"), v.literal("claimed")),
     playerId: v.optional(v.string()),
+    // The guest connecting, whose results move to the account.
+    guestId: v.optional(v.string()),
     createdAt: v.number(),
     expiresAt: v.number(),
   })

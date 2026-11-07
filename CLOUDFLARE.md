@@ -85,8 +85,12 @@ copied onto `process.env`). An undeclared name is simply `undefined`.
   `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`,
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
   `RESEND_API_KEY`, `BUILD_NOTIFICATION_TOKEN`.
-  `GAMES_SERVER_SECRET` is read by the games service but is not set on Vercel
-  either, so it is not required; add it when a game goes live.
+  `GAMES_SERVER_SECRET` (the games service) and `WICKETS_SEED_SECRET`
+  (Wicket's challenge seeds) are not declared, so they are not required; set
+  them on the Worker when games go live. Until then `/api/games/` answers 503.
+  Hearken games' rules modules (`hearken-rules/`) are bundled into the Worker
+  at build time by `scripts/hearken-rules-plugin.mjs`, already compiled: a
+  Worker cannot read them from disk or compile WebAssembly from bytes.
   Locally they come from `.dev.vars` (copy `.dev.vars.example`). On Cloudflare
   they are set with `cf workers secrets put NAME --worker <worker>` or in the
   dashboard.
