@@ -80,11 +80,13 @@ Things a handler should know:
 
 ## Testers
 
-Any game can let chosen players see its unreleased content early. Run the
-"Game testers" workflow from the Actions tab with the player's orinks.net
-name (the name the game shows under Settings, Online account) and the game's
-id; "remove" takes the flag off and "list" shows who has it. The player
-needs to have connected the game once, so the account has a name.
+Any game can let chosen players see its unreleased content early. Sign in
+at /games/testers as the site's owner (the account's verified email must be
+in `GAMES_ADMIN_EMAILS` on Convex, or the contact address when that is
+unset), type the player's orinks.net name (the name the game shows under
+Settings, Online account) under the game, and add or remove them. The
+"Game testers" workflow in the Actions tab does the same. The player needs
+to have connected the game once, so the account has a name.
 
 The game asks `GET /api/games/<game>/tester` with its token and gets
 `{"tester": true}` or `{"tester": false}` (`testerHandler` in

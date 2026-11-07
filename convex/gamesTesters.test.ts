@@ -60,3 +60,36 @@ describe("testers", () => {
     await expect(t.mutation(internal.games.setTester, { name: "Nobody", game: "wickets" })).rejects.toThrow(/Nobody/);
   });
 });
+
+describe("the testers page", () => {
+  test("only the owner's verified email may list and change testers", async () => {
+    const t = setup();
+    await connect(t, "wickets", "user_cy", "Cy Young");
+    const owner = t.withIdentity({ subject: "user_owner", email: "Orin8722@gmail.com", emailVerified: true });
+    const stranger = t.withIdentity({ subject: "user_x", email: "someone@example.com", emailVerified: true });
+    const unverified = t.withIdentity({ subject: "user_y", email: "orin8722@gmail.com", emailVerified: false });
+
+    expect(await stranger.query(api.games.adminListTesters, { game: "wickets" })).toBeNull();
+    expect(await unverified.query(api.games.adminListTesters, { game: "wickets" })).toBeNull();
+    expect(await t.query(api.games.adminListTesters, { game: "wickets" })).toBeNull();
+    expect(await stranger.mutation(api.games.adminSetTester, { name: "Cy Young", game: "wickets", tester: true })).toEqual({
+      ok: false,
+      code: "forbidden",
+    });
+
+    expect(await owner.query(api.games.adminListTesters, { game: "wickets" })).toEqual([]);
+    expect(await owner.mutation(api.games.adminSetTester, { name: "cy young", game: "wickets", tester: true })).toEqual({
+      ok: true,
+      name: "Cy Young",
+      game: "wickets",
+      tester: true,
+    });
+    expect(await owner.query(api.games.adminListTesters, { game: "wickets" })).toEqual(["Cy Young"]);
+    expect(await owner.mutation(api.games.adminSetTester, { name: "Nobody", game: "wickets", tester: true })).toEqual({
+      ok: false,
+      code: "no_player",
+    });
+    await owner.mutation(api.games.adminSetTester, { name: "Cy Young", game: "wickets", tester: false });
+    expect(await owner.query(api.games.adminListTesters, { game: "wickets" })).toEqual([]);
+  });
+});
