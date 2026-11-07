@@ -1,6 +1,7 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { consumeFreightFateWrite } from "./freightFateRateLimit";
+import type { Doc } from "./_generated/dataModel";
 import {
   displayNameTaken,
   driverIdFromName,
@@ -11,6 +12,7 @@ import {
   normalizeDisplayName,
 } from "./freightFate";
 import { screenDisplayName } from "./moderation";
+import { guestDriver, mergeGuestInto, provenGuest } from "./freightFateGuests";
 
 // The alphanumerics minus the pairs a synthesized voice blurs together:
 // O/0, I/1/L, S/5, Z/2. What is left is safe to read aloud and to type back.
@@ -99,7 +101,17 @@ export const startActivation = mutation({
   // machineKey is the game's opaque name for the computer asking. It rides
   // the activation to the device row so that connecting the same PC again
   // replaces its entry instead of taking another slot on the list.
-  args: { clientKey: v.string(), now: v.number(), machineKey: v.optional(v.string()) },
+  //
+  // guestDriverId and guestTokenHash: a guest connecting an account, so its
+  // journal and achievements can follow it. A pair that does not prove a
+  // guest is ignored and the connection goes ahead as an ordinary one.
+  args: {
+    clientKey: v.string(),
+    now: v.number(),
+    machineKey: v.optional(v.string()),
+    guestDriverId: v.optional(v.string()),
+    guestTokenHash: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "activation_start",
@@ -130,6 +142,11 @@ export const startActivation = mutation({
       throw new ConvexError({ code: "activation_unavailable" as const });
     }
 
+    const guest =
+      args.guestDriverId && args.guestTokenHash
+        ? await provenGuest(ctx, args.guestDriverId, args.guestTokenHash)
+        : null;
+
     const deviceCode = mintDeviceCode();
     const expiresAt = args.now + ACTIVATION_TTL_MS;
     await ctx.db.insert("freightFateActivations", {
@@ -137,6 +154,7 @@ export const startActivation = mutation({
       userCode,
       status: "pending",
       machineKey: normalizeMachineKey(args.machineKey),
+      ...(guest ? { guestDriverId: guest.driverId } : {}),
       createdAt: args.now,
       expiresAt,
     });
@@ -170,10 +188,36 @@ export const claimActivation = mutation({
       .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
       .unique();
 
-    // No driver and nothing to create one from: the page's signal to show
-    // the name field, not a guess worth spending rate-limit budget on.
+    // A code a guest asked for, claimed by an account with no driver yet:
+    // the guest becomes the account's driver, name and all, so there is
+    // nothing to ask for. Peeking at the code costs rate-limit budget first,
+    // or "no_driver" versus a claim would let a caller probe codes for free.
+    const code = normalizeUserCode(args.userCode);
+    let adopting: Doc<"freightFateDrivers"> | null = null;
     if (!driver && !args.displayName) {
-      return { ok: false as const, code: "no_driver" as const };
+      const allowed = await consumeFreightFateWrite(ctx, {
+        scope: "activation_claim",
+        driverId: identity.subject,
+        now: args.now,
+        limit: ACTIVATION_CLAIM_LIMIT,
+      });
+      if (!allowed) {
+        return { ok: false as const, code: "rate_limited" as const };
+      }
+      const peek = code
+        ? await ctx.db
+            .query("freightFateActivations")
+            .withIndex("by_user_code", (q) => q.eq("userCode", code))
+            .unique()
+        : null;
+      if (peek && peek.status === "pending" && peek.expiresAt > args.now && peek.guestDriverId) {
+        adopting = await guestDriver(ctx, peek.guestDriverId);
+      }
+      // No driver and nothing to create one from: the page's signal to show
+      // the name field.
+      if (!adopting) {
+        return { ok: false as const, code: "no_driver" as const };
+      }
     }
 
     // Ordering below is the whole point of doing this in one mutation:
@@ -185,20 +229,22 @@ export const claimActivation = mutation({
     // 1. Rate limit. Guessing is the attack this stops: a caller hammering
     // codes until one lands. Keyed by driver id when there is one; a
     // brand-new account has none yet, so the Clerk subject stands in.
-    const allowed = await consumeFreightFateWrite(ctx, {
-      scope: "activation_claim",
-      driverId: driver ? driver.driverId : identity.subject,
-      now: args.now,
-      limit: ACTIVATION_CLAIM_LIMIT,
-    });
-    if (!allowed) {
-      return { ok: false as const, code: "rate_limited" as const };
+    // (Already spent above when adopting a guest.)
+    if (!adopting) {
+      const allowed = await consumeFreightFateWrite(ctx, {
+        scope: "activation_claim",
+        driverId: driver ? driver.driverId : identity.subject,
+        now: args.now,
+        limit: ACTIVATION_CLAIM_LIMIT,
+      });
+      if (!allowed) {
+        return { ok: false as const, code: "rate_limited" as const };
+      }
     }
 
     // 2. Code lookup. Unknown, already claimed, and expired are one error on
     // purpose: telling a stranger which of those a code is would let them
     // probe for live ones.
-    const code = normalizeUserCode(args.userCode);
     const row = code
       ? await ctx.db
           .query("freightFateActivations")
@@ -236,7 +282,7 @@ export const claimActivation = mutation({
     // existing driver ignores a supplied name entirely: renaming someone's
     // driver is not a side effect activating a computer should ever have.
     let displayName: string | null = null;
-    if (!driver) {
+    if (!driver && !adopting) {
       displayName = normalizeDisplayName(args.displayName!);
       const verdict = screenDisplayName(displayName);
       if (!verdict.ok) {
@@ -253,6 +299,15 @@ export const claimActivation = mutation({
     let driverId: string;
     if (driver) {
       driverId = driver.driverId;
+    } else if (adopting) {
+      // The guest row becomes the account's driver. Its sharing choice was
+      // made in the game under the same consent wording, so it stands.
+      driverId = adopting.driverId;
+      await ctx.db.patch(adopting._id, {
+        authSubject: identity.subject,
+        guest: undefined,
+        updatedAt: args.now,
+      });
     } else {
       // Mirrors provisionDriver's brand-new-driver insert. Visibility starts
       // private: a public-sharing consent decision does not belong on a
@@ -382,10 +437,23 @@ export const redeemActivation = mutation({
       row.machineKey,
     );
     await ctx.db.delete(row._id);
+    // A guest connecting an account that already had a driver: the guest's
+    // journal and achievements move to it and the guest is gone. Done here,
+    // not at claim, so the guest's token keeps working until this computer
+    // actually holds the account's.
+    const guestMoved =
+      row.guestDriverId !== undefined && row.guestDriverId !== row.driverId
+        ? await mergeGuestInto(ctx, row.guestDriverId, row.driverId)
+        : false;
     // displayName goes back so the game can say who it connected as; that
     // spoken name is the only thing standing between a claimed-by-a-stranger
     // code and a player who never notices.
-    return { driverId: row.driverId, token, displayName: driver.displayName };
+    return {
+      driverId: row.driverId,
+      token,
+      displayName: driver.displayName,
+      ...(guestMoved ? { guestMoved: true } : {}),
+    };
   },
 });
 

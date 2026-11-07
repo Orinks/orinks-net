@@ -70,6 +70,11 @@ async function authorizedDriver(ctx: QueryCtx, driverId: string, driverTokenHash
     return { driver: null, reason: "unauthorized" as const };
   }
 
+  // Backups are for restoring on another computer, which takes an account.
+  if (driver.guest === true) {
+    return { driver: null, reason: "account_required" as const };
+  }
+
   return { driver, reason: null };
 }
 
@@ -634,6 +639,9 @@ export const storeValidatedSave = internalMutation({
     const { accepted, device } = await acceptDriverToken(ctx, driver, args.driverTokenHash);
     if (!accepted) {
       return { ok: false as const, reason: "unauthorized" as const };
+    }
+    if (driver.guest === true) {
+      return { ok: false as const, reason: "account_required" as const };
     }
 
     await stampClientVersion(ctx, driver, args.clientVersion, now);

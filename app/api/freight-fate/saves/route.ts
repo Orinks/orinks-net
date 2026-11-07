@@ -36,6 +36,7 @@ function bearerToken(request: Request) {
 const FAILURE_STATUS: Record<string, number> = {
   driver_not_found: 404,
   unauthorized: 401,
+  account_required: 403,
   save_not_found: 404,
   conflict: 409,
   too_large: 413,

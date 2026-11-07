@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       driver_id: result.driverId,
       token: result.token,
       display_name: result.displayName,
+      // The guest this computer was signed in as moved onto this account.
+      ...(result.guestMoved ? { guest_moved: true } : {}),
     });
   } catch {
     // pollFreightFateActivation makes two Convex calls; any failure here is

@@ -293,7 +293,7 @@ function deliverySummary(payload: {
   return `${cleanFact(payload.cargo, 80)}, ${weight} pounds, delivered from ${cleanFact(payload.origin, 80)} to ${cleanFact(payload.destination, 80)} over ${distance} miles${payload.onTime ? " on time" : ""}.${condition}`.slice(0, 280);
 }
 
-async function pruneDriverEvents(ctx: MutationCtx, driverId: string) {
+export async function pruneDriverEvents(ctx: MutationCtx, driverId: string) {
   const events = await ctx.db.query("freightFateDriverEvents")
     .withIndex("by_driver", (q) => q.eq("driverId", driverId)).collect();
   events.sort((a, b) => b.occurredAt - a.occurredAt || b.eventId.localeCompare(a.eventId));

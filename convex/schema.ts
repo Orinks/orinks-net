@@ -327,6 +327,13 @@ export default defineSchema({
     // One driver per account; the setup page provisions it after sign-in.
     // Optional so pre-existing prototype rows validate until they are reset.
     authSubject: v.optional(v.string()),
+    // A guest: a driver with no account, made from the game, named by the
+    // server from word lists (lib/hearken-online/names.js) so no name a
+    // player typed reaches the board. Never has an authSubject; connecting an
+    // account from the game either adopts the row or merges it into the
+    // account's driver (convex/freightFateGuests.ts). Guests get no cloud
+    // backups.
+    guest: v.optional(v.boolean()),
     // public: listed on the live drivers board; unlisted: profile reachable
     // by URL only; private: nothing shown anywhere.
     visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
@@ -413,6 +420,10 @@ export default defineSchema({
     // Supplied by the game when it asks for the code, carried to the device
     // row when the activation is redeemed. See freightFateDeviceTokens.
     machineKey: v.optional(v.string()),
+    // The guest driver connecting an account, proven by its token when the
+    // game asked for the code. Claiming adopts it (no driver yet) or redeeming
+    // merges it into the account's driver.
+    guestDriverId: v.optional(v.string()),
     createdAt: v.number(),
     expiresAt: v.number(),
   })
