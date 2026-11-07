@@ -10,7 +10,8 @@ name: Cloudflare deploy
 #                 build (scripts/vercel-build.mjs).
 #
 # Every push to dev deploys the preview Worker (no Convex), like a Vercel
-# preview. Every push to main deploys production: orinks.net is served by the
+# preview. A game release's "hearken-rules" dispatch redeploys production
+# with that release's rules module. Every push to main deploys production: orinks.net is served by the
 # "orinks-net" Worker, and this is the only pipeline that deploys the Convex
 # backend (Vercel's Git integration is disconnected). The preview Worker is
 # also deployable by hand with "Run workflow". See CLOUDFLARE.md.
@@ -27,6 +28,11 @@ on:
     branches:
       - main
       - dev
+  # A Hearken game's release asks for this (wickets' release.yml) once its
+  # rules module is attached, so the live site starts accepting that
+  # release's runs. It runs on main: a production deploy.
+  repository_dispatch:
+    types: [hearken-rules]
   workflow_dispatch:
     inputs:
       target:
@@ -66,6 +72,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Every listed game's rules modules, from its releases
+      # (hearken-rules/sources.json), bundled into the Worker by the build.
+      - name: Fetch Hearken rules modules
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/fetch-hearken-rules.mjs
 
       - name: Build and deploy
         env:

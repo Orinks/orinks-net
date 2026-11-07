@@ -52,9 +52,11 @@ Wicket's answers 503 and other games are unaffected.
    `rules = "<crate>"` in `[package.metadata.hearken]`, and `Game::online()`
    returning `https://orinks.net/api/games/<id>` with the site name
    `orinks.net`.
-2. Copy the `<game>-<version>-rules-<id>.wasm` that `hearken release` puts in
-   `dist/` into `hearken-rules/<id>/`. Do this for every release whose runs
-   should count.
+2. List the game's release repository in `hearken-rules/sources.json`. Each
+   deploy fetches the rules modules its releases attach
+   (`hearken-rules/README.md`). To have a release count at once, its release
+   workflow sends a `hearken-rules` repository dispatch to this repository,
+   which redeploys production.
 3. Add the game to `GAMES` in `lib/games/registry.ts`, with a handler for each
    kind of run it sends. A handler says what a run must have started from
    (`expect`) and what to do with the verified result (`accept`). It can also

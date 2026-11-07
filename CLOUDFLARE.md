@@ -90,7 +90,8 @@ copied onto `process.env`). An undeclared name is simply `undefined`.
   them on the Worker when games go live. Until then `/api/games/` answers 503.
   Hearken games' rules modules (`hearken-rules/`) are bundled into the Worker
   at build time by `scripts/hearken-rules-plugin.mjs`, already compiled: a
-  Worker cannot read them from disk or compile WebAssembly from bytes.
+  Worker cannot read them from disk or compile WebAssembly from bytes. The
+  deploy workflow fetches them from each game's releases first.
   Locally they come from `.dev.vars` (copy `.dev.vars.example`). On Cloudflare
   they are set with `cf workers secrets put NAME --worker <worker>` or in the
   dashboard.

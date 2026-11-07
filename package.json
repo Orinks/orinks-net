@@ -19,7 +19,8 @@
     "build:cf:preview": "node scripts/cloudflare-build.mjs --target preview --build-only",
     "build:cf:production": "node scripts/cloudflare-build.mjs --target production --build-only",
     "deploy:cf:preview": "node scripts/cloudflare-build.mjs --target preview",
-    "deploy:cf:production": "node scripts/cloudflare-build.mjs --target production"
+    "deploy:cf:production": "node scripts/cloudflare-build.mjs --target production",
+    "rules:fetch": "node scripts/fetch-hearken-rules.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.13",

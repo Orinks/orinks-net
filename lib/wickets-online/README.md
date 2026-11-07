@@ -12,4 +12,5 @@ place of `@hearken/online`. Update by copying those files again.
   route answers 503.
 - Boards are kept in the game's records (`recordsBoards`): no tables of
   their own.
-- Each release's rules module goes in `hearken-rules/wickets/`.
+- Each release's rules module is fetched from its GitHub release at deploy
+  (`hearken-rules/sources.json`).

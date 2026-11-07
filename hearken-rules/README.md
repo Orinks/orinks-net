@@ -1,10 +1,16 @@
 # Published rules modules for Hearken games
 
 Each game has a folder named after its id in `lib/games/registry.ts`, such as
-`hearken-rules/wickets/`. `hearken release` writes a game's module to its
-`dist/` folder as `<game>-<version>-rules-<id>.wasm`; copy that file here to
-publish it. Runs recorded by that release are then accepted, and runs from a
-release whose module is not here are refused as `unknown-build`.
+`hearken-rules/wickets/`. `hearken release` writes a game's module as
+`<game>-<version>-rules-<id>.wasm`. Runs recorded by a release whose module is
+here are accepted; runs from any other release are refused as `unknown-build`.
 
-Keep a module here for as long as players may still play that release. Removing
-it stops that release's runs being accepted.
+Nobody copies these by hand. A game listed in `sources.json` attaches each
+release's module to its GitHub release, and every deploy fetches the modules
+of its newest 40 releases (`npm run rules:fetch`,
+`scripts/fetch-hearken-rules.mjs`). The fetched files are not committed. A
+release then asks for a production deploy (a `hearken-rules` repository
+dispatch), so its runs count within minutes of the release.
+
+A module committed here by hand is bundled too, for a game with no releases
+to fetch from.
