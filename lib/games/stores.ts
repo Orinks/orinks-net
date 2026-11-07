@@ -38,6 +38,9 @@ export function convexStores(input: {
           device_code: started.deviceCode,
           user_code: started.userCode,
           verify_url: input.connectUrl,
+          // The same page with the code filled in, which the game opens in
+          // the player's browser.
+          verify_url_complete: `${input.connectUrl}?code=${encodeURIComponent(started.userCode)}`,
           expires_in: started.expiresIn,
           interval: 5,
         };

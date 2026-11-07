@@ -89,6 +89,7 @@ export interface Accounts {
     device_code: string;
     user_code: string;
     verify_url?: string;
+    verify_url_complete?: string;
     expires_in: number;
     interval: number;
   }>;
