@@ -85,10 +85,12 @@ export default defineConfig(({ mode }) => {
         SPOTIFY_LOGIN_KEY: productionSecret(),
         VAPID_PRIVATE_KEY: productionSecret(),
         RESEND_API_KEY: productionSecret(),
-        // GAMES_SERVER_SECRET (lib/games/stores.ts) and WICKETS_SEED_SECRET
-        // (lib/wickets-online) are not declared, so a deploy does not insist
-        // on them: set them with `cf workers secrets put` when games go live.
-        // Until then /api/games/ answers 503.
+        // The Hearken games' secrets (lib/games/stores.ts, lib/wickets-online),
+        // made and set by the deploy workflow's "games-secrets" run. The
+        // preview has none, so its /api/games/ answers 503: it shares the
+        // production Convex deployment, and must not write to it.
+        GAMES_SERVER_SECRET: productionSecret(),
+        WICKETS_SEED_SECRET: productionSecret(),
         BUILD_NOTIFICATION_TOKEN: productionSecret(),
       },
     }),

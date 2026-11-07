@@ -85,9 +85,12 @@ copied onto `process.env`). An undeclared name is simply `undefined`.
   `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`,
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
   `RESEND_API_KEY`, `BUILD_NOTIFICATION_TOKEN`.
-  `GAMES_SERVER_SECRET` (the games service) and `WICKETS_SEED_SECRET`
-  (Wicket's challenge seeds) are not declared, so they are not required; set
-  them on the Worker when games go live. Until then `/api/games/` answers 503.
+  `GAMES_SERVER_SECRET` (the games service, also on Convex) and
+  `WICKETS_SEED_SECRET` (Wicket's challenge seeds) are production secrets.
+  Nobody makes them by hand: run the Cloudflare deploy workflow with target
+  `games-secrets`, which makes any that are missing and sets them on Convex
+  and the Worker without printing them. The preview has neither, so its
+  `/api/games/` answers 503: it shares the production Convex deployment.
   Hearken games' rules modules (`hearken-rules/`) are bundled into the Worker
   at build time by `scripts/hearken-rules-plugin.mjs`, already compiled: a
   Worker cannot read them from disk or compile WebAssembly from bytes. The
