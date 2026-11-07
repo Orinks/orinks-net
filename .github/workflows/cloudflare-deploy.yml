@@ -137,7 +137,7 @@ jobs:
             echo "Convex already has GAMES_SERVER_SECRET."
           fi
           # The Worker gets the same value every run, so the two always match.
-          npx cf workers secrets update GAMES_SERVER_SECRET --worker "$worker" --text "$games" > /dev/null
+          npx cf workers secrets update GAMES_SERVER_SECRET --worker "$worker" --type secret_text --text "$games" > /dev/null
           echo "Set GAMES_SERVER_SECRET on $worker."
 
           # The seed secret lives only on the Worker, and is kept once made.
@@ -146,6 +146,6 @@ jobs:
           else
             seed=$(make_secret)
             echo "::add-mask::$seed"
-            npx cf workers secrets update WICKETS_SEED_SECRET --worker "$worker" --text "$seed" > /dev/null
+            npx cf workers secrets update WICKETS_SEED_SECRET --worker "$worker" --type secret_text --text "$seed" > /dev/null
             echo "Made WICKETS_SEED_SECRET on $worker."
           fi
