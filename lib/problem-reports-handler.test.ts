@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createHandler, type Deps } from "./route";
+import { createHandler, type Deps } from "./problem-reports-handler";
 
 const report = {
   app: "Freight Fate",
