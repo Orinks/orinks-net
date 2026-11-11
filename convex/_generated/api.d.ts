@@ -14,6 +14,8 @@ import type * as crons from "../crons.js";
 import type * as freightFate from "../freightFate.js";
 import type * as freightFateActivation from "../freightFateActivation.js";
 import type * as freightFateAdmin from "../freightFateAdmin.js";
+import type * as freightFateDispatch from "../freightFateDispatch.js";
+import type * as freightFateDispatchTruck from "../freightFateDispatchTruck.js";
 import type * as freightFateMastodonPurge from "../freightFateMastodonPurge.js";
 import type * as freightFateMeaningfulPlay from "../freightFateMeaningfulPlay.js";
 import type * as freightFateProfileAchievements from "../freightFateProfileAchievements.js";
@@ -71,6 +73,8 @@ declare const fullApi: ApiFromModules<{
   freightFate: typeof freightFate;
   freightFateActivation: typeof freightFateActivation;
   freightFateAdmin: typeof freightFateAdmin;
+  freightFateDispatch: typeof freightFateDispatch;
+  freightFateDispatchTruck: typeof freightFateDispatchTruck;
   freightFateMastodonPurge: typeof freightFateMastodonPurge;
   freightFateMeaningfulPlay: typeof freightFateMeaningfulPlay;
   freightFateProfileAchievements: typeof freightFateProfileAchievements;

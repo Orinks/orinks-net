@@ -702,6 +702,126 @@ export default defineSchema({
     // intentionally never return it until a later activation migration.
     future: v.optional(v.any()),
   }).index("by_driver", ["driverId"]),
+  // --- Live dispatch (convex/freightFateDispatch.ts) ---
+  //
+  // A Dispatch player runs a carrier; Freight Fate players join it by invite
+  // code and get routed by it. Nobody has to be online at the same time: the
+  // carrier, every order and every truck's last known state live here.
+  // Behind the FREIGHT_FATE_LIVE_DISPATCH flag; nothing public reads these.
+  freightFateCarriers: defineTable({
+    // Public handle the games pass around; never the Convex _id.
+    carrierId: v.string(),
+    // The dispatcher's driver (their orinks.net account). One carrier each.
+    ownerDriverId: v.string(),
+    name: v.string(),
+    homeTerminal: v.string(),
+    secondTerminal: v.optional(v.string()),
+    // Eight characters, read aloud by the dispatcher, typed by the driver.
+    inviteCode: v.string(),
+    // Whether the night desk covers a member who has no switch of their own.
+    nightDispatcherDefault: v.boolean(),
+    // Where the night desk may send an empty truck: a lane with no origin
+    // runs from anywhere. Set by the Dispatch desk.
+    lanes: v.array(v.object({
+      origin: v.optional(v.string()),
+      destination: v.string(),
+      cargo: v.optional(v.string()),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    // A closed carrier keeps its row so a released driver can still be told
+    // whose carrier ended; the owner may open a new one.
+    closedAt: v.optional(v.number()),
+  })
+    .index("by_carrier_id", ["carrierId"])
+    .index("by_owner", ["ownerDriverId"])
+    .index("by_invite_code", ["inviteCode"]),
+  // One row per driver per stint with a carrier. Leaving stamps leftAt and
+  // keeps the row, so the desk can still name who ran a delivered load. A
+  // driver has at most one row with no leftAt.
+  freightFateCarrierMembers: defineTable({
+    carrierId: v.string(),
+    driverId: v.string(),
+    joinedAt: v.number(),
+    leftAt: v.optional(v.number()),
+    // "left" (the driver), "released" (the desk), "carrier_closed".
+    leftReason: v.optional(v.string()),
+    standingRules: v.object({
+      fuelChain: v.optional(v.string()),
+      noNightDriving: v.optional(v.boolean()),
+      // Spoken, in game time ("Friday"): the driver's own clock decides.
+      homeBy: v.optional(v.string()),
+    }),
+    // The dispatcher's per-driver switch; absent follows the carrier default.
+    nightDispatcher: v.optional(v.boolean()),
+    // The driver's own switch: notes from this carrier are not delivered.
+    notesMuted: v.optional(v.boolean()),
+    // The truck's last known state, from the heartbeat. Kept after the
+    // driver signs off so the desk can say "parked in Memphis, loaded for
+    // Dallas". Written only when a field changes, never per beat.
+    truck: v.optional(v.object({
+      city: v.string(),
+      nextWaypoint: v.optional(v.string()),
+      // Hours-of-service time left, in game minutes.
+      hosMinutesLeft: v.optional(v.number()),
+      fuelPercent: v.optional(v.number()),
+      cargo: v.optional(v.string()),
+      loaded: v.boolean(),
+    })),
+    truckChangedAt: v.optional(v.number()),
+    // When the night desk last offered this driver a load, so a declined
+    // offer is not repeated on the next tick.
+    lastNightOfferAt: v.optional(v.number()),
+  })
+    .index("by_driver", ["driverId", "leftAt"])
+    .index("by_carrier", ["carrierId", "leftAt"]),
+  // Desk to truck. Every order expires; nothing waits for a driver forever.
+  freightFateDispatchOrders: defineTable({
+    // Chosen by the sender so a retry is a no-op.
+    orderId: v.string(),
+    carrierId: v.string(),
+    driverId: v.string(),
+    kind: v.union(v.literal("load_offer"), v.literal("route"), v.literal("go_home"), v.literal("note")),
+    // "desk" (the dispatcher) or "night_desk" (the cron).
+    source: v.union(v.literal("desk"), v.literal("night_desk")),
+    // Shape depends on kind; validated in freightFateDispatch.ts.
+    payload: v.any(),
+    createdAt: v.number(),
+    // Real (wall-clock) time.
+    expiresAt: v.number(),
+    status: v.union(
+      v.literal("open"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("lapsed"),
+      v.literal("done"),
+      v.literal("withdrawn"),
+    ),
+    answeredAt: v.optional(v.number()),
+    closedAt: v.optional(v.number()),
+  })
+    .index("by_order_id", ["orderId"])
+    .index("by_driver_status", ["driverId", "status"])
+    .index("by_carrier_status", ["carrierId", "status"])
+    .index("by_status_expires", ["status", "expiresAt"])
+    .index("by_closed", ["closedAt"]),
+  // Truck to desk, plus what the server itself tells the desk (an order
+  // lapsed, the night desk sent someone out, a driver left).
+  freightFateDispatchReplies: defineTable({
+    replyId: v.string(),
+    orderId: v.optional(v.string()),
+    carrierId: v.string(),
+    driverId: v.string(),
+    kind: v.string(),
+    source: v.union(v.literal("driver"), v.literal("server")),
+    payload: v.any(),
+    createdAt: v.number(),
+    readAt: v.optional(v.number()),
+  })
+    .index("by_reply_id", ["replyId"])
+    .index("by_carrier_read", ["carrierId", "readAt"])
+    .index("by_driver", ["driverId"])
+    .index("by_read", ["readAt"]),
   freightFateRateLimits: defineTable({
     key: v.string(),
     count: v.number(),

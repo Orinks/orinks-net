@@ -106,4 +106,25 @@ crons.interval(
   {},
 );
 
+// Live dispatch: lapse orders whose time ran out (the desk hears each one),
+// then the night desk offers a load to any signed-on, empty carrier driver
+// with nothing queued. Five minutes is well inside a load offer's day-long
+// pickup window and a driver's sign-on. Reads nothing while
+// FREIGHT_FATE_LIVE_DISPATCH is off.
+crons.interval(
+  "run the Freight Fate night dispatcher",
+  { minutes: 5 },
+  internal.freightFateDispatch.dispatchTick,
+  {},
+);
+
+// Dispatch orders closed, and replies the desk heard, more than thirty days
+// ago. Daily, batched.
+crons.interval(
+  "drop old Freight Fate dispatch mail",
+  { hours: 24 },
+  internal.freightFateDispatch.pruneDispatchMail,
+  {},
+);
+
 export default crons;
