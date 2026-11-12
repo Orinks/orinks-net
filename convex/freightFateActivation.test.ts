@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { api } from "./_generated/api";
@@ -53,6 +53,17 @@ function setup() {
   return convexTest(schema, modules);
 }
 const NOW = 1_760_000_000_000;
+
+// claimActivation reads the server's clock, so a test sets that clock
+// rather than passing a time. Only Date is faked: convex-test's scheduler
+// still runs on real timers.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("startActivation", () => {
   test("returns a device code and a user code, and stores only the hash", async () => {
@@ -124,10 +135,10 @@ describe("claimActivation", () => {
       async (ctx) => await ctx.db.query("freightFateDeviceTokens").collect(),
     );
 
+    vi.setSystemTime(NOW + 5_000);
     const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
       label: "Studio desktop",
-      now: NOW + 5_000,
     });
 
     expect(result).toEqual({ ok: true });
@@ -151,7 +162,6 @@ describe("claimActivation", () => {
     await driverFor(t, SUBJECT);
     const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: "WKQR3468",
-      now: NOW,
     });
     expect(result).toEqual({ ok: false, code: "unknown_code" });
   });
@@ -163,9 +173,9 @@ describe("claimActivation", () => {
       clientKey: "1.2.3.4",
       now: NOW,
     });
+    vi.setSystemTime(NOW + 11 * 60_000);
     const result = await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
-      now: NOW + 11 * 60_000,
     });
     expect(result).toEqual({ ok: false, code: "unknown_code" });
   });
@@ -178,7 +188,6 @@ describe("claimActivation", () => {
     });
     const result = await t.mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
-      now: NOW,
     });
     expect(result).toEqual({ ok: false, code: "not_signed_in" });
   });
@@ -192,7 +201,6 @@ describe("claimActivation", () => {
     for (let i = 0; i < 10; i++) {
       const result = await signedIn.mutation(api.freightFateActivation.claimActivation, {
         userCode: "WKQR3468",
-        now: NOW,
       });
       expect(result).toEqual({ ok: false, code: "unknown_code" });
     }
@@ -203,7 +211,6 @@ describe("claimActivation", () => {
     // Even a correct code is refused once the budget is spent.
     const result = await signedIn.mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
-      now: NOW,
     });
     expect(result).toEqual({ ok: false, code: "rate_limited" });
   });
@@ -220,7 +227,6 @@ describe("claimActivation", () => {
         userCode: started.userCode,
         displayName: "Road Star",
         label: "Studio desktop",
-        now: NOW,
       });
     expect(result).toEqual({ ok: true });
 
@@ -249,7 +255,6 @@ describe("claimActivation", () => {
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
         displayName: "1234",
-        now: NOW,
       });
     expect(result.ok).toBe(false);
 
@@ -269,7 +274,6 @@ describe("claimActivation", () => {
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: "WKQR3468",
         displayName: "Road Star",
-        now: NOW,
       });
     expect(result).toEqual({ ok: false, code: "unknown_code" });
     const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
@@ -286,7 +290,6 @@ describe("claimActivation", () => {
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
       displayName: "Someone Else",
-      now: NOW,
     });
     const drivers = await t.run(async (ctx) => await ctx.db.query("freightFateDrivers").collect());
     expect(drivers).toHaveLength(1);
@@ -308,17 +311,16 @@ describe("claimActivation", () => {
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
       label: "Studio desktop",
-      now: NOW,
     });
 
     // Unknown, expired and already-claimed are one answer on purpose: a
     // second claimant learns nothing about which of those it hit.
+    vi.setSystemTime(NOW + 60_000);
     const second = await t
       .withIdentity({ subject: "user_2eavesdrop" })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
         label: "Somewhere else",
-        now: NOW + 60_000,
       });
     expect(second).toEqual({ ok: false, code: "unknown_code" });
 
@@ -350,7 +352,6 @@ describe("claimActivation", () => {
       .withIdentity({ subject: "user_2brandnew" })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
-        now: NOW,
       });
     expect(result).toEqual({ ok: false, code: "no_driver" });
   });
@@ -386,7 +387,6 @@ describe("the computer cap", () => {
       .withIdentity({ subject: SUBJECT })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
-        now: NOW,
       });
 
     // The player is standing at a browser that can explain this, so this is
@@ -417,7 +417,6 @@ describe("the computer cap", () => {
         .mutation(api.freightFateActivation.claimActivation, {
           userCode: activation.userCode,
           label: `Extra ${i}`,
-          now: NOW,
         });
       expect(claim).toEqual({ ok: true });
       started.push(activation);
@@ -461,7 +460,6 @@ describe("checkActivation / redeemActivation", () => {
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
       label: "Studio desktop",
-      now: NOW,
     });
     return started;
   }
@@ -586,7 +584,6 @@ describe("checkActivation / redeemActivation", () => {
       .withIdentity({ subject: "user_2eavesdrop" })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
-        now: NOW,
       });
 
     const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
@@ -632,9 +629,9 @@ describe("claiming resets the collection window", () => {
     // Claim with four seconds left on the original ten-minute window: the
     // exact shape of the preview run where a real claim stranded itself.
     const late = NOW + 10 * 60_000 - 4_000;
+    vi.setSystemTime(late);
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
-      now: late,
     });
 
     const hash = await hashDeviceCode(started.deviceCode);
@@ -653,70 +650,48 @@ describe("claiming resets the collection window", () => {
     expect(redeemed?.token).toMatch(/^ffd_[0-9a-f]{64}$/);
   });
 
-  // `now` on claimActivation is the browser's clock -- the /activate page
-  // sends Date.now() -- and sweepExpiredActivations is the only thing that
-  // ever collects this table, so a row stamped far enough ahead would never
-  // be collected at all. The written deadline is therefore clamped against
-  // the server-stamped createdAt.
-  test("a browser clock cannot stamp the deadline past the server-bounded ceiling", async () => {
+  // The report this exists for: a player whose page sent a clock running
+  // ahead saw every fresh code refused as expired (Freight Fate issues 605
+  // and 606, 2026-11-12). The claim now reads the server's clock, and a
+  // clock an old page still sends is ignored.
+  test("a browser clock running ahead does not make a live code look expired", async () => {
     const t = setup();
     await driverFor(t, SUBJECT);
     const started = await t.mutation(api.freightFateActivation.startActivation, {
       clientKey: "1.2.3.4",
       now: NOW,
     });
-    // Widening the row's own window is what makes a far-future `now`
-    // survive the expiry check at all; without it the claim is simply
-    // refused (the test below). This is the state the clamp has to hold in.
-    await t.run(async (ctx) => {
-      const row = (await ctx.db.query("freightFateActivations").collect())[0];
-      await ctx.db.patch(row._id, { expiresAt: NOW + 365 * 24 * 60 * 60_000 });
-    });
-
+    vi.setSystemTime(NOW + 5_000);
     const result = await t
       .withIdentity({ subject: SUBJECT })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
-        now: NOW + 300 * 24 * 60 * 60_000,
+        now: NOW + 11 * 60_000,
       });
     expect(result).toEqual({ ok: true });
 
+    // The collection window runs from the server's time, too.
     const row = await t.run(
       async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
     );
-    // One TTL plus one collection window after the row was really created,
-    // whatever clock the claim arrived with.
-    expect(row.expiresAt).toBe(NOW + 10 * 60_000 + 2 * 60_000);
-
-    // Which means the sweep still collects it, on the server's clock.
-    await t.mutation(internal.freightFateActivation.sweepExpiredActivations, {
-      now: NOW + 13 * 60_000,
-    });
-    expect(
-      await t.run(async (ctx) => await ctx.db.query("freightFateActivations").collect()),
-    ).toHaveLength(0);
+    expect(row.expiresAt).toBe(NOW + 5_000 + 2 * 60_000);
   });
 
-  test("a future-dated claim on a live row is refused and moves no deadline", async () => {
+  test("a browser clock running behind cannot claim an expired code", async () => {
     const t = setup();
     await driverFor(t, SUBJECT);
     const started = await t.mutation(api.freightFateActivation.startActivation, {
       clientKey: "1.2.3.4",
       now: NOW,
     });
+    vi.setSystemTime(NOW + 11 * 60_000);
     const result = await t
       .withIdentity({ subject: SUBJECT })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
-        now: NOW + 365 * 24 * 60 * 60_000,
+        now: NOW,
       });
     expect(result).toEqual({ ok: false, code: "unknown_code" });
-
-    const row = await t.run(
-      async (ctx) => (await ctx.db.query("freightFateActivations").collect())[0],
-    );
-    expect(row.status).toBe("pending");
-    expect(row.expiresAt).toBe(NOW + 10 * 60_000);
   });
 
   test("the collection window is not unlimited", async () => {
@@ -728,7 +703,6 @@ describe("claiming resets the collection window", () => {
     });
     await t.withIdentity({ subject: SUBJECT }).mutation(api.freightFateActivation.claimActivation, {
       userCode: started.userCode,
-      now: NOW,
     });
     const hash = await hashDeviceCode(started.deviceCode);
     expect(
@@ -752,12 +726,12 @@ describe("one computer, one row", () => {
       machineKey,
       now,
     });
+    vi.setSystemTime(now + 1_000);
     await t
       .withIdentity({ subject: SUBJECT })
       .mutation(api.freightFateActivation.claimActivation, {
         userCode: started.userCode,
         label,
-        now: now + 1_000,
       });
     return await t.mutation(api.freightFateActivation.redeemActivation, {
       deviceCodeHash: await hashDeviceCode(started.deviceCode),

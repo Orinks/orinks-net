@@ -439,7 +439,8 @@ export default function ActivateClient({
 
 // The real wiring: requires a Clerk session the way the setup page does
 // (copied from FreightFateSetupClient in setup-client.tsx) and passes a
-// `claim` that calls the real Convex mutation with now: Date.now().
+// `claim` that calls the real Convex mutation. The mutation reads the
+// server's clock itself; the browser's is never sent.
 export function ActivateGate({ initialCode }: { initialCode: string }) {
   const { isLoaded, isSignedIn, user } = useUser();
   // Clerk knowing the user is signed in is not the same as Convex having
@@ -464,7 +465,7 @@ export function ActivateGate({ initialCode }: { initialCode: string }) {
   const driverResolved = isAuthenticated && myDriver !== undefined;
   const claimActivation = useMutation(api.freightFateActivation.claimActivation);
   const claim = useCallback<ClaimFn>(
-    (input) => claimActivation({ ...input, now: Date.now() }),
+    (input) => claimActivation(input),
     [claimActivation],
   );
 
