@@ -50,14 +50,16 @@ makes that work:
 3. The form posts `{ description, reply_to, omit }` to
    `POST /api/problem-reports/<code>`, which checks the text and the
    address the way the game route does (400 and 422 carry the `field`),
-   takes the draft out of Convex (`take`, so a double press cannot email
-   twice; 404 once it is gone) and runs step 6. 202 `{ ok: true }` when
-   the email went out.
+   reads the draft from Convex (`read`; 404 once it is gone), runs step 6
+   and then drops the draft (`discard`). 202 `{ ok: true }` when the email
+   went out; a send that fails keeps the logs for another try, and the
+   page keeps a double press from sending twice.
 4. A draft nobody finishes is dropped with its files after a day
    (`expireDrafts`, hourly from `convex/crons.ts`).
 
-Both staging and taking carry `GAMES_SERVER_SECRET`; the code is the only
-thing the page needs, and only names and sizes are readable with it.
+Staging, reading and discarding carry `GAMES_SERVER_SECRET`; the code is
+the only thing the page needs, and only names and sizes are readable with
+it.
 
 ## On Cloudflare Workers
 

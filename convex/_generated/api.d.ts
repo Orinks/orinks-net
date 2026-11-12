@@ -43,6 +43,7 @@ import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
 import type * as mutators from "../mutators.js";
 import type * as notifications from "../notifications.js";
+import type * as problemReports from "../problemReports.js";
 import type * as questionBank from "../questionBank.js";
 import type * as questionClipValidation from "../questionClipValidation.js";
 import type * as questionTypes from "../questionTypes.js";
@@ -57,8 +58,8 @@ import type * as triviaSelection from "../triviaSelection.js";
 import type * as triviaStartHandlers from "../triviaStartHandlers.js";
 import type * as triviaStoryBeats from "../triviaStoryBeats.js";
 import type * as triviaStoryHandler from "../triviaStoryHandler.js";
-import type * as problemReports from "../problemReports.js";
 import type * as triviaVersions from "../triviaVersions.js";
+import type * as turnstile from "../turnstile.js";
 import type * as visits from "../visits.js";
 
 import type {
@@ -119,6 +120,7 @@ declare const fullApi: ApiFromModules<{
   triviaStoryBeats: typeof triviaStoryBeats;
   triviaStoryHandler: typeof triviaStoryHandler;
   triviaVersions: typeof triviaVersions;
+  turnstile: typeof turnstile;
   visits: typeof visits;
 }>;
 

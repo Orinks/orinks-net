@@ -53,7 +53,8 @@ describe("problem report drafts", () => {
     await expect(t.mutation(api.problemReports.uploadUrl, { secret: "wrong" })).rejects.toThrow();
     const now = Date.now();
     const code = await stage(t, now);
-    await expect(t.action(api.problemReports.take, { secret: "wrong", code })).rejects.toThrow();
+    await expect(t.action(api.problemReports.read, { secret: "wrong", code })).rejects.toThrow();
+    await expect(t.mutation(api.problemReports.discard, { secret: "wrong", code })).rejects.toThrow();
     expect(await t.query(api.problemReports.peek, { code })).toEqual({
       app: "Hello Hearken",
       version: "0.1.0",
@@ -72,11 +73,11 @@ describe("problem report drafts", () => {
     expect(a).not.toBe(b);
   });
 
-  test("take hands back the logs' text once, and deletes the files", async () => {
+  test("read hands back the logs' text until discard deletes the draft and its files", async () => {
     const t = setup();
     const code = await stage(t, Date.now(), { "game.log": "a\n", "crash.log": "b\n" });
-    const taken = await t.action(api.problemReports.take, { secret: SECRET, code });
-    expect(taken).toEqual({
+    const read = await t.action(api.problemReports.read, { secret: SECRET, code });
+    expect(read).toEqual({
       app: "Hello Hearken",
       version: "0.1.0",
       os: "windows x86_64",
@@ -86,22 +87,26 @@ describe("problem report drafts", () => {
         { name: "crash.log", text: "b\n" },
       ],
     });
-    expect(await t.action(api.problemReports.take, { secret: SECRET, code })).toBeNull();
+    // Reading leaves the draft for another try.
+    expect(await t.action(api.problemReports.read, { secret: SECRET, code })).toEqual(read);
+    expect(await t.mutation(api.problemReports.discard, { secret: SECRET, code })).toBe(true);
+    expect(await t.mutation(api.problemReports.discard, { secret: SECRET, code })).toBe(false);
+    expect(await t.action(api.problemReports.read, { secret: SECRET, code })).toBeNull();
     expect(await t.query(api.problemReports.peek, { code })).toBeNull();
     const files = await t.run((ctx) => ctx.db.system.query("_storage").collect());
     expect(files).toHaveLength(0);
   });
 
-  test("an expired draft is gone to peek and take, and the sweep deletes it with its files", async () => {
+  test("an expired draft is gone to peek and read, and the sweep deletes it with its files", async () => {
     const t = setup();
     const old = Date.now() - DRAFT_TTL_MS - 60_000;
     const stale = await stage(t, old);
     const fresh = await stage(t, Date.now());
     expect(await t.query(api.problemReports.peek, { code: stale })).toBeNull();
-    expect(await t.action(api.problemReports.take, { secret: SECRET, code: stale })).toBeNull();
+    expect(await t.action(api.problemReports.read, { secret: SECRET, code: stale })).toBeNull();
     expect(await t.query(api.problemReports.peek, { code: fresh })).not.toBeNull();
     const swept = await t.mutation(internal.problemReports.expireDrafts, {});
-    expect(swept).toBe(0);
+    expect(swept).toBe(1);
     const rows = await t.run((ctx) => ctx.db.query("problemReportDrafts").collect());
     expect(rows.map((row) => row.code)).toEqual([fresh]);
     const files = await t.run((ctx) => ctx.db.system.query("_storage").collect());

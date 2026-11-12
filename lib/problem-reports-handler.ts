@@ -47,8 +47,10 @@ export type Deps = {
   sendMail(body: Record<string, unknown>): Promise<Response>;
   /** Keeps a report's logs for the web form; the code of its link, or null when drafts are not set up. */
   stage(report: ProblemReport): Promise<string | null>;
-  /** The draft a link's code names, taken out for good; null when there is none. */
-  take(code: string): Promise<StoredDraft | null>;
+  /** The draft a link's code names; null when there is none or it expired. */
+  read(code: string): Promise<StoredDraft | null>;
+  /** Drops the draft once its report was emailed. */
+  discard(code: string): Promise<void>;
 };
 
 /**
@@ -134,10 +136,16 @@ async function stageOnConvex(report: ProblemReport): Promise<string | null> {
   })) as string;
 }
 
-async function takeFromConvex(code: string): Promise<StoredDraft | null> {
+async function readFromConvex(code: string): Promise<StoredDraft | null> {
   const d = drafts();
   if (!d) return null;
-  return (await d.client.action(anyApi.problemReports.take, { secret: d.secret, code })) as StoredDraft | null;
+  return (await d.client.action(anyApi.problemReports.read, { secret: d.secret, code })) as StoredDraft | null;
+}
+
+async function discardOnConvex(code: string): Promise<void> {
+  const d = drafts();
+  if (!d) return;
+  await d.client.mutation(anyApi.problemReports.discard, { secret: d.secret, code });
 }
 
 export const liveDeps: Deps = {
@@ -153,7 +161,8 @@ export const liveDeps: Deps = {
       method: "POST",
     }),
   stage: stageOnConvex,
-  take: takeFromConvex,
+  read: readFromConvex,
+  discard: discardOnConvex,
 };
 
 function refuse(status: number, error: string) {
@@ -296,7 +305,9 @@ export function createOpenHandler(deps: Deps) {
 /**
  * POST /api/problem-reports/<code>: what the player wrote on the web form,
  * emailed with the logs the game sent ahead. The page reads `error` and
- * `field` from a refusal.
+ * `field` from a refusal. The draft is dropped only once the email went
+ * out, so a send that fails keeps the logs for another try; the page
+ * keeps a double press from sending twice.
  */
 export function createSendHandler(deps: Deps) {
   return async function POST(request: Request, code: string) {
@@ -322,19 +333,24 @@ export function createSendHandler(deps: Deps) {
         );
       }
     }
-    // The draft is taken out before the send, so a double press cannot
-    // email twice; a send that fails after that is reported, not retried.
     let draft: StoredDraft | null;
     try {
-      draft = await deps.take(code);
+      draft = await deps.read(code);
     } catch (error) {
       console.error("Problem reports: the draft could not be read", error);
       return refuse(502, "the report could not be read back");
     }
     if (!draft) return refuse(404, "this report link has expired or was already used");
     const report = reportFromDraft(draft, parsed.submission);
-    // The address was checked above, before the draft was spent.
+    // The address was checked above.
     const sent = await deliver({ ...deps, takesMail: async () => true }, report, env);
-    return sent.status === 202 ? Response.json({ ok: true }, { status: 202 }) : sent;
+    if (sent.status !== 202) return sent;
+    try {
+      await deps.discard(code);
+    } catch (error) {
+      // The report went out; a draft left behind expires on its own.
+      console.error("Problem reports: the sent draft could not be dropped", error);
+    }
+    return Response.json({ ok: true }, { status: 202 });
   };
 }

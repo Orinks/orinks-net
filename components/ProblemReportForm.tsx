@@ -86,7 +86,8 @@ export function ProblemReportForm({ code, app, version, crashed, logs }: Props) 
       } else if (response.status === 404) {
         setFormError("This link has expired or was already used. Open Report a problem in the game again.");
       } else {
-        setFormError(payload.error ?? "The report could not be sent. Please try again.");
+        // The route's reasons are for its logs; the logs are still here for another try.
+        setFormError("The report could not be sent. Please try again in a moment.");
       }
       requestAnimationFrame(() => summaryRef.current?.focus());
     } catch {

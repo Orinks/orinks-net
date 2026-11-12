@@ -4,8 +4,9 @@
 // with no description, to /api/problem-reports/open. That route keeps them
 // here, in file storage, under a code nobody can guess, and hands the game a
 // link to /report/<code>. The player writes what happened on that page; its
-// send takes the draft back out (take), emails it, and the draft is gone. A
-// draft nobody finishes is dropped after a day (expireDrafts).
+// send reads the draft back (read), emails it, and then drops it (discard),
+// so a send that fails keeps the logs for another try. A draft nobody
+// finishes is dropped after a day (expireDrafts).
 //
 // Writes are gated by GAMES_SERVER_SECRET, as convex/games.ts is: only the
 // site's own server stages and takes drafts. peek is public because the code
@@ -126,10 +127,7 @@ export const removeDraft = internalMutation({
   },
 });
 
-/**
- * The draft for a code, with its logs' text, taken out so the link cannot
- * be used twice. Null when there is no such draft or it has expired.
- */
+/** The draft for a code, with its logs' text. Null when there is no such draft or it has expired. */
 export type TakenDraft = {
   app: string;
   version: string;
@@ -139,7 +137,7 @@ export type TakenDraft = {
   logs: { name: string; text: string }[];
 };
 
-export const take = action({
+export const read = action({
   args: { secret: v.string(), code: v.string() },
   handler: async (ctx, args): Promise<TakenDraft | null> => {
     requireServer(args.secret);
@@ -147,17 +145,12 @@ export const take = action({
       internal.problemReports.draftByCode,
       { code: args.code },
     );
-    if (!draft) return null;
-    const expired = draft.createdAt + DRAFT_TTL_MS < Date.now();
+    if (!draft || draft.createdAt + DRAFT_TTL_MS < Date.now()) return null;
     const logs: { name: string; text: string }[] = [];
-    if (!expired) {
-      for (const log of draft.logs) {
-        const blob = await ctx.storage.get(log.storageId);
-        logs.push({ name: log.name, text: blob ? await blob.text() : "" });
-      }
+    for (const log of draft.logs) {
+      const blob = await ctx.storage.get(log.storageId);
+      logs.push({ name: log.name, text: blob ? await blob.text() : "" });
     }
-    await ctx.runMutation(internal.problemReports.removeDraft, { id: draft._id });
-    if (expired) return null;
     return {
       app: draft.app,
       version: draft.version,
@@ -166,6 +159,20 @@ export const take = action({
       crashed: draft.crashed,
       logs,
     };
+  },
+});
+
+/** Drops the draft for a code and its files, once its report was emailed. */
+export const discard = mutation({
+  args: { secret: v.string(), code: v.string() },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    const draft = await ctx.db
+      .query("problemReportDrafts")
+      .withIndex("by_code", (q) => q.eq("code", args.code))
+      .unique();
+    if (draft) await dropDraft(ctx, draft);
+    return draft !== null;
   },
 });
 

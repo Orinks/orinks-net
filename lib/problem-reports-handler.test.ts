@@ -40,7 +40,8 @@ function deps(overrides: Partial<Deps> = {}) {
       return new Response(JSON.stringify({ id: "sent" }), { status: 200 });
     },
     stage: async () => "0".repeat(40),
-    take: async () => null,
+    read: async () => null,
+    discard: async () => {},
     ...overrides,
   };
   return d;
@@ -207,21 +208,19 @@ describe("POST /api/problem-reports/<code>", () => {
     });
   }
 
-  /** Deps whose draft can be taken exactly once. */
+  /** Deps holding one draft, until it is discarded. */
   function withDraft(overrides: Partial<Deps> = {}) {
     let left: typeof draft | null = draft;
     return deps({
-      take: async (c) => {
-        if (c !== code) return null;
-        const taken = left;
-        left = null;
-        return taken;
+      read: async (c) => (c === code ? left : null),
+      discard: async (c) => {
+        if (c === code) left = null;
       },
       ...overrides,
     });
   }
 
-  it("emails what the player wrote with the logs sent ahead, less the ones left out, once", async () => {
+  it("emails what the player wrote with the logs sent ahead, less the ones left out, and drops the draft", async () => {
     const d = withDraft();
     const send = createSendHandler(d);
     const response = await send(submit({ description: "It closed.", reply_to: "me@example.com", omit: ["crash.log"] }), code);
@@ -269,5 +268,20 @@ describe("POST /api/problem-reports/<code>", () => {
     expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(503);
     vi.stubEnv("RESEND_API_KEY", "re_test");
     expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(202);
+  });
+
+  it("keeps the draft when the email does not go out, so the player can try again", async () => {
+    let fail = true;
+    const d = withDraft({
+      sendMail: async () => {
+        if (fail) throw new Error("resend is down");
+        return new Response(JSON.stringify({ id: "sent" }), { status: 200 });
+      },
+    });
+    const send = createSendHandler(d);
+    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(502);
+    fail = false;
+    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(202);
+    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(404);
   });
 });
