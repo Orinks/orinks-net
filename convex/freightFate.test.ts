@@ -948,7 +948,7 @@ describe("expanded sharing", () => {
     expect(first?.recentAchievements.map((item) => item.achievementKey)).toEqual(["clean_delivery"]);
     expect(first?.achievements).toEqual([
       expect.objectContaining({ achievementKey: "clean_delivery", label: "Pretty as a Billboard", earnedAt: now }),
-      expect.objectContaining({ achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" }),
+      expect.objectContaining({ achievementKey: "first_delivery", label: "Truck Driving Man" }),
     ]);
     expect(first?.achievements[1]).not.toHaveProperty("earnedAt");
     expect(first?.nextAchievementBefore).not.toBeNull();
@@ -958,7 +958,7 @@ describe("expanded sharing", () => {
       achievementBefore: first!.nextAchievementBefore!,
     });
     expect(second?.achievements).toEqual([
-      expect.objectContaining({ achievementKey: "coast_to_coast", label: "Coast-to-Coast Hauler" }),
+      expect.objectContaining({ achievementKey: "coast_to_coast", label: "Fantastic Voyage" }),
     ]);
     expect(second?.nextAchievementBefore).toBeNull();
     expect([...first!.achievements, ...second!.achievements]).toHaveLength(first!.achievementCount);
@@ -1495,7 +1495,7 @@ describe("expanded sharing", () => {
     expect(profile?.achievements.map((badge) => badge.achievementKey)).toEqual(["clean_delivery", "first_delivery"]);
     expect(profile?.achievements).toEqual([
       expect.objectContaining({ achievementKey: "clean_delivery", label: "Pretty as a Billboard" }),
-      expect.objectContaining({ achievementKey: "first_delivery", label: "Signed, Sealed, Hauled" }),
+      expect.objectContaining({ achievementKey: "first_delivery", label: "Truck Driving Man" }),
     ]);
     expect(profile?.achievements[0]).not.toHaveProperty("name");
     // The description is the catalog's, never the stored event copy.
