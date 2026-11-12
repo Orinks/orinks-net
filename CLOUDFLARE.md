@@ -72,9 +72,12 @@ to set up the presence rewrite to `<deployment>.convex.site`.
 Changing any of these means rebuilding, not just editing a Worker variable.
 
 **Run time (Worker bindings).** Server code reads `process.env.X` at request
-time. On Workers that only works for names declared under `env` in
+time. On Workers that works for names declared under `env` in
 `cloudflare.config.ts` (with `nodejs_compat`, declared vars and secrets are
-copied onto `process.env`). An undeclared name is simply `undefined`.
+copied onto `process.env`), and for any secret set on the Worker with
+`wrangler secret put`, declared or not: on 2026-11-12 `RESEND_API_KEY` put
+on the preview Worker, which does not declare it, reached the problem-report
+route. A plain value that is not declared is `undefined`.
 
 - Plain values are declared with `bindings.text(...)` in the config:
   `VERCEL_ENV`, `VISITOR_COUNTER_ENV` (both set per mode), `MASTODON_PROFILE_URL`,

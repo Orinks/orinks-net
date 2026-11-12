@@ -30,8 +30,9 @@ password.
 
 ## On Cloudflare Workers
 
-The site runs on Workers (`CLOUDFLARE.md`), where only names declared in
-`cloudflare.config.ts` reach `process.env`:
+The site runs on Workers (`CLOUDFLARE.md`), where a plain value reaches
+`process.env` only when `cloudflare.config.ts` declares it, and a secret
+reaches it once it is put on the Worker:
 
 - The client address is `CF-Connecting-IP` (`lib/client-ip.ts`).
 - To stop taking reports from one address, put it in `PROBLEM_REPORT_BLOCK`
@@ -42,3 +43,7 @@ The site runs on Workers (`CLOUDFLARE.md`), where only names declared in
 - An oversized gzipped report is refused from the size its trailer declares,
   before it is unpacked, because workerd does not name the oversize error
   the way Node does.
+- The preview Worker (`orinks-net-preview`) serves the route from every push
+  to dev. With a Resend key put on it, a posted report is emailed for real:
+  checked on 2026-11-12 with a plain report, a crash report with two logs,
+  a refused reply domain, a game not on the list and an oversized body.
