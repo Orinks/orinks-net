@@ -79,7 +79,7 @@ async function connectComputer(
     clientKey: `${subject}:${label}`, now,
   });
   await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
-    userCode: started.userCode, label, now,
+    userCode: started.userCode, label,
   });
   const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
     deviceCodeHash: createHash("sha256").update(started.deviceCode, "utf8").digest("hex"), now,

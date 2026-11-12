@@ -3,7 +3,7 @@
 // Dispatch's live desk will, another plays the Freight Fate driver, and both
 // go through the same calls and heartbeat the games will make.
 import { convexTest } from "convex-test";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import {
@@ -33,11 +33,17 @@ async function player(t: T, subject: string, displayName: string, now: number) {
     .withIdentity({ subject })
     .mutation(api.freightFate.provisionDriver, { displayName, visibility: "private", now });
   const started = await t.mutation(api.freightFateActivation.startActivation, { clientKey: subject, now });
-  await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
-    userCode: started.userCode,
-    label: "Desktop",
-    now,
-  });
+  // claimActivation reads the server's clock, so confirm the code at `now`.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(now);
+  try {
+    await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      label: "Desktop",
+    });
+  } finally {
+    vi.useRealTimers();
+  }
   const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
     deviceCodeHash: await sha256Hex(started.deviceCode),
     now,

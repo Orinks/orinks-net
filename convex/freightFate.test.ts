@@ -61,11 +61,25 @@ async function connectComputer(
     clientKey: `${subject}:${label}`,
     now,
   });
-  await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
-    userCode: started.userCode,
-    label,
-    now,
-  });
+  // claimActivation reads the server's clock, so confirm the code at `now`.
+  const faked = vi.isFakeTimers();
+  const before = Date.now();
+  if (!faked) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+  }
+  vi.setSystemTime(now);
+  try {
+    await t.withIdentity({ subject }).mutation(api.freightFateActivation.claimActivation, {
+      userCode: started.userCode,
+      label,
+    });
+  } finally {
+    if (faked) {
+      vi.setSystemTime(before);
+    } else {
+      vi.useRealTimers();
+    }
+  }
   const redeemed = await t.mutation(api.freightFateActivation.redeemActivation, {
     deviceCodeHash: await sha256Hex(started.deviceCode),
     now,
