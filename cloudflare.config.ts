@@ -68,6 +68,9 @@ export default defineConfig(({ mode }) => {
         VAPID_SUBJECT: bindings.text("mailto:notifications@orinks.net"),
         CONTACT_FROM_EMAIL: bindings.text("orinks.net contact <contact@orinks.net>"),
         CONTACT_TO_EMAIL: bindings.text("orin8722@gmail.com"),
+        // Client addresses and IPv4 ranges whose problem reports
+        // (/api/problem-reports) are refused, separated by commas or spaces.
+        PROBLEM_REPORT_BLOCK: bindings.text(""),
         // Public Vercel Blob URL of the Freight Fate music pack
         // (/downloads/music.pak redirects to it).
         FREIGHT_FATE_MUSIC_BLOB_URL: bindings.secret(),
@@ -85,9 +88,11 @@ export default defineConfig(({ mode }) => {
         SPOTIFY_LOGIN_KEY: productionSecret(),
         VAPID_PRIVATE_KEY: productionSecret(),
         RESEND_API_KEY: productionSecret(),
-        // GAMES_SERVER_SECRET is read by lib/games/stores.ts but is not set
-        // on Vercel either (no game is registered yet), so it is not required
-        // here. Set it with `cf workers secrets put` when a game goes live.
+        // Shared with the Convex deployment (its GAMES_SERVER_SECRET). The
+        // games service (lib/games/stores.ts) and the problem-report relay's
+        // daily counters call Convex with it; without it the relay counts
+        // reports per isolate instead. No game is registered yet.
+        GAMES_SERVER_SECRET: productionSecret(),
         BUILD_NOTIFICATION_TOKEN: productionSecret(),
       },
     }),

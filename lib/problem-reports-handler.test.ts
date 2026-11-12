@@ -94,6 +94,21 @@ describe("POST /api/problem-reports", () => {
     expect(d.sent).toHaveLength(0);
   });
 
+  it("refuses a gzipped report that unpacks past the cap from its trailer, before unpacking it", async () => {
+    const d = deps();
+    const huge = { ...report, attachments: [{ name: "game.log", text: "x".repeat(7 * 1024 * 1024) }] };
+    const response = await createHandler(d)(post(huge, { gzip: true }));
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "the report is too big" });
+    const notGzip = new Request("https://orinks.net/api/problem-reports", {
+      method: "POST",
+      headers: { "Content-Encoding": "gzip" },
+      body: Buffer.concat([Buffer.from("not a gzip stream, with a trailer that reads huge"), Buffer.from([0xff, 0xff, 0xff, 0x7f])]),
+    });
+    expect(await (await createHandler(d)(notGzip)).json()).toEqual({ error: "the report could not be unpacked" });
+    expect(d.sent).toHaveLength(0);
+  });
+
   it("answers 422 when the reply address's domain takes no mail, and takes the report when the lookup fails", async () => {
     const no = deps({ takesMail: async () => false });
     expect((await createHandler(no)(post({ ...report, reply_to: "driver@exmaple.com" }))).status).toBe(422);

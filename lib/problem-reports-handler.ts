@@ -39,7 +39,8 @@ export type Deps = {
 /**
  * The day's counters live on Convex when the games secret is set, so every
  * instance of this function shares them. Without it each instance counts
- * on its own, which still bounds a burst from one address.
+ * on its own (on Workers, each isolate in each location), which still
+ * bounds a burst from one address.
  */
 function convexOrMemoryLimiter(): Deps["allow"] {
   const client = getConvexClient();
@@ -102,17 +103,33 @@ function refuse(status: number, error: string) {
   return Response.json({ error }, { status });
 }
 
+/**
+ * The unpacked size a gzip stream declares in its last four bytes (mod 2^32),
+ * or null when the bytes are not a gzip stream to begin with.
+ */
+function declaredGzipSize(raw: Uint8Array): number | null {
+  // A gzip member starts with 1f 8b and is at least a 10-byte header and
+  // an 8-byte trailer.
+  if (raw.byteLength < 18 || raw[0] !== 0x1f || raw[1] !== 0x8b) return null;
+  return new DataView(raw.buffer, raw.byteOffset + raw.byteLength - 4, 4).getUint32(0, true);
+}
+
 /** The report's JSON, unpacked when the game gzipped it, within the size cap. */
 async function readBody(request: Request): Promise<{ body: unknown } | { status: 400 | 413; error: string }> {
   const raw = new Uint8Array(await request.arrayBuffer());
   if (raw.byteLength > MAX_BODY_BYTES) return { status: 413, error: "the report is too big" };
   let bytes: Uint8Array = raw;
   if ((request.headers.get("content-encoding") ?? "").toLowerCase() === "gzip") {
+    // The trailer says how big the stream unpacks to, so an oversized report
+    // is refused before any of it is inflated. The cap on the inflate itself
+    // is for a trailer that lies; the runtimes name that error differently
+    // (Node's code is ERR_BUFFER_TOO_LARGE, workerd's is not), so any
+    // failure past an honest trailer reads as a stream that is not gzip.
+    const declared = declaredGzipSize(raw);
+    if (declared !== null && declared > MAX_BODY_BYTES) return { status: 413, error: "the report is too big" };
     try {
       bytes = gunzipSync(raw, { maxOutputLength: MAX_BODY_BYTES });
-    } catch (error) {
-      const code = (error as { code?: string }).code;
-      if (code === "ERR_BUFFER_TOO_LARGE") return { status: 413, error: "the report is too big" };
+    } catch {
       return { status: 400, error: "the report could not be unpacked" };
     }
   }
@@ -137,8 +154,8 @@ export function createHandler(deps: Deps) {
     if (!takesApp(report.app)) return refuse(403, `reports from ${report.app} are not taken`);
 
     const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.PROBLEM_REPORT_FROM_EMAIL || process.env.CONTACT_FROM_EMAIL;
-    const to = process.env.PROBLEM_REPORT_TO_EMAIL || process.env.CONTACT_TO_EMAIL;
+    const from = process.env.CONTACT_FROM_EMAIL;
+    const to = process.env.CONTACT_TO_EMAIL;
     if (!apiKey || !from || !to) return refuse(503, "problem reports are not set up on this server");
 
     // Blocked and malformed reports never count toward the limits.

@@ -14,17 +14,31 @@ What the route does, in order:
 3. Takes only the games named in `lib/problem-reports.ts` (403).
 4. Counts the report against five per client address and a hundred in all
    per day (429). The counters live on Convex through `games.consumeRateLimit`
-   when `GAMES_SERVER_SECRET` is set, so every instance shares them;
-   without it, each instance counts on its own.
+   when `GAMES_SERVER_SECRET` is set on both the Worker and the Convex
+   deployment, so every instance shares them; without it, each Worker
+   isolate counts on its own.
 5. Looks up the reply address's domain in DNS and refuses one with no mail
    exchanger (422), so a typo is caught while the player can still fix it.
    A lookup that fails is not held against the player.
-6. Sends the email through Resend, from `PROBLEM_REPORT_FROM_EMAIL` (else
-   `CONTACT_FROM_EMAIL`) to `PROBLEM_REPORT_TO_EMAIL` (else
-   `CONTACT_TO_EMAIL`), with the player's address on Reply-To (502 when it
+6. Sends the email through Resend, from `CONTACT_FROM_EMAIL` to
+   `CONTACT_TO_EMAIL`, with the player's address on Reply-To (502 when it
    does not go out, 503 when mail is not configured). The subject reads
    `[Freight Fate 1.9.6] crash: The window closed`.
 
 The route never emails the player, and the game never holds a mail
-password. To stop taking reports from one address, add it to
-`PROBLEM_REPORT_BLOCK` and redeploy.
+password.
+
+## On Cloudflare Workers
+
+The site runs on Workers (`CLOUDFLARE.md`), where only names declared in
+`cloudflare.config.ts` reach `process.env`:
+
+- The client address is `CF-Connecting-IP` (`lib/client-ip.ts`).
+- To stop taking reports from one address, put it in `PROBLEM_REPORT_BLOCK`
+  in `cloudflare.config.ts` and redeploy.
+- `RESEND_API_KEY` and `GAMES_SERVER_SECRET` are Worker secrets
+  (`cf workers secrets put NAME --worker orinks-net`). The mail addresses
+  are the `CONTACT_*` values in the config.
+- An oversized gzipped report is refused from the size its trailer declares,
+  before it is unpacked, because workerd does not name the oversize error
+  the way Node does.
