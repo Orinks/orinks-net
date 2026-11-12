@@ -11,7 +11,8 @@ What the route does, in order:
 1. Refuses a client address in `PROBLEM_REPORT_BLOCK` (403).
 2. Unpacks the body when it is gzipped, within 6 MB (413), and parses the
    report against the limits the game checks too (400, 413).
-3. Takes only the games named in `lib/problem-reports.ts` (403).
+3. Takes only the games named in `lib/problem-reports.ts` (403): Freight Fate,
+   Wicket's and Hearken's template game, Hello Hearken.
 4. Counts the report against five per client address and a hundred in all
    per day (429). The counters live on Convex through `games.consumeRateLimit`
    when `GAMES_SERVER_SECRET` is set on both the Worker and the Convex

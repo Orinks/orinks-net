@@ -64,7 +64,7 @@ describe("the email", () => {
     if (!parsed.ok) throw new Error(parsed.error);
     expect(subjectOf(parsed.report)).toBe("[Freight Fate 1.9.6] crash: The dock menu is empty.");
     expect(bodyOf(parsed.report)).toBe(
-      "The dock menu is empty.\nIt happens at every warehouse.\n\nApp: Freight Fate 1.9.6 (commit abc123)\nSystem: windows x86_64\nCrashed on its last run: yes\nReply to: driver@example.com\n",
+      "What happened:\nThe dock menu is empty.\nIt happens at every warehouse.\n\nApp: Freight Fate 1.9.6 (commit abc123)\nSystem: windows x86_64\nCrashed on its last run: yes\nReply to: driver@example.com\n",
     );
     const email = composeEmail(parsed.report);
     expect(email.reply_to).toBe("driver@example.com");

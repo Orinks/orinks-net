@@ -9,7 +9,7 @@
  */
 
 /** The games whose reports are taken, by the name they send, lowercased. */
-export const REPORT_APPS: readonly string[] = ["freight fate", "wicket's"];
+export const REPORT_APPS: readonly string[] = ["freight fate", "wicket's", "hello hearken"];
 
 /** The most of a log a report carries; a game keeps the end of a longer one. */
 export const MAX_LOG_BYTES = 1 << 20;
@@ -134,9 +134,13 @@ export function subjectOf(report: ProblemReport): string {
   return `[${report.app} ${report.version}] ${report.crashed ? "crash: " : ""}${summary}`;
 }
 
-/** The email body: the description, then the game and system details. */
+/**
+ * The email body: what the player wrote, under a heading so it reads as the
+ * report and not as a repeat of the subject, then the game and system details.
+ */
 export function bodyOf(report: ProblemReport): string {
   const lines = [
+    "What happened:",
     report.description.trim(),
     "",
     `App: ${report.app} ${report.version}${report.commit ? ` (commit ${report.commit})` : ""}`,
