@@ -127,4 +127,13 @@ crons.interval(
   {},
 );
 
+// A problem report a player never finished on the web form: its logs are
+// dropped after a day. Hourly, batched.
+crons.interval(
+  "drop unfinished problem report drafts",
+  { hours: 1 },
+  internal.problemReports.expireDrafts,
+  {},
+);
+
 export default crons;

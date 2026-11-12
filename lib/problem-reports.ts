@@ -58,8 +58,30 @@ export function looksLikeAddress(text: string): boolean {
   return domain.includes(".") && !/\s/.test(text);
 }
 
+/** A report held for the web form: what the game sent ahead, without a description. */
+export type StoredDraft = {
+  app: string;
+  version: string;
+  commit?: string;
+  os: string;
+  crashed: boolean;
+  logs: Attachment[];
+};
+
+/** What the report page sends: the description, a reply address, and logs to leave out. */
+export type FormSubmission = { description: string; reply_to?: string; omit: string[] };
+
+export type ParsedForm =
+  | { ok: true; submission: FormSubmission }
+  | { ok: false; status: 400 | 413; error: string; field?: "description" | "reply_to" };
+
+export type ParseOptions = {
+  /** For a report sent ahead of the web form, which has no description yet. */
+  emptyDescription?: boolean;
+};
+
 /** The report in `body`, checked against the limits the game checks too. */
-export function parseReport(body: unknown): Parsed {
+export function parseReport(body: unknown, options: ParseOptions = {}): Parsed {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return { ok: false, status: 400, error: "the report is not an object" };
   }
@@ -76,8 +98,9 @@ export function parseReport(body: unknown): Parsed {
     if (typeof value !== "string") return { ok: false, status: 400, error: value.error };
     commit = value;
   }
-  const description = source.description;
-  if (typeof description !== "string" || description.trim() === "") {
+  const description = source.description ?? "";
+  if (typeof description !== "string") return { ok: false, status: 400, error: "description is not text" };
+  if (description.trim() === "" && !options.emptyDescription) {
     return { ok: false, status: 400, error: "description is empty" };
   }
   if ([...description].length > MAX_DESCRIPTION_CHARS) {
@@ -119,6 +142,52 @@ export function parseReport(body: unknown): Parsed {
       crashed,
       attachments,
     },
+  };
+}
+
+/** What the report page posted, checked the way a game's report is. */
+export function parseFormSubmission(body: unknown): ParsedForm {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, status: 400, error: "the submission is not an object" };
+  }
+  const source = body as Record<string, unknown>;
+  const description = source.description;
+  if (typeof description !== "string" || description.trim() === "") {
+    return { ok: false, status: 400, error: "Say what happened.", field: "description" };
+  }
+  if ([...description].length > MAX_DESCRIPTION_CHARS) {
+    return {
+      ok: false,
+      status: 413,
+      error: `Keep it under ${MAX_DESCRIPTION_CHARS.toLocaleString("en-US")} characters.`,
+      field: "description",
+    };
+  }
+  let reply_to: string | undefined;
+  if (typeof source.reply_to === "string" && source.reply_to.trim() !== "") {
+    const value = source.reply_to.trim();
+    if ([...value].length > 254 || CONTROL.test(value) || !looksLikeAddress(value)) {
+      return { ok: false, status: 400, error: "That is not an email address.", field: "reply_to" };
+    }
+    reply_to = value;
+  }
+  const omit = Array.isArray(source.omit)
+    ? source.omit.filter((name): name is string => typeof name === "string")
+    : [];
+  return { ok: true, submission: { description, ...(reply_to ? { reply_to } : {}), omit } };
+}
+
+/** The report the page's submission makes with the draft the game sent ahead. */
+export function reportFromDraft(draft: StoredDraft, submission: FormSubmission): ProblemReport {
+  return {
+    app: draft.app,
+    version: draft.version,
+    ...(draft.commit ? { commit: draft.commit } : {}),
+    os: draft.os,
+    description: submission.description,
+    ...(submission.reply_to ? { reply_to: submission.reply_to } : {}),
+    crashed: draft.crashed,
+    attachments: draft.logs.filter((log) => !submission.omit.includes(log.name)),
   };
 }
 

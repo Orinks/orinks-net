@@ -29,6 +29,36 @@ What the route does, in order:
 The route never emails the player, and the game never holds a mail
 password.
 
+## Written on the site instead of in the game
+
+A game can open the report in the browser instead of taking the text in
+its own window. The player sees one form at `/report/<code>` with the game
+and version filled in, the game's logs listed as attached (a checkbox each,
+so one can be left out), an email field and a box for what happened. What
+makes that work:
+
+1. `POST /api/problem-reports/open` takes the same report with an empty
+   description, runs steps 1 to 4 above, keeps the logs in Convex file
+   storage under a 40-hex-digit code (`convex/problemReports.ts`, table
+   `problemReportDrafts`) and answers 201 with `{ code, url }`. 503 when
+   `GAMES_SERVER_SECRET` or the Convex URL is not set, 502 when a log
+   could not be stored.
+2. The game opens `url` in the browser. `app/report/[code]/page.tsx` reads
+   the draft's names and sizes (`peek`, never the logs' text) and renders
+   `components/ProblemReportForm.tsx`; a code with no draft shows an
+   expired-link page. The page is not indexed.
+3. The form posts `{ description, reply_to, omit }` to
+   `POST /api/problem-reports/<code>`, which checks the text and the
+   address the way the game route does (400 and 422 carry the `field`),
+   takes the draft out of Convex (`take`, so a double press cannot email
+   twice; 404 once it is gone) and runs step 6. 202 `{ ok: true }` when
+   the email went out.
+4. A draft nobody finishes is dropped with its files after a day
+   (`expireDrafts`, hourly from `convex/crons.ts`).
+
+Both staging and taking carry `GAMES_SERVER_SECRET`; the code is the only
+thing the page needs, and only names and sizes are readable with it.
+
 ## On Cloudflare Workers
 
 The site runs on Workers (`CLOUDFLARE.md`), where a plain value reaches

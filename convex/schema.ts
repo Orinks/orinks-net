@@ -822,6 +822,27 @@ export default defineSchema({
     .index("by_carrier_read", ["carrierId", "readAt"])
     .index("by_driver", ["driverId"])
     .index("by_read", ["readAt"]),
+  // Logs a Hearken game sent ahead of a problem report written on the web
+  // form (convex/problemReports.ts). One row per link, gone once the report
+  // is sent or a day has passed.
+  problemReportDrafts: defineTable({
+    code: v.string(),
+    app: v.string(),
+    version: v.string(),
+    commit: v.optional(v.string()),
+    os: v.string(),
+    crashed: v.boolean(),
+    logs: v.array(
+      v.object({
+        name: v.string(),
+        storageId: v.id("_storage"),
+        bytes: v.number(),
+      }),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_created", ["createdAt"]),
   freightFateRateLimits: defineTable({
     key: v.string(),
     count: v.number(),

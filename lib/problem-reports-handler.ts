@@ -9,21 +9,32 @@ import {
   isBlocked,
   MAX_BODY_BYTES,
   parseBlockList,
+  parseFormSubmission,
   parseReport,
   PER_ADDRESS_PER_DAY,
   PER_DAY,
+  reportFromDraft,
   takesApp,
   type ProblemReport,
+  type StoredDraft,
 } from "@/lib/problem-reports";
 
 // Problem reports from Hearken games (hearken-report; the format is
-// mailbag's). The game posts what the player wrote and its logs here, and
-// this emails them through Resend to the address the contact form uses.
+// mailbag's). Two ways in:
+//
+// - POST /api/problem-reports: the game posts what the player wrote and its
+//   logs, and this emails them through Resend to the address the contact
+//   form uses. Answers are mailbag's: 202 sent, 400 malformed, 403 not a
+//   game we take or a blocked address, 413 too big, 422 the reply address's
+//   domain takes no mail, 429 over a limit, 502 the email did not go out.
+// - POST /api/problem-reports/open, then the web form: the game posts its
+//   logs with no description and gets a link (201, `{ code, url }`); the
+//   browser opens the link, the player writes there, and the page posts to
+//   /api/problem-reports/<code>, which emails the report with the logs the
+//   game sent ahead (202) or says the link is gone (404).
+//
 // The game never holds a mail password, and this never emails anyone else:
-// the player's address rides on Reply-To. Answers are mailbag's: 202 sent,
-// 400 malformed, 403 not a game we take or a blocked address, 413 too big,
-// 422 the reply address's domain takes no mail, 429 over a limit, 502 the
-// email did not go out.
+// the player's address rides on Reply-To.
 
 const RESEND_SEND_URL = "https://api.resend.com/emails";
 const DAY_MS = 24 * 60 * 60_000;
@@ -34,6 +45,10 @@ export type Deps = {
   /** Whether `domain` has mail exchangers; null when the lookup itself failed. */
   takesMail(domain: string): Promise<boolean | null>;
   sendMail(body: Record<string, unknown>): Promise<Response>;
+  /** Keeps a report's logs for the web form; the code of its link, or null when drafts are not set up. */
+  stage(report: ProblemReport): Promise<string | null>;
+  /** The draft a link's code names, taken out for good; null when there is none. */
+  take(code: string): Promise<StoredDraft | null>;
 };
 
 /**
@@ -85,6 +100,46 @@ async function mxTakesMail(domain: string): Promise<boolean | null> {
   }
 }
 
+/** The Convex client and the secret its writes carry, when both are set. */
+function drafts() {
+  const client = getConvexClient();
+  const secret = gamesServerSecret();
+  return client && secret ? { client, secret } : null;
+}
+
+async function stageOnConvex(report: ProblemReport): Promise<string | null> {
+  const d = drafts();
+  if (!d) return null;
+  const logs = [];
+  for (const attachment of report.attachments) {
+    const url = (await d.client.mutation(anyApi.problemReports.uploadUrl, { secret: d.secret })) as string;
+    const upload = await fetch(url, {
+      body: attachment.text,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+      method: "POST",
+    });
+    if (!upload.ok) throw new Error(`the log upload answered ${upload.status}`);
+    const { storageId } = (await upload.json()) as { storageId: string };
+    logs.push({ name: attachment.name, storageId, bytes: Buffer.byteLength(attachment.text, "utf8") });
+  }
+  return (await d.client.mutation(anyApi.problemReports.stage, {
+    secret: d.secret,
+    app: report.app,
+    version: report.version,
+    ...(report.commit ? { commit: report.commit } : {}),
+    os: report.os,
+    crashed: report.crashed,
+    logs,
+    now: Date.now(),
+  })) as string;
+}
+
+async function takeFromConvex(code: string): Promise<StoredDraft | null> {
+  const d = drafts();
+  if (!d) return null;
+  return (await d.client.action(anyApi.problemReports.take, { secret: d.secret, code })) as StoredDraft | null;
+}
+
 export const liveDeps: Deps = {
   allow: convexOrMemoryLimiter(),
   takesMail: mxTakesMail,
@@ -97,6 +152,8 @@ export const liveDeps: Deps = {
       },
       method: "POST",
     }),
+  stage: stageOnConvex,
+  take: takeFromConvex,
 };
 
 function refuse(status: number, error: string) {
@@ -140,57 +197,144 @@ async function readBody(request: Request): Promise<{ body: unknown } | { status:
   }
 }
 
+/** A code as the links carry it: 40 hex digits. */
+const CODE = /^[0-9a-f]{40}$/;
+
+function mailEnv() {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.CONTACT_FROM_EMAIL;
+  const to = process.env.CONTACT_TO_EMAIL;
+  return apiKey && from && to ? { from, to } : null;
+}
+
+/** The report, read and checked, or the refusal: the first steps both game-facing routes share. */
+async function takeIn(
+  request: Request,
+  deps: Deps,
+  options: { emptyDescription?: boolean } = {},
+): Promise<{ report: ProblemReport; ip: string | null } | Response> {
+  const ip = clientIp(request);
+  if (isBlocked(ip, parseBlockList(process.env.PROBLEM_REPORT_BLOCK))) {
+    return refuse(403, "reports from this address are not taken");
+  }
+  const read = await readBody(request);
+  if (!("body" in read)) return refuse(read.status, read.error);
+  const parsed = parseReport(read.body, options);
+  if (!parsed.ok) return refuse(parsed.status, parsed.error);
+  const report = parsed.report;
+  if (!takesApp(report.app)) return refuse(403, `reports from ${report.app} are not taken`);
+  // Blocked and malformed reports never count toward the limits.
+  if (!(await deps.allow(`address:${ip ?? "unknown"}`, PER_ADDRESS_PER_DAY))) {
+    return refuse(429, "too many reports from this address today");
+  }
+  if (!(await deps.allow("all", PER_DAY))) return refuse(429, "too many reports today");
+  return { report, ip };
+}
+
+/** Emails `report`; the answer for the route that asked. */
+async function deliver(deps: Deps, report: ProblemReport, env: { from: string; to: string }): Promise<Response> {
+  if (report.reply_to) {
+    const domain = report.reply_to.slice(report.reply_to.lastIndexOf("@") + 1);
+    // A lookup that fails is not the player's fault; the report is taken.
+    if ((await deps.takesMail(domain)) === false) {
+      return refuse(422, "the reply address's domain does not take email");
+    }
+  }
+  const mail = composeEmail(report);
+  let response: Response;
+  try {
+    response = await deps.sendMail({
+      from: env.from,
+      to: [env.to],
+      subject: mail.subject,
+      text: mail.text,
+      ...(mail.reply_to ? { reply_to: mail.reply_to } : {}),
+      ...(mail.attachments.length ? { attachments: mail.attachments } : {}),
+    });
+  } catch {
+    return refuse(502, "the report could not be emailed");
+  }
+  if (!response.ok) {
+    console.error(`Problem reports: Resend rejected the send with ${response.status}: ${await response.text()}`);
+    return refuse(502, "the report could not be emailed");
+  }
+  return new Response(null, { status: 202 });
+}
+
+/** POST /api/problem-reports: a whole report from the game, emailed now. */
 export function createHandler(deps: Deps) {
   return async function POST(request: Request) {
-    const ip = clientIp(request);
-    if (isBlocked(ip, parseBlockList(process.env.PROBLEM_REPORT_BLOCK))) {
-      return refuse(403, "reports from this address are not taken");
-    }
-    const read = await readBody(request);
-    if (!("body" in read)) return refuse(read.status, read.error);
-    const parsed = parseReport(read.body);
-    if (!parsed.ok) return refuse(parsed.status, parsed.error);
-    const report: ProblemReport = parsed.report;
-    if (!takesApp(report.app)) return refuse(403, `reports from ${report.app} are not taken`);
-
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.CONTACT_FROM_EMAIL;
-    const to = process.env.CONTACT_TO_EMAIL;
-    if (!apiKey || !from || !to) return refuse(503, "problem reports are not set up on this server");
-
-    // Blocked and malformed reports never count toward the limits.
-    if (!(await deps.allow(`address:${ip ?? "unknown"}`, PER_ADDRESS_PER_DAY))) {
-      return refuse(429, "too many reports from this address today");
-    }
-    if (!(await deps.allow("all", PER_DAY))) return refuse(429, "too many reports today");
-
-    if (report.reply_to) {
-      const domain = report.reply_to.slice(report.reply_to.lastIndexOf("@") + 1);
-      // A lookup that fails is not the player's fault; the report is taken.
-      if ((await deps.takesMail(domain)) === false) {
-        return refuse(422, "the reply address's domain does not take email");
-      }
-    }
-
-    const mail = composeEmail(report);
-    let response: Response;
-    try {
-      response = await deps.sendMail({
-        from,
-        to: [to],
-        subject: mail.subject,
-        text: mail.text,
-        ...(mail.reply_to ? { reply_to: mail.reply_to } : {}),
-        ...(mail.attachments.length ? { attachments: mail.attachments } : {}),
-      });
-    } catch {
-      return refuse(502, "the report could not be emailed");
-    }
-    if (!response.ok) {
-      console.error(`Problem reports: Resend rejected the send with ${response.status}: ${await response.text()}`);
-      return refuse(502, "the report could not be emailed");
-    }
-    return new Response(null, { status: 202 });
+    const taken = await takeIn(request, deps);
+    if (taken instanceof Response) return taken;
+    const env = mailEnv();
+    if (!env) return refuse(503, "problem reports are not set up on this server");
+    return deliver(deps, taken.report, env);
   };
 }
 
+/**
+ * POST /api/problem-reports/open: the game's logs, kept for the web form.
+ * Answers 201 with the link's `code` and `url`.
+ */
+export function createOpenHandler(deps: Deps) {
+  return async function POST(request: Request) {
+    const taken = await takeIn(request, deps, { emptyDescription: true });
+    if (taken instanceof Response) return taken;
+    let code: string | null;
+    try {
+      code = await deps.stage(taken.report);
+    } catch (error) {
+      console.error("Problem reports: the logs could not be kept", error);
+      return refuse(502, "the report could not be kept");
+    }
+    if (!code) return refuse(503, "problem reports are not set up on this server");
+    const url = `${new URL(request.url).origin}/report/${code}`;
+    return Response.json({ code, url }, { status: 201 });
+  };
+}
+
+/**
+ * POST /api/problem-reports/<code>: what the player wrote on the web form,
+ * emailed with the logs the game sent ahead. The page reads `error` and
+ * `field` from a refusal.
+ */
+export function createSendHandler(deps: Deps) {
+  return async function POST(request: Request, code: string) {
+    if (!CODE.test(code)) return refuse(404, "this report link is not one the site gave out");
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return refuse(400, "the submission is not JSON");
+    }
+    const parsed = parseFormSubmission(body);
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error, ...(parsed.field ? { field: parsed.field } : {}) }, { status: parsed.status });
+    }
+    const env = mailEnv();
+    if (!env) return refuse(503, "problem reports are not set up on this server");
+    if (parsed.submission.reply_to) {
+      const domain = parsed.submission.reply_to.slice(parsed.submission.reply_to.lastIndexOf("@") + 1);
+      if ((await deps.takesMail(domain)) === false) {
+        return Response.json(
+          { error: "Email cannot be delivered to that address. Check it, or leave it blank.", field: "reply_to" },
+          { status: 422 },
+        );
+      }
+    }
+    // The draft is taken out before the send, so a double press cannot
+    // email twice; a send that fails after that is reported, not retried.
+    let draft: StoredDraft | null;
+    try {
+      draft = await deps.take(code);
+    } catch (error) {
+      console.error("Problem reports: the draft could not be read", error);
+      return refuse(502, "the report could not be read back");
+    }
+    if (!draft) return refuse(404, "this report link has expired or was already used");
+    const report = reportFromDraft(draft, parsed.submission);
+    // The address was checked above, before the draft was spent.
+    const sent = await deliver({ ...deps, takesMail: async () => true }, report, env);
+    return sent.status === 202 ? Response.json({ ok: true }, { status: 202 }) : sent;
+  };
+}

@@ -57,6 +57,7 @@ import type * as triviaSelection from "../triviaSelection.js";
 import type * as triviaStartHandlers from "../triviaStartHandlers.js";
 import type * as triviaStoryBeats from "../triviaStoryBeats.js";
 import type * as triviaStoryHandler from "../triviaStoryHandler.js";
+import type * as problemReports from "../problemReports.js";
 import type * as triviaVersions from "../triviaVersions.js";
 import type * as visits from "../visits.js";
 
@@ -102,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   moderation: typeof moderation;
   mutators: typeof mutators;
   notifications: typeof notifications;
+  problemReports: typeof problemReports;
   questionBank: typeof questionBank;
   questionClipValidation: typeof questionClipValidation;
   questionTypes: typeof questionTypes;

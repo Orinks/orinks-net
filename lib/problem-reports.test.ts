@@ -3,9 +3,12 @@ import {
   bodyOf,
   composeEmail,
   isBlocked,
+  MAX_DESCRIPTION_CHARS,
   MAX_LOG_BYTES,
   parseBlockList,
+  parseFormSubmission,
   parseReport,
+  reportFromDraft,
   subjectOf,
   takesApp,
 } from "./problem-reports";
@@ -90,5 +93,68 @@ describe("who is taken", () => {
     expect(isBlocked("2001:db8::1", blocked)).toBe(true);
     expect(isBlocked(null, blocked)).toBe(false);
     expect(isBlocked("203.0.113.7", [])).toBe(false);
+  });
+});
+
+describe("parseReport ahead of the web form", () => {
+  it("takes a report with no description only when asked to", () => {
+    const { description: _dropped, ...sentAhead } = good;
+    expect(parseReport(sentAhead)).toMatchObject({ ok: false, error: "description is empty" });
+    const parsed = parseReport(sentAhead, { emptyDescription: true });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.report.description).toBe("");
+    expect(parseReport({ ...sentAhead, description: 7 }, { emptyDescription: true })).toMatchObject({ ok: false, status: 400 });
+  });
+});
+
+describe("parseFormSubmission", () => {
+  it("takes what the page posts and names the field of a refusal", () => {
+    expect(parseFormSubmission({ description: "It froze.", reply_to: " me@example.com ", omit: ["a.log", 3] })).toEqual({
+      ok: true,
+      submission: { description: "It froze.", reply_to: "me@example.com", omit: ["a.log"] },
+    });
+    expect(parseFormSubmission({ description: "It froze.", reply_to: "" })).toEqual({
+      ok: true,
+      submission: { description: "It froze.", omit: [] },
+    });
+    expect(parseFormSubmission({ description: "  " })).toMatchObject({ ok: false, status: 400, field: "description" });
+    expect(parseFormSubmission({ description: "x".repeat(MAX_DESCRIPTION_CHARS + 1) })).toMatchObject({
+      ok: false,
+      status: 413,
+      field: "description",
+    });
+    expect(parseFormSubmission({ description: "It froze.", reply_to: "nobody" })).toMatchObject({
+      ok: false,
+      status: 400,
+      field: "reply_to",
+    });
+    expect(parseFormSubmission(null)).toMatchObject({ ok: false, status: 400 });
+  });
+});
+
+describe("reportFromDraft", () => {
+  it("joins the draft the game sent ahead with what the player wrote, minus the logs they left out", () => {
+    const draft = {
+      app: "Hello Hearken",
+      version: "0.1.0",
+      os: "windows x86_64",
+      crashed: true,
+      logs: [
+        { name: "game.log", text: "a\n" },
+        { name: "crash.log", text: "b\n" },
+      ],
+    };
+    const report = reportFromDraft(draft, { description: "It closed.", reply_to: "me@example.com", omit: ["crash.log"] });
+    expect(report).toEqual({
+      app: "Hello Hearken",
+      version: "0.1.0",
+      os: "windows x86_64",
+      description: "It closed.",
+      reply_to: "me@example.com",
+      crashed: true,
+      attachments: [{ name: "game.log", text: "a\n" }],
+    });
+    expect(reportFromDraft(draft, { description: "It closed.", omit: [] }).reply_to).toBeUndefined();
   });
 });

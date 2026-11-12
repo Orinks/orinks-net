@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createHandler, type Deps } from "./problem-reports-handler";
+import { createHandler, createOpenHandler, createSendHandler, type Deps } from "./problem-reports-handler";
 
 const report = {
   app: "Freight Fate",
@@ -39,6 +39,8 @@ function deps(overrides: Partial<Deps> = {}) {
       sent.push(body);
       return new Response(JSON.stringify({ id: "sent" }), { status: 200 });
     },
+    stage: async () => "0".repeat(40),
+    take: async () => null,
     ...overrides,
   };
   return d;
@@ -142,5 +144,130 @@ describe("POST /api/problem-reports", () => {
     expect((await createHandler(down)(post(report))).status).toBe(502);
     vi.stubEnv("RESEND_API_KEY", "");
     expect((await createHandler(deps())(post(report))).status).toBe(503);
+  });
+});
+
+describe("POST /api/problem-reports/open", () => {
+  const { description: _dropped, ...sentAhead } = report;
+
+  it("keeps the logs and answers 201 with the link, without emailing", async () => {
+    const staged: unknown[] = [];
+    const d = deps({
+      stage: async (r) => {
+        staged.push(r);
+        return "ab".repeat(20);
+      },
+    });
+    const response = await createOpenHandler(d)(post(sentAhead, { gzip: true }));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ code: "ab".repeat(20), url: `https://orinks.net/report/${"ab".repeat(20)}` });
+    expect(staged).toHaveLength(1);
+    expect(staged[0]).toMatchObject({ description: "", attachments: report.attachments });
+    expect(d.sent).toHaveLength(0);
+  });
+
+  it("still checks the report, the game and the limits", async () => {
+    const d = deps();
+    const open = createOpenHandler(d);
+    expect((await open(post({ ...sentAhead, app: "Solitaire" }))).status).toBe(403);
+    expect((await open(post({ ...sentAhead, version: 9 }))).status).toBe(400);
+    for (let i = 0; i < 5; i += 1) expect((await open(post(sentAhead))).status).toBe(201);
+    expect((await open(post(sentAhead))).status).toBe(429);
+  });
+
+  it("answers 503 when drafts are not set up and 502 when the logs could not be kept", async () => {
+    expect((await createOpenHandler(deps({ stage: async () => null }))(post(sentAhead))).status).toBe(503);
+    const failing = deps({
+      stage: async () => {
+        throw new Error("upload answered 500");
+      },
+    });
+    expect((await createOpenHandler(failing)(post(sentAhead))).status).toBe(502);
+  });
+});
+
+describe("POST /api/problem-reports/<code>", () => {
+  const code = "cd".repeat(20);
+  const draft = {
+    app: "Hello Hearken",
+    version: "0.1.0",
+    os: "windows x86_64",
+    crashed: true,
+    logs: [
+      { name: "game.log", text: "a\n" },
+      { name: "crash.log", text: "b\n" },
+    ],
+  };
+
+  function submit(body: unknown) {
+    return new Request(`https://orinks.net/api/problem-reports/${code}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  /** Deps whose draft can be taken exactly once. */
+  function withDraft(overrides: Partial<Deps> = {}) {
+    let left: typeof draft | null = draft;
+    return deps({
+      take: async (c) => {
+        if (c !== code) return null;
+        const taken = left;
+        left = null;
+        return taken;
+      },
+      ...overrides,
+    });
+  }
+
+  it("emails what the player wrote with the logs sent ahead, less the ones left out, once", async () => {
+    const d = withDraft();
+    const send = createSendHandler(d);
+    const response = await send(submit({ description: "It closed.", reply_to: "me@example.com", omit: ["crash.log"] }), code);
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(d.sent).toHaveLength(1);
+    expect(d.sent[0]).toMatchObject({ reply_to: "me@example.com", subject: expect.stringContaining("Hello Hearken") });
+    expect((d.sent[0] as { text: string }).text).toContain("What happened:\nIt closed.");
+    expect((d.sent[0] as { attachments: { filename: string }[] }).attachments.map((a) => a.filename)).toEqual(["game.log"]);
+    // The link is spent.
+    const again = await send(submit({ description: "It closed.", omit: [] }), code);
+    expect(again.status).toBe(404);
+    expect(d.sent).toHaveLength(1);
+  });
+
+  it("refuses a code the site did not give out, and one with no draft, as 404", async () => {
+    const d = withDraft();
+    const send = createSendHandler(d);
+    expect((await send(submit({ description: "x", omit: [] }), "../contact")).status).toBe(404);
+    expect((await send(submit({ description: "x", omit: [] }), "ef".repeat(20))).status).toBe(404);
+    expect(d.sent).toHaveLength(0);
+  });
+
+  it("names the field of a refusal and leaves the draft unspent", async () => {
+    const d = withDraft({ takesMail: async () => false });
+    const send = createSendHandler(d);
+    expect(await (await send(submit({ description: " ", omit: [] }), code)).json()).toEqual({
+      error: "Say what happened.",
+      field: "description",
+    });
+    expect(await (await send(submit({ description: "x", reply_to: "nobody", omit: [] }), code)).json()).toMatchObject({
+      field: "reply_to",
+    });
+    const noMail = await send(submit({ description: "x", reply_to: "me@nowhere.invalid", omit: [] }), code);
+    expect(noMail.status).toBe(422);
+    expect(await noMail.json()).toMatchObject({ field: "reply_to" });
+    expect((await send(new Request(`https://orinks.net/api/problem-reports/${code}`, { method: "POST", body: "{" }), code)).status).toBe(400);
+    // Every refusal above left the draft for the next try.
+    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(202);
+  });
+
+  it("answers 503 when mail is not set up, before spending the draft", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    const d = withDraft();
+    expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(503);
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(202);
   });
 });
