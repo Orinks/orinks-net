@@ -21,7 +21,7 @@ describe("Freight Fate public profile catalogs", () => {
     });
     expect(FREIGHT_FATE_TRAILER_PRICES.dry_van).toBe(42_000);
     expect(FREIGHT_FATE_ACHIEVEMENT_LABELS.first_delivery)
-      .toBe("Signed, Sealed, Hauled");
+      .toBe("Truck Driving Man");
     expect(FREIGHT_FATE_ACHIEVEMENT_DETAILS.first_delivery.category).toBe("road");
     expect(FREIGHT_FATE_ACHIEVEMENT_DETAILS.first_delivery.description.length).toBeGreaterThan(40);
     expect(FREIGHT_FATE_ACHIEVEMENT_CATEGORIES[0]).toEqual({ key: "road", title: "Out on the Road" });
