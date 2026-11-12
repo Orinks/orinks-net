@@ -17,9 +17,16 @@ const CLEANUP_BATCH = 512;
 
 export async function consumeFreightFateWrite(
   ctx: MutationCtx,
-  input: { scope: string; driverId: string; now: number; limit: number },
+  input: { scope: string; driverId: string; now: number; limit: number; windowMs?: number },
 ) {
-  const windowStart = input.now - (input.now % RATE_LIMIT_WINDOW_MS);
+  // A minute unless the caller counts over a longer stretch, such as the
+  // problem-report relay's day. A counter's window is also when the cleanup
+  // cron may drop it, so a window never outlasts the retention.
+  const windowMs = Math.min(
+    Math.max(1, Math.floor(input.windowMs ?? RATE_LIMIT_WINDOW_MS)),
+    RATE_LIMIT_RETENTION_MS,
+  );
+  const windowStart = input.now - (input.now % windowMs);
   // One durable counter per scope and driver, rolled over in place when the
   // minute changes. The key used to embed the window too, which meant every
   // driver-minute of play inserted a row nothing would ever read again and

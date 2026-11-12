@@ -94,7 +94,15 @@ async function nameTaken(ctx: QueryCtx, name: string, exceptSubject: string) {
 // ---- Rate limits -------------------------------------------------------
 
 export const consumeRateLimit = mutation({
-  args: { secret: v.string(), key: v.string(), limit: v.number(), now: v.number() },
+  args: {
+    secret: v.string(),
+    key: v.string(),
+    limit: v.number(),
+    now: v.number(),
+    // The stretch the limit counts over, a minute by default; the
+    // problem-report relay counts over a day.
+    windowMs: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     requireServer(args.secret);
     return consumeFreightFateWrite(ctx, {
@@ -102,6 +110,7 @@ export const consumeRateLimit = mutation({
       driverId: args.key.slice(0, 160),
       now: args.now,
       limit: Math.max(1, Math.floor(args.limit)),
+      ...(args.windowMs ? { windowMs: args.windowMs } : {}),
     });
   },
 });

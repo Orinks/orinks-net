@@ -72,21 +72,29 @@ to set up the presence rewrite to `<deployment>.convex.site`.
 Changing any of these means rebuilding, not just editing a Worker variable.
 
 **Run time (Worker bindings).** Server code reads `process.env.X` at request
-time. On Workers that only works for names declared under `env` in
+time. On Workers that works for names declared under `env` in
 `cloudflare.config.ts` (with `nodejs_compat`, declared vars and secrets are
-copied onto `process.env`). An undeclared name is simply `undefined`.
+copied onto `process.env`), and for any secret set on the Worker with
+`wrangler secret put`, declared or not: on 2026-11-12 `RESEND_API_KEY` put
+on the preview Worker, which does not declare it, reached the problem-report
+route. A plain value that is not declared is `undefined`.
 
 - Plain values are declared with `bindings.text(...)` in the config:
   `VERCEL_ENV`, `VISITOR_COUNTER_ENV` (both set per mode), `MASTODON_PROFILE_URL`,
-  `VAPID_SUBJECT`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`.
+  `VAPID_SUBJECT`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`,
+  `PROBLEM_REPORT_BLOCK` (empty; addresses whose problem reports are refused).
 - Secrets are declared with `bindings.secret()`:
   every Worker: `CONVEX_URL`, `CLERK_SECRET_KEY`, `FREIGHT_FATE_MUSIC_BLOB_URL`;
   production only: `GITHUB_TOKEN`, `LASTFM_API_KEY`, `LASTFM_USERNAME`,
   `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`,
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
-  `RESEND_API_KEY`, `BUILD_NOTIFICATION_TOKEN`.
-  `GAMES_SERVER_SECRET` is read by the games service but is not set on Vercel
-  either, so it is not required; add it when a game goes live.
+  `RESEND_API_KEY`, `GAMES_SERVER_SECRET`, `BUILD_NOTIFICATION_TOKEN`.
+  `GAMES_SERVER_SECRET` is the same value as the Convex deployment's
+  `GAMES_SERVER_SECRET` (32 characters or more): the games service and the
+  problem-report relay's daily counters (`docs/problem-reports.md`) call
+  Convex with it. It was never set on Vercel. Until it is set, the relay
+  counts reports per isolate, and the games service has no store (no game is
+  registered yet).
   Locally they come from `.dev.vars` (copy `.dev.vars.example`). On Cloudflare
   they are set with `cf workers secrets put NAME --worker <worker>` or in the
   dashboard.
@@ -203,7 +211,11 @@ only in the browser to trim it.
 - Sign-in itself: the production Clerk key only works on orinks.net, and no
   development key was available. The middleware and the signed-out pages work.
 - POST routes (game saves, events, presence, contact, notifications) were not
-  exercised, to avoid writing to production Convex.
+  exercised, to avoid writing to production Convex. `/api/problem-reports`
+  was, against the production-mode build in the local runtime with a fake
+  Resend key (2026-11-12): gzip unpacking, the `node:dns` mail-exchanger
+  lookup, the address from `CF-Connecting-IP`, the per-isolate counters and
+  the Resend call all answered as on Node.
 
 ## Convex deploy step
 
