@@ -40,10 +40,11 @@ export default async function ReportPage({ params }: ReportPageProps) {
   if (!draft) {
     return (
       <>
-        <PageHeader title="Report a problem" />
+        <PageHeader showSiteName={false} title="Report a problem" />
         <section className="py-8">
           <p className="max-w-2xl text-slate-700">
-            This link has expired or was already used. Open Report a problem in the game again, or{" "}
+            This link has expired, or the report was already sent. To send a new one, choose Report a problem in the
+            game again, or{" "}
             <a className="font-semibold text-action underline hover:no-underline" href="/contact">
               write through the contact form
             </a>
@@ -56,11 +57,11 @@ export default async function ReportPage({ params }: ReportPageProps) {
 
   return (
     <>
-      <PageHeader title={`Report a problem with ${draft.app}`} />
+      <PageHeader showSiteName={false} title={`Report a problem with ${draft.app}`} />
       {/* Not wrapped in <Section>: its `prose` styles would fight the form's
           own spacing and label typography. */}
       <section className="py-8">
-        <ProblemReportForm app={draft.app} code={code} crashed={draft.crashed} logs={draft.logs} version={draft.version} />
+        <ProblemReportForm code={code} crashed={draft.crashed} logs={draft.logs} version={draft.version} />
       </section>
     </>
   );

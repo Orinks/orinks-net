@@ -155,11 +155,12 @@ export function parseFormSubmission(body: unknown): ParsedForm {
   if (typeof description !== "string" || description.trim() === "") {
     return { ok: false, status: 400, error: "Say what happened.", field: "description" };
   }
-  if ([...description].length > MAX_DESCRIPTION_CHARS) {
+  const count = [...description].length;
+  if (count > MAX_DESCRIPTION_CHARS) {
     return {
       ok: false,
       status: 413,
-      error: `Keep it under ${MAX_DESCRIPTION_CHARS.toLocaleString("en-US")} characters.`,
+      error: `Shorten what happened to ${MAX_DESCRIPTION_CHARS.toLocaleString("en-US")} characters or fewer. It is ${count.toLocaleString("en-US")} now.`,
       field: "description",
     };
   }
@@ -167,7 +168,12 @@ export function parseFormSubmission(body: unknown): ParsedForm {
   if (typeof source.reply_to === "string" && source.reply_to.trim() !== "") {
     const value = source.reply_to.trim();
     if ([...value].length > 254 || CONTROL.test(value) || !looksLikeAddress(value)) {
-      return { ok: false, status: 400, error: "That is not an email address.", field: "reply_to" };
+      return {
+        ok: false,
+        status: 400,
+        error: "Enter an email address like name@example.com, or leave it blank.",
+        field: "reply_to",
+      };
     }
     reply_to = value;
   }
