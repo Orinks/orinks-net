@@ -23,6 +23,9 @@ export const PER_ADDRESS_PER_DAY = 5;
 export const PER_DAY = 100;
 
 export type Attachment = { name: string; text: string };
+/** One named fact about where the player was: `{ name: "Game", value: "Tightrope" }`. */
+export type Detail = { name: string; value: string };
+export const MAX_DETAILS = 8;
 
 export type ProblemReport = {
   app: string;
@@ -32,6 +35,8 @@ export type ProblemReport = {
   description: string;
   reply_to?: string;
   crashed: boolean;
+  /** Where the player was; the first entry is the headline and goes in the subject. */
+  details?: Detail[];
   attachments: Attachment[];
 };
 
@@ -65,6 +70,7 @@ export type StoredDraft = {
   commit?: string;
   os: string;
   crashed: boolean;
+  details?: Detail[];
   logs: Attachment[];
 };
 
@@ -114,6 +120,18 @@ export function parseReport(body: unknown, options: ParseOptions = {}): Parsed {
     reply_to = value;
   }
   const crashed = source.crashed === true;
+  const rawDetails = source.details ?? [];
+  if (!Array.isArray(rawDetails)) return { ok: false, status: 400, error: "details is not a list" };
+  if (rawDetails.length > MAX_DETAILS) return { ok: false, status: 413, error: "too many details" };
+  const details: Detail[] = [];
+  for (const entry of rawDetails) {
+    if (!entry || typeof entry !== "object") return { ok: false, status: 400, error: "a detail is not an object" };
+    const name = line(entry as Record<string, unknown>, "name", 40);
+    if (typeof name !== "string") return { ok: false, status: 400, error: `detail ${name.error}` };
+    const value = line(entry as Record<string, unknown>, "value", 200);
+    if (typeof value !== "string") return { ok: false, status: 400, error: `detail ${value.error}` };
+    details.push({ name, value });
+  }
   const rawAttachments = source.attachments ?? [];
   if (!Array.isArray(rawAttachments)) return { ok: false, status: 400, error: "attachments is not a list" };
   if (rawAttachments.length > MAX_ATTACHMENTS) return { ok: false, status: 413, error: "too many attachments" };
@@ -140,6 +158,7 @@ export function parseReport(body: unknown, options: ParseOptions = {}): Parsed {
       description,
       ...(reply_to ? { reply_to } : {}),
       crashed,
+      ...(details.length > 0 ? { details } : {}),
       attachments,
     },
   };
@@ -193,6 +212,7 @@ export function reportFromDraft(draft: StoredDraft, submission: FormSubmission):
     description: submission.description,
     ...(submission.reply_to ? { reply_to: submission.reply_to } : {}),
     crashed: draft.crashed,
+    ...(draft.details && draft.details.length > 0 ? { details: draft.details } : {}),
     attachments: draft.logs.filter((log) => !submission.omit.includes(log.name)),
   };
 }
@@ -202,11 +222,17 @@ export function takesApp(app: string): boolean {
   return REPORT_APPS.includes(app.trim().toLowerCase());
 }
 
-/** The subject line: `[Freight Fate 1.9.6] crash: The window closed`. */
+/**
+ * The subject line: `[Freight Fate 1.9.6] crash: The window closed`, or
+ * `[Wicket's 1.6.0, Tightrope] The rope swayed` when the report says where
+ * the player was.
+ */
 export function subjectOf(report: ProblemReport): string {
   const first = report.description.split("\n").map((l) => l.trim()).find((l) => l !== "") ?? "";
   const summary = [...first].slice(0, 80).join("");
-  return `[${report.app} ${report.version}] ${report.crashed ? "crash: " : ""}${summary}`;
+  const headline = report.details?.[0]?.value;
+  const where = headline ? `, ${headline}` : "";
+  return `[${report.app} ${report.version}${where}] ${report.crashed ? "crash: " : ""}${summary}`;
 }
 
 /**
@@ -219,6 +245,7 @@ export function bodyOf(report: ProblemReport): string {
     report.description.trim(),
     "",
     `App: ${report.app} ${report.version}${report.commit ? ` (commit ${report.commit})` : ""}`,
+    ...(report.details ?? []).map((d) => `${d.name}: ${d.value}`),
     `System: ${report.os}`,
     `Crashed on its last run: ${report.crashed ? "yes" : "no"}`,
   ];

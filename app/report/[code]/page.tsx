@@ -12,6 +12,7 @@ type Draft = {
   app: string;
   version: string;
   crashed: boolean;
+  details?: { name: string; value: string }[];
   logs: { name: string; bytes: number }[];
 };
 
@@ -61,7 +62,13 @@ export default async function ReportPage({ params }: ReportPageProps) {
       {/* Not wrapped in <Section>: its `prose` styles would fight the form's
           own spacing and label typography. */}
       <section className="py-8">
-        <ProblemReportForm code={code} crashed={draft.crashed} logs={draft.logs} version={draft.version} />
+        <ProblemReportForm
+          code={code}
+          crashed={draft.crashed}
+          details={draft.details ?? []}
+          logs={draft.logs}
+          version={draft.version}
+        />
       </section>
     </>
   );

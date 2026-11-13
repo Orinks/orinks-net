@@ -832,6 +832,7 @@ export default defineSchema({
     commit: v.optional(v.string()),
     os: v.string(),
     crashed: v.boolean(),
+    details: v.optional(v.array(v.object({ name: v.string(), value: v.string() }))),
     logs: v.array(
       v.object({
         name: v.string(),

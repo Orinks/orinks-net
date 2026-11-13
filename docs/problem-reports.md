@@ -24,7 +24,11 @@ What the route does, in order:
 6. Sends the email through Resend, from `CONTACT_FROM_EMAIL` to
    `CONTACT_TO_EMAIL`, with the player's address on Reply-To (502 when it
    does not go out, 503 when mail is not configured). The subject reads
-   `[Freight Fate 1.9.6] crash: The window closed`.
+   `[Freight Fate 1.9.6] crash: The window closed`. A report that says
+   where the player was (`details`, up to eight name and value pairs such
+   as `Game: Tightrope`; Hearken's `Game::report_details`) lists them in
+   the body after the app line, and the first one goes in the subject:
+   `[Wicket's 1.6.0, Tightrope] The rope swayed`.
 
 The route never emails the player, and the game never holds a mail
 password.

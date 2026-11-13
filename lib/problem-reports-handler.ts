@@ -131,6 +131,7 @@ async function stageOnConvex(report: ProblemReport): Promise<string | null> {
     ...(report.commit ? { commit: report.commit } : {}),
     os: report.os,
     crashed: report.crashed,
+    ...(report.details && report.details.length > 0 ? { details: report.details } : {}),
     logs,
     now: Date.now(),
   })) as string;
