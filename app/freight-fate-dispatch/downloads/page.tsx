@@ -9,46 +9,17 @@ export const revalidate = 300;
 
 export const metadata = {
   title: "Freight Fate: Dispatch Downloads",
-  description:
-    "Download Freight Fate: Dispatch for Windows, macOS on Apple Silicon, or Linux, with instructions for keeping your careers when updating.",
+  description: "Download Freight Fate: Dispatch for Windows, macOS on Apple Silicon, or Linux.",
 };
 
 export default function FreightFateDispatchDownloadsPage() {
   return (
     <>
-      <PageHeader
-        title="Freight Fate: Dispatch Downloads"
-        intro="Releases of Freight Fate: Dispatch for Windows, macOS and Linux."
-      />
+      <PageHeader title="Freight Fate: Dispatch Downloads" />
       <Section>
-        <p>Download the package for your system and unpack it. No installer is required.</p>
-        <ul>
-          <li>
-            <strong>Windows:</strong> Unzip the download and run FreightFateDispatch.exe.
-          </li>
-          <li>
-            <strong>macOS:</strong> The build runs on Apple Silicon Macs. Unzip the download and
-            open FreightFateDispatch.app. The app is not notarized yet, so the first time, open
-            its shortcut menu with Control-click, or VO-Shift-M in VoiceOver, and choose Open.
-          </li>
-          <li>
-            <strong>Linux:</strong> The build is for x64. Unpack the tarball and run the
-            FreightFateDispatch program inside.
-          </li>
-        </ul>
-      </Section>
-      <Section title="Updating and keeping your careers">
         <p>
-          On Windows and Linux, careers and settings stay in the <code>saves</code> folder inside
-          the <code>FreightFateDispatch</code> folder. Unpack the new version over the old copy,
-          or move the old <code>saves</code> folder into the new copy before starting it.
-        </p>
-        <p>
-          On macOS, replace the app. Your careers and settings stay in{" "}
-          <code>~/Library/Application Support/FreightFateDispatch</code>.
-        </p>
-        <p>
-          <a href="/freight-fate-dispatch">About Freight Fate: Dispatch</a>
+          On Windows, unzip the game somewhere other than Program Files. It keeps your careers
+          in its own folder, and Windows won&apos;t let it write there.
         </p>
       </Section>
       <ReleaseDownloads
@@ -56,6 +27,7 @@ export default function FreightFateDispatchDownloadsPage() {
         repo="freight-fate-dispatch"
         prereleaseLabel="beta releases"
         buildNotifications={false}
+        heading={false}
       />
     </>
   );

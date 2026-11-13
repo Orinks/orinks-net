@@ -166,4 +166,34 @@ describe("ReleaseDownloads", () => {
     expect(markup).not.toContain("No stable release");
     expect(markup).not.toContain("latest stable release");
   });
+
+  test("without its own heading the list starts at the release, one level up", async () => {
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: {
+        assets: [],
+        body: "## Changes",
+        body_html: "<h2>Changes</h2>",
+        html_url: "https://github.com/orinks-games/freight-fate-dispatch/releases/tag/v1.0.0",
+        name: "Dispatch v1.0.0",
+        prerelease: false,
+        published_at: "2026-11-13T23:35:09Z",
+        tag_name: "v1.0.0",
+      },
+      nightlies: [],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({
+        buildNotifications: false,
+        heading: false,
+        productName: "Freight Fate: Dispatch",
+        repo: "freight-fate-dispatch",
+      }),
+    );
+
+    expect(markup).not.toContain("Download Freight Fate: Dispatch");
+    expect(markup).not.toContain("aria-labelledby");
+    expect(markup).toMatch(/<h2[^>]*>Dispatch v1\.0\.0<\/h2>/);
+    expect(markup).toMatch(/<h3[^>]*>Changes<\/h3>/);
+  });
 });
