@@ -21,6 +21,13 @@ export const MAX_BODY_BYTES = 6 * 1024 * 1024;
 /** Reports taken from one client address in a day, and in all. */
 export const PER_ADDRESS_PER_DAY = 5;
 export const PER_DAY = 100;
+/**
+ * Report forms opened from one client address in a day, and in all. Counted
+ * apart from the reports above: opening the form sends no email, and a
+ * player who opens it and closes it again has not used up a report.
+ */
+export const OPENS_PER_ADDRESS_PER_DAY = 20;
+export const OPENS_PER_DAY = 300;
 
 export type Attachment = { name: string; text: string };
 /** One named fact about where the player was: `{ name: "Game", value: "Tightrope" }`. */

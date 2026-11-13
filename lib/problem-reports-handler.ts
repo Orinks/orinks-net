@@ -8,6 +8,8 @@ import {
   composeEmail,
   isBlocked,
   MAX_BODY_BYTES,
+  OPENS_PER_ADDRESS_PER_DAY,
+  OPENS_PER_DAY,
   parseBlockList,
   parseFormSubmission,
   parseReport,
@@ -27,11 +29,14 @@ import {
 //   form uses. Answers are mailbag's: 202 sent, 400 malformed, 403 not a
 //   game we take or a blocked address, 413 too big, 422 the reply address's
 //   domain takes no mail, 429 over a limit, 502 the email did not go out.
+//   Five a day from one address, a hundred in all.
 // - POST /api/problem-reports/open, then the web form: the game posts its
 //   logs with no description and gets a link (201, `{ code, url }`); the
 //   browser opens the link, the player writes there, and the page posts to
 //   /api/problem-reports/<code>, which emails the report with the logs the
-//   game sent ahead (202) or says the link is gone (404).
+//   game sent ahead (202) or says the link is gone (404). Opening the form
+//   has its own limits (429): twenty a day from one address, three hundred
+//   in all.
 //
 // The game never holds a mail password, and this never emails anyone else:
 // the player's address rides on Reply-To.
@@ -217,12 +222,25 @@ function mailEnv() {
   return apiKey && from && to ? { from, to } : null;
 }
 
+/** A day's limits for one route, and the prefix its counters are kept under. */
+type Limits = { key: string; perAddress: number; perDay: number };
+
+/** A whole report, emailed at once. */
+const REPORT_LIMITS: Limits = { key: "", perAddress: PER_ADDRESS_PER_DAY, perDay: PER_DAY };
+/**
+ * A report form opened. Its own counters, and more room: nothing is emailed
+ * until the player sends the form, and five presses of Report a problem in
+ * a day used to lock a player out of the form without one report sent.
+ */
+const OPEN_LIMITS: Limits = { key: "open:", perAddress: OPENS_PER_ADDRESS_PER_DAY, perDay: OPENS_PER_DAY };
+
 /** The report, read and checked, or the refusal: the first steps both game-facing routes share. */
 async function takeIn(
   request: Request,
   deps: Deps,
-  options: { emptyDescription?: boolean } = {},
+  options: { emptyDescription?: boolean; limits?: Limits } = {},
 ): Promise<{ report: ProblemReport; ip: string | null } | Response> {
+  const limits = options.limits ?? REPORT_LIMITS;
   const ip = clientIp(request);
   if (isBlocked(ip, parseBlockList(process.env.PROBLEM_REPORT_BLOCK))) {
     return refuse(403, "reports from this address are not taken");
@@ -234,10 +252,10 @@ async function takeIn(
   const report = parsed.report;
   if (!takesApp(report.app)) return refuse(403, `reports from ${report.app} are not taken`);
   // Blocked and malformed reports never count toward the limits.
-  if (!(await deps.allow(`address:${ip ?? "unknown"}`, PER_ADDRESS_PER_DAY))) {
+  if (!(await deps.allow(`${limits.key}address:${ip ?? "unknown"}`, limits.perAddress))) {
     return refuse(429, "too many reports from this address today");
   }
-  if (!(await deps.allow("all", PER_DAY))) return refuse(429, "too many reports today");
+  if (!(await deps.allow(`${limits.key}all`, limits.perDay))) return refuse(429, "too many reports today");
   return { report, ip };
 }
 
@@ -288,7 +306,7 @@ export function createHandler(deps: Deps) {
  */
 export function createOpenHandler(deps: Deps) {
   return async function POST(request: Request) {
-    const taken = await takeIn(request, deps, { emptyDescription: true });
+    const taken = await takeIn(request, deps, { emptyDescription: true, limits: OPEN_LIMITS });
     if (taken instanceof Response) return taken;
     let code: string | null;
     try {
