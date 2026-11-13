@@ -167,13 +167,27 @@ describe("POST /api/problem-reports/open", () => {
     expect(d.sent).toHaveLength(0);
   });
 
-  it("still checks the report, the game and the limits", async () => {
+  it("still checks the report and the game", async () => {
     const d = deps();
     const open = createOpenHandler(d);
     expect((await open(post({ ...sentAhead, app: "Solitaire" }))).status).toBe(403);
     expect((await open(post({ ...sentAhead, version: 9 }))).status).toBe(400);
-    for (let i = 0; i < 5; i += 1) expect((await open(post(sentAhead))).status).toBe(201);
-    expect((await open(post(sentAhead))).status).toBe(429);
+  });
+
+  it("counts opened forms apart from sent reports, twenty a day from one address", async () => {
+    const d = deps();
+    const open = createOpenHandler(d);
+    const from = (ip: string) => ({ headers: { "x-forwarded-for": ip } });
+    // A day's five reports from this address are already used up.
+    const send = createHandler(d);
+    for (let i = 0; i < 5; i += 1) expect((await send(post(report, from("203.0.113.7")))).status).toBe(202);
+    expect((await send(post(report, from("203.0.113.7")))).status).toBe(429);
+    for (let i = 0; i < 20; i += 1) expect((await open(post(sentAhead, from("203.0.113.7")))).status).toBe(201);
+    expect((await open(post(sentAhead, from("203.0.113.7")))).status).toBe(429);
+    expect((await open(post(sentAhead, from("203.0.113.8")))).status).toBe(201);
+    const full = deps({ allow: async (key) => key !== "open:all" });
+    expect((await createOpenHandler(full)(post(sentAhead))).status).toBe(429);
+    expect((await createHandler(full)(post(report))).status).toBe(202);
   });
 
   it("answers 503 when drafts are not set up and 502 when the logs could not be kept", async () => {

@@ -46,7 +46,11 @@ makes that work:
    storage under a 40-hex-digit code (`convex/problemReports.ts`, table
    `problemReportDrafts`) and answers 201 with `{ code, url }`. 503 when
    `GAMES_SERVER_SECRET` or the Convex URL is not set, 502 when a log
-   could not be stored.
+   could not be stored. Step 4 counts opened forms on their own: twenty
+   per client address and three hundred in all per day (429). Opening the
+   form emails nothing, and under the shared count five presses of Report
+   a problem locked a player out for the day with no report sent
+   (2026-11-13).
 2. The game opens `url` in the browser. `app/report/[code]/page.tsx` reads
    the draft's names and sizes (`peek`, never the logs' text) and renders
    `components/ProblemReportForm.tsx`; a code with no draft shows an
