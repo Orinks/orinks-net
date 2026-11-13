@@ -89,7 +89,7 @@ export const freightFateDispatch: ProjectPage = {
   tagline: "Run the desk at a Freight Fate carrier.",
   summary:
     "Freight Fate: Dispatch is an audio management game for blind and visually impaired players, for Windows, macOS, and Linux. You are the dispatcher at a small trucking carrier. You accept customers' tenders, work the brokers' spot board, decide which driver takes which load, and answer the phone when something goes wrong on the road. Time only moves when you act: assigning a load takes 10 minutes of the day, and a phone call takes 5.",
-  status: "Beta releases are available for Windows, macOS on Apple Silicon, and Linux.",
+  status: "Stable releases are available for Windows, macOS on Apple Silicon, and Linux.",
   features: [
     "Freight from two places: contract customers, who tender loads a day ahead and keep count of the ones you decline or deliver late, and brokers, whose spot loads you can counter for a better rate.",
     "Drivers with five traits you learn by working with them, morale that follows their miles and home time each week, and requests such as no reefer or long runs only.",
