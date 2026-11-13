@@ -29,6 +29,7 @@ export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enha
 export const gamesNav = [
   { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense" },
   { href: "/freight-fate", label: "Freight Fate" },
+  { href: "/freight-fate-dispatch", label: "Freight Fate: Dispatch" },
   { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
   { href: "/wickets", label: "Wicket's" },
@@ -79,6 +80,31 @@ export const freightFate: ProjectPage = {
     { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
     { href: "https://github.com/orinks-games/Freight-Fate", label: "GitHub repository" },
     { href: "https://github.com/orinks-games/Freight-Fate/issues", label: "Report an issue" },
+  ],
+};
+
+export const freightFateDispatch: ProjectPage = {
+  href: "/freight-fate-dispatch",
+  title: "Freight Fate: Dispatch",
+  tagline: "Run the desk at a Freight Fate carrier.",
+  summary:
+    "Freight Fate: Dispatch is an audio management game for blind and visually impaired players, for Windows, macOS, and Linux. You are the dispatcher at a small trucking carrier. You accept customers' tenders, work the brokers' spot board, decide which driver takes which load, and answer the phone when something goes wrong on the road. Time only moves when you act: assigning a load takes 10 minutes of the day, and a phone call takes 5.",
+  status: "Beta releases are available for Windows, macOS on Apple Silicon, and Linux.",
+  features: [
+    "Freight from two places: contract customers, who tender loads a day ahead and keep count of the ones you decline or deliver late, and brokers, whose spot loads you can counter for a better rate.",
+    "Drivers with five traits you learn by working with them, morale that follows their miles and home time each week, and requests such as no reefer or long runs only.",
+    "Real hours of service: 11 hours of driving, a 14-hour window, 70 hours in 8 days, and a 34-hour restart, with roadside inspections, citations, and CDL suspensions for the logs that don't hold up.",
+    "Phone calls from the road: breakdowns, drivers out of hours, trucks held at a dock, and brokers with hot loads. F1 on an answer says what it costs before you choose it.",
+    "Money on a carrier's schedule: invoices paid in 30 or 45 days, factoring, fuel, Friday settlements, truck notes, insurance priced by your safety score, and a line of credit.",
+    "A scorecard every Sunday, and a carrier that grows through reputation tiers, sales calls for new accounts, dedicated customers, and a second terminal.",
+    "Drivers from your Freight Fate careers can join the roster. Dispatch only reads the Freight Fate save.",
+    "Portable on Windows and Linux: careers save in the game's own folder. Unzip and run, no installer.",
+  ],
+  downloadsHref: "/freight-fate-dispatch/downloads",
+  links: [
+    { href: "/freight-fate", label: "Freight Fate, the driving game" },
+    { href: "https://github.com/orinks-games/freight-fate-dispatch", label: "GitHub repository" },
+    { href: "https://github.com/orinks-games/freight-fate-dispatch/issues", label: "Report an issue" },
   ],
 };
 
@@ -135,6 +161,14 @@ export const gameSummaries: GameSummary[] = [
     primaryHref: freightFate.downloadsHref!,
     primaryLabel: "Downloads",
     links: freightFate.links,
+  },
+  {
+    href: freightFateDispatch.href,
+    title: freightFateDispatch.title,
+    summary: freightFateDispatch.summary,
+    primaryHref: freightFateDispatch.downloadsHref!,
+    primaryLabel: "Downloads",
+    links: freightFateDispatch.links.filter((link) => link.href.startsWith("https://")),
   },
   {
     href: saltwake.href,
@@ -252,6 +286,7 @@ export function getProject(href: string) {
 
 export function getGame(href: string) {
   if (href === freightFate.href) return freightFate;
+  if (href === freightFateDispatch.href) return freightFateDispatch;
   if (href === saltwake.href) return saltwake;
   return undefined;
 }

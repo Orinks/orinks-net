@@ -128,4 +128,42 @@ describe("ReleaseDownloads", () => {
     expect(withoutSignup).not.toContain("Build notifications");
     expect(withoutSignup).not.toContain('role="status"');
   });
+
+  test("a game with only beta releases lists the newest without a missing-stable line", async () => {
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: undefined,
+      nightlies: [
+        {
+          assets: [
+            {
+              browser_download_url: "https://example.test/FreightFateDispatch-v0.1.4-windows-portable.zip",
+              download_count: 3,
+              name: "FreightFateDispatch-v0.1.4-windows-portable.zip",
+            },
+          ],
+          body: null,
+          body_html: null,
+          html_url: "https://github.com/orinks-games/freight-fate-dispatch/releases/tag/v0.1.4",
+          name: "Dispatch v0.1.4",
+          prerelease: true,
+          published_at: "2026-10-13T16:40:24Z",
+          tag_name: "v0.1.4",
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({
+        buildNotifications: false,
+        prereleaseLabel: "beta releases",
+        productName: "Freight Fate: Dispatch",
+        repo: "freight-fate-dispatch",
+      }),
+    );
+
+    expect(markup).toContain("Latest beta release");
+    expect(markup).toContain("Windows portable");
+    expect(markup).not.toContain("No stable release");
+    expect(markup).not.toContain("latest stable release");
+  });
 });

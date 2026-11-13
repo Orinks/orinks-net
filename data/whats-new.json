@@ -2,6 +2,19 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-13-freight-fate-dispatch-page",
+      "date": "2026-11-13",
+      "project": "Freight Fate: Dispatch",
+      "title": "Freight Fate: Dispatch has a page and downloads",
+      "body": [
+        "Freight Fate: Dispatch puts you at the desk of a trucking carrier instead of behind the wheel. You take freight from customers and brokers, assign it to drivers, and handle the calls that come in from the road. Its page describes the game, and its downloads page has builds for Windows, macOS and Linux."
+      ],
+      "link": {
+        "href": "/freight-fate-dispatch",
+        "label": "Read about Freight Fate: Dispatch"
+      }
+    },
+    {
       "id": "2026-10-29-wickets-released",
       "date": "2026-10-29",
       "project": "Wicket's",

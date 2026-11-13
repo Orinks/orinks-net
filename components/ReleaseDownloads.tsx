@@ -12,7 +12,7 @@ import {
 } from "@/lib/github";
 
 type ReleaseDownloadsProps = {
-  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake" | "Spectra" | "wickets";
+  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake" | "Spectra" | "wickets" | "freight-fate-dispatch";
   productName: string;
   prereleaseLabel?: string;
   buildNotifications?: boolean;
@@ -140,7 +140,7 @@ export async function ReleaseDownloads({
           <h2 id={`${repo.toLowerCase()}-downloads`} className="text-2xl font-bold text-ink">
             Download {productName}
           </h2>
-          {nightlies.length > 0 ? (
+          {stable && nightlies.length > 0 ? (
             <p className="mt-2 max-w-3xl text-slate-700">
               Download the latest stable release directly, or choose the {singularPrereleaseLabel}{" "}
               for the newest fixes and features.
@@ -166,9 +166,9 @@ export async function ReleaseDownloads({
             </div>
             <Notes headingLevel={4} release={stable} title={releaseTitle(stable)} />
           </article>
-        ) : (
+        ) : nightlies.length === 0 ? (
           <p>No stable release was found on GitHub.</p>
-        )}
+        ) : null}
 
         {nightlies.length > 0 ? (
           <div>
