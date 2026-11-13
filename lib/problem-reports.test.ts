@@ -50,6 +50,32 @@ describe("parseReport", () => {
     });
   });
 
+  it("takes up to eight details of where the player was and holds them to a line", () => {
+    const parsed = parseReport({ ...good, details: [{ name: "Game", value: "Tightrope" }] });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.report.details).toEqual([{ name: "Game", value: "Tightrope" }]);
+    expect(parseReport(good)).toMatchObject({ ok: true });
+    if (!("report" in parseReport(good))) return;
+    expect((parseReport(good) as { report: { details?: unknown } }).report.details).toBeUndefined();
+    expect(parseReport({ ...good, details: "Tightrope" })).toMatchObject({ ok: false, error: "details is not a list" });
+    expect(parseReport({ ...good, details: [{ name: "Game", value: "two\nlines" }] })).toMatchObject({
+      ok: false,
+      error: "detail value has a control character",
+    });
+    expect(parseReport({ ...good, details: [{ name: "", value: "x" }] })).toMatchObject({
+      ok: false,
+      error: "detail name is empty",
+    });
+    expect(parseReport({ ...good, details: [{ name: "Game", value: "x".repeat(201) }] })).toMatchObject({
+      ok: false,
+      status: 400,
+    });
+    expect(
+      parseReport({ ...good, details: Array.from({ length: 9 }, (_, i) => ({ name: `d${i}`, value: "v" })) }),
+    ).toMatchObject({ ok: false, status: 413, error: "too many details" });
+  });
+
   it("answers 413 for a report that is too big", () => {
     expect(parseReport({ ...good, description: "x".repeat(20_001) })).toMatchObject({ ok: false, status: 413 });
     expect(
@@ -74,6 +100,23 @@ describe("the email", () => {
     expect(email.attachments).toEqual([
       { filename: "session.log", content: Buffer.from("12:00 INFO started\n").toString("base64") },
     ]);
+  });
+
+  it("puts the headline detail in the subject and every detail in the body", () => {
+    const parsed = parseReport({
+      ...good,
+      app: "Wicket's",
+      version: "1.6.0",
+      details: [
+        { name: "Game", value: "Tightrope" },
+        { name: "Mode", value: "challenge" },
+      ],
+    });
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(subjectOf(parsed.report)).toBe("[Wicket's 1.6.0, Tightrope] The dock menu is empty.");
+    expect(bodyOf(parsed.report)).toBe(
+      "What happened:\nThe dock menu is empty.\nIt happens at every warehouse.\n\nApp: Wicket's 1.6.0\nGame: Tightrope\nMode: challenge\nSystem: windows x86_64\nCrashed on its last run: no\n",
+    );
   });
 });
 
@@ -140,6 +183,7 @@ describe("reportFromDraft", () => {
       version: "0.1.0",
       os: "windows x86_64",
       crashed: true,
+      details: [{ name: "Game", value: "Belfry" }],
       logs: [
         { name: "game.log", text: "a\n" },
         { name: "crash.log", text: "b\n" },
@@ -153,6 +197,7 @@ describe("reportFromDraft", () => {
       description: "It closed.",
       reply_to: "me@example.com",
       crashed: true,
+      details: [{ name: "Game", value: "Belfry" }],
       attachments: [{ name: "game.log", text: "a\n" }],
     });
     expect(reportFromDraft(draft, { description: "It closed.", omit: [] }).reply_to).toBeUndefined();

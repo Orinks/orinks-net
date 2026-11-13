@@ -18,6 +18,8 @@ type Props = {
   code: string;
   version: string;
   crashed: boolean;
+  /** Where the player was, as the game said: `Game: Tightrope`. */
+  details: { name: string; value: string }[];
   logs: { name: string; bytes: number }[];
 };
 
@@ -31,7 +33,7 @@ export function describeProblem(description: string): string | null {
   return null;
 }
 
-export function ProblemReportForm({ code, version, crashed, logs }: Props) {
+export function ProblemReportForm({ code, version, crashed, details, logs }: Props) {
   const [description, setDescription] = useState("");
   const [replyTo, setReplyTo] = useState("");
   const [attached, setAttached] = useState<Record<string, boolean>>(
@@ -200,6 +202,7 @@ export function ProblemReportForm({ code, version, crashed, logs }: Props) {
       <p className="text-slate-700">
         Version {version}
         {crashed ? ", which closed unexpectedly the last time it ran" : ""}.
+        {details.length > 0 ? ` ${details.map((d) => `${d.name}: ${d.value}`).join(". ")}.` : ""}
       </p>
 
       <div className="mt-6 space-y-6">

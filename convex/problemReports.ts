@@ -43,6 +43,12 @@ const logValidator = v.object({
   bytes: v.number(),
 });
 
+/** One line of where the player was, such as the game they had open. */
+const detailValidator = v.object({
+  name: v.string(),
+  value: v.string(),
+});
+
 async function dropDraft(ctx: MutationCtx, draft: Doc<"problemReportDrafts">) {
   for (const log of draft.logs) {
     await ctx.storage.delete(log.storageId);
@@ -68,6 +74,7 @@ export const stage = mutation({
     commit: v.optional(v.string()),
     os: v.string(),
     crashed: v.boolean(),
+    details: v.optional(v.array(detailValidator)),
     logs: v.array(logValidator),
     now: v.number(),
   },
@@ -84,6 +91,7 @@ export const stage = mutation({
       ...(args.commit ? { commit: args.commit } : {}),
       os: args.os,
       crashed: args.crashed,
+      ...(args.details && args.details.length > 0 ? { details: args.details } : {}),
       logs: args.logs,
       createdAt: args.now,
     });
@@ -104,6 +112,7 @@ export const peek = query({
       app: draft.app,
       version: draft.version,
       crashed: draft.crashed,
+      ...(draft.details ? { details: draft.details } : {}),
       createdAt: draft.createdAt,
       logs: draft.logs.map((log) => ({ name: log.name, bytes: log.bytes })),
     };
@@ -134,6 +143,7 @@ export type TakenDraft = {
   commit?: string;
   os: string;
   crashed: boolean;
+  details?: { name: string; value: string }[];
   logs: { name: string; text: string }[];
 };
 
@@ -157,6 +167,7 @@ export const read = action({
       ...(draft.commit ? { commit: draft.commit } : {}),
       os: draft.os,
       crashed: draft.crashed,
+      ...(draft.details ? { details: draft.details } : {}),
       logs,
     };
   },
