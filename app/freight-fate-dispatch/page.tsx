@@ -14,12 +14,11 @@ export default function FreightFateDispatchPage() {
       <PageHeader title={project.title} />
       <Section>
         <p>
-          Built from the ground up for blind and visually impaired players, Freight Fate:
-          Dispatch puts you in the hot seat of a struggling trucking carrier where every ringing
+          An audio game for blind and visually impaired players, Freight Fate: Dispatch puts you in the hot seat of a struggling trucking carrier where every ringing
           phone, unexpected crisis, and missed delivery can put you out of business.
         </p>
         <p>
-          Driven by sharp text, atmospheric music, and the stark ring of a desk phone signaling
+          Driven by sharp text, music, and the stark ring of a desk phone signaling
           a new event, there are no arcade timers or frantic clicking here. Time only moves when
           you act, leaving you alone with your coffee, your logs, and your decisions.
         </p>
@@ -51,7 +50,7 @@ export default function FreightFateDispatchPage() {
           No two drivers are alike, and you only learn their faults when they’re stranded three
           states away. One runs hot, logs 80 miles an hour, and collects speeding tickets like
           souvenirs. Another is safe as a church but goes radio-silent for twelve hours straight.
-          Some refuse to touch the Northeast; others won’t pull a reefer unit. Give them fair
+          Some want nothing to do with the Northeast; others won’t pull a reefer unit. Give them fair
           miles and get them home to their families, and they stay loyal. Run them ragged or
           leave them sitting unpaid, and you’ll be staring at a two-week notice by Sunday night.
         </p>
@@ -62,7 +61,7 @@ export default function FreightFateDispatchPage() {
           workday, and 70 hours in 8 days. When a driver is out of hours and a tight delivery is
           on the line, the choice is yours: shut them down and take the hit, or tell them to run
           it anyway and pray they bypass the weigh station. Inspections, logbook citations, and
-          suspended licenses tank your safety score. Let it climb too high, and the DOT auditors
+          suspended licenses pile points onto your safety score. Let it climb too high, and the DOT auditors
           show up with clipboards and bad news.
         </p>
       </Section>
@@ -70,19 +69,19 @@ export default function FreightFateDispatchPage() {
         <p>
           The morning dispatch plan is dead by noon. The desk phone rings, bringing a fresh wave
           of operational chaos: a truck has broken down in a blizzard on I-80, a shipper is
-          holding your driver at the dock for six hours of unpaid detention, or a broker is
+          holding your driver at the dock for hours of unpaid detention, or a broker is
           hitting your line with a hot, high-paying load that needs a truck now. Every
           interruption demands a choice, and every answer carries a cost.
         </p>
       </Section>
       <Section title="Make the Money Work">
         <p>
-          Freight doesn’t pay the day it drops. Customers take thirty days to settle an invoice.
+          Freight doesn’t pay the day it drops. Brokers and customers take thirty days or more to settle an invoice.
           But diesel, driver pay, monthly truck notes, insurance, and terminal rent don’t wait.
         </p>
         <ul>
           <li>
-            Factor your invoices to get cash tomorrow in exchange for a punishing percentage cut.
+            Factor your invoices to get cash tomorrow in exchange for a cut of every invoice.
           </li>
           <li>
             Hold out for the full payout and lean on your bank line of credit to survive the
@@ -93,7 +92,7 @@ export default function FreightFateDispatchPage() {
       </Section>
       <Section title="Grow the Carrier">
         <p>
-          Every Sunday closes with your weekly scorecard in red or black. As your reputation
+          Every Sunday closes with your weekly scorecard. As your reputation
           grinds upward, bigger shippers start taking your sales calls, loyal customers offer
           lucrative dedicated lanes, and you can finally afford to open a second terminal in a
           new city.
