@@ -33,6 +33,7 @@ vi.mock("next/cache", () => ({
 
 import {
   downloadAssetLabel,
+  repoSlug,
   getLatestStableRelease,
   getReleaseGroups,
   getReleases,
@@ -47,6 +48,15 @@ describe("download labels", () => {
     expect(downloadAssetLabel("wickets-1.1.0-windows-x64.zip")).toBe("Windows ZIP archive x64");
     expect(downloadAssetLabel("wickets-1.1.0-macos-arm64.zip")).toBe("macOS ZIP archive ARM64");
     expect(downloadAssetLabel("wickets-1.1.0-linux-x64.tar.gz")).toBe("Linux tarball x64");
+  });
+});
+
+describe("Dispatch packages", () => {
+  test("names the platform on every Freight Fate: Dispatch package", () => {
+    expect(downloadAssetLabel("FreightFateDispatch-v0.1.4-windows-portable.zip")).toBe("Windows portable");
+    expect(downloadAssetLabel("FreightFateDispatch-v0.1.4-macos-arm64.zip")).toBe("macOS ZIP archive ARM64");
+    expect(downloadAssetLabel("FreightFateDispatch-v0.1.4-linux-x64.tar.gz")).toBe("Linux tarball x64");
+    expect(repoSlug("freight-fate-dispatch")).toBe("orinks-games/freight-fate-dispatch");
   });
 });
 

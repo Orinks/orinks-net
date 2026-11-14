@@ -128,4 +128,72 @@ describe("ReleaseDownloads", () => {
     expect(withoutSignup).not.toContain("Build notifications");
     expect(withoutSignup).not.toContain('role="status"');
   });
+
+  test("a game with only beta releases lists the newest without a missing-stable line", async () => {
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: undefined,
+      nightlies: [
+        {
+          assets: [
+            {
+              browser_download_url: "https://example.test/FreightFateDispatch-v0.1.4-windows-portable.zip",
+              download_count: 3,
+              name: "FreightFateDispatch-v0.1.4-windows-portable.zip",
+            },
+          ],
+          body: null,
+          body_html: null,
+          html_url: "https://github.com/orinks-games/freight-fate-dispatch/releases/tag/v0.1.4",
+          name: "Dispatch v0.1.4",
+          prerelease: true,
+          published_at: "2026-10-13T16:40:24Z",
+          tag_name: "v0.1.4",
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({
+        buildNotifications: false,
+        prereleaseLabel: "beta releases",
+        productName: "Freight Fate: Dispatch",
+        repo: "freight-fate-dispatch",
+      }),
+    );
+
+    expect(markup).toContain("Latest beta release");
+    expect(markup).toContain("Windows portable");
+    expect(markup).not.toContain("No stable release");
+    expect(markup).not.toContain("latest stable release");
+  });
+
+  test("without its own heading the list starts at the release, one level up", async () => {
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: {
+        assets: [],
+        body: "## Changes",
+        body_html: "<h2>Changes</h2>",
+        html_url: "https://github.com/orinks-games/freight-fate-dispatch/releases/tag/v1.0.0",
+        name: "Dispatch v1.0.0",
+        prerelease: false,
+        published_at: "2026-11-13T23:35:09Z",
+        tag_name: "v1.0.0",
+      },
+      nightlies: [],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({
+        buildNotifications: false,
+        heading: false,
+        productName: "Freight Fate: Dispatch",
+        repo: "freight-fate-dispatch",
+      }),
+    );
+
+    expect(markup).not.toContain("Download Freight Fate: Dispatch");
+    expect(markup).not.toContain("aria-labelledby");
+    expect(markup).toMatch(/<h2[^>]*>Dispatch v1\.0\.0<\/h2>/);
+    expect(markup).toMatch(/<h3[^>]*>Changes<\/h3>/);
+  });
 });
