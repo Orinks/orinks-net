@@ -88,7 +88,8 @@ route. A plain value that is not declared is `undefined`.
   production only: `GITHUB_TOKEN`, `LASTFM_API_KEY`, `LASTFM_USERNAME`,
   `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`,
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
-  `RESEND_API_KEY`, `GAMES_SERVER_SECRET`, `BUILD_NOTIFICATION_TOKEN`.
+  `RESEND_API_KEY`, `GAMES_SERVER_SECRET`, `BUILD_NOTIFICATION_TOKEN`,
+  `DISPATCH_BUILD_NOTIFICATION_TOKEN`.
   `GAMES_SERVER_SECRET` is the same value as the Convex deployment's
   `GAMES_SERVER_SECRET` (32 characters or more): the games service and the
   problem-report relay's daily counters (`docs/problem-reports.md`) call

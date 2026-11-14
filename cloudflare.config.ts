@@ -94,6 +94,8 @@ export default defineConfig(({ mode }) => {
         // reports per isolate instead. No game is registered yet.
         GAMES_SERVER_SECRET: productionSecret(),
         BUILD_NOTIFICATION_TOKEN: productionSecret(),
+        // Freight Fate: Dispatch's own token for the same endpoint.
+        DISPATCH_BUILD_NOTIFICATION_TOKEN: productionSecret(),
       },
     }),
   };

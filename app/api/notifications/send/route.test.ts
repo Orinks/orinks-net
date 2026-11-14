@@ -63,6 +63,16 @@ describe("build notification cache invalidation", () => {
     expect(mocks.revalidateTag).toHaveBeenCalledWith("github-rendered-markdown");
   });
 
+  test("accepts Dispatch's own token as well", async () => {
+    process.env.DISPATCH_BUILD_NOTIFICATION_TOKEN = "dispatch-token";
+
+    const response = await POST(request("dispatch-token"));
+    delete process.env.DISPATCH_BUILD_NOTIFICATION_TOKEN;
+
+    expect(response.status).toBe(200);
+    expect(mocks.revalidateTag).toHaveBeenCalledWith("github-releases");
+  });
+
   test("does not invalidate the cache for unauthorized requests", async () => {
     const response = await POST(request("wrong-token"));
 

@@ -13,11 +13,14 @@ type SendBody = {
   url?: string;
 };
 
+// Two tokens are accepted. Cloudflare never shows a secret back, so a project
+// added later cannot be handed the first one; Freight Fate: Dispatch's release
+// workflow has its own.
 function hasSendToken(request: Request) {
-  const configuredToken = process.env.BUILD_NOTIFICATION_TOKEN;
   const header = request.headers.get("authorization");
+  const tokens = [process.env.BUILD_NOTIFICATION_TOKEN, process.env.DISPATCH_BUILD_NOTIFICATION_TOKEN];
 
-  return Boolean(configuredToken && header && header === `Bearer ${configuredToken}`);
+  return tokens.some((token) => Boolean(token && header && header === `Bearer ${token}`));
 }
 
 function configureWebPush() {
