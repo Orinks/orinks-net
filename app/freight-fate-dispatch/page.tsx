@@ -85,8 +85,8 @@ export default function FreightFateDispatchPage() {
           </li>
           <li>
             Hold out for the full payout and lean on your bank line of credit to survive the
-            gap. Just don’t stay maxed out for a full month, or the bank will padlock the doors
-            and repossess your authority.
+            gap. Just don’t stay maxed out for a full month, or the bank will call the loan
+            and padlock the doors.
           </li>
         </ul>
       </Section>
