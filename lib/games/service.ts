@@ -9,7 +9,7 @@ import { site } from "@/lib/site";
 import { clientIp } from "@/lib/client-ip";
 import { convexRecords } from "./records";
 import { GAMES, type GameDefinition } from "./registry";
-import { convexStores, gamesServerSecret, type GameStores } from "./stores";
+import { convexSaves, convexStores, gamesServerSecret, type GameStores } from "./stores";
 
 type Service = { fetch(request: Request): Promise<Response> };
 
@@ -99,10 +99,12 @@ export function buildService(
       },
     });
   }
+  const { saves: saveStore, ...stores } = parts.stores;
   return createService({
     rules: parts.rules,
-    ...parts.stores,
+    ...stores,
     accounts,
+    saves: saveStore && game.saves ? game.saves(parts.records, saveStore) : null,
     onLink: guests?.linked,
     handlers: withTester(game.handlers(parts.records)),
     basePath: `/api/games/${game.id}`,
@@ -147,12 +149,15 @@ function build(
     rules: rulesFolder(id),
     // The live site names itself, so a first request to a deployment URL
     // cannot make every game speak that host; previews use their own.
-    stores: convexStores({
-      client,
-      secret,
-      game: id,
-      connectUrl: `${process.env.VERCEL_ENV === "production" ? site.url : origin}/games/connect`,
-    }),
+    stores: {
+      ...convexStores({
+        client,
+        secret,
+        game: id,
+        connectUrl: `${process.env.VERCEL_ENV === "production" ? site.url : origin}/games/connect`,
+      }),
+      saves: convexSaves(client, secret, id),
+    },
     records: convexRecords(client, secret, id),
   });
 }

@@ -1,7 +1,7 @@
 // The Hearken games this site runs verified runs for. A game joins by
 // adding an entry here, its handlers, and its published rules modules in
 // hearken-rules/<id>/ (docs/games/hearken-online.md walks through it).
-import type { Handler, Player } from "@/lib/hearken-online";
+import type { Handler, Player, SaveStore, SavesOptions } from "@/lib/hearken-online";
 import { wicketsGame } from "@/lib/wickets-online";
 import type { GameRecords } from "./records";
 
@@ -17,6 +17,8 @@ export type GameDefinition = {
    * without it has no guests. `renamed` and `linked` let its records
    * follow a guest's new name, and move to the account a guest connects.
    */
+  /** Synced files: the game's saves kept with each account. */
+  saves?(records: GameRecords, store: SaveStore): SavesOptions;
   guests?(records: GameRecords): {
     renamed?(player: Player, name: string): Promise<void>;
     linked?(input: { guest: string; player: Player | null }): Promise<void>;

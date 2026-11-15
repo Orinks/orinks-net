@@ -2,6 +2,16 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-15-wickets-player-pages",
+      "date": "2026-11-15",
+      "project": "Wicket's",
+      "title": "Wicket's player pages and cloud saves",
+      "body": [
+        "Each orinks.net account that plays Wicket's now has a player page with its ranked bests, the holiday specials it has beaten, and the bests and unlocks its game last sent. Hide my page on your own page takes it down until you show it again.",
+        "Wicket's 1.8.0 keeps your scores, unlocks and progress with your account, so they follow you to another computer. Turn it on in Settings, Online. If both computers already have progress, the game asks once whether to combine them. Guests keep their progress on one computer."
+      ]
+    },
+    {
       "id": "2026-11-15-wickets-leaderboards",
       "date": "2026-11-15",
       "project": "Wicket's",

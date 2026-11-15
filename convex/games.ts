@@ -20,6 +20,7 @@ import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { formatUserCode, mintUserCode, normalizeUserCode } from "./freightFateActivation";
 import { sameText } from "./freightFateReview";
 import { screenDisplayName } from "./moderation";
+import { purgeGamesSaves } from "./gamesSaves";
 
 export const GAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/;
 export const CONNECT_TTL_MS = 10 * 60_000;
@@ -43,7 +44,7 @@ function serverSecret() {
 }
 
 /** Refuses a caller that is not the site's own server. */
-function requireServer(secret: string) {
+export function requireServer(secret: string) {
   const expected = serverSecret();
   if (!expected || !sameText(secret, expected)) {
     throw new ConvexError({ code: "forbidden" as const });
@@ -65,7 +66,7 @@ export async function sha256Hex(text: string) {
   return toHex(new Uint8Array(digest));
 }
 
-function checkGame(game: string) {
+export function checkGame(game: string) {
   if (!GAME_PATTERN.test(game)) {
     throw new ConvexError({ code: "bad_game" as const });
   }
@@ -172,7 +173,7 @@ export const playerForToken = query({
   },
 });
 
-/** The signed-in account's player, for the connect page. */
+/** The signed-in account's player, for the connect page and the player page. */
 export const getMyGamesPlayer = query({
   args: {},
   handler: async (ctx) => {
@@ -181,7 +182,43 @@ export const getMyGamesPlayer = query({
       return null;
     }
     const player = await playerBySubject(ctx, identity.subject);
-    return player ? { displayName: player.displayName } : null;
+    return player ? { displayName: player.displayName, profileHidden: player.profileHidden === true } : null;
+  },
+});
+
+/** Hides or shows the signed-in player's public player page. */
+export const setProfileHidden = mutation({
+  args: { hidden: v.boolean() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { ok: false as const };
+    }
+    const player = await playerBySubject(ctx, identity.subject);
+    if (!player) {
+      return { ok: false as const };
+    }
+    await ctx.db.patch(player._id, { profileHidden: args.hidden });
+    return { ok: true as const, hidden: args.hidden };
+  },
+});
+
+/**
+ * An account's player by name, for its public page, and whether they hid
+ * it: null for no such player. Guests have no page.
+ */
+export const playerForPage = query({
+  args: { secret: v.string(), name: v.string() },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    const key = normalizePlayerName(args.name).toLowerCase();
+    if (!key) return null;
+    const player = await ctx.db
+      .query("gamesPlayers")
+      .withIndex("by_name_key", (q) => q.eq("nameKey", key))
+      .first();
+    if (!player) return null;
+    return { playerId: player.playerId, name: player.displayName, hidden: player.profileHidden === true };
   },
 });
 
@@ -664,6 +701,7 @@ export async function purgeGamesPlayer(ctx: MutationCtx, authSubject: string) {
       deleted += 1;
     }
   }
+  deleted += await purgeGamesSaves(ctx, player.playerId);
   // Run claims stay, so a copied run still reads as already sent; the
   // player id they keep no longer leads to anyone.
   await ctx.db.delete(player._id);

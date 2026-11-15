@@ -103,6 +103,8 @@ export default defineSchema({
     // Games this player tests unreleased content for (games:setTester).
     // The game asks after connecting and opens what its build holds back.
     testerGames: v.optional(v.array(v.string())),
+    // The player hid their public player page (/wickets/players/<name>).
+    profileHidden: v.optional(v.boolean()),
   })
     .index("by_player_id", ["playerId"])
     .index("by_auth_subject", ["authSubject"])
@@ -163,6 +165,25 @@ export default defineSchema({
     .index("by_key", ["game", "collection", "key"])
     .index("by_order", ["game", "collection", "order"])
     .index("by_player", ["playerId"]),
+  // Synced files (convex/gamesSaves.ts): a sealed copy of a player's save
+  // per game and file name, the last ten revisions.
+  gamesSaves: defineTable({
+    game: v.string(),
+    playerId: v.string(),
+    name: v.string(),
+    revision: v.number(),
+    format: v.number(),
+    contentHash: v.string(),
+    sizeBytes: v.number(),
+    contentId: v.id("gamesSaveContent"),
+    createdAt: v.number(),
+  })
+    .index("by_slot", ["game", "playerId", "name", "revision"])
+    .index("by_player", ["playerId"]),
+  gamesSaveContent: defineTable({
+    playerId: v.string(),
+    content: v.bytes(),
+  }).index("by_player", ["playerId"]),
   buildNotificationSubscriptions: defineTable({
     endpoint: v.string(),
     expirationTime: v.optional(v.number()),
