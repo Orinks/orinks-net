@@ -14,6 +14,7 @@ import {
   FREIGHT_FATE_ACHIEVEMENT_ID_SET,
 } from "./freightFateProfileCatalog";
 import { readCatalogAchievements } from "./freightFateProfileAchievements";
+import { foldHeartbeatIntoDispatch, truckStateValidator } from "./freightFateDispatchTruck";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -679,6 +680,9 @@ export const updatePresence = mutation({
     driverTokenHash: v.string(),
     activity: v.string(),
     detail: v.string(),
+    // Live dispatch only (convex/freightFateDispatchTruck.ts): where a carrier
+    // driver's truck is. Never shown on the board.
+    truck: v.optional(truckStateValidator),
     clientVersion: v.optional(v.string()),
     now: v.number(),
   },
@@ -732,6 +736,8 @@ export const updatePresence = mutation({
         // not seen.
         await ctx.db.patch(driver._id, { lastOnDutyAt: args.now });
       }
+      // A sign-off may carry where the truck parked; the desk keeps it.
+      await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
       return { ok: true as const, cleared: true };
     }
 
@@ -761,7 +767,8 @@ export const updatePresence = mutation({
         changedAt: args.now,
         ...listing,
       });
-      return { ok: true as const, cleared: false };
+      const dispatch = await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
+      return { ok: true as const, cleared: false, ...(dispatch ? { dispatch } : {}) };
     }
 
     const shown =
@@ -788,7 +795,8 @@ export const updatePresence = mutation({
       });
     }
 
-    return { ok: true as const, cleared: false };
+    const dispatch = await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
+    return { ok: true as const, cleared: false, ...(dispatch ? { dispatch } : {}) };
   },
 });
 

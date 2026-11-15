@@ -72,13 +72,17 @@ to set up the presence rewrite to `<deployment>.convex.site`.
 Changing any of these means rebuilding, not just editing a Worker variable.
 
 **Run time (Worker bindings).** Server code reads `process.env.X` at request
-time. On Workers that only works for names declared under `env` in
+time. On Workers that works for names declared under `env` in
 `cloudflare.config.ts` (with `nodejs_compat`, declared vars and secrets are
-copied onto `process.env`). An undeclared name is simply `undefined`.
+copied onto `process.env`), and for any secret set on the Worker with
+`wrangler secret put`, declared or not: on 2026-11-12 `RESEND_API_KEY` put
+on the preview Worker, which does not declare it, reached the problem-report
+route. A plain value that is not declared is `undefined`.
 
 - Plain values are declared with `bindings.text(...)` in the config:
   `VERCEL_ENV`, `VISITOR_COUNTER_ENV` (both set per mode), `MASTODON_PROFILE_URL`,
-  `VAPID_SUBJECT`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`.
+  `VAPID_SUBJECT`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`,
+  `PROBLEM_REPORT_BLOCK` (empty; addresses whose problem reports are refused).
 - Secrets are declared with `bindings.secret()`:
   every Worker: `CONVEX_URL`, `CLERK_SECRET_KEY`, `FREIGHT_FATE_MUSIC_BLOB_URL`;
   production only: `GITHUB_TOKEN`, `LASTFM_API_KEY`, `LASTFM_USERNAME`,
@@ -86,7 +90,8 @@ copied onto `process.env`). An undeclared name is simply `undefined`.
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
   `RESEND_API_KEY`, `BUILD_NOTIFICATION_TOKEN`.
   `GAMES_SERVER_SECRET` (the games service, also on Convex) and
-  `WICKETS_SEED_SECRET` (Wicket's challenge seeds) are production secrets.
+  `WICKETS_SEED_SECRET` (Wicket's challenge seeds) are production secrets. The problem-report relay's daily counters
+  (`docs/problem-reports.md`) also call Convex with `GAMES_SERVER_SECRET`.
   Nobody makes them by hand: run the Cloudflare deploy workflow with target
   `games-secrets`, which makes any that are missing and sets them on Convex
   and the Worker without printing them. The preview has neither, so its
@@ -211,7 +216,11 @@ only in the browser to trim it.
 - Sign-in itself: the production Clerk key only works on orinks.net, and no
   development key was available. The middleware and the signed-out pages work.
 - POST routes (game saves, events, presence, contact, notifications) were not
-  exercised, to avoid writing to production Convex.
+  exercised, to avoid writing to production Convex. `/api/problem-reports`
+  was, against the production-mode build in the local runtime with a fake
+  Resend key (2026-11-12): gzip unpacking, the `node:dns` mail-exchanger
+  lookup, the address from `CF-Connecting-IP`, the per-isolate counters and
+  the Resend call all answered as on Node.
 
 ## Convex deploy step
 

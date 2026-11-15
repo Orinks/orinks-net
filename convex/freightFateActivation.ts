@@ -155,9 +155,17 @@ export const claimActivation = mutation({
     // page nobody chose to land on is the wrong place for that to happen as
     // a side effect.
     displayName: v.optional(v.string()),
-    now: v.number(),
+    // Ignored. The page used to send the browser's clock here, and a page
+    // loaded before that stopped still sends it, so the argument stays
+    // accepted rather than failing validation for an open tab.
+    now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // The server's clock, never the browser's. The page used to send its own,
+    // so a computer clock more than ten minutes fast made every fresh code
+    // look expired (suspected in Freight Fate issues 605 and 606,
+    // 2026-11-12). Date.now() is fixed for the length of a mutation.
+    const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       // Two different failures the page words differently: signed out, versus
@@ -188,7 +196,7 @@ export const claimActivation = mutation({
     const allowed = await consumeFreightFateWrite(ctx, {
       scope: "activation_claim",
       driverId: driver ? driver.driverId : identity.subject,
-      now: args.now,
+      now,
       limit: ACTIVATION_CLAIM_LIMIT,
     });
     if (!allowed) {
@@ -205,7 +213,7 @@ export const claimActivation = mutation({
           .withIndex("by_user_code", (q) => q.eq("userCode", code))
           .unique()
       : null;
-    if (!row || row.status !== "pending" || row.expiresAt <= args.now) {
+    if (!row || row.status !== "pending" || row.expiresAt <= now) {
       return { ok: false as const, code: "unknown_code" as const };
     }
 
@@ -274,25 +282,21 @@ export const claimActivation = mutation({
         displayName: displayName!,
         visibility: "private",
         authSubject: identity.subject,
-        createdAt: args.now,
-        updatedAt: args.now,
+        createdAt: now,
+        updatedAt: now,
       });
     }
 
-    // `now` here is the browser's clock (the /activate page sends
-    // Date.now()), so it is not something to write into a deadline
-    // unchecked: the sweep is the only thing that ever collects this table,
-    // and a row stamped far enough ahead would simply never be collected.
-    // Clamping against the server-stamped createdAt keeps the late-claim fix
-    // -- a claim at T+9:59 still gets its full collection window -- while
-    // bounding what any caller can write to one TTL plus one collection
-    // window after the row was actually created.
+    // Bounded by createdAt as well as by now: the late-claim fix -- a claim
+    // at T+9:59 still gets its full collection window -- never stretches a
+    // row past one TTL plus one collection window after it was created, so
+    // the sweep always collects it.
     await ctx.db.patch(row._id, {
       status: "claimed",
       driverId,
       label: args.label,
       expiresAt: Math.min(
-        args.now + ACTIVATION_COLLECTION_MS,
+        now + ACTIVATION_COLLECTION_MS,
         row.createdAt + ACTIVATION_TTL_MS + ACTIVATION_COLLECTION_MS,
       ),
     });

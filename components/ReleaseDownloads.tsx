@@ -12,10 +12,13 @@ import {
 } from "@/lib/github";
 
 type ReleaseDownloadsProps = {
-  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake" | "Spectra" | "wickets";
+  repo: "AccessiWeather" | "PortkeyDrop" | "station-scout" | "Freight-Fate" | "saltwake" | "Spectra" | "wickets" | "freight-fate-dispatch";
   productName: string;
   prereleaseLabel?: string;
   buildNotifications?: boolean;
+  // False when the page's own title already says "downloads": the list then
+  // starts at the release, and every heading in it moves up one level.
+  heading?: boolean;
 };
 
 function DownloadList({ release }: { release: GitHubRelease }) {
@@ -53,7 +56,7 @@ function DownloadList({ release }: { release: GitHubRelease }) {
   );
 }
 
-function rebaseNoteHeadings(html: string, minimumLevel: 4 | 5) {
+function rebaseNoteHeadings(html: string, minimumLevel: 3 | 4 | 5) {
   const levels = Array.from(html.matchAll(/<h([1-6])\b/gi), (match) => Number(match[1]));
 
   if (levels.length === 0) {
@@ -74,7 +77,7 @@ function Notes({
   title,
 }: {
   release: GitHubRelease;
-  headingLevel: 4 | 5;
+  headingLevel: 3 | 4 | 5;
   title: string;
 }) {
   if (!(release.body_html || release.body)?.trim()) {
@@ -127,7 +130,11 @@ export async function ReleaseDownloads({
   productName,
   prereleaseLabel = "nightly builds",
   buildNotifications = true,
+  heading = true,
 }: ReleaseDownloadsProps) {
+  const GroupHeading = heading ? "h3" : "h2";
+  const ReleaseHeading = heading ? "h4" : "h3";
+
   try {
     const { stable, nightlies } = await getReleaseGroups(repo);
     const singularPrereleaseLabel = prereleaseLabel.endsWith("s")
@@ -135,24 +142,29 @@ export async function ReleaseDownloads({
       : prereleaseLabel;
 
     return (
-      <section className="space-y-6 py-8" aria-labelledby={`${repo.toLowerCase()}-downloads`}>
-        <div>
-          <h2 id={`${repo.toLowerCase()}-downloads`} className="text-2xl font-bold text-ink">
-            Download {productName}
-          </h2>
-          {nightlies.length > 0 ? (
-            <p className="mt-2 max-w-3xl text-slate-700">
-              Download the latest stable release directly, or choose the {singularPrereleaseLabel}{" "}
-              for the newest fixes and features.
-            </p>
-          ) : null}
-        </div>
+      <section
+        className="space-y-6 py-8"
+        aria-labelledby={heading ? `${repo.toLowerCase()}-downloads` : undefined}
+      >
+        {heading ? (
+          <div>
+            <h2 id={`${repo.toLowerCase()}-downloads`} className="text-2xl font-bold text-ink">
+              Download {productName}
+            </h2>
+            {stable && nightlies.length > 0 ? (
+              <p className="mt-2 max-w-3xl text-slate-700">
+                Download the latest stable release directly, or choose the {singularPrereleaseLabel}{" "}
+                for the newest fixes and features.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {buildNotifications ? <BuildNotificationSignup productName={productName} /> : null}
 
         {stable ? (
           <article className="rounded-lg border border-line bg-soft-green p-5">
             <p className="font-semibold text-emerald-900">Stable release</p>
-            <h3 className="mt-1 text-xl font-bold text-ink">{releaseTitle(stable)}</h3>
+            <GroupHeading className="mt-1 text-xl font-bold text-ink">{releaseTitle(stable)}</GroupHeading>
             <p className="mt-1 text-sm text-slate-700">
               Published {formatDate(stable.published_at)}
             </p>
@@ -164,21 +176,21 @@ export async function ReleaseDownloads({
                 View full release
               </ButtonLink>
             </div>
-            <Notes headingLevel={4} release={stable} title={releaseTitle(stable)} />
+            <Notes headingLevel={heading ? 4 : 3} release={stable} title={releaseTitle(stable)} />
           </article>
-        ) : (
+        ) : nightlies.length === 0 ? (
           <p>No stable release was found on GitHub.</p>
-        )}
+        ) : null}
 
         {nightlies.length > 0 ? (
           <div>
-            <h3 className="mb-3 text-xl font-bold text-ink">Latest {singularPrereleaseLabel}</h3>
+            <GroupHeading className="mb-3 text-xl font-bold text-ink">Latest {singularPrereleaseLabel}</GroupHeading>
             <div className="space-y-4">
               {nightlies.map((release) => (
                 <article className="rounded-lg border border-line bg-white p-5" key={release.tag_name}>
-                  <h4 className="text-lg font-bold text-ink">
+                  <ReleaseHeading className="text-lg font-bold text-ink">
                     {prereleaseTitle(release, singularPrereleaseLabel)}
-                  </h4>
+                  </ReleaseHeading>
                   <p className="mt-1 text-sm text-slate-700">
                     Published {formatDate(release.published_at)}
                   </p>
@@ -191,7 +203,7 @@ export async function ReleaseDownloads({
                     </a>
                   </p>
                   <Notes
-                    headingLevel={5}
+                    headingLevel={heading ? 5 : 4}
                     release={release}
                     title={prereleaseTitle(release, singularPrereleaseLabel)}
                   />
