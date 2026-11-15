@@ -88,11 +88,14 @@ export default defineConfig(({ mode }) => {
         SPOTIFY_LOGIN_KEY: productionSecret(),
         VAPID_PRIVATE_KEY: productionSecret(),
         RESEND_API_KEY: productionSecret(),
-        // Shared with the Convex deployment (its GAMES_SERVER_SECRET). The
-        // games service (lib/games/stores.ts) and the problem-report relay's
-        // daily counters call Convex with it; without it the relay counts
-        // reports per isolate instead. No game is registered yet.
+        // The Hearken games' secrets (lib/games/stores.ts, lib/wickets-online),
+        // made and set by the deploy workflow's "games-secrets" run. The
+        // games service and the problem-report relay's daily counters call
+        // Convex with GAMES_SERVER_SECRET. The preview has none, so its
+        // /api/games/ answers 503: it shares the production Convex
+        // deployment, and must not write to it.
         GAMES_SERVER_SECRET: productionSecret(),
+        WICKETS_SEED_SECRET: productionSecret(),
         BUILD_NOTIFICATION_TOKEN: productionSecret(),
       },
     }),

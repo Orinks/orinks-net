@@ -88,13 +88,18 @@ route. A plain value that is not declared is `undefined`.
   production only: `GITHUB_TOKEN`, `LASTFM_API_KEY`, `LASTFM_USERNAME`,
   `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`,
   `SPOTIFY_REDIRECT_URI`, `SPOTIFY_LOGIN_KEY`, `VAPID_PRIVATE_KEY`,
-  `RESEND_API_KEY`, `GAMES_SERVER_SECRET`, `BUILD_NOTIFICATION_TOKEN`.
-  `GAMES_SERVER_SECRET` is the same value as the Convex deployment's
-  `GAMES_SERVER_SECRET` (32 characters or more): the games service and the
-  problem-report relay's daily counters (`docs/problem-reports.md`) call
-  Convex with it. It was never set on Vercel. Until it is set, the relay
-  counts reports per isolate, and the games service has no store (no game is
-  registered yet).
+  `RESEND_API_KEY`, `BUILD_NOTIFICATION_TOKEN`.
+  `GAMES_SERVER_SECRET` (the games service, also on Convex) and
+  `WICKETS_SEED_SECRET` (Wicket's challenge seeds) are production secrets. The problem-report relay's daily counters
+  (`docs/problem-reports.md`) also call Convex with `GAMES_SERVER_SECRET`.
+  Nobody makes them by hand: run the Cloudflare deploy workflow with target
+  `games-secrets`, which makes any that are missing and sets them on Convex
+  and the Worker without printing them. The preview has neither, so its
+  `/api/games/` answers 503: it shares the production Convex deployment.
+  Hearken games' rules modules (`hearken-rules/`) are bundled into the Worker
+  at build time by `scripts/hearken-rules-plugin.mjs`, already compiled: a
+  Worker cannot read them from disk or compile WebAssembly from bytes. The
+  deploy workflow fetches them from each game's releases first.
   Locally they come from `.dev.vars` (copy `.dev.vars.example`). On Cloudflare
   they are set with `cf workers secrets put NAME --worker <worker>` or in the
   dashboard.

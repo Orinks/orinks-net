@@ -23,6 +23,17 @@ The protocol and the engine side are in Hearken's `docs/online.md`.
 One player per orinks.net account is shared by every game. The token each game
 holds works for that game only.
 
+## Guests
+
+A game can let players play with no account. It opts in with `guests` in its
+registry entry. A guest's name comes from Hearken's word lists (`Copper Fox
+12`), picked by this server, so no typed name ever reaches a board. A guest
+can ask for another name (`activate/rename`). A guest who later connects an
+account sends its guest token with `activate/start`, and once the code is
+entered it becomes the account: its tokens stop working, and the game's
+`guests().linked` moves its records. Guests are kept in `gamesGuests`, for
+one game each.
+
 ## Setup
 
 Set `GAMES_SERVER_SECRET` to the same random value, 32 characters or more, in
@@ -30,15 +41,22 @@ two places: the Convex deployment's environment variables, and Vercel's. Every
 Convex function that writes a verified result checks it. Without it, the games
 route answers 503.
 
+Wicket's (`lib/wickets-online/`) also needs `WICKETS_SEED_SECRET`, 32
+characters or more, where the site's server code runs. Its challenge seeds
+are made from it, so nobody can practise a board before it opens. Without it,
+Wicket's answers 503 and other games are unaffected.
+
 ## Adding a game
 
 1. In the game, follow Hearken's `docs/online.md`: a rules crate,
    `rules = "<crate>"` in `[package.metadata.hearken]`, and `Game::online()`
    returning `https://orinks.net/api/games/<id>` with the site name
    `orinks.net`.
-2. Copy the `<game>-<version>-rules-<id>.wasm` that `hearken release` puts in
-   `dist/` into `hearken-rules/<id>/`. Do this for every release whose runs
-   should count.
+2. List the game's release repository in `hearken-rules/sources.json`. Each
+   deploy fetches the rules modules its releases attach
+   (`hearken-rules/README.md`). To have a release count at once, its release
+   workflow sends a `hearken-rules` repository dispatch to this repository,
+   which redeploys production.
 3. Add the game to `GAMES` in `lib/games/registry.ts`, with a handler for each
    kind of run it sends. A handler says what a run must have started from
    (`expect`) and what to do with the verified result (`accept`). It can also

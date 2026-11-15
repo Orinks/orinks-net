@@ -7,24 +7,26 @@ import {
   periodKey,
   scorePhrase,
   wicketsBoardSource,
-  wicketsLeaderboardsShown,
+  boardKind,
+  onLiveSite,
 } from "./index";
 import { mockBoard } from "./mock";
 
 // Friday, November 13, 2026, 15:30 UTC.
 const NOW = Date.UTC(2026, 10, 13, 15, 30);
 
-describe("the preview gate", () => {
-  test("the production Worker does not show the pages", () => {
-    expect(wicketsLeaderboardsShown({ VERCEL_ENV: "production" })).toBe(false);
+describe("which site this is", () => {
+  test("the production Worker, or a build that does not say, is the live site", () => {
+    expect(onLiveSite({ VERCEL_ENV: "production" })).toBe(true);
+    expect(onLiveSite({})).toBe(true);
+    expect(onLiveSite({ VERCEL_ENV: "preview" })).toBe(false);
   });
+});
 
-  test("a build that does not say which it is counts as production", () => {
-    expect(wicketsLeaderboardsShown({})).toBe(false);
-  });
-
-  test("the preview Worker shows them", () => {
-    expect(wicketsLeaderboardsShown({ VERCEL_ENV: "preview" })).toBe(true);
+describe("board kinds", () => {
+  test("are named as the service names them", () => {
+    expect(boardKind("belfry", "daily", "main")).toBe("belfry-daily");
+    expect(boardKind("sonar-dive", "weekly", "relaxed")).toBe("sonar-dive-weekly-relaxed");
   });
 });
 

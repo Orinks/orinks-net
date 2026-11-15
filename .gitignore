@@ -23,3 +23,6 @@ video-stack.en.vtt
 .vinext/
 .cloudflare/
 /.dev.vars
+
+# Fetched from each game's releases at deploy (scripts/fetch-hearken-rules.mjs).
+/hearken-rules/*/*-rules-*.wasm

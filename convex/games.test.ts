@@ -210,3 +210,52 @@ describe("account deletion", () => {
     expect(left.map((r) => r.key)).toEqual(["x"]);
   });
 });
+
+describe("guests", () => {
+  test("a guest plays one game under the name it was given, and can be renamed", async () => {
+    const t = setup();
+    const made = await t.mutation(api.games.createGuest, { secret: SECRET, game: "dash", name: "Copper Fox 12", now: 1 });
+    const tokenHash = await sha256Hex(made.token);
+    expect(await t.query(api.games.playerForToken, { secret: SECRET, game: "dash", tokenHash })).toEqual({
+      id: made.playerId,
+      name: "Copper Fox 12",
+      guest: true,
+    });
+    expect(await t.query(api.games.playerForToken, { secret: SECRET, game: "other", tokenHash })).toBeNull();
+    expect(
+      await t.mutation(api.games.renameGuest, { secret: SECRET, game: "dash", playerId: made.playerId, name: "Sunny Pine 3" }),
+    ).toBe(true);
+    expect((await t.query(api.games.playerForToken, { secret: SECRET, game: "dash", tokenHash }))?.name).toBe("Sunny Pine 3");
+  });
+
+  test("only a server-picked name will do", async () => {
+    const t = setup();
+    await expect(
+      t.mutation(api.games.createGuest, { secret: SECRET, game: "dash", name: "anything I like", now: 1 }),
+    ).rejects.toThrow();
+  });
+
+  test("a guest who connects an account becomes it", async () => {
+    const t = setup();
+    const made = await t.mutation(api.games.createGuest, { secret: SECRET, game: "dash", name: "Copper Fox 12", now: 1 });
+    const now = Date.now();
+    const started = await t.mutation(api.games.startActivation, {
+      secret: SECRET,
+      game: "dash",
+      now,
+      guestId: made.playerId,
+    });
+    await t
+      .withIdentity({ subject: "user_ada" })
+      .mutation(api.games.claimActivation, { userCode: started.userCode, displayName: "Ada Lovelace" });
+    const polled = await t.mutation(api.games.pollActivation, {
+      secret: SECRET,
+      game: "dash",
+      deviceCodeHash: await sha256Hex(started.deviceCode),
+      now: now + 2000,
+    });
+    expect(polled).toMatchObject({ status: "ready", name: "Ada Lovelace", linked: made.playerId });
+    const tokenHash = await sha256Hex(made.token);
+    expect(await t.query(api.games.playerForToken, { secret: SECRET, game: "dash", tokenHash })).toBeNull();
+  });
+});
