@@ -94,6 +94,10 @@ export type FreightFateDriverDirectory = {
   /** The moment the snapshot was taken; every age in it is measured from
    * this, so a cached page stays true to itself. */
   asOf: number;
+  /** False when the backend stopped at its ceiling with drivers left
+   * unread. Absent from snapshots taken before the field existed, which
+   * reads as complete. */
+  complete?: boolean;
 };
 
 const coarseRelative = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });

@@ -9,6 +9,7 @@ import { FREIGHT_FATE_ACHIEVEMENT_DETAILS } from "./freightFateProfileCatalog";
 import {
   DRIVER_EVENT_CLOCK_SKEW_MS,
   DRIVER_EVENT_WRITE_LIMIT,
+  MAX_DIRECTORY_ROWS,
   MAX_DRIVER_EVENTS,
   PAUSED_ACTIVITY,
   PRESENCE_WRITE_LIMIT,
@@ -2202,6 +2203,60 @@ describe("live drivers board", () => {
     expect(later.drivers.map((row) => [row.displayName, row.onDuty])).toEqual([
       ["Recent Hauler", false], ["Older Hauler", false], ["Never Seen", false], ["Still Driving", false],
     ]);
+  });
+
+  // Live site, 2026-11-15: 436 public profiles, and the page said 200 -- the
+  // directory read the first 200 rows of the index whether or not they were
+  // listed, and dropped everyone off duty longest or never seen.
+  test("the directory lists past 200 drivers, and private rows do not use up the listing", async () => {
+    const t = setup();
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      const row = (n: number, visibility: "public" | "private", lastOnDutyAt?: number) => ({
+        driverId: `ffd_${visibility}_${String(n).padStart(4, "0")}`,
+        displayName: `Driver ${visibility} ${n}`,
+        visibility,
+        sharingConsentVersion: SHARING_CONSENT_VERSION,
+        ...(lastOnDutyAt !== undefined ? { lastOnDutyAt } : {}),
+        createdAt: now,
+        updatedAt: now,
+      });
+      // Private drivers hold the newest stamps, where the old read started.
+      for (let n = 0; n < 50; n += 1) await ctx.db.insert("freightFateDrivers", row(n, "private", now - n));
+      for (let n = 0; n < 230; n += 1) await ctx.db.insert("freightFateDrivers", row(n, "public", now - 1_000 - n));
+      for (let n = 230; n < 260; n += 1) await ctx.db.insert("freightFateDrivers", row(n, "public"));
+    });
+
+    const directory = await t.query(api.freightFate.getDriverDirectory, { now });
+    expect(directory.drivers).toHaveLength(260);
+    expect(directory.complete).toBe(true);
+    expect(directory.drivers.some((row) => row.driverId.includes("private"))).toBe(false);
+    expect(directory.drivers.filter((row) => row.lastOnDutyAt === undefined)).toHaveLength(30);
+  });
+
+  test("a directory cut short at its ceiling says it is incomplete", async () => {
+    const t = setup();
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      for (let n = 0; n <= MAX_DIRECTORY_ROWS; n += 1) {
+        await ctx.db.insert("freightFateDrivers", {
+          driverId: `ffd_${String(n).padStart(5, "0")}`,
+          displayName: `Driver ${n}`,
+          visibility: "public",
+          sharingConsentVersion: SHARING_CONSENT_VERSION,
+          lastOnDutyAt: now - n,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    });
+
+    const directory = await t.query(api.freightFate.getDriverDirectory, { now });
+    expect(directory.drivers).toHaveLength(MAX_DIRECTORY_ROWS);
+    expect(directory.complete).toBe(false);
+    // The one left out is the one off duty longest.
+    expect(directory.drivers.some((row) => row.driverId === `ffd_${String(MAX_DIRECTORY_ROWS).padStart(5, "0")}`))
+      .toBe(false);
   });
 
   test("the one-off migration carries a live driver's clock across and drops the rest", async () => {

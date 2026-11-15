@@ -469,6 +469,7 @@ export function onDutyFromBoard(
   return {
     drivers: [...rows.filter((driver) => driver.onDuty), ...rows.filter((driver) => !driver.onDuty)],
     asOf: directory.asOf,
+    ...(directory.complete === false ? { complete: false } : {}),
   };
 }
 
