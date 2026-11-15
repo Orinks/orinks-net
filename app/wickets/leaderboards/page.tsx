@@ -6,28 +6,43 @@ import { Section } from "@/components/Section";
 import {
   PERIODS,
   WICKETS_RANKED_GAMES,
+  onLiveSite,
   wicketsBoardSource,
-  wicketsLeaderboardsShown,
   type BoardPace,
 } from "@/lib/wickets-leaderboards";
+import { liveBoards } from "@/lib/wickets-leaderboards/live";
 import { choiceFrom } from "@/lib/wickets-leaderboards/choice";
 import { BoardPicker, type PickerGame } from "./board-picker";
 
 export const metadata: Metadata = {
   title: "Wicket's Leaderboards",
-  robots: { index: false },
+  description: "The daily, weekly and monthly challenge leaderboards for Wicket's.",
 };
 
 // Read per request: the boards follow the current UTC period, and the
 // preview check is a Worker variable, not a build value.
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
+type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export default async function WicketsLeaderboardsPage({ searchParams }: PageProps = {}) {
-  if (!wicketsLeaderboardsShown()) notFound();
+export default async function WicketsLeaderboardsPage({ searchParams }: PageProps) {
   const initial = choiceFrom((await searchParams) ?? {});
   const now = Date.now();
+  const live = onLiveSite();
+  // The live site reads the board shown, and the page reads others as they
+  // are chosen; the preview has no backend and shows every sample board.
+  const source = live ? liveBoards() : wicketsBoardSource;
+
+  if (!source) {
+    return (
+      <>
+        <PageHeader title="Wicket's Leaderboards" />
+        <Section>
+          <p>The leaderboards are unavailable right now. Try again later.</p>
+        </Section>
+      </>
+    );
+  }
 
   const games: PickerGame[] = await Promise.all(
     WICKETS_RANKED_GAMES.map(async (game) => {
@@ -38,7 +53,9 @@ export default async function WicketsLeaderboardsPage({ searchParams }: PageProp
             period,
             Object.fromEntries(
               await Promise.all(
-                paces.map(async (pace) => [pace, await wicketsBoardSource.board(game.id, period, pace, now)]),
+                paces
+                  .filter((pace) => !live || (game.id === initial.game && period === initial.period && pace === initial.pace))
+                  .map(async (pace) => [pace, await source.board(game.id, period, pace, now)]),
               ),
             ),
           ]),
@@ -50,7 +67,7 @@ export default async function WicketsLeaderboardsPage({ searchParams }: PageProp
 
   return (
     <>
-      <PageHeader title="Wicket's Leaderboards" intro="Sample scores." />
+      <PageHeader title="Wicket's Leaderboards" intro={live ? undefined : "Sample scores."} />
       <Section>
         <BoardPicker games={games} initial={initial} />
         <p className="mt-8">

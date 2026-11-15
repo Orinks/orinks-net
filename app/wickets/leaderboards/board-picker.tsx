@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { BoardPace, Period, WicketsBoard } from "@/lib/wickets-leaderboards";
+import { periodEnd } from "@/lib/wickets-leaderboards/periods";
 import type { Choice } from "@/lib/wickets-leaderboards/choice";
 import { BoardTable } from "./board-table";
 
-/** A game and every board it keeps, as the page read them. */
+/** A game and the boards the page has already read: every one on the
+ * preview's sample boards, only the one shown on the live site. */
 export type PickerGame = {
   id: string;
   name: string;
@@ -40,11 +42,40 @@ export function boardTitle(game: PickerGame, period: Period, pace: BoardPace) {
 /** The game picker, the board buttons and the board they choose. It is a
  * GET form, so without scripts the buttons load the page for that board;
  * with them, the board changes in place and the address follows. */
+type Read = { board?: WicketsBoard; failed?: boolean };
+
+/** The service's name for a board, as lib/wickets-leaderboards names it. */
+function kindOf(game: string, period: Period, pace: BoardPace) {
+  return `${game}-${period}${pace === "relaxed" ? "-relaxed" : ""}`;
+}
+
 export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: Choice }) {
   const [choice, setChoice] = useState(initial);
+  const [read, setRead] = useState<Record<string, Read>>({});
   const game = games.find((g) => g.id === choice.game) ?? games[0];
   const pace = game.pace ? choice.pace : "main";
-  const board = game.boards[choice.period][pace];
+  const kind = kindOf(game.id, choice.period, pace);
+  const board = game.boards[choice.period][pace] ?? read[kind]?.board;
+  const failed = read[kind]?.failed;
+
+  // A board the page did not bring is read from the service, once.
+  useEffect(() => {
+    if (board || failed) return;
+    let gone = false;
+    fetch(`/api/games/wickets/${kind}/top`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((answer: { key: string; entries: WicketsBoard["entries"]; of: number }) => {
+        if (gone) return;
+        const endsAt = periodEnd(choice.period, Date.now());
+        setRead((r) => ({ ...r, [kind]: { board: { key: answer.key, endsAt, entries: answer.entries, of: answer.of } } }));
+      })
+      .catch(() => {
+        if (!gone) setRead((r) => ({ ...r, [kind]: { failed: true } }));
+      });
+    return () => {
+      gone = true;
+    };
+  }, [board, failed, kind, choice.period]);
 
   function choose(next: Choice) {
     setChoice(next);
@@ -120,7 +151,13 @@ export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: 
       <h2 className="mb-4 mt-8 text-2xl font-bold text-ink" id="leaderboard-title">
         {boardTitle(game, choice.period, pace)}
       </h2>
-      {board ? <BoardTable board={board} labelledBy="leaderboard-title" /> : null}
+      {board ? (
+        <BoardTable board={board} labelledBy="leaderboard-title" />
+      ) : failed ? (
+        <p>The scores could not be read. Try again later.</p>
+      ) : (
+        <p>Reading the scores…</p>
+      )}
     </form>
   );
 }

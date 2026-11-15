@@ -19,6 +19,11 @@ export type WicketsGameId = WicketsRankedGame["id"];
 /** Which board of a period: the main one, or Relaxed pace's own. */
 export type BoardPace = "main" | "relaxed";
 
+/** The service's name for a board: "sonar-dive-weekly-relaxed". */
+export function boardKind(game: string, period: Period, pace: BoardPace) {
+  return `${game}-${period}${pace === "relaxed" ? "-relaxed" : ""}`;
+}
+
 export function wicketsRankedGame(id: string): WicketsRankedGame | undefined {
   return WICKETS_RANKED_GAMES.find((game) => game.id === id);
 }
@@ -39,11 +44,11 @@ export type WicketsBoardSource = {
 
 export const wicketsBoardSource: WicketsBoardSource = mockBoards;
 
-/** The leaderboard pages show their sample boards on the preview only.
- * Production is told apart the way robots.txt does it: VERCEL_ENV, set per
- * Worker in cloudflare.config.ts, and a missing value counts as production. */
-export function wicketsLeaderboardsShown(env: Record<string, string | undefined> = process.env) {
-  return env.VERCEL_ENV !== undefined && env.VERCEL_ENV !== "production";
+/** Whether this deployment is the live site. Production is told apart the
+ * way robots.txt does it: VERCEL_ENV, set per Worker in cloudflare.config.ts,
+ * and a missing value counts as production. */
+export function onLiveSite(env: Record<string, string | undefined> = process.env) {
+  return env.VERCEL_ENV === undefined || env.VERCEL_ENV === "production";
 }
 
 const ENDS_DAY = new Intl.DateTimeFormat("en-US", {

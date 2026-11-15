@@ -4,6 +4,10 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { choiceFrom } from "@/lib/wickets-leaderboards/choice";
+import type { WicketsBoardSource } from "@/lib/wickets-leaderboards";
+
+const live = vi.hoisted(() => ({ source: null as WicketsBoardSource | null, asked: [] as string[] }));
+vi.mock("@/lib/wickets-leaderboards/live", () => ({ liveBoards: () => live.source }));
 import WicketsLeaderboardsPage, { metadata } from "./page";
 import WicketsGameLeaderboardsPage from "./[game]/page";
 
@@ -31,18 +35,77 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  live.source = null;
+  live.asked = [];
   vi.unstubAllEnvs();
   window.history.replaceState(null, "", "/");
 });
 
-describe("on the production site", () => {
+describe("on the live site", () => {
   beforeEach(() => vi.stubEnv("VERCEL_ENV", "production"));
 
-  test("the page and the old game pages are not found", async () => {
-    await expect(WicketsLeaderboardsPage()).rejects.toThrow(NOT_FOUND);
-    await expect(WicketsGameLeaderboardsPage({ params: Promise.resolve({ game: "belfry" }) })).rejects.toThrow(
-      NOT_FOUND,
+  test("with no backend, the page says the boards are unavailable", async () => {
+    await page();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Wicket's Leaderboards");
+    expect(document.body.textContent).toContain("The leaderboards are unavailable right now. Try again later.");
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  test("reads only the board shown, then the others from the service as they are chosen", async () => {
+    live.source = {
+      async board(game, period, pace) {
+        live.asked.push(`${game}-${period}-${pace}`);
+        return {
+          key: "2026-11-13",
+          endsAt: Date.UTC(2026, 10, 14),
+          entries: [{ rank: 1, name: "Copper Fox 12", score: 640 }],
+          of: 1,
+        };
+      },
+    };
+    const fetched: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        fetched.push(url);
+        return new Response(
+          JSON.stringify({
+            key: "2026-W46",
+            current: true,
+            entries: [
+              { rank: 1, name: "TinLantern", score: 900 },
+              { rank: 2, name: "Quiet Wren 4", score: 410 },
+            ],
+            of: 2,
+            you: null,
+          }),
+        );
+      }),
     );
+    await page({ game: "belfry" });
+    expect(live.asked).toEqual(["belfry-daily-main"]);
+    expect(document.body.textContent).not.toContain("Sample scores.");
+    expect(document.body.textContent).toContain("1 player. Ends Saturday, November 14, 00:00 UTC.");
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "This week" }));
+    expect(document.body.textContent).toContain("Reading the scores…");
+    expect(await screen.findByRole("table", { name: "Belfry, this week" })).toBeInTheDocument();
+    expect(fetched).toEqual(["/api/games/wickets/belfry-weekly/top"]);
+    expect(document.body.textContent).toContain("2 players. Ends Monday, November 16, 00:00 UTC.");
+  });
+
+  test("a board the service cannot answer says so", async () => {
+    live.source = {
+      async board() {
+        return { key: "k", endsAt: Date.UTC(2026, 10, 14), entries: [], of: 0 };
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 503 })));
+    await page({ game: "sonar-dive" });
+    expect(document.body.textContent).toContain("No scores yet. Ends Saturday, November 14, 00:00 UTC.");
+    fireEvent.click(screen.getByRole("button", { name: "Relaxed" }));
+    expect(await screen.findByText("The scores could not be read. Try again later.")).toBeInTheDocument();
   });
 });
 
@@ -68,7 +131,7 @@ describe("on the preview", () => {
     expect(within(table).getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Rank", "Player", "Score"]);
     expect(document.body.textContent).toContain("Top 10 of 39 players. Ends Saturday, November 14, 00:00 UTC.");
     expect(document.body.textContent).not.toMatch(/mock|preview/i);
-    expect(metadata.robots).toEqual({ index: false });
+    expect(metadata.title).toBe("Wicket's Leaderboards");
   });
 
   test("the address chooses the board, and a form without scripts takes the pressed button's", async () => {

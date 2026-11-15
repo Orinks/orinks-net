@@ -32,6 +32,7 @@ export default function WicketsPage() {
         <p>Wicket&apos;s is free for Windows, macOS on Apple Silicon, and Linux.</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <ButtonLink href="/wickets/downloads">Download Wicket&apos;s</ButtonLink>
+          <ButtonLink href="/wickets/leaderboards">Leaderboards</ButtonLink>
         </div>
         <div className="mt-4">
           <a href="https://github.com/orinks-games/wickets/releases">Wicket&apos;s releases on GitHub</a>
