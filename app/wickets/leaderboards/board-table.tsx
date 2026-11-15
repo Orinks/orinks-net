@@ -15,9 +15,9 @@ function Ends({ at }: { at: number }) {
   );
 }
 
-/** One board: who is on it and when it closes, then the table. An empty
- * board says so in place of the table. */
-export function BoardTable({ board, caption }: { board: WicketsBoard; caption: string }) {
+/** One board: who is on it and when it closes, then the table, named by
+ * the heading `labelledBy`. An empty board says so in place of the table. */
+export function BoardTable({ board, labelledBy }: { board: WicketsBoard; labelledBy: string }) {
   if (board.entries.length === 0) {
     return (
       <p>
@@ -31,8 +31,7 @@ export function BoardTable({ board, caption }: { board: WicketsBoard; caption: s
       <p>
         {playersPhrase(board)} <Ends at={board.endsAt} />
       </p>
-      <table className="w-full max-w-2xl table-fixed border-collapse text-left">
-        <caption className="mb-2 text-left font-semibold">{caption}</caption>
+      <table aria-labelledby={labelledBy} className="w-full max-w-2xl table-fixed border-collapse text-left">
         <thead>
           <tr className="border-b border-line-strong">
             <th className="w-16 py-2 pr-4" scope="col">Rank</th>

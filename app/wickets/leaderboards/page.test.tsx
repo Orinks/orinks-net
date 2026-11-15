@@ -1,26 +1,26 @@
 // @vitest-environment jsdom
-import { renderToStaticMarkup } from "react-dom/server";
+import "@testing-library/jest-dom/vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { choiceFrom } from "@/lib/wickets-leaderboards/choice";
 import WicketsLeaderboardsPage, { metadata } from "./page";
-import WicketsGameLeaderboardsPage, { generateMetadata } from "./[game]/page";
+import WicketsGameLeaderboardsPage from "./[game]/page";
 
-function documentFor(markup: string) {
-  const parsed = document.implementation.createHTMLDocument();
-  parsed.body.innerHTML = markup;
-  return parsed;
-}
-
-async function gamePage(game: string) {
-  return documentFor(renderToStaticMarkup(await WicketsGameLeaderboardsPage({ params: Promise.resolve({ game }) })));
-}
-
-function texts(nodes: Iterable<Element>) {
-  return Array.from(nodes, (node) => node.textContent);
-}
-
-/** What notFound() throws, so a test can tell a 404 from any other failure. */
+/** What notFound() and redirect() throw, so a test can tell them apart. */
 const NOT_FOUND = expect.objectContaining({ digest: expect.stringContaining("404") });
+const REDIRECT = (to: string) => expect.objectContaining({ digest: expect.stringContaining(to) });
+
+async function page(search: Record<string, string | string[]> = {}) {
+  render(await WicketsLeaderboardsPage({ searchParams: Promise.resolve(search) }));
+}
+
+function pressed(group: string) {
+  return within(screen.getByRole("group", { name: group }))
+    .getAllByRole("button")
+    .filter((b) => b.getAttribute("aria-pressed") === "true")
+    .map((b) => b.textContent);
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -29,102 +29,96 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  window.history.replaceState(null, "", "/");
 });
 
 describe("on the production site", () => {
   beforeEach(() => vi.stubEnv("VERCEL_ENV", "production"));
 
-  test("both pages are not found", async () => {
-    expect(() => WicketsLeaderboardsPage()).toThrow(NOT_FOUND);
-    await expect(gamePage("safecracker")).rejects.toThrow(NOT_FOUND);
+  test("the page and the old game pages are not found", async () => {
+    await expect(WicketsLeaderboardsPage()).rejects.toThrow(NOT_FOUND);
+    await expect(WicketsGameLeaderboardsPage({ params: Promise.resolve({ game: "belfry" }) })).rejects.toThrow(
+      NOT_FOUND,
+    );
   });
 });
 
 describe("on the preview", () => {
   beforeEach(() => vi.stubEnv("VERCEL_ENV", "preview"));
 
-  test("the index links each ranked game, and is not indexed", () => {
-    const page = documentFor(renderToStaticMarkup(<WicketsLeaderboardsPage />));
-    expect(texts(page.querySelectorAll("h1"))).toEqual(["Wicket's Leaderboards"]);
-    expect(page.querySelector("header p:last-child")?.textContent).toBe("Sample scores.");
-    expect(Array.from(page.querySelectorAll("li a"), (a) => [a.textContent, a.getAttribute("href")])).toEqual([
-      ["Safecracker", "/wickets/leaderboards/safecracker"],
-      ["Belfry", "/wickets/leaderboards/belfry"],
-      ["Fireside Patience", "/wickets/leaderboards/fireside-patience"],
-      ["Riverboat Dice", "/wickets/leaderboards/riverboat-dice"],
-      ["Sonar Dive", "/wickets/leaderboards/sonar-dive"],
+  test("one page: a game picker, board buttons, and the first game's daily board", async () => {
+    await page();
+    expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Wicket's Leaderboards"]);
+    const select = screen.getByRole("combobox", { name: "Game" });
+    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Safecracker",
+      "Belfry",
+      "Fireside Patience",
+      "Riverboat Dice",
+      "Sonar Dive",
     ]);
+    expect(select).toHaveValue("safecracker");
+    expect(pressed("Board")).toEqual(["Today"]);
+    expect(pressed("Pace")).toEqual(["Normal and Quick"]);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Safecracker, today");
+    const table = screen.getByRole("table", { name: "Safecracker, today" });
+    expect(within(table).getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Rank", "Player", "Score"]);
+    expect(document.body.textContent).toContain("Top 10 of 39 players. Ends Saturday, November 14, 00:00 UTC.");
+    expect(document.body.textContent).not.toMatch(/mock|preview/i);
     expect(metadata.robots).toEqual({ index: false });
   });
 
-  test("an unknown game is not found", async () => {
-    await expect(gamePage("lantern-lake")).rejects.toThrow(NOT_FOUND);
-  });
-
-  test("a game has one heading per period and a captioned table for each board", async () => {
-    const page = await gamePage("riverboat-dice");
-    expect(texts(page.querySelectorAll("h1"))).toEqual(["Riverboat Dice Leaderboards"]);
-    expect(texts(page.querySelectorAll("h2"))).toEqual(["Today", "This week", "This month"]);
-    expect(page.querySelectorAll("h3")).toHaveLength(0);
-    const tables = Array.from(page.querySelectorAll("table"));
-    expect(tables.map((table) => table.querySelector("caption")?.textContent)).toEqual([
-      "Daily challenge",
-      "Weekly challenge",
-      "Monthly challenge",
-    ]);
-    for (const table of tables) {
-      expect(texts(table.querySelectorAll("thead th[scope=col]"))).toEqual(["Rank", "Player", "Score"]);
-      const rows = Array.from(table.querySelectorAll("tbody tr"));
-      expect(rows.map((row) => row.querySelector("td")?.textContent)).toEqual(rows.map((_, i) => String(i + 1)));
-      expect(rows.every((row) => row.querySelector("th[scope=row]"))).toBe(true);
-    }
-    expect(page.body.textContent).not.toMatch(/mock|preview/i);
-    expect((await generateMetadata({ params: Promise.resolve({ game: "riverboat-dice" }) })).robots).toEqual({
-      index: false,
+  test("the address chooses the board, and a form without scripts takes the pressed button's", async () => {
+    expect(choiceFrom({ game: "sonar-dive", board: "weekly", pace: "relaxed" })).toEqual({
+      game: "sonar-dive",
+      period: "weekly",
+      pace: "relaxed",
     });
+    expect(choiceFrom({ game: "belfry", board: ["daily", "monthly"], pace: "relaxed" })).toEqual({
+      game: "belfry",
+      period: "monthly",
+      pace: "main",
+    });
+    expect(choiceFrom({ game: "lantern-lake", board: "yearly" })).toEqual({
+      game: "safecracker",
+      period: "daily",
+      pace: "main",
+    });
+    await page({ game: "riverboat-dice", board: "monthly" });
+    expect(screen.getByRole("table", { name: "Riverboat Dice, this month" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Pace" })).toBeNull();
   });
 
-  test("each board says how many players it has and when it ends", async () => {
-    const page = await gamePage("riverboat-dice");
-    const lines = Array.from(page.querySelectorAll("h2 + div > p, section p"))
-      .map((p) => p.textContent)
-      .filter((text) => text?.includes("Ends"));
-    expect(lines).toHaveLength(3);
-    expect(lines[0]).toMatch(/^Top 10 of \d+ players\. Ends Saturday, November 14, 00:00 UTC\.$/);
-    expect(lines[1]).toMatch(/Ends Monday, November 16, 00:00 UTC\.$/);
-    expect(lines[2]).toMatch(/Ends Tuesday, December 1, 00:00 UTC\.$/);
-    expect(Array.from(page.querySelectorAll("time"), (time) => time.getAttribute("datetime"))).toEqual([
-      "2026-11-14T00:00:00.000Z",
-      "2026-11-16T00:00:00.000Z",
-      "2026-12-01T00:00:00.000Z",
-    ]);
-  });
-
-  test("a game with a Relaxed pace board keeps it apart under each period", async () => {
-    const page = await gamePage("safecracker");
-    expect(texts(page.querySelectorAll("h1"))).toEqual(["Safecracker Leaderboards"]);
-    expect(texts(page.querySelectorAll("h3"))).toEqual(
-      Array(3).fill(["Normal and Quick pace", "Relaxed pace"]).flat(),
-    );
-    expect(texts(page.querySelectorAll("caption"))).toEqual([
-      "Daily challenge, Normal and Quick pace",
-      "Daily challenge, Relaxed pace",
-      "Weekly challenge, Normal and Quick pace",
-      "Weekly challenge, Relaxed pace",
-      "Monthly challenge, Normal and Quick pace",
-      "Monthly challenge, Relaxed pace",
-    ]);
-    expect(page.body.textContent).toContain("7 players. Ends Saturday, November 14, 00:00 UTC.");
+  test("the buttons and the picker change the board in place, and the address follows", async () => {
+    await page();
+    fireEvent.click(screen.getByRole("button", { name: "This week" }));
+    expect(pressed("Board")).toEqual(["This week"]);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Safecracker, this week");
+    fireEvent.click(screen.getByRole("button", { name: "Relaxed" }));
+    expect(screen.getByRole("table", { name: "Safecracker, this week, Relaxed pace" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?game=safecracker&board=weekly&pace=relaxed");
+    fireEvent.change(screen.getByRole("combobox", { name: "Game" }), { target: { value: "fireside-patience" } });
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Fireside Patience, this week");
+    expect(screen.queryByRole("group", { name: "Pace" })).toBeNull();
+    expect(window.location.search).toBe("?game=fireside-patience&board=weekly");
   });
 
   test("an empty board says so in one sentence instead of a table", async () => {
-    const page = await gamePage("belfry");
-    const today = page.querySelector("section")!;
-    expect(today.querySelector("h2")?.textContent).toBe("Today");
-    expect(today.querySelector("table")).toBeNull();
-    expect(today.querySelector("p")?.textContent).toBe("No scores yet. Ends Saturday, November 14, 00:00 UTC.");
-    expect(page.querySelectorAll("table")).toHaveLength(2);
+    await page({ game: "belfry" });
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Belfry, today");
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(document.body.textContent).toContain("No scores yet. Ends Saturday, November 14, 00:00 UTC.");
+  });
+
+  test("an old game page goes to that game on the one page", async () => {
+    await expect(WicketsGameLeaderboardsPage({ params: Promise.resolve({ game: "sonar-dive" }) })).rejects.toThrow(
+      REDIRECT("/wickets/leaderboards?game=sonar-dive"),
+    );
+    await expect(WicketsGameLeaderboardsPage({ params: Promise.resolve({ game: "lantern-lake" }) })).rejects.toThrow(
+      NOT_FOUND,
+    );
   });
 });
