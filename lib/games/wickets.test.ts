@@ -94,7 +94,10 @@ describe("Wicket's", () => {
     const kinds = Object.keys(GAMES.wickets.handlers(memoryRecords()));
     expect(kinds).toContain("safecracker-daily");
     expect(kinds).toContain("sonar-dive-monthly");
-    expect(kinds).toHaveLength(15);
+    // Safecracker and Sonar Dive also keep relaxed boards.
+    expect(kinds).toContain("safecracker-daily-relaxed");
+    expect(kinds).toContain("sonar-dive-monthly-relaxed");
+    expect(kinds).toHaveLength(21);
   });
 
   test("cannot be built without its seed secret", () => {
