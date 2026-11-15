@@ -51,7 +51,7 @@ export async function FreightFateDriverDirectory() {
 
   return (
     <>
-      <p>{countPhrase(rows.length, onDuty)}</p>
+      <p>{countPhrase(rows.length, onDuty, directory.complete !== false)}</p>
       <ul aria-label="Driver directory">
         {rows.map((driver) => (
           <li key={driver.driverId}>
@@ -77,8 +77,10 @@ export async function FreightFateDriverDirectory() {
   );
 }
 
-function countPhrase(total: number, onDuty: number) {
-  const profiles = `${total} ${total === 1 ? "driver has" : "drivers have"} a public profile.`;
+function countPhrase(total: number, onDuty: number, complete: boolean) {
+  const profiles = complete
+    ? `${total} ${total === 1 ? "driver has" : "drivers have"} a public profile.`
+    : `More than ${total} drivers have a public profile. These are the ${total} most recently on duty.`;
   if (onDuty === 0) {
     return `${profiles} None are on duty right now.`;
   }
