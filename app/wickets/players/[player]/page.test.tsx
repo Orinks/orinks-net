@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
 
 import type { PlayerPage } from "@/lib/wickets-profile";
-import { PlayerPageView } from "./page";
+import { PlayerPageView } from "./player-page-view";
 
 afterEach(cleanup);
 
