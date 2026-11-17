@@ -27,6 +27,7 @@ const FAILURE_STATUS: Record<string, number> = {
   driver_not_found: 404,
   unauthorized: 401,
   rate_limited: 429,
+  account_required: 403,
 };
 
 export async function POST(request: Request) {

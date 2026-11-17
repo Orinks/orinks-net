@@ -103,6 +103,8 @@ export default defineSchema({
     // Games this player tests unreleased content for (games:setTester).
     // The game asks after connecting and opens what its build holds back.
     testerGames: v.optional(v.array(v.string())),
+    // The player hid their public player page (/wickets/players/<name>).
+    profileHidden: v.optional(v.boolean()),
   })
     .index("by_player_id", ["playerId"])
     .index("by_auth_subject", ["authSubject"])
@@ -163,6 +165,25 @@ export default defineSchema({
     .index("by_key", ["game", "collection", "key"])
     .index("by_order", ["game", "collection", "order"])
     .index("by_player", ["playerId"]),
+  // Synced files (convex/gamesSaves.ts): a sealed copy of a player's save
+  // per game and file name, the last ten revisions.
+  gamesSaves: defineTable({
+    game: v.string(),
+    playerId: v.string(),
+    name: v.string(),
+    revision: v.number(),
+    format: v.number(),
+    contentHash: v.string(),
+    sizeBytes: v.number(),
+    contentId: v.id("gamesSaveContent"),
+    createdAt: v.number(),
+  })
+    .index("by_slot", ["game", "playerId", "name", "revision"])
+    .index("by_player", ["playerId"]),
+  gamesSaveContent: defineTable({
+    playerId: v.string(),
+    content: v.bytes(),
+  }).index("by_player", ["playerId"]),
   buildNotificationSubscriptions: defineTable({
     endpoint: v.string(),
     expirationTime: v.optional(v.number()),
@@ -330,6 +351,13 @@ export default defineSchema({
     // One driver per account; the setup page provisions it after sign-in.
     // Optional so pre-existing prototype rows validate until they are reset.
     authSubject: v.optional(v.string()),
+    // A guest: a driver with no account, made from the game, named by the
+    // server from word lists (lib/hearken-online/names.js) so no name a
+    // player typed reaches the board. Never has an authSubject; connecting an
+    // account from the game either adopts the row or merges it into the
+    // account's driver (convex/freightFateGuests.ts). Guests get no cloud
+    // backups.
+    guest: v.optional(v.boolean()),
     // public: listed on the live drivers board; unlisted: profile reachable
     // by URL only; private: nothing shown anywhere.
     visibility: v.union(v.literal("public"), v.literal("private"), v.literal("unlisted")),
@@ -416,6 +444,10 @@ export default defineSchema({
     // Supplied by the game when it asks for the code, carried to the device
     // row when the activation is redeemed. See freightFateDeviceTokens.
     machineKey: v.optional(v.string()),
+    // The guest driver connecting an account, proven by its token when the
+    // game asked for the code. Claiming adopts it (no driver yet) or redeeming
+    // merges it into the account's driver.
+    guestDriverId: v.optional(v.string()),
     createdAt: v.number(),
     expiresAt: v.number(),
   })
@@ -458,6 +490,8 @@ export default defineSchema({
     // deploy, which is the safe direction to be wrong in.
     displayName: v.optional(v.string()),
     listed: v.optional(v.boolean()),
+    // A guest driver (no account): shown, but with no profile to open.
+    guest: v.optional(v.boolean()),
     // Legacy: the heartbeat clock used to live here. Kept optional so rows
     // written by the previous deploy still validate; nothing reads it.
     updatedAt: v.optional(v.number()),

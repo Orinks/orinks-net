@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { ConvexError } from "convex/values";
-import { startFreightFateActivation } from "@/lib/freight-fate-online";
+import {
+  normalizeFreightFateDriverId,
+  normalizeFreightFateToken,
+  startFreightFateActivation,
+} from "@/lib/freight-fate-online";
 import { clientIp } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
@@ -12,11 +16,32 @@ function clientKey(request: Request) {
 // The game may name the computer it is connecting. Anything unreadable is
 // simply absent: an older build sends no body at all, and this endpoint has
 // always accepted that.
-async function machineKey(request: Request) {
+//
+// A guest connecting an account also sends its driver id in the body and its
+// token as a Bearer header, so its journal and achievements can follow it.
+// Anything that does not prove a guest is ignored, never an error.
+async function readBody(request: Request) {
   try {
-    const body = (await request.json()) as { machine_key?: unknown } | null;
+    const body = (await request.json()) as { machine_key?: unknown; guest_driver_id?: unknown } | null;
     const key = body?.machine_key;
-    return typeof key === "string" ? key.slice(0, 64) : undefined;
+    const guestId = body?.guest_driver_id;
+    return {
+      machineKey: typeof key === "string" ? key.slice(0, 64) : undefined,
+      guestDriverId: typeof guestId === "string" ? guestId : undefined,
+    };
+  } catch {
+    return { machineKey: undefined, guestDriverId: undefined };
+  }
+}
+
+function guestProof(request: Request, guestDriverId: string | undefined) {
+  const token = /^Bearer\s+(.+)$/i.exec(request.headers.get("authorization") ?? "")?.[1];
+  if (!token || !guestDriverId) return undefined;
+  try {
+    return {
+      driverId: normalizeFreightFateDriverId(guestDriverId),
+      driverToken: normalizeFreightFateToken(token, "Driver token"),
+    };
   } catch {
     return undefined;
   }
@@ -24,9 +49,11 @@ async function machineKey(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const body = await readBody(request);
     const started = await startFreightFateActivation({
       clientKey: clientKey(request),
-      machineKey: await machineKey(request),
+      machineKey: body.machineKey,
+      guest: guestProof(request, body.guestDriverId),
       siteOrigin: new URL(request.url).origin,
     });
     if (!started) {

@@ -36,6 +36,8 @@ export type FreightFatePresenceDriver = {
   detail: string;
   changedAt: number;
   updatedAt?: number;
+  /** A guest driver: on the board, with no profile. */
+  guest?: boolean;
 };
 
 export type FreightFatePresenceBoard = {

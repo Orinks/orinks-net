@@ -12,6 +12,7 @@ import type {
 } from "./freight-fate-presence";
 import { formatUserCode } from "@/convex/freightFateActivation";
 import { normalizeFreightFateDriverId } from "@/convex/freightFateRequest";
+import { guestName } from "@/lib/hearken-online";
 
 export type FreightFateVisibility = "public" | "private" | "unlisted";
 
@@ -580,6 +581,9 @@ export async function startFreightFateActivation(input: {
   // row so that connecting the same PC again replaces its entry instead of
   // spending another slot on the ten-computer list.
   machineKey?: string;
+  // A guest connecting an account: its driver id and token, so the guest is
+  // retired once the account holds this computer.
+  guest?: { driverId: string; driverToken: string };
 }) {
   const client = getConvexClient();
   if (!client) {
@@ -588,6 +592,12 @@ export async function startFreightFateActivation(input: {
   const started = await client.mutation(anyApi.freightFateActivation.startActivation, {
     clientKey: input.clientKey.slice(0, 64),
     machineKey: input.machineKey,
+    ...(input.guest
+      ? {
+          guestDriverId: normalizeFreightFateDriverId(input.guest.driverId),
+          guestTokenHash: hashFreightFateToken(input.guest.driverToken),
+        }
+      : {}),
     now: Date.now(),
   });
   // Formatted by the same function the /activate page's parser was built
@@ -618,7 +628,7 @@ export async function pollFreightFateActivation(input: { deviceCode: string }) {
     now: Date.now(),
   });
   if (status !== "ready") {
-    return { status } as const;
+    return status === "expired" ? ({ status: "expired" } as const) : ({ status: "pending" } as const);
   }
   const redeemed = await client.mutation(anyApi.freightFateActivation.redeemActivation, {
     deviceCodeHash,
@@ -635,4 +645,44 @@ export async function pollFreightFateActivation(input: { deviceCode: string }) {
     token: redeemed.token,
     displayName: redeemed.displayName,
   } as const;
+}
+
+// Guest drivers (convex/freightFateGuests.ts). The name always comes from
+// Hearken's word lists, picked here; a clash with a driver already on the
+// board picks again.
+const GUEST_NAME_TRIES = 4;
+
+export async function createFreightFateGuest(input: { clientKey: string; machineKey?: string }) {
+  const client = getConvexClient();
+  if (!client) return null;
+  for (let attempt = 0; attempt < GUEST_NAME_TRIES; attempt += 1) {
+    const made = await client.mutation(anyApi.freightFateGuests.createGuest, {
+      clientKey: input.clientKey.slice(0, 64),
+      name: guestName(),
+      machineKey: input.machineKey,
+      now: Date.now(),
+    });
+    if (made.ok) {
+      return made as { ok: true; driverId: string; token: string; displayName: string };
+    }
+  }
+  return { ok: false as const, code: "name_taken" as const };
+}
+
+export async function renameFreightFateGuest(input: { driverId: string; driverToken: string }) {
+  const client = getConvexClient();
+  if (!client) return null;
+  let last: { ok: false; reason: string } = { ok: false, reason: "name_taken" };
+  for (let attempt = 0; attempt < GUEST_NAME_TRIES; attempt += 1) {
+    const result = await client.mutation(anyApi.freightFateGuests.renameGuest, {
+      driverId: normalizeFreightFateDriverId(input.driverId),
+      driverTokenHash: hashFreightFateToken(input.driverToken),
+      name: guestName(),
+      now: Date.now(),
+    });
+    if (result.ok) return result as { ok: true; displayName: string };
+    last = result;
+    if (result.reason !== "name_taken") break;
+  }
+  return last;
 }

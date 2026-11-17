@@ -139,13 +139,53 @@ export interface ServiceOptions {
   log?: (event: object) => void;
   /** A guest connected an account: move the guest's results to it. */
   onLink?: (input: { guest: string; player: Player | null }) => Promise<void>;
+  /** Synced files: a sealed copy of each player's save (saves.js). */
+  saves?: SavesOptions | null;
   limits?: Partial<{
     runsPerMinute: number;
     activationsPerMinute: number;
     pollsPerMinute: number;
     guestsPerDay: number;
     renamesPerHour: number;
+    savesPerHour: number;
+    saveReadsPerHour: number;
   }>;
 }
 
 export function createService(options: ServiceOptions): { fetch(request: Request): Promise<Response> };
+
+/** One kept revision of a synced file, as a store answers `head`. */
+export interface SaveHead {
+  revision: number;
+  hash: string;
+  bytes: number;
+  format: number;
+  at: number;
+}
+
+export interface SaveStore {
+  head(player: string, name: string): Promise<SaveHead | null>;
+  read(player: string, name: string): Promise<(SaveHead & { content: Uint8Array }) | null>;
+  /** The base check and the new revision must be one transaction. */
+  write(
+    player: string,
+    name: string,
+    save: { base: number; format: number; hash: string; content: Uint8Array; bytes: number; at: number },
+  ): Promise<{ revision: number; stale?: boolean }>;
+}
+
+export interface SavesOptions {
+  store: SaveStore;
+  files: Record<string, { maxBytes?: number; sealed?: boolean; card?: (card: unknown, input: { player: Player }) => unknown }>;
+  guests?: boolean;
+  onSave?: (input: { player: Player; name: string; revision: number; card: unknown }) => Promise<void>;
+}
+
+export const SAVE_NAME_PATTERN: RegExp;
+export const MAX_SAVE_BYTES: number;
+export const KEEP_REVISIONS: number;
+export const MAX_CARD_BYTES: number;
+export function memorySaves(options?: { keep?: number }): SaveStore & {
+  revisions(player: string, name: string): Promise<number[]>;
+  purge(player: string): Promise<void>;
+};

@@ -67,6 +67,7 @@ describe("connecting a game", () => {
     expect(await t.query(api.games.playerForToken, { secret: SECRET, game: "other", tokenHash })).toBeNull();
     expect(await t.withIdentity({ subject: "user_ada" }).query(api.games.getMyGamesPlayer, {})).toEqual({
       displayName: "Ada Lovelace",
+      profileHidden: false,
     });
   });
 
