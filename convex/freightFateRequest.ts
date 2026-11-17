@@ -63,16 +63,63 @@ async function sha256Hex(input: string) {
     .join("");
 }
 
+export type PresenceTruck = {
+  city: string;
+  nextWaypoint?: string;
+  hosMinutesLeft?: number;
+  fuelPercent?: number;
+  cargo?: string;
+  loaded: boolean;
+};
+
 export type PresenceUpdateArgs = {
   driverId: string;
   driverTokenHash: string;
   activity: string;
   detail: string;
+  truck?: PresenceTruck;
   clientVersion?: string;
   now: number;
 };
 
-export type PresenceUpdateResult = { ok: true; cleared: boolean } | { ok: false; reason: string };
+export type PresenceUpdateResult =
+  | { ok: true; cleared: boolean; dispatch?: { carrierId: string; openOrders: number } }
+  | { ok: false; reason: string };
+
+function truckText(value: unknown, max: number) {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(/[\u0000-\u001f\u007f]/g, " ").trim().replace(/\s+/g, " ").slice(0, max);
+  return text || undefined;
+}
+
+function truckNumber(value: unknown, min: number, max: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.round(Math.min(max, Math.max(min, value)));
+}
+
+/** The live-dispatch truck state a carrier driver's heartbeat may carry.
+ *
+ * Optional and forgiving: a build that sends none, or sends something
+ * malformed, gets an ordinary heartbeat, never a rejected one. Only a city
+ * and loaded/empty are needed for the state to count.
+ */
+export function normalizePresenceTruck(value: unknown): PresenceTruck | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  const city = truckText(raw.city, 80);
+  if (!city || typeof raw.loaded !== "boolean") return undefined;
+  const truck: PresenceTruck = { city, loaded: raw.loaded };
+  const nextWaypoint = truckText(raw.nextWaypoint, 80);
+  if (nextWaypoint) truck.nextWaypoint = nextWaypoint;
+  // Game minutes; a driver can hold at most a fourteen-hour duty window.
+  const hos = truckNumber(raw.hosMinutesLeft, 0, 14 * 60);
+  if (hos !== undefined) truck.hosMinutesLeft = hos;
+  const fuel = truckNumber(raw.fuelPercent, 0, 100);
+  if (fuel !== undefined) truck.fuelPercent = fuel;
+  const cargo = truckText(raw.cargo, 80);
+  if (cargo) truck.cargo = cargo;
+  return truck;
+}
 
 const PRESENCE_FAILURE_STATUS: Record<string, number> = {
   driver_not_found: 404,
@@ -100,11 +147,14 @@ export async function answerPresencePost(
 ) {
   try {
     const driverToken = normalizeFreightFateToken(bearerToken(request), "Driver token");
-    const body = (await request.json()) as { driverId?: unknown; activity?: unknown; detail?: unknown };
+    const body = (await request.json()) as {
+      driverId?: unknown; activity?: unknown; detail?: unknown; truck?: unknown;
+    };
     const driverId = normalizeFreightFateDriverId(body.driverId);
     const activity = typeof body.activity === "string" ? body.activity : "";
     const detail = typeof body.detail === "string" ? body.detail : "";
     const clientVersion = freightFateClientVersion(request);
+    const truck = normalizePresenceTruck(body.truck);
     const result = await update({
       driverId,
       driverTokenHash: await sha256Hex(driverToken),
@@ -112,6 +162,7 @@ export async function answerPresencePost(
       // letting a normalizer reject it.
       activity: activity.trim().replace(/\s+/g, " ").slice(0, 160),
       detail: detail.trim().replace(/\s+/g, " ").slice(0, 160),
+      ...(truck ? { truck } : {}),
       ...(clientVersion ? { clientVersion } : {}),
       now: Date.now(),
     });
@@ -120,7 +171,9 @@ export async function answerPresencePost(
       return json({ error: result.reason }, PRESENCE_FAILURE_STATUS[result.reason] ?? 400);
     }
 
-    return json({ ok: true, cleared: result.cleared });
+    // dispatch is present only for a carrier driver with live dispatch on:
+    // how many orders wait, so the game fetches them only when there are some.
+    return json({ ok: true, cleared: result.cleared, ...(result.dispatch ? { dispatch: result.dispatch } : {}) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid presence request.";
 

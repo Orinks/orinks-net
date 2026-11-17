@@ -96,6 +96,22 @@ Things a handler should know:
 - A record's value is at most 8 KB. `ahead` counts at most 1000, so past that
   a rank reads as 1001.
 
+## Testers
+
+Any game can let chosen players see its unreleased content early. Sign in
+at /games/testers as the site's owner (the account's verified email must be
+in `GAMES_ADMIN_EMAILS` on Convex, or the contact address when that is
+unset), type the player's orinks.net name (the name the game shows under
+Settings, Online account) under the game, and add or remove them. The
+"Game testers" workflow in the Actions tab does the same. The player needs
+to have connected the game once, so the account has a name.
+
+The game asks `GET /api/games/<game>/tester` with its token and gets
+`{"tester": true}` or `{"tester": false}` (`testerHandler` in
+`lib/games/service.ts`). The flag lives on `gamesPlayers.testerGames`, one
+list of game ids per account, so being a tester of one game says nothing to
+another. Guests are never testers.
+
 ## Deploying
 
 Pushes to `dev` build a frontend preview only. The Convex functions and

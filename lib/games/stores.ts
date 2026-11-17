@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 import { guestName } from "@/lib/hearken-online";
-import type { Accounts, Claim, Limiter, Runs } from "@/lib/hearken-online";
+import type { Accounts, Claim, Limiter, Runs, SaveStore } from "@/lib/hearken-online";
 
 export function hashSecret(value: string) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -16,7 +16,30 @@ export function gamesServerSecret() {
   return secret && secret.length >= 32 ? secret : null;
 }
 
-export type GameStores = { accounts: Accounts; runs: Runs; limiter: Limiter };
+export type GameStores = { accounts: Accounts; runs: Runs; limiter: Limiter; saves?: SaveStore };
+
+/** Synced files in Convex (convex/gamesSaves.ts). */
+export function convexSaves(client: ConvexHttpClient, secret: string, game: string): SaveStore {
+  return {
+    head: (playerId, name) => client.query(anyApi.gamesSaves.head, { secret, game, playerId, name }),
+    async read(playerId, name) {
+      const row = await client.query(anyApi.gamesSaves.read, { secret, game, playerId, name });
+      return row ? { ...row, content: new Uint8Array(row.content) } : null;
+    },
+    write: (playerId, name, save) =>
+      client.mutation(anyApi.gamesSaves.store, {
+        secret,
+        game,
+        playerId,
+        name,
+        base: save.base,
+        format: save.format,
+        hash: save.hash,
+        content: save.content.slice().buffer,
+        now: save.at,
+      }),
+  };
+}
 
 // How long a claimed run with no reply holds before it may be claimed
 // again: a request that died partway frees its run after this.
@@ -44,6 +67,9 @@ export function convexStores(input: {
           device_code: started.deviceCode,
           user_code: started.userCode,
           verify_url: input.connectUrl,
+          // The same page with the code filled in, which the game opens in
+          // the player's browser.
+          verify_url_complete: `${input.connectUrl}?code=${encodeURIComponent(started.userCode)}`,
           expires_in: started.expiresIn,
           interval: 5,
         };

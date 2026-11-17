@@ -1,5 +1,5 @@
 // Types for the copied Wicket's leaderboards (index.js). Hand-written.
-import type { Handler, Player } from "@/lib/hearken-online";
+import type { Handler, Player, SaveStore, SavesOptions } from "@/lib/hearken-online";
 import type { GameRecords } from "@/lib/games/records";
 
 export interface Boards {
@@ -38,8 +38,19 @@ export function wicketsGame(options?: { secret?: string; now?: () => number; gam
   id: string;
   title: string;
   handlers(records: GameRecords): Record<string, Handler<any>>;
+  saves(records: GameRecords, store: SaveStore): SavesOptions;
   guests(records: GameRecords): {
     renamed(player: Player, name: string): Promise<void>;
     linked(input: { guest: string; player: Player | null }): Promise<void>;
   };
 };
+
+/** A player's page: ranked bests from the boards, and their game's card. */
+export interface WicketsProfile {
+  name: string | null;
+  ranked: { game: string; period: string; relaxed: boolean; score: number }[];
+  card: { v: 1; games: Record<string, { best?: number; unlocks?: number }>; specials: string[]; at?: number } | null;
+}
+export function profile(records: GameRecords, playerId: string, options?: { now?: () => number }): Promise<WicketsProfile | null>;
+export function checkCard(card: unknown): WicketsProfile["card"];
+export function wicketsSaves(options: { store: SaveStore; records: GameRecords; sealed?: boolean; now?: () => number }): SavesOptions;

@@ -14,6 +14,7 @@ import {
   FREIGHT_FATE_ACHIEVEMENT_ID_SET,
 } from "./freightFateProfileCatalog";
 import { readCatalogAchievements } from "./freightFateProfileAchievements";
+import { foldHeartbeatIntoDispatch, truckStateValidator } from "./freightFateDispatchTruck";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -688,6 +689,9 @@ export const updatePresence = mutation({
     driverTokenHash: v.string(),
     activity: v.string(),
     detail: v.string(),
+    // Live dispatch only (convex/freightFateDispatchTruck.ts): where a carrier
+    // driver's truck is. Never shown on the board.
+    truck: v.optional(truckStateValidator),
     clientVersion: v.optional(v.string()),
     now: v.number(),
   },
@@ -741,6 +745,8 @@ export const updatePresence = mutation({
         // not seen.
         await ctx.db.patch(driver._id, { lastOnDutyAt: args.now });
       }
+      // A sign-off may carry where the truck parked; the desk keeps it.
+      await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
       return { ok: true as const, cleared: true };
     }
 
@@ -770,7 +776,8 @@ export const updatePresence = mutation({
         changedAt: args.now,
         ...listing,
       });
-      return { ok: true as const, cleared: false };
+      const dispatch = await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
+      return { ok: true as const, cleared: false, ...(dispatch ? { dispatch } : {}) };
     }
 
     const shown =
@@ -798,7 +805,8 @@ export const updatePresence = mutation({
       });
     }
 
-    return { ok: true as const, cleared: false };
+    const dispatch = await foldHeartbeatIntoDispatch(ctx, args.driverId, args.truck, args.now);
+    return { ok: true as const, cleared: false, ...(dispatch ? { dispatch } : {}) };
   },
 });
 
@@ -1031,11 +1039,20 @@ export const getLivePresenceBoard = query({
   },
 });
 
-// How many drivers the directory lists at most. Read once a minute per
-// site, not per viewer, so this bounds one cached read rather than a
-// subscription; the ceiling exists so a directory of every driver who ever
-// opted in cannot grow into a full-table read.
-export const MAX_DIRECTORY_ROWS = 200;
+// How many drivers the directory lists at most, and how many driver rows it
+// may read to find them. Read once a minute per site, not per viewer, so
+// these bound one cached read rather than a subscription; the ceilings exist
+// so a directory of every driver who ever opted in cannot grow into an
+// unbounded table read, and so the listing fits in its snapshot row.
+//
+// The listing used to stop after the first 200 rows of the index, public or
+// not, so from the 201st driver on the page said "200 drivers have a public
+// profile" and dropped whoever had been off duty longest (2026-11-15). Rows
+// that are not listed no longer use up the listing, and a listing cut short
+// by either ceiling says so (`complete: false`) instead of passing for the
+// whole directory.
+export const MAX_DIRECTORY_ROWS = 2000;
+export const MAX_DIRECTORY_SCAN = 5000;
 
 /** Every driver with a public profile, on duty or not, and when they were
  * last on duty.
@@ -1081,14 +1098,18 @@ export async function readDriverDirectory(ctx: QueryCtx, args: { now: number }) 
 
   // Everyone with a public profile, most recently off duty first. Rows
   // with no stamp sort first in the index and so come out last here.
-  const candidates = await ctx.db
+  const drivers = [];
+  let scanned = 0;
+  let complete = true;
+  for await (const driver of ctx.db
     .query("freightFateDrivers")
     .withIndex("by_last_on_duty")
-    .order("desc")
-    .take(MAX_DIRECTORY_ROWS);
-
-  const drivers = [];
-  for (const driver of candidates) {
+    .order("desc")) {
+    if (scanned >= MAX_DIRECTORY_SCAN || drivers.length >= MAX_DIRECTORY_ROWS) {
+      complete = false;
+      break;
+    }
+    scanned += 1;
     // The directory lists profiles, and only accounts have one.
     if (!boardListing(driver).listed || driver.guest) {
       continue;
@@ -1115,7 +1136,7 @@ export async function readDriverDirectory(ctx: QueryCtx, args: { now: number }) 
     return a.displayName.localeCompare(b.displayName, "en-US") || a.driverId.localeCompare(b.driverId);
   });
 
-  return { drivers, asOf: args.now };
+  return { drivers, asOf: args.now, complete };
 }
 
 export const getDriverDirectory = query({

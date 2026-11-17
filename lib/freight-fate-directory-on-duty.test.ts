@@ -61,4 +61,9 @@ describe("onDutyFromBoard", () => {
     expect(merged.drivers.some((row) => row.onDuty)).toBe(false);
     expect(merged.drivers).toHaveLength(directory.drivers.length);
   });
+
+  test("a directory cut short stays marked as cut short", () => {
+    expect(onDutyFromBoard({ ...directory, complete: false }, board).complete).toBe(false);
+    expect(onDutyFromBoard(directory, board).complete).toBeUndefined();
+  });
 });

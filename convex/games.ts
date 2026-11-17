@@ -12,7 +12,7 @@
 // Convex functions, and without the gate anyone could write a record the
 // replay never checked. Only claimActivation (the browser, signed in with
 // Clerk) and getMyGamesPlayer are callable without it.
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -20,6 +20,7 @@ import { consumeFreightFateWrite } from "./freightFateRateLimit";
 import { formatUserCode, mintUserCode, normalizeUserCode } from "./freightFateActivation";
 import { sameText } from "./freightFateReview";
 import { screenDisplayName } from "./moderation";
+import { purgeGamesSaves } from "./gamesSaves";
 
 export const GAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/;
 export const CONNECT_TTL_MS = 10 * 60_000;
@@ -43,7 +44,7 @@ function serverSecret() {
 }
 
 /** Refuses a caller that is not the site's own server. */
-function requireServer(secret: string) {
+export function requireServer(secret: string) {
   const expected = serverSecret();
   if (!expected || !sameText(secret, expected)) {
     throw new ConvexError({ code: "forbidden" as const });
@@ -65,7 +66,7 @@ export async function sha256Hex(text: string) {
   return toHex(new Uint8Array(digest));
 }
 
-function checkGame(game: string) {
+export function checkGame(game: string) {
   if (!GAME_PATTERN.test(game)) {
     throw new ConvexError({ code: "bad_game" as const });
   }
@@ -118,7 +119,15 @@ const GUEST_NAME = /^[A-Z][a-z]+ [A-Z][a-z]+ [1-9][0-9]?$/;
 // ---- Rate limits -------------------------------------------------------
 
 export const consumeRateLimit = mutation({
-  args: { secret: v.string(), key: v.string(), limit: v.number(), now: v.number() },
+  args: {
+    secret: v.string(),
+    key: v.string(),
+    limit: v.number(),
+    now: v.number(),
+    // The stretch the limit counts over, a minute by default; the
+    // problem-report relay counts over a day.
+    windowMs: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     requireServer(args.secret);
     return consumeFreightFateWrite(ctx, {
@@ -126,6 +135,7 @@ export const consumeRateLimit = mutation({
       driverId: args.key.slice(0, 160),
       now: args.now,
       limit: Math.max(1, Math.floor(args.limit)),
+      ...(args.windowMs ? { windowMs: args.windowMs } : {}),
     });
   },
 });
@@ -151,7 +161,9 @@ export const playerForToken = query({
       .withIndex("by_player_id", (q) => q.eq("playerId", row.playerId))
       .unique();
     if (player) {
-      return { id: player.playerId, name: player.displayName };
+      return player.testerGames?.includes(args.game)
+        ? { id: player.playerId, name: player.displayName, tester: true }
+        : { id: player.playerId, name: player.displayName };
     }
     const guest = await guestById(ctx, row.playerId);
     if (guest && guest.game === args.game) {
@@ -161,7 +173,7 @@ export const playerForToken = query({
   },
 });
 
-/** The signed-in account's player, for the connect page. */
+/** The signed-in account's player, for the connect page and the player page. */
 export const getMyGamesPlayer = query({
   args: {},
   handler: async (ctx) => {
@@ -170,7 +182,43 @@ export const getMyGamesPlayer = query({
       return null;
     }
     const player = await playerBySubject(ctx, identity.subject);
-    return player ? { displayName: player.displayName } : null;
+    return player ? { displayName: player.displayName, profileHidden: player.profileHidden === true } : null;
+  },
+});
+
+/** Hides or shows the signed-in player's public player page. */
+export const setProfileHidden = mutation({
+  args: { hidden: v.boolean() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { ok: false as const };
+    }
+    const player = await playerBySubject(ctx, identity.subject);
+    if (!player) {
+      return { ok: false as const };
+    }
+    await ctx.db.patch(player._id, { profileHidden: args.hidden });
+    return { ok: true as const, hidden: args.hidden };
+  },
+});
+
+/**
+ * An account's player by name, for its public page, and whether they hid
+ * it: null for no such player. Guests have no page.
+ */
+export const playerForPage = query({
+  args: { secret: v.string(), name: v.string() },
+  handler: async (ctx, args) => {
+    requireServer(args.secret);
+    const key = normalizePlayerName(args.name).toLowerCase();
+    if (!key) return null;
+    const player = await ctx.db
+      .query("gamesPlayers")
+      .withIndex("by_name_key", (q) => q.eq("nameKey", key))
+      .first();
+    if (!player) return null;
+    return { playerId: player.playerId, name: player.displayName, hidden: player.profileHidden === true };
   },
 });
 
@@ -653,8 +701,98 @@ export async function purgeGamesPlayer(ctx: MutationCtx, authSubject: string) {
       deleted += 1;
     }
   }
+  deleted += await purgeGamesSaves(ctx, player.playerId);
   // Run claims stay, so a copied run still reads as already sent; the
   // player id they keep no longer leads to anyone.
   await ctx.db.delete(player._id);
   return deleted + 1;
 }
+
+// ---- Testers -------------------------------------------------------------
+//
+// A tester sees a game's unreleased content early: the game reads
+// /api/games/<game>/tester once connected (lib/games/service.ts). The owner
+// flags players on the testers page (/games/testers, adminSetTester below);
+// the "Game testers" workflow and the Convex dashboard run the internal
+// ones, e.g.
+//
+//   npx convex run games:setTester '{"name":"Orinks","game":"wickets"}'
+
+type TesterChange = { ok: true; name: string; game: string; tester: boolean } | { ok: false; code: "no_player" };
+
+async function changeTester(ctx: MutationCtx, name: string, game: string, tester: boolean): Promise<TesterChange> {
+  checkGame(game);
+  const key = normalizePlayerName(name).toLowerCase();
+  const player = await ctx.db
+    .query("gamesPlayers")
+    .withIndex("by_name_key", (q) => q.eq("nameKey", key))
+    .first();
+  if (!player) {
+    return { ok: false, code: "no_player" };
+  }
+  const others = (player.testerGames ?? []).filter((g) => g !== game);
+  await ctx.db.patch(player._id, { testerGames: tester ? [...others, game] : others });
+  return { ok: true, name: player.displayName, game, tester };
+}
+
+async function testersOf(ctx: QueryCtx, game: string) {
+  checkGame(game);
+  const players = await ctx.db.query("gamesPlayers").collect();
+  return players
+    .filter((p) => p.testerGames?.includes(game))
+    .map((p) => p.displayName)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/** Makes the player with this orinks.net name a tester of `game`, or not. */
+export const setTester = internalMutation({
+  args: { name: v.string(), game: v.string(), tester: v.optional(v.boolean()) },
+  handler: async (ctx, args) => {
+    const done = await changeTester(ctx, args.name, args.game, args.tester ?? true);
+    if (!done.ok) {
+      throw new ConvexError({
+        code: "no_player" as const,
+        message: `Nobody is called "${args.name}". They connect a game once to get a name.`,
+      });
+    }
+    return { name: done.name, game: done.game, tester: done.tester };
+  },
+});
+
+/** The names of everyone testing `game`. */
+export const listTesters = internalQuery({
+  args: { game: v.string() },
+  handler: async (ctx, args) => testersOf(ctx, args.game),
+});
+
+// The testers page (/games/testers) is for the site's owner: the signed-in
+// account's verified email must be one of GAMES_ADMIN_EMAILS (comma
+// separated), or the site's contact address when that is unset.
+const OWNER_EMAIL = "orin8722@gmail.com";
+
+export function isGamesAdmin(identity: { email?: string; emailVerified?: boolean } | null) {
+  if (!identity?.email || identity.emailVerified === false) return false;
+  const admins = (process.env.GAMES_ADMIN_EMAILS || OWNER_EMAIL)
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(identity.email.toLowerCase());
+}
+
+/** The testers page's list: null for anyone who may not see it. */
+export const adminListTesters = query({
+  args: { game: v.string() },
+  handler: async (ctx, args) => {
+    if (!isGamesAdmin(await ctx.auth.getUserIdentity())) return null;
+    return testersOf(ctx, args.game);
+  },
+});
+
+/** Adds or removes a tester from the testers page. */
+export const adminSetTester = mutation({
+  args: { name: v.string(), game: v.string(), tester: v.boolean() },
+  handler: async (ctx, args): Promise<TesterChange | { ok: false; code: "forbidden" }> => {
+    if (!isGamesAdmin(await ctx.auth.getUserIdentity())) return { ok: false, code: "forbidden" };
+    return changeTester(ctx, args.name, args.game, args.tester);
+  },
+});

@@ -68,6 +68,9 @@ export default defineConfig(({ mode }) => {
         VAPID_SUBJECT: bindings.text("mailto:notifications@orinks.net"),
         CONTACT_FROM_EMAIL: bindings.text("orinks.net contact <contact@orinks.net>"),
         CONTACT_TO_EMAIL: bindings.text("orin8722@gmail.com"),
+        // Client addresses and IPv4 ranges whose problem reports
+        // (/api/problem-reports) are refused, separated by commas or spaces.
+        PROBLEM_REPORT_BLOCK: bindings.text(""),
         // Public Vercel Blob URL of the Freight Fate music pack
         // (/downloads/music.pak redirects to it).
         FREIGHT_FATE_MUSIC_BLOB_URL: bindings.secret(),
@@ -87,8 +90,10 @@ export default defineConfig(({ mode }) => {
         RESEND_API_KEY: productionSecret(),
         // The Hearken games' secrets (lib/games/stores.ts, lib/wickets-online),
         // made and set by the deploy workflow's "games-secrets" run. The
-        // preview has none, so its /api/games/ answers 503: it shares the
-        // production Convex deployment, and must not write to it.
+        // games service and the problem-report relay's daily counters call
+        // Convex with GAMES_SERVER_SECRET. The preview has none, so its
+        // /api/games/ answers 503: it shares the production Convex
+        // deployment, and must not write to it.
         GAMES_SERVER_SECRET: productionSecret(),
         WICKETS_SEED_SECRET: productionSecret(),
         BUILD_NOTIFICATION_TOKEN: productionSecret(),

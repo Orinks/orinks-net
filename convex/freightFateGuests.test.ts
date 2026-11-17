@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { api } from "./_generated/api";
@@ -13,6 +13,16 @@ function setup() {
   return convexTest(schema, modules);
 }
 const NOW = 1_760_000_000_000;
+
+// claimActivation reads the server's clock, so the tests set that clock.
+// Only Date is faked: convex-test's scheduler still runs on real timers.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 const SUBJECT = "user_2guestowner";
 
 async function sha256(text: string) {

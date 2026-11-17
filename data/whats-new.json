@@ -2,6 +2,45 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-15-wickets-player-pages",
+      "date": "2026-11-15",
+      "project": "Wicket's",
+      "title": "Wicket's player pages and cloud saves",
+      "body": [
+        "Each orinks.net account that plays Wicket's now has a player page with its ranked bests, the holiday specials it has beaten, and the bests and unlocks its game last sent. Hide my page on your own page takes it down until you show it again.",
+        "Wicket's 1.8.0 keeps your scores, unlocks and progress with your account, so they follow you to another computer. Turn it on in Settings, Online. If both computers already have progress, the game asks once whether to combine them. Guests keep their progress on one computer."
+      ]
+    },
+    {
+      "id": "2026-11-15-wickets-leaderboards",
+      "date": "2026-11-15",
+      "project": "Wicket's",
+      "title": "Wicket's leaderboards",
+      "body": [
+        "Wicket's 1.7.0 posts challenge scores to orinks.net. Safecracker, Belfry, Fireside Patience, Riverboat Dice and Sonar Dive each have a daily, weekly and monthly board, and Safecracker and Sonar Dive keep a separate board for the Relaxed pace.",
+        "Connect your orinks.net account in Settings, Online, or play as a guest under a name the game picks. Post scores in Settings decides whether a score is posted: ask first, always, or never. A daily counts only your first run of the day.",
+        "The leaderboards page shows every board. Choose a game, then the day, week or month."
+      ],
+      "link": {
+        "href": "/wickets/leaderboards",
+        "label": "See the Wicket's leaderboards"
+      }
+    },
+    {
+      "id": "2026-11-13-freight-fate-dispatch-page",
+      "date": "2026-11-13",
+      "project": "Freight Fate: Dispatch",
+      "title": "Freight Fate: Dispatch is out",
+      "body": [
+        "Freight Fate: Dispatch is out for Windows, macOS and Linux. This time you aren't behind the wheel. You run the desk at a trucking carrier: take freight from customers and brokers, decide which driver hauls what, and answer the phone when the day goes sideways.",
+        "Time only moves when you act. Keep your customers, keep your drivers, and keep the bank off your back. Drivers from your Freight Fate careers can join the roster."
+      ],
+      "link": {
+        "href": "/freight-fate-dispatch",
+        "label": "Read about Freight Fate: Dispatch"
+      }
+    },
+    {
       "id": "2026-10-29-wickets-released",
       "date": "2026-10-29",
       "project": "Wicket's",

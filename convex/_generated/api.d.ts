@@ -14,6 +14,8 @@ import type * as crons from "../crons.js";
 import type * as freightFate from "../freightFate.js";
 import type * as freightFateActivation from "../freightFateActivation.js";
 import type * as freightFateAdmin from "../freightFateAdmin.js";
+import type * as freightFateDispatch from "../freightFateDispatch.js";
+import type * as freightFateDispatchTruck from "../freightFateDispatchTruck.js";
 import type * as freightFateGuests from "../freightFateGuests.js";
 import type * as freightFateMastodonPurge from "../freightFateMastodonPurge.js";
 import type * as freightFateMeaningfulPlay from "../freightFateMeaningfulPlay.js";
@@ -38,10 +40,12 @@ import type * as freightFateStationRules from "../freightFateStationRules.js";
 import type * as freightFateStationVetting from "../freightFateStationVetting.js";
 import type * as freightFateStations from "../freightFateStations.js";
 import type * as games from "../games.js";
+import type * as gamesSaves from "../gamesSaves.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
 import type * as mutators from "../mutators.js";
 import type * as notifications from "../notifications.js";
+import type * as problemReports from "../problemReports.js";
 import type * as questionBank from "../questionBank.js";
 import type * as questionClipValidation from "../questionClipValidation.js";
 import type * as questionTypes from "../questionTypes.js";
@@ -57,6 +61,7 @@ import type * as triviaStartHandlers from "../triviaStartHandlers.js";
 import type * as triviaStoryBeats from "../triviaStoryBeats.js";
 import type * as triviaStoryHandler from "../triviaStoryHandler.js";
 import type * as triviaVersions from "../triviaVersions.js";
+import type * as turnstile from "../turnstile.js";
 import type * as visits from "../visits.js";
 
 import type {
@@ -72,6 +77,8 @@ declare const fullApi: ApiFromModules<{
   freightFate: typeof freightFate;
   freightFateActivation: typeof freightFateActivation;
   freightFateAdmin: typeof freightFateAdmin;
+  freightFateDispatch: typeof freightFateDispatch;
+  freightFateDispatchTruck: typeof freightFateDispatchTruck;
   freightFateGuests: typeof freightFateGuests;
   freightFateMastodonPurge: typeof freightFateMastodonPurge;
   freightFateMeaningfulPlay: typeof freightFateMeaningfulPlay;
@@ -96,10 +103,12 @@ declare const fullApi: ApiFromModules<{
   freightFateStationVetting: typeof freightFateStationVetting;
   freightFateStations: typeof freightFateStations;
   games: typeof games;
+  gamesSaves: typeof gamesSaves;
   http: typeof http;
   moderation: typeof moderation;
   mutators: typeof mutators;
   notifications: typeof notifications;
+  problemReports: typeof problemReports;
   questionBank: typeof questionBank;
   questionClipValidation: typeof questionClipValidation;
   questionTypes: typeof questionTypes;
@@ -115,6 +124,7 @@ declare const fullApi: ApiFromModules<{
   triviaStoryBeats: typeof triviaStoryBeats;
   triviaStoryHandler: typeof triviaStoryHandler;
   triviaVersions: typeof triviaVersions;
+  turnstile: typeof turnstile;
   visits: typeof visits;
 }>;
 

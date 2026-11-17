@@ -29,6 +29,7 @@ export const gameModNav = [{ href: "/eurofly-enhanced-mod", label: "Eurofly Enha
 export const gamesNav = [
   { href: "/games/space-colony-defense/index.html", label: "Space Colony Defense" },
   { href: "/freight-fate", label: "Freight Fate" },
+  { href: "/freight-fate-dispatch", label: "Freight Fate: Dispatch" },
   { href: "/midnight-signal", label: "The Midnight Signal" },
   { href: "/saltwake", label: "Saltwake" },
   { href: "/wickets", label: "Wicket's" },
@@ -79,6 +80,20 @@ export const freightFate: ProjectPage = {
     { href: "/freight-fate/suggest-a-station", label: "Suggest a radio station" },
     { href: "https://github.com/orinks-games/Freight-Fate", label: "GitHub repository" },
     { href: "https://github.com/orinks-games/Freight-Fate/issues", label: "Report an issue" },
+  ],
+};
+
+export const freightFateDispatch: ProjectPage = {
+  href: "/freight-fate-dispatch",
+  title: "Freight Fate: Dispatch",
+  tagline: "Run the desk at a trucking carrier. Every truck, every load, and every phone call is yours to handle.",
+  summary:
+    "Freight Fate: Dispatch is an audio management game for blind and visually impaired players, for Windows, macOS, and Linux. You run the desk at a new trucking carrier: decide who hauls what, keep your customers, keep your drivers, and keep the carrier out of the red.",
+  downloadsHref: "/freight-fate-dispatch/downloads",
+  links: [
+    { href: "/freight-fate", label: "Freight Fate, the driving game" },
+    { href: "https://github.com/orinks-games/freight-fate-dispatch", label: "GitHub repository" },
+    { href: "https://github.com/orinks-games/freight-fate-dispatch/issues", label: "Report an issue" },
   ],
 };
 
@@ -135,6 +150,14 @@ export const gameSummaries: GameSummary[] = [
     primaryHref: freightFate.downloadsHref!,
     primaryLabel: "Downloads",
     links: freightFate.links,
+  },
+  {
+    href: freightFateDispatch.href,
+    title: freightFateDispatch.title,
+    summary: freightFateDispatch.summary,
+    primaryHref: freightFateDispatch.downloadsHref!,
+    primaryLabel: "Downloads",
+    links: freightFateDispatch.links.filter((link) => link.href.startsWith("https://")),
   },
   {
     href: saltwake.href,
@@ -252,6 +275,7 @@ export function getProject(href: string) {
 
 export function getGame(href: string) {
   if (href === freightFate.href) return freightFate;
+  if (href === freightFateDispatch.href) return freightFateDispatch;
   if (href === saltwake.href) return saltwake;
   return undefined;
 }
