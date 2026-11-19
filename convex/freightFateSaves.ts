@@ -230,7 +230,7 @@ export const setPublicSave = mutation({
     if (!allowed) {
       return { ok: false as const, reason: "rate_limited" as const };
     }
-    if (args.saveName !== null && (args.saveName.length === 0 || args.saveName.length > 48)) {
+    if (args.saveName !== null && (args.saveName.length === 0 || args.saveName.length > 64)) {
       return { ok: false as const, reason: "invalid_name" as const };
     }
     await ctx.db.patch(driver._id, {

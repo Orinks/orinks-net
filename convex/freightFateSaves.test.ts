@@ -1268,6 +1268,44 @@ describe("validated private cloud revisions", () => {
     });
   });
 
+  test.each(["Road Star", "A".repeat(48)])("isolates plain and release slots for %s", async (name) => {
+    const t = setup();
+    const auth = await provisionedDriver(t);
+    const plain = name;
+    const suffixed = `${name} (Career 2)`;
+    const send = async (saveName: string, line: string, parentRevision: number | null) => {
+      const payload = { ...profileNamed(name), created_line: line };
+      const content = contentFor(payload);
+      return t.action(anyApi.freightFateSaveActions.uploadValidatedSave, {
+        ...auth, saveName, saveVersion: payload.version, parentRevision,
+        contentHash: hash(content), content, summary: name,
+      });
+    };
+    expect(await send(plain, "1.9", null)).toMatchObject({ ok: true, revision: 1 });
+    expect(await send(plain, "1.9", 1)).toMatchObject({ ok: true, revision: 2 });
+    expect(await send(suffixed, "2.0", null)).toMatchObject({ ok: true, revision: 1 });
+    expect(await send(suffixed, "2.0", 2)).toMatchObject({ ok: false, reason: "conflict", latestRevision: 1 });
+    expect(await listedSaveNames(t, auth)).toEqual([plain, suffixed]);
+    for (const [saveName, revision] of [[plain, 2], [suffixed, 1]] as const) {
+      expect(await t.action(anyApi.freightFateSaveActions.downloadValidatedSave, {
+        ...auth, saveName, now: Date.now(),
+      })).toMatchObject({ ok: true, saveName, revision });
+      expect(await t.mutation(api.freightFateSaves.setPublicSave, {
+        ...auth, saveName, now: Date.now(),
+      })).toMatchObject({ ok: true, publicSaveName: saveName });
+    }
+    expect(await t.mutation(api.freightFateSaves.deleteSaveSlot, { ...auth, saveName: suffixed }))
+      .toMatchObject({ ok: true, deletedRevisions: 1 });
+    expect(await listedSaveNames(t, auth)).toEqual([plain]);
+    expect(await t.action(anyApi.freightFateSaveActions.downloadValidatedSave, {
+      ...auth, saveName: plain, revision: 1, now: Date.now(),
+    })).toMatchObject({ ok: true, saveName: plain, revision: 1 });
+    expect(await send(suffixed, "2.0", null)).toMatchObject({ ok: true, revision: 1 });
+    expect(await t.mutation(api.freightFateSaves.deleteSaveSlot, { ...auth, saveName: plain }))
+      .toMatchObject({ ok: true, deletedRevisions: 2 });
+    expect(await listedSaveNames(t, auth)).toEqual([suffixed]);
+  });
+
   test("an eleventh career evicts the least recently meaningfully played slot", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));

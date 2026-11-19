@@ -1,5 +1,5 @@
 import invariants from "../data/freight-fate-profile-invariants.json";
-import { freightFateSaveSlotName } from "../lib/freight-fate-save-name";
+import { freightFateReleaseSlotName } from "../lib/freight-fate-save-name";
 
 export const SHARED_PROFILE_VALIDATOR_VERSION = 1;
 export const MAX_SHARED_PROFILE_BYTES = 256 * 1024;
@@ -322,7 +322,7 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     return failure("invalid_schema", "The cloud backup has missing or unknown profile fields.");
   }
   const normalizedName = typeof payload.name === "string"
-    ? freightFateSaveSlotName(payload.name)
+    ? freightFateReleaseSlotName(payload.name, payload.created_line)
     : "";
   if (typeof payload.name !== "string" || payload.name.trim().length === 0
     || payload.name.length > 48 || normalizedName !== saveName) {
