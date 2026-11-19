@@ -1,4 +1,5 @@
 import type { Doc } from "./_generated/dataModel";
+import { splitFreightFateSaveSlotName } from "../lib/freight-fate-save-name";
 import invariants from "../data/freight-fate-profile-invariants.json";
 import {
   FREIGHT_FATE_ACHIEVEMENT_LABELS,
@@ -271,7 +272,7 @@ export function publicVerifiedSnapshot(
   if (!snapshot?.sourceRevision || !snapshot.validatorVersion) return null;
   return {
     version: snapshot.version,
-    saveName: snapshot.saveName,
+    saveName: snapshot.saveName === undefined ? undefined : splitFreightFateSaveSlotName(snapshot.saveName).base,
     businessStatus: snapshot.businessStatus,
     businessIdentity: snapshot.businessIdentity,
     carrierName: snapshot.carrierName,

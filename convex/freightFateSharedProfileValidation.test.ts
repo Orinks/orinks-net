@@ -63,6 +63,21 @@ function validProfile() {
 }
 
 describe("validateSharedProfile", () => {
+  test.each([
+    ["2.0", "Road Star (Career 2)", true],
+    ["1.9", "Road Star", true],
+    [undefined, "Road Star", true],
+    ["bad", "Road Star", true],
+    ["2.0", "Road Star", false],
+    ["1.9", "Road Star (Career 2)", false],
+    [undefined, "Road Star (Career 2)", false],
+    ["2.0", "Road Star (Career 3)", false],
+  ])("checks release %s against slot %s", (line, slot, accepted) => {
+    const profile = { ...validProfile(), ...(line === undefined ? {} : { created_line: line }) };
+    expect(validateSharedProfile(profile, slot)).toMatchObject(accepted
+      ? { ok: true } : { ok: false, reason: "invalid_name" });
+  });
+
   test("accepts a current self-consistent career", () => {
     expect(validateSharedProfile(validProfile(), "Road Star")).toMatchObject({ ok: true });
   });

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { unstable_cache } from "next/cache";
-import { freightFateSaveSlotName } from "./freight-fate-save-name";
+import { freightFateSaveSlotName, splitFreightFateSaveSlotName } from "./freight-fate-save-name";
 import { FREIGHT_FATE_PROFILE_SUMMARY_EVENTS, freightFateProfileSummary } from "./freight-fate-profile-summary";
 import { anyApi } from "convex/server";
 import { getConvexClient } from "@/lib/convex";
@@ -63,7 +63,8 @@ export function normalizeFreightFateSaveName(value: unknown) {
     throw new Error("Save name is required.");
   }
 
-  const saveName = freightFateSaveSlotName(value);
+  const { base, suffix } = splitFreightFateSaveSlotName(value);
+  const saveName = freightFateSaveSlotName(base) + suffix;
 
   if (saveName.length > 64) {
     throw new Error("Save name is too long.");

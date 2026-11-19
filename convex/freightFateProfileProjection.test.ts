@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildVerifiedProfileSnapshot } from "./freightFateProfileProjection";
+import { buildVerifiedProfileSnapshot, publicVerifiedSnapshot } from "./freightFateProfileProjection";
 import invariants from "../data/freight-fate-profile-invariants.json";
 
 function payload(career: Record<string, number>) {
@@ -19,6 +19,14 @@ function snapshot(career: Record<string, number>) {
     payload: payload(career), now: 1_800_000_000_000, validatorVersion: 1,
   });
 }
+
+test("public career names omit only the release suffix", () => {
+  for (const [saveName, displayed] of [["Road Star (Career 2)", "Road Star"], ["Road Star - Career 2", "Road Star - Career 2"]]) {
+    const stored = { ...snapshot({}), saveName } as NonNullable<Parameters<typeof publicVerifiedSnapshot>[0]>;
+    expect(publicVerifiedSnapshot(stored)?.saveName).toBe(displayed);
+    expect(stored.sourceSaveName).toBe("Main");
+  }
+});
 
 describe("the profile's career title", () => {
   function titleAt(level: number, extra: Record<string, unknown>) {
