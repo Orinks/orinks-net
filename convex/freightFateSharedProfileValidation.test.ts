@@ -223,6 +223,29 @@ describe("validateSharedProfile", () => {
   });
 
 
+  test("accepts a Career 2.0 regional driver and a driver with no carrier near home", () => {
+    const careerTwo = {
+      ...validProfile(),
+      created_line: "2.0",
+      current_city: "fairbanks_ak_us",
+      business_status: "company_driver",
+      carrier_key: "chatanika_freight",
+      carrier_name: "Chatanika Freight Lines",
+      home_terminal_city: "anchorage_ak_us",
+      home_city: "anchorage_ak_us",
+      parked_facility: "",
+      turnpike_program_notice_seen: false,
+    };
+    expect(validateSharedProfile(careerTwo, "Road Star (Career 2)")).toMatchObject({ ok: true });
+    expect(validateSharedProfile(
+      { ...careerTwo, carrier_key: "", carrier_name: "", home_terminal_city: "" },
+      "Road Star (Career 2)",
+    )).toMatchObject({ ok: true });
+    for (const field of ["home_terminal_city", "home_city", "parked_facility", "turnpike_program_notice_seen"]) {
+      expect(REQUIRED_FIELDS).not.toContain(field);
+    }
+  });
+
   test("accepts the 1.9 created-on line marker without demanding it", () => {
     // 1.9 careers stamp the release line they were created on into every
     // save (Freight Fate's created_line field, part of its cutover gate on

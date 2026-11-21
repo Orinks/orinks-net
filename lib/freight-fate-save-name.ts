@@ -7,15 +7,20 @@ export function freightFateSaveSlotName(profileName: string) {
   return safe || "Driver";
 }
 
-export function freightFateReleaseSlotName(profileName: string, createdLine: unknown) {
-  const name = freightFateSaveSlotName(profileName);
+/** True for a save created on a release line after 1.9 ("2.0", "1.10", ...). */
+export function isPostStableLine(createdLine: unknown) {
   const match = typeof createdLine === "string" ? /^(\d+)\.(\d+)$/.exec(createdLine) : null;
-  if (!match) return name;
+  if (!match) return false;
   const major = BigInt(match[1]);
   const minor = BigInt(match[2]);
-  return major > BigInt(1) || (major === BigInt(1) && minor > BigInt(9))
-    ? `${name} (Career ${major})`
-    : name;
+  return major > BigInt(1) || (major === BigInt(1) && minor > BigInt(9));
+}
+
+export function freightFateReleaseSlotName(profileName: string, createdLine: unknown) {
+  const name = freightFateSaveSlotName(profileName);
+  if (!isPostStableLine(createdLine)) return name;
+  const major = BigInt((createdLine as string).split(".")[0]);
+  return `${name} (Career ${major})`;
 }
 
 export function splitFreightFateSaveSlotName(slot: string) {

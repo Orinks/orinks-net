@@ -1,4 +1,4 @@
-import invariants from "../data/freight-fate-profile-invariants.json";
+import { ALL_LINES, invariantsForLine } from "../lib/freight-fate-invariants";
 import { freightFateReleaseSlotName } from "../lib/freight-fate-save-name";
 
 export const SHARED_PROFILE_VALIDATOR_VERSION = 1;
@@ -30,7 +30,7 @@ const LEGACY_CONDITION_LIMITS: Record<string, number> = {
 // superset guard now: an unknown field is still refused, but a field this
 // validator never reads is never demanded.
 const TOP_LEVEL_FIELDS = new Set([
-  ...invariants.profileFields,
+  ...ALL_LINES.profileFields,
   ...Object.keys(LEGACY_CONDITION_LIMITS),
 ]);
 // Only what every supported build writes and the checks below actually read.
@@ -52,11 +52,11 @@ const OPTIONAL_FLAG_FIELDS = [
 // game migrates it to the current shape on load. Accepting it costs nothing;
 // refusing it locks out every player who is not running a nightly.
 const OLDEST_SUPPORTED_SAVE_VERSION = 4;
-const CAREER_FIELDS = new Set(invariants.careerFields);
+const CAREER_FIELDS = new Set(ALL_LINES.careerFields);
 // Exported too, for the same reason as the profile list: this record is where
 // new per-truck state lands (brake and engine wear, traction gear), and a copy
 // kept here would reject the next build's saves the day one is added.
-const TRUCK_CONDITION_FIELDS = new Set(invariants.truckConditionFields);
+const TRUCK_CONDITION_FIELDS = new Set(ALL_LINES.truckConditionFields);
 const MARKET_FIELDS = new Set(["seed", "day", "multipliers"]);
 const HOS_FIELDS = new Set([
   "driving_min", "duty_min", "since_break_min", "status", "non_driving_min",
@@ -71,7 +71,7 @@ const DUTY_STATUSES = new Set(["driving", "on_duty_not_driving", "off_duty", "sl
 // a career, never whether the career may be backed up -- an unknown id is a
 // build this server has not been told about, and the driver keeps their save
 // either way. See the notes at each check for the refusals this replaced.
-const ACHIEVEMENT_IDS = new Set(invariants.achievementIds);
+const ACHIEVEMENT_IDS = new Set(ALL_LINES.achievementIds);
 
 // Badges the public tally may count. Ids this server cannot name are carried
 // in the backup and left out of the number, so the catalog and the tally
@@ -84,16 +84,23 @@ export function knownBadgeCount(achievements: unknown): number {
 // Economy terms behind the two arithmetic checks, exported from the game for
 // the same reason the field lists are: a copy kept here goes stale on the next
 // balance pass and starts rejecting honest backups.
-const STARTING_MONEY = invariants.startingMoney as number;
-// The richest career start the game offers. The money ceiling has to credit
-// this, not STARTING_MONEY: the owner-operator start opens with 18,000
-// dollars, and a ceiling built on the company-driver 5,000 rejected every
-// honest owner-operator backup as impossible_money until earnings outgrew
-// the gap (munchkinbear, 2026-08-14). Falls back to STARTING_MONEY for an
-// invariants file exported before the key existed.
-const STARTING_MONEY_MAX = (invariants.startingMoneyMax as number | undefined) ?? STARTING_MONEY;
-const XP_PER_MILE_MAX = invariants.xpPerMileMax as number;
-const XP_FLAT_PER_DELIVERY = invariants.xpFlatPerDelivery as number;
+// Read from the save's own career line (lib/freight-fate-invariants.ts).
+//
+// startingMoneyMax is the richest career start the game offers. The money
+// ceiling has to credit it, not startingMoney: the owner-operator start opens
+// with 18,000 dollars, and a ceiling built on the company-driver 5,000
+// rejected every honest owner-operator backup as impossible_money until
+// earnings outgrew the gap (munchkinbear, 2026-08-14). It falls back to
+// startingMoney for an invariants file exported before the key existed.
+function economy(createdLine: unknown) {
+  const line = invariantsForLine(createdLine);
+  const startingMoney = line.startingMoney as number;
+  return {
+    startingMoneyMax: (line.startingMoneyMax as number | undefined) ?? startingMoney,
+    xpPerMileMax: line.xpPerMileMax as number,
+    xpFlatPerDelivery: line.xpFlatPerDelivery as number,
+  };
+}
 // Absorbs rounding drift between a total accumulated per delivery and the same
 // total recomputed once here. Cents, not dollars -- it is not a cheat budget.
 const ARITHMETIC_SLACK = 1;
@@ -314,7 +321,7 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // know is named as version skew. Underneath, an unrecognised shape fails
   // the field check instead, and the player hears that their backup is
   // malformed when their game is only a different build.
-  if (!integer(payload.version, OLDEST_SUPPORTED_SAVE_VERSION, invariants.sourceSaveVersion)) {
+  if (!integer(payload.version, OLDEST_SUPPORTED_SAVE_VERSION, ALL_LINES.sourceSaveVersion)) {
     return failure("unsupported_version", "This career version is not supported for Cloud Backup.");
   }
   if (!exactFields(payload, TOP_LEVEL_FIELDS)
@@ -438,8 +445,9 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // sat exactly on what a spotless career earns -- one XP of headroom, and
   // below the rate the 1.9 arc pays -- so honest drivers were the ones it
   // caught. Wrong in the generous direction is the survivable wrong here.
-  const xpCeiling = (career.deliveries as number) * XP_FLAT_PER_DELIVERY
-    + (career.total_miles as number) * XP_PER_MILE_MAX
+  const terms = economy(payload.created_line);
+  const xpCeiling = (career.deliveries as number) * terms.xpFlatPerDelivery
+    + (career.total_miles as number) * terms.xpPerMileMax
     + ARITHMETIC_SLACK;
   if ((career.xp as number) > xpCeiling) {
     return failure("impossible_xp", "The cloud backup experience is not supported by its recorded miles.");
@@ -456,7 +464,7 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
   // through the garage is left to offline forensics, which is what has
   // actually caught every real edit so far.
   if ((payload.money as number)
-    > STARTING_MONEY_MAX + (career.total_earnings as number)
+    > terms.startingMoneyMax + (career.total_earnings as number)
       + (payload.pay_advance as number) + ARITHMETIC_SLACK) {
     return failure("impossible_money", "The cloud backup money exceeds what the career has earned.");
   }

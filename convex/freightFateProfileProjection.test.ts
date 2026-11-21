@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { buildVerifiedProfileSnapshot, publicVerifiedSnapshot } from "./freightFateProfileProjection";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import careerTwo from "../data/freight-fate-profile-invariants-career-2.json";
 
 function payload(career: Record<string, number>) {
   return {
@@ -128,5 +129,44 @@ describe("the profile's reputation", () => {
 
   test("falls back to the raw ledger for a save from before the standing existed", () => {
     expect(snapshot({ reputation: 70 }).reputation).toBe(70);
+  });
+});
+
+describe("a Career 2.0 profile", () => {
+  function snapshotOf(extra: Record<string, unknown>, career: Record<string, number> = {}) {
+    return buildVerifiedProfileSnapshot({
+      driverId: "road-star-1234", saveName: "Road Star (Career 2)", revision: 1,
+      payload: { ...payload(career), ...extra }, now: 1_800_000_000_000, validatorVersion: 1,
+    });
+  }
+  const livestock = careerTwo.endorsements.livestock_handling;
+
+  test("names a regional carrier, an Alaska city and a Yukon delivery", () => {
+    const snapshot = snapshotOf({
+      created_line: "2.0",
+      business_status: "company_driver",
+      carrier_key: "chatanika_freight",
+      current_city: "fairbanks_ak_us",
+      achievement_stats: { cities_delivered: ["anchorage_ak_us", "whitehorse_yt_ca"] },
+    });
+    expect(snapshot.carrierName).toBe("Chatanika Freight Lines");
+    expect(snapshot.businessIdentity).toBe("Company driver for Chatanika Freight Lines");
+    expect(snapshot.lastSavedCity).toBe(careerTwo.cityLabels.fairbanks_ak_us);
+    expect(snapshot.visitedPlaces?.map((place) => place.state)).toHaveLength(2);
+  });
+
+  test("a company driver with no carrier near home shows no carrier", () => {
+    const snapshot = snapshotOf({
+      created_line: "2.0", business_status: "company_driver", carrier_key: "", carrier_name: "",
+    });
+    expect(snapshot.carrierName).toBeUndefined();
+    expect(snapshot.businessIdentity).toBe("Company driver");
+  });
+
+  test("lists the 2.0 credentials only on a 2.0 career", () => {
+    const xp = { xp: invariants.levelXp[livestock.level - 1], total_miles: 400_000, deliveries: 400 };
+    expect(snapshotOf({ created_line: "2.0" }, xp).endorsements).toContain(livestock.label);
+    expect(snapshotOf({ created_line: "1.9" }, xp).endorsements).not.toContain(livestock.label);
+    expect(snapshotOf({}, xp).endorsements).not.toContain(livestock.label);
   });
 });

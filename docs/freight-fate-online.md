@@ -140,7 +140,13 @@ run `cargo run -p ff-core --bin ff-invariants --
 the Python one predates the public profile catalogs and no longer emits
 them), then commit both sides of the contract in the same change whenever
 the game adds a city, achievement, truck, upgrade, market cargo key, save
-field, or save-schema version. Gated possessions
+field, or save-schema version. Career 2.0 has its own export,
+`data/freight-fate-profile-invariants-career-2.json`, regenerated the same way
+from the game's `feat/career-2.0` branch. A save with `created_line` "2.0"
+(cloud slot "Name (Career 2)") is read against it for its level table, titles
+and credentials; labels and catalog prices come from both files, so a 2.0
+carrier or city gets its name. The carrier pages read only the stable export
+(`lib/freight-fate-invariants.ts` has the rules). Gated possessions
 such as Golden Antlers must not be added until the server can validate their
 grant trail.
 
