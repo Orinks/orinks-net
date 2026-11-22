@@ -7,6 +7,11 @@ type FreightFateLandingProps = {
   project: ProjectPage;
 };
 
+type FreightFatePitchProps = FreightFateLandingProps & {
+  /** The paper's link, when an edition is published. */
+  paperLink?: { href: string; label: string } | null;
+};
+
 /** The top of the page: the title, the pitch in one line, and the downloads.
  *
  * The live sections (drivers on duty, driver updates) follow this on the
@@ -31,7 +36,7 @@ export function FreightFateIntro({ project }: FreightFateLandingProps) {
 }
 
 /** The features, then the community and source links to close the page. */
-export function FreightFatePitch({ project }: FreightFateLandingProps) {
+export function FreightFatePitch({ project, paperLink }: FreightFatePitchProps) {
   return (
     <>
       <Section title="Driving and freight">
@@ -46,6 +51,7 @@ export function FreightFatePitch({ project }: FreightFateLandingProps) {
 
       <Section title="Community and source">
         <ul>
+          {paperLink ? <li><a href={paperLink.href}>{paperLink.label}</a></li> : null}
           {project.links.map((link) => (
             <li key={link.href}>
               <a href={link.href}>{link.label}</a>

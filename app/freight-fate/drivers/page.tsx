@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
 import { FreightFateDriverDirectory } from "@/components/FreightFateDriverDirectory";
+import { paperLink } from "@/lib/freight-fate-paper-page";
 
 export const metadata: Metadata = { title: "Freight Fate Driver Directory" };
 
@@ -13,7 +14,8 @@ export const metadata: Metadata = { title: "Freight Fate Driver Directory" };
 // 2026-09-21: Age 3056 s, x-vercel-cache STALE).
 export const dynamic = "force-dynamic";
 
-export default function FreightFateDriversPage() {
+export default async function FreightFateDriversPage() {
+  const paper = await paperLink();
   return (
     <div className="space-y-8">
       <PageHeader
@@ -21,6 +23,7 @@ export default function FreightFateDriversPage() {
         intro="Every Freight Fate driver with a public profile, whether they are on duty right now or not, and when each was last on duty."
       />
       <div className="prose prose-slate max-w-none prose-a:text-action prose-a:font-semibold prose-li:my-1">
+        {paper ? <p><a href={paper.href}>{paper.label}</a></p> : null}
         <FreightFateDriverDirectory />
       </div>
     </div>

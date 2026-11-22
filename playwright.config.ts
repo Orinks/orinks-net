@@ -10,6 +10,9 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev -- -p 3108",
+    // The driver newspaper's pages read the fixture edition in
+    // test-fixtures/ instead of the backend.
+    env: { FREIGHT_FATE_PAPER_FIXTURE: "1" },
     url: "http://127.0.0.1:3108/freight-fate",
     reuseExistingServer: true,
     timeout: 120_000,

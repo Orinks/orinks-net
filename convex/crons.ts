@@ -136,4 +136,15 @@ crons.interval(
   {},
 );
 
+// The driver newspaper: every day at noon UTC (7 a.m. Eastern, 8 in summer)
+// read the day's events into the week's tallies; on Monday, close the week
+// and publish. Reads nothing while FREIGHT_FATE_PAPER is off. An hour ahead
+// of the review digest, which reports a failed build.
+crons.daily(
+  "write the Freight Fate paper",
+  { hourUTC: 12, minuteUTC: 0 },
+  internal.freightFatePaper.runPaperSchedule,
+  {},
+);
+
 export default crons;

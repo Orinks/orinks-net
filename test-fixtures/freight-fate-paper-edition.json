@@ -1,0 +1,357 @@
+{
+  "note": "A made-up edition for the paper's pages on a development server (FREIGHT_FATE_PAPER_FIXTURE=1): the accessibility spec and reviews read it. Names are invented. gone-driver has no name here, so its stories drop out the way a driver who turned sharing off does.",
+  "latestIssue": 25,
+  "drivers": {
+    "dana-rig": "Dana Rig",
+    "mo-k": "Mo K",
+    "sam-hollis": "Sam Hollis",
+    "lee-ann": "Lee Ann",
+    "jo-ray": "Jo Ray",
+    "pat-q": "Pat Q",
+    "tomas-v": "Tomas V",
+    "rosa-m": "Rosa M",
+    "ike-t": "Ike T",
+    "nan-b": "Nan B"
+  },
+  "edition": {
+    "issue": 25,
+    "weekKey": "2026-11-16",
+    "periodStart": 1794805200000,
+    "periodEnd": 1795410000000,
+    "state": "published",
+    "publishedAt": 1795435500000,
+    "stories": [
+      {
+        "id": "mile_club.dana-rig",
+        "section": "front_page",
+        "kind": "mile_club",
+        "driverIds": [
+          "dana-rig"
+        ],
+        "facts": {
+          "mark": 1000000,
+          "deliveries": 3412
+        },
+        "variant": 0,
+        "rank": 100
+      },
+      {
+        "id": "first_into_city.mo_k",
+        "section": "front_page",
+        "kind": "first_into_city",
+        "driverIds": [
+          "mo-k"
+        ],
+        "facts": {
+          "city": "aberdeen_sd_us",
+          "origin": "abilene_tx_us",
+          "miles": 1088
+        },
+        "variant": 0,
+        "rank": 90
+      },
+      {
+        "id": "own_authority.sam-hollis",
+        "section": "front_page",
+        "kind": "own_authority",
+        "driverIds": [
+          "sam-hollis"
+        ],
+        "facts": {
+          "from_carrier": "northstar"
+        },
+        "variant": 0,
+        "rank": 80
+      },
+      {
+        "id": "first_delivery.lee-ann",
+        "section": "driver_news",
+        "kind": "first_delivery",
+        "driverIds": [
+          "lee-ann"
+        ],
+        "facts": {
+          "origin": "akron_oh_us",
+          "destination": "abingdon_va_us",
+          "miles": 402,
+          "carrier": "great_lakes_training"
+        },
+        "variant": 2,
+        "rank": 10
+      },
+      {
+        "id": "promotion.jo-ray",
+        "section": "driver_news",
+        "kind": "promotion",
+        "driverIds": [
+          "jo-ray"
+        ],
+        "facts": {
+          "title": "Solo Company Driver",
+          "level": 6,
+          "carrier": "prairie_link"
+        },
+        "variant": 0,
+        "rank": 60
+      },
+      {
+        "id": "endorsement.jo-ray",
+        "section": "driver_news",
+        "kind": "endorsement",
+        "driverIds": [
+          "jo-ray"
+        ],
+        "facts": {
+          "endorsement": "doubles_triples"
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "moved_carrier.pat-q",
+        "section": "driver_news",
+        "kind": "moved_carrier",
+        "driverIds": [
+          "pat-q"
+        ],
+        "facts": {
+          "carrier": "summit_value",
+          "from_carrier": "northstar"
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "new_hires.all",
+        "section": "new_hires",
+        "kind": "new_hires",
+        "driverIds": [
+          "ike-t",
+          "lee-ann",
+          "gone-driver",
+          "nan-b",
+          "rosa-m",
+          "tomas-v"
+        ],
+        "facts": {
+          "count": 6
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "rare_achievement.mo-k",
+        "section": "achievements",
+        "kind": "rare_achievement",
+        "driverIds": [
+          "mo-k"
+        ],
+        "facts": {
+          "achievement": "all_regions",
+          "holders": 3
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "most_miles.dana-rig",
+        "section": "records",
+        "kind": "most_miles",
+        "driverIds": [
+          "dana-rig"
+        ],
+        "facts": {
+          "miles": 4210,
+          "deliveries": 9
+        },
+        "variant": 0,
+        "rank": 50
+      },
+      {
+        "id": "busiest_lane.all",
+        "section": "freight",
+        "kind": "busiest_lane",
+        "driverIds": [],
+        "facts": {
+          "origin": "akron_oh_us",
+          "destination": "abilene_tx_us",
+          "count": 7
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "tons_total.all",
+        "section": "freight",
+        "kind": "tons_total",
+        "driverIds": [],
+        "facts": {
+          "tons": 1860
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "road_weather.all",
+        "section": "road_report",
+        "kind": "road_weather",
+        "driverIds": [],
+        "facts": {
+          "weather": "heavy_rain",
+          "count": 9,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "road_chain_law.all",
+        "section": "road_report",
+        "kind": "road_chain_law",
+        "driverIds": [],
+        "facts": {
+          "count": 1,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "road_scales.all",
+        "section": "road_report",
+        "kind": "road_scales",
+        "driverIds": [],
+        "facts": {
+          "count": 14,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "blotter_citations.all",
+        "section": "blotter",
+        "kind": "blotter_citations",
+        "driverIds": [],
+        "facts": {
+          "count": 14
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "blotter_crashes.all",
+        "section": "blotter",
+        "kind": "blotter_crashes",
+        "driverIds": [],
+        "facts": {
+          "count": 1
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "stations_added.all",
+        "section": "on_the_dial",
+        "kind": "stations_added",
+        "driverIds": [],
+        "facts": {
+          "count": 2,
+          "stations": [
+            "WKRP 88.5",
+            "Night Road Radio"
+          ]
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "promotion.gone-driver",
+        "section": "driver_news",
+        "kind": "promotion",
+        "driverIds": [
+          "gone-driver"
+        ],
+        "facts": {
+          "title": "Solo Company Driver",
+          "level": 6
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "game_release.all",
+        "section": "game_news",
+        "kind": "game_release",
+        "driverIds": [],
+        "facts": {
+          "version": "1.9.7"
+        },
+        "variant": 0,
+        "rank": 10
+      }
+    ],
+    "records": [
+      {
+        "record": "most_miles",
+        "driverId": "dana-rig",
+        "value": 4210
+      },
+      {
+        "record": "most_deliveries",
+        "driverId": "jo-ray",
+        "value": 11
+      },
+      {
+        "record": "longest_haul",
+        "driverId": "mo-k",
+        "value": 2118
+      },
+      {
+        "record": "heaviest_load",
+        "driverId": "sam-hollis",
+        "value": 44000
+      },
+      {
+        "record": "most_new_cities",
+        "driverId": "gone-driver",
+        "value": 6
+      }
+    ],
+    "standings": [
+      {
+        "carrierKey": "northstar",
+        "drivers": 12,
+        "loads": 58,
+        "miles": 26400,
+        "onTimeRate": 96.5
+      },
+      {
+        "carrierKey": "prairie_link",
+        "drivers": 7,
+        "loads": 31,
+        "miles": 14020,
+        "onTimeRate": 90
+      },
+      {
+        "carrierKey": "summit_value",
+        "drivers": 3,
+        "loads": 9,
+        "miles": 3900
+      }
+    ],
+    "backPage": [
+      "column-01-coffee",
+      "want-ad-01-great-lakes",
+      "cb-letter-01-scale"
+    ],
+    "sinceMonday": {
+      "weekKey": "2026-11-23",
+      "asOf": 1795608000000,
+      "drivers": 31,
+      "loads": 118,
+      "miles": 54210,
+      "tons": 610
+    }
+  }
+}

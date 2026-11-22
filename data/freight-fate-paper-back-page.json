@@ -1,0 +1,446 @@
+{
+  "note": "Back page pieces for the Freight Fate paper, written by the director thread on 2026-11-22. All fiction. Task N1 copies this to data/freight-fate-paper-back-page.json in orinks-net. One piece of each kind runs per edition, in order, starting over when a kind's list runs out. No piece names a real driver, and the build check refuses a piece that contains a driver's display name slot. Help wanted pieces 01 to 04 advertise carriers from the game, and their facts match the carrier catalog as of 1.9.7: recheck them when a carrier's terms change. The other help wanted pieces name no carrier. Fifty-two pieces: 18 columns, 17 help wanted, 17 CB. Do not reword without the director.",
+  "version": 1,
+  "heading": "Back page: fiction",
+  "kinds": {
+    "column": "From the fuel desk",
+    "want_ad": "Help wanted",
+    "cb_letter": "Heard on the CB"
+  },
+  "pieces": [
+    {
+      "id": "column-01-coffee",
+      "kind": "column",
+      "title": "The coffee is the same",
+      "body": [
+        "A driver asked me this week whether the coffee on pump side is fresher than the coffee by the register. It is the same pot. I carry it across the store when the first one runs low.",
+        "He bought a cup from each anyway and said the pump side one was better. I did not argue. He had 600 miles to go and I had a floor to mop."
+      ]
+    },
+    {
+      "id": "want-ad-01-great-lakes",
+      "kind": "want_ad",
+      "title": "Great Lakes Training Transport, Milwaukee",
+      "body": [
+        "New drivers wanted. Short loads, extra room on the appointment, and good stop pay on a short hop. We supply the truck and pay for its upkeep. Most of our drivers leave for a bigger carrier once they have the hang of it, and we wish them well."
+      ]
+    },
+    {
+      "id": "cb-letter-01-scale",
+      "kind": "cb_letter",
+      "title": "Northbound, somewhere past the scale",
+      "body": [
+        "\"Is the scale open?\" \"It was when I went by.\" \"When was that?\" \"Tuesday.\""
+      ]
+    },
+    {
+      "id": "column-02-receipts",
+      "kind": "column",
+      "title": "Nobody wants the receipt",
+      "body": [
+        "I ask every driver if they want the receipt. Company drivers say no, the carrier is paying. Owner-operators say yes, fold it twice, and put it in a shirt pocket that already has forty in it.",
+        "You can tell who bought their own truck by the shape of the pocket."
+      ]
+    },
+    {
+      "id": "want-ad-02-northstar",
+      "kind": "want_ad",
+      "title": "Northstar Freight Lines, Chicago",
+      "body": [
+        "Company drivers wanted for steady work of every kind. We assign the tractor, keep it running, and pay the fuel and the routine repairs. The wage is the wage, week in and week out. No specialty required."
+      ]
+    },
+    {
+      "id": "cb-letter-02-weather",
+      "kind": "cb_letter",
+      "title": "Westbound, in the rain",
+      "body": [
+        "\"How is it up ahead?\" \"Wet.\" \"How far does it go?\" \"I will tell you when I get out of it.\""
+      ]
+    },
+    {
+      "id": "column-03-ten-hours",
+      "kind": "column",
+      "title": "Ten hours",
+      "body": [
+        "A truck pulled in at nine last night and did not move until seven this morning. The driver came in for a breakfast sandwich and looked better than I did.",
+        "Ten hours off is a rule. Most of them will tell you it is also the best part of the job, as long as they found a spot before the lot filled."
+      ]
+    },
+    {
+      "id": "want-ad-03-prairie-link",
+      "kind": "want_ad",
+      "title": "Prairie Link Regional, Kansas City",
+      "body": [
+        "Drivers wanted who like to stay in one part of the country and keep the wheels turning. Our per-mile floor is high and our stop pay is not. Grain, farm inputs and bulk materials. If you want a run of forty miles, call someone else."
+      ]
+    },
+    {
+      "id": "cb-letter-03-exit",
+      "kind": "cb_letter",
+      "title": "Southbound, near the truck stop",
+      "body": [
+        "\"Is that lot full?\" \"There is one spot.\" \"Where?\" \"I am in it.\""
+      ]
+    },
+    {
+      "id": "column-04-radio",
+      "kind": "column",
+      "title": "What they leave the radio on",
+      "body": [
+        "You can hear a truck's radio for a second when the door opens. Country, mostly. One driver had a ball game on from a city he left four hours ago, hanging on to the last of the signal.",
+        "He sat in the cab until it faded out. Then he came in and asked me the score, and I had to tell him I sell diesel."
+      ]
+    },
+    {
+      "id": "want-ad-04-summit",
+      "kind": "want_ad",
+      "title": "Summit Value Logistics, Denver",
+      "body": [
+        "Drivers wanted who are on time and know it. Our guaranteed floor is smaller than the next carrier's, and our on-time bonus is bigger. Longer lanes, with electronics, automotive parts and parcel freight. We supply the truck, the authority, the insurance, the fuel and the repairs. You supply the clock."
+      ]
+    },
+    {
+      "id": "cb-letter-04-chains",
+      "kind": "cb_letter",
+      "title": "Eastbound, at the chain-up area",
+      "body": [
+        "\"You ever put these on before?\" \"Once.\" \"How did it go?\" \"It stopped snowing while I was doing it.\""
+      ]
+    },
+    {
+      "id": "column-05-shower-list",
+      "kind": "column",
+      "title": "The shower list",
+      "body": [
+        "I call shower numbers over the speaker. Number 41 was called three times on Thursday and nobody came. He was asleep in a booth with his hand around a cup of coffee.",
+        "I let him sleep and gave the shower to 42. When he woke up he asked what number we were on. I said 58. He said that was fine, he was in no hurry now."
+      ]
+    },
+    {
+      "id": "want-ad-05-night-clerk",
+      "kind": "want_ad",
+      "title": "Night clerk, fuel desk",
+      "body": [
+        "Clerk wanted, eleven at night to seven in the morning. You will sell diesel, make coffee, call shower numbers and mop. You will be asked about the scale, the weather and the score. You are not expected to know any of them."
+      ]
+    },
+    {
+      "id": "cb-letter-05-oversize",
+      "kind": "cb_letter",
+      "title": "Eastbound, behind an oversize load",
+      "body": [
+        "\"How wide is he?\" \"Both lanes.\" \"How long are we stuck back here?\" \"He says he gets off in Ohio.\""
+      ]
+    },
+    {
+      "id": "column-06-pump-nine",
+      "kind": "column",
+      "title": "Pump nine",
+      "body": [
+        "Drivers will wait in line at pump eight with pump nine standing open. Somebody decided years ago that nine runs slow, and they have been telling each other on the CB ever since.",
+        "We replaced that pump in the spring. It is the fastest one on the island. I have stopped telling people."
+      ]
+    },
+    {
+      "id": "want-ad-06-scale-house",
+      "kind": "want_ad",
+      "title": "Scale house attendant",
+      "body": [
+        "Attendant wanted for a weigh station that is open some of the time. Duties are to wave trucks through, wave trucks in, and decline to say which days we are closed."
+      ]
+    },
+    {
+      "id": "cb-letter-06-work-zone",
+      "kind": "cb_letter",
+      "title": "Northbound, in the work zone",
+      "body": [
+        "\"What are they building?\" \"I could not tell you.\" \"How long has it been like this?\" \"I took my road test in it.\""
+      ]
+    },
+    {
+      "id": "column-07-scale",
+      "kind": "column",
+      "title": "Is the scale open",
+      "body": [
+        "Twenty times a shift somebody asks me whether the scale down the road is open. I cannot see it from here. I have never been to it.",
+        "I tell them what the last driver told me. So far nobody has come back to complain."
+      ]
+    },
+    {
+      "id": "want-ad-07-tire-shop",
+      "kind": "want_ad",
+      "title": "Tire shop, second shift",
+      "body": [
+        "Tire technician wanted, three to eleven. Most of the work is on the shoulder, in the rain, for a driver who is late. Must be able to hear \"how long\" forty times a night and answer it the same way."
+      ]
+    },
+    {
+      "id": "cb-letter-07-toll",
+      "kind": "cb_letter",
+      "title": "Westbound, at the toll plaza",
+      "body": [
+        "\"What did that one cost you?\" \"I did not look.\" \"Why not?\" \"It does not get cheaper if I look.\""
+      ]
+    },
+    {
+      "id": "column-08-chains",
+      "kind": "column",
+      "title": "Chains",
+      "body": [
+        "We sell tire chains two days a year. The first is the day the snow starts. The second is the day after, to the drivers who thought the first day was a fluke.",
+        "The rest of the year they hang on the back wall next to the sunscreen."
+      ]
+    },
+    {
+      "id": "want-ad-08-dock-hand",
+      "kind": "want_ad",
+      "title": "Dock hand, cold storage",
+      "body": [
+        "Dock hands wanted at a cold storage warehouse. Bring a coat in July. Trucks are unloaded in the order of their appointments, which is not the order they arrive in, and you will be the one who explains that."
+      ]
+    },
+    {
+      "id": "cb-letter-08-midnight",
+      "kind": "cb_letter",
+      "title": "Southbound, after midnight",
+      "body": [
+        "\"Anybody out there awake?\" \"No.\" \"Then who is this?\" \"I said what I said.\""
+      ]
+    },
+    {
+      "id": "column-09-atlas",
+      "kind": "column",
+      "title": "The road atlas",
+      "body": [
+        "We still sell a paper road atlas. One goes about every month. The buyer always opens it on my counter first and finds the town they grew up in.",
+        "Then they close it and put it behind the seat, where I suppose it stays."
+      ]
+    },
+    {
+      "id": "want-ad-09-flagger",
+      "kind": "want_ad",
+      "title": "Flagger, summer work zone",
+      "body": [
+        "Flaggers wanted for a lane closure expected to finish in the fall. It was expected to finish last fall too. Steady work."
+      ]
+    },
+    {
+      "id": "cb-letter-09-fuel-island",
+      "kind": "cb_letter",
+      "title": "Eastbound, at the fuel island",
+      "body": [
+        "\"Which pump is the fast one?\" \"None of them.\" \"Which is the least slow?\" \"The one I am on.\""
+      ]
+    },
+    {
+      "id": "column-10-three-am",
+      "kind": "column",
+      "title": "Three in the morning",
+      "body": [
+        "At three in the morning the lot is full and the store is empty. Sixty engines are idling out there, and the only ones awake are me and the coffee maker.",
+        "Around four the first door slams. By five there is a line. Nobody says much before the second cup."
+      ]
+    },
+    {
+      "id": "want-ad-10-night-dispatcher",
+      "kind": "want_ad",
+      "title": "Night dispatcher",
+      "body": [
+        "Dispatcher wanted for the overnight desk at a midsize carrier. You will hand out loads, take calls from drivers who do not like their loads, and hand out the same loads. A calm voice matters more than experience."
+      ]
+    },
+    {
+      "id": "cb-letter-10-fog",
+      "kind": "cb_letter",
+      "title": "Northbound, in the fog",
+      "body": [
+        "\"How thick is it up there?\" \"I rolled the window down to listen for the road.\" \"Did that help?\" \"I can hear it. It is under me.\""
+      ]
+    },
+    {
+      "id": "column-11-earplugs",
+      "kind": "column",
+      "title": "Earplugs",
+      "body": [
+        "A refrigerated trailer runs its cooling unit all night, on and off, whether the driver is awake or not. The driver sleeps through it. The driver parked beside it does not.",
+        "I keep earplugs at the register. I can tell from the face which truck a customer is parked next to."
+      ]
+    },
+    {
+      "id": "want-ad-11-tow-operator",
+      "kind": "want_ad",
+      "title": "Tow operator, mountain pass",
+      "body": [
+        "Heavy tow operator wanted, on call from the first snow to the last. Busy when the chain law goes up and for about an hour after it comes down. Coffee provided at the top of the grade."
+      ]
+    },
+    {
+      "id": "cb-letter-11-dock",
+      "kind": "cb_letter",
+      "title": "Westbound, at the dock",
+      "body": [
+        "\"They ready for you yet?\" \"They said ten minutes.\" \"When was that?\" \"Before lunch.\""
+      ]
+    },
+    {
+      "id": "column-12-weather-radio",
+      "kind": "column",
+      "title": "The weather radio",
+      "body": [
+        "There is a weather radio on the shelf behind me. It reads county names all day in one flat voice. Most people stop hearing it after a minute.",
+        "A driver will stand at the counter with a coffee until it says the one county they are headed for. Then they nod, or they swear, and go."
+      ]
+    },
+    {
+      "id": "want-ad-12-cook",
+      "kind": "want_ad",
+      "title": "Short order cook, truck stop diner",
+      "body": [
+        "Cook wanted, nights. The menu is breakfast. It is breakfast at noon and at midnight. Drivers order by the number and do not want to hear about the special."
+      ]
+    },
+    {
+      "id": "cb-letter-12-trooper",
+      "kind": "cb_letter",
+      "title": "Southbound, past a trooper",
+      "body": [
+        "\"Trooper at mile 114.\" \"Which side?\" \"Mine.\" \"What is he doing?\" \"Writing.\""
+      ]
+    },
+    {
+      "id": "column-13-lost-and-found",
+      "kind": "column",
+      "title": "Lost and found",
+      "body": [
+        "The lost and found box under the counter has eleven left gloves, a thermos with a dent in it, and a paper logbook from before the logs went electronic.",
+        "Nobody has asked for any of it. I looked through the logbook once. Every page is filled in, and the last one stops in the middle of a week."
+      ]
+    },
+    {
+      "id": "want-ad-13-lot-attendant",
+      "kind": "want_ad",
+      "title": "Parking lot attendant",
+      "body": [
+        "Attendant wanted for a truck stop lot of eighty spaces, evenings. The job is to tell the eighty-first truck. Thick skin helps."
+      ]
+    },
+    {
+      "id": "cb-letter-13-grade",
+      "kind": "cb_letter",
+      "title": "Eastbound, on a long grade",
+      "body": [
+        "\"What gear are you in?\" \"A low one.\" \"How low?\" \"A mile marker just passed me.\""
+      ]
+    },
+    {
+      "id": "column-14-month-in",
+      "kind": "column",
+      "title": "A month in",
+      "body": [
+        "A new driver came in last month and apologized to me for how he had parked. He was across two spots and a little of a third. I told him I do not own the lot.",
+        "He was back this week. He backed in on the first try, between two trucks, in the dark. He did not come in to tell me about it, so I am telling you."
+      ]
+    },
+    {
+      "id": "want-ad-14-truck-wash",
+      "kind": "want_ad",
+      "title": "Truck wash, day shift",
+      "body": [
+        "Washers wanted. A tractor and trailer takes twenty minutes and is dirty again in fifty miles. Drivers pay for it anyway, and most of them stand and watch."
+      ]
+    },
+    {
+      "id": "cb-letter-14-team",
+      "kind": "cb_letter",
+      "title": "Northbound, on a team load",
+      "body": [
+        "\"Who is driving that truck?\" \"My co-driver.\" \"Then why are you awake?\" \"He likes to sing.\""
+      ]
+    },
+    {
+      "id": "column-15-price-sign",
+      "kind": "column",
+      "title": "The price sign",
+      "body": [
+        "When diesel goes up four cents, drivers ask me why. I am the one who goes out with the pole and changes the numbers. I do not pick them.",
+        "When it goes down four cents nobody asks me anything."
+      ]
+    },
+    {
+      "id": "want-ad-15-instructor",
+      "kind": "want_ad",
+      "title": "Driving instructor",
+      "body": [
+        "Instructor wanted at a truck driving school. Students arrive able to go forward. You will teach the other direction. Patience required, and a loud voice for the lot."
+      ]
+    },
+    {
+      "id": "cb-letter-15-weigh-station",
+      "kind": "cb_letter",
+      "title": "Eastbound, leaving the weigh station",
+      "body": [
+        "\"They pull you in?\" \"They did.\" \"What for?\" \"They were open.\""
+      ]
+    },
+    {
+      "id": "column-16-cones",
+      "kind": "column",
+      "title": "The same cones",
+      "body": [
+        "Everybody who came in from the east on Wednesday was an hour late and blamed the same work zone. One lane, twelve miles, nobody working in it.",
+        "By evening they were comparing how long each of them had sat there. The winner said ninety minutes. I think he rounded up."
+      ]
+    },
+    {
+      "id": "want-ad-16-sign-crew",
+      "kind": "want_ad",
+      "title": "Sign crew, state highway department",
+      "body": [
+        "Crew wanted to post and take down chain law, work zone and detour signs. Drivers will be unhappy when the sign goes up and will not notice when it comes down."
+      ]
+    },
+    {
+      "id": "cb-letter-16-static",
+      "kind": "cb_letter",
+      "title": "Westbound, between stations",
+      "body": [
+        "\"What are you listening to?\" \"You.\" \"What was on before me?\" \"Static. I liked it.\""
+      ]
+    },
+    {
+      "id": "column-17-hot-load",
+      "kind": "column",
+      "title": "Hot load",
+      "body": [
+        "A driver came through the door at a run, went to the back, came out at a run, and was gone before I could say good morning. He bought nothing.",
+        "The next one in line watched him go and said two words, hot load. Then he took his time picking a sandwich."
+      ]
+    },
+    {
+      "id": "want-ad-17-parts-counter",
+      "kind": "want_ad",
+      "title": "Parts counter, truck dealer",
+      "body": [
+        "Counter help wanted. Customers will describe a noise. You will find the part that makes it. Owner-operators pay at the counter and ask twice about the price. Company drivers sign and leave."
+      ]
+    },
+    {
+      "id": "cb-letter-17-low-fuel",
+      "kind": "cb_letter",
+      "title": "Southbound, low on fuel",
+      "body": [
+        "\"How far is the next fuel?\" \"Forty miles.\" \"How much have you got?\" \"About thirty-nine.\""
+      ]
+    },
+    {
+      "id": "column-18-trooper",
+      "kind": "column",
+      "title": "The trooper stops for coffee",
+      "body": [
+        "A state trooper comes in most mornings around six for a large coffee, black. He is a pleasant man and he tips.",
+        "When his car pulls in, four drivers at the counter remember they have somewhere to be. He has never once followed any of them out."
+      ]
+    }
+  ]
+}

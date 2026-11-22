@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { paperTables } from "./freightFatePaperSchema";
 
 const strictTriviaQuestionFormat = v.union(
   v.literal("award-desk"),
@@ -658,7 +659,9 @@ export default defineSchema({
     .index("by_driver_achievement", ["driverId", "achievementKey"])
     // Same reason as by_driver_occurred above: the profile shows the most
     // recent badges, not the whole shelf.
-    .index("by_driver_earned", ["driverId", "earnedAt"]),
+    .index("by_driver_earned", ["driverId", "earnedAt"])
+    // The newspaper counts an achievement's holders without reading shelves.
+    .index("by_achievement", ["achievementKey"]),
   // Stable operation IDs make meaningful-play selection idempotent even
   // after the save slot gains later revisions. These rows are account data,
   // not public events, and never feed the road journal.
@@ -997,4 +1000,6 @@ export default defineSchema({
       }),
     ),
   }).index("by_created", ["createdAt"]),
+  // --- The driver newspaper (convex/freightFatePaper.ts) ---
+  ...paperTables,
 });
