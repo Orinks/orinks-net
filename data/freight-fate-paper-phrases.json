@@ -94,11 +94,11 @@
       ],
       "variants": [
         {
-          "headline": "{driver} adds {endorsement}",
+          "headline": "{driver} earns a credential: {endorsement}",
           "body": ""
         },
         {
-          "headline": "{driver} is cleared for {endorsement} loads",
+          "headline": "New credential for {driver}: {endorsement}",
           "body": ""
         }
       ]
