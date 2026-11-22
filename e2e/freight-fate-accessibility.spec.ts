@@ -228,10 +228,16 @@ test("the latest edition leads with Since Monday; a past one has none and links 
     .toHaveAttribute("href", "/freight-fate/news");
 });
 
-test("only the wide standings table is a scrolling stop for the keyboard", async ({ page }) => {
+test("the standings table is a scrolling stop only while it overflows", async ({ page }) => {
   await page.goto("/freight-fate/news");
-  await expect(page.locator("main [role=region][tabindex='0']")).toHaveCount(1);
-  await expect(page.getByRole("region", { name: /^Carriers/ })).toBeVisible();
+  await expect(page.locator("main [role=region]")).toHaveCount(0);
+  await expect(page.locator("main [tabindex='0']")).toHaveCount(0);
+
+  await page.setViewportSize({ width: 320, height: 800 });
+  await expect(page.getByRole("region", { name: /^Carriers/ })).toHaveAttribute("tabindex", "0");
+  await expect(page.locator("main [role=region]")).toHaveCount(1);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(overflow).toBe(false);
 });
 
 test("earlier issues page through with named titles", async ({ page }) => {

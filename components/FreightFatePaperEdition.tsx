@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
+import { PaperScrollRegion } from "./PaperScrollRegion";
 import type { PaperTextSegment } from "@/lib/freight-fate-paper-text";
 import type { PaperView, PaperViewSection, PaperViewTable } from "@/lib/freight-fate-paper-view";
 
@@ -22,40 +23,31 @@ export function PaperSegments({ segments }: { segments: PaperTextSegment[] }) {
   );
 }
 
-function PaperTable({ table, scrolls }: { table: PaperViewTable; scrolls: boolean }) {
+// The three-column records table fits a 320px screen; the five-column
+// standings table can be wider, so it sits in a region that becomes a Tab
+// stop only while it overflows (PaperScrollRegion).
+function PaperTable({ table }: { table: PaperViewTable }) {
   const content = (
-    <table className="w-full border-collapse text-left">
+    <table className="not-prose w-full border-collapse text-left">
       <caption className="mb-2 text-left font-semibold" id={table.id}>{table.caption}</caption>
       <thead>
         <tr className="border-b border-line-strong">
-          {table.columns.map((column) => <th className="py-2 pr-4" key={column} scope="col">{column}</th>)}
+          {table.columns.map((column) => <th className="py-2 pr-2 align-bottom" key={column} scope="col">{column}</th>)}
         </tr>
       </thead>
       <tbody>
         {table.rows.map((row) => (
           <tr className="border-b border-line align-top" key={row.header}>
-            <th className="py-2 pr-4 font-semibold" scope="row">{row.header}</th>
+            <th className="py-2 pr-2 font-semibold" scope="row">{row.header}</th>
             {row.cells.map((cell, index) => (
-              <td className="py-2 pr-4" key={index}><PaperSegments segments={[cell]} /></td>
+              <td className="py-2 pr-2" key={index}><PaperSegments segments={[cell]} /></td>
             ))}
           </tr>
         ))}
       </tbody>
     </table>
   );
-  if (!scrolls) return content;
-  // Only the wide table scrolls sideways, so only it is a stop for the
-  // keyboard. The padding keeps focus rings on edge links inside the clip.
-  return (
-    <div
-      aria-labelledby={table.id}
-      className="overflow-x-auto p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action"
-      role="region"
-      tabIndex={0}
-    >
-      <div className="min-w-[36rem]">{content}</div>
-    </div>
-  );
+  return table.columns.length > 3 ? <PaperScrollRegion labelledBy={table.id}>{content}</PaperScrollRegion> : content;
 }
 
 function PaperSection({ section }: { section: PaperViewSection }) {
@@ -75,7 +67,7 @@ function PaperSection({ section }: { section: PaperViewSection }) {
           </p>
         ))}
         {section.table
-          ? <PaperTable scrolls={section.table.columns.length > 3} table={section.table} />
+          ? <PaperTable table={section.table} />
           : null}
         {section.stories.map((story) => (
           <div key={story.id}>

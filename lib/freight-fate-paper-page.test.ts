@@ -160,7 +160,7 @@ describe("wording the page owns", () => {
 
   test("Since Monday reads as one sentence, and is absent before a load is in", () => {
     expect(sinceMondaySentence({ weekKey: "w", asOf: 0, drivers: 1, loads: 1, miles: 402, tons: 20 }))
-      .toBe("1 driver has delivered 1 load, 402 miles and 20 tons of freight.");
+      .toBe("1 driver has delivered 1 load and 20 tons of freight over 402 miles.");
     expect(sinceMondaySentence({ weekKey: "w", asOf: 0, drivers: 0, loads: 0, miles: 0, tons: 0 })).toBeNull();
   });
 

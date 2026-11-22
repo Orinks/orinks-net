@@ -207,8 +207,8 @@ export function paperOnTime(rate: number | undefined) {
 export function sinceMondaySentence(brief: NonNullable<PaperEditionData["sinceMonday"]>) {
   if (brief.loads <= 0) return null;
   const drivers = brief.drivers === 1 ? "1 driver has" : `${formatPaperNumber(brief.drivers)} drivers have`;
-  return `${drivers} delivered ${counted(brief.loads, "load", "loads")}, `
-    + `${counted(brief.miles, "mile", "miles")} and ${counted(brief.tons, "ton", "tons")} of freight.`;
+  return `${drivers} delivered ${counted(brief.loads, "load", "loads")} and `
+    + `${counted(brief.tons, "ton", "tons")} of freight over ${counted(brief.miles, "mile", "miles")}.`;
 }
 
 function monthDayOnly(ms: number) {
