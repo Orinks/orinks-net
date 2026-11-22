@@ -209,6 +209,8 @@ export const CARGO_LABELS: Labels = optionalLabels("cargoLabels");
 export const CARGO_KEYS = new Set([...optionalList("marketCargoKeys"), ...Object.keys(CARGO_LABELS)]);
 /** Weather keys, once the export carries `weatherKeys` (task N4). Empty means unchecked. */
 export const WEATHER_KEYS = new Set(optionalList("weatherKeys"));
+/** The spoken name of each weather key ("heavy_rain" is "heavy rain"). */
+export const WEATHER_LABELS: Labels = optionalLabels("weatherLabels");
 
 function invert(labels: Labels) {
   const out = new Map<string, string>();
@@ -318,7 +320,7 @@ export function deliveryV2Problem(payload: {
 
 export type SlotType =
   | "driver" | "driverList" | "number" | "city" | "cargo" | "carrier" | "truck"
-  | "endorsement" | "title" | "achievement" | "text" | "textList";
+  | "endorsement" | "title" | "achievement" | "text" | "textList" | "weather";
 
 const n = "number" as const;
 
@@ -355,7 +357,58 @@ export const KIND_SLOTS: Record<string, Record<string, SlotType>> = {
   blotter_cargo_claims: { count: n },
   stations_added: { count: n, stations: "textList" },
   game_release: { version: "text" },
+  // Road report, from version 2 deliveries (task N4). Totals only, no drivers.
+  road_weather: { weather: "weather", count: n, loads: n },
+  road_chain_law: { count: n, loads: n },
+  road_work_zones: { count: n, loads: n },
+  road_scales: { count: n, loads: n },
+  road_inspections: { count: n, loads: n },
 };
+
+/**
+ * Kinds the jobs can build before the phrases file words them. A story of a
+ * kind with no wording is left out of the edition, so the Road report starts
+ * printing the week its wording lands.
+ */
+export const KINDS_WORDED_LATER = new Set([
+  "road_weather", "road_chain_law", "road_work_zones", "road_scales", "road_inspections",
+]);
+
+/** Weather too ordinary to report. */
+export const UNREMARKABLE_WEATHER = new Set(["clear", "cloudy"]);
+
+export type RoadConditions = {
+  loads: number; chainLaw: number; workZones: number; scales: number; inspections: number;
+  weather: Array<{ key: string; count: number }>;
+};
+
+/**
+ * The Road report's stories from a period's tallied conditions. `loads` is
+ * how many version 2 deliveries reported conditions, so a story can say
+ * "of N loads". The weather story names the remarkable weather the most
+ * loads met (ties go to the key that sorts first).
+ */
+export function roadReportStories(conditions: RoadConditions) {
+  const stories: Array<{ kind: string; driverIds: string[]; facts: Record<string, FactValue> }> = [];
+  const loads = conditions.loads;
+  if (loads <= 0) return stories;
+  const weather = conditions.weather
+    .filter((row) => row.count > 0 && !UNREMARKABLE_WEATHER.has(row.key) && Object.hasOwn(WEATHER_LABELS, row.key))
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))[0];
+  if (weather) {
+    stories.push({ kind: "road_weather", driverIds: [], facts: { weather: weather.key, count: weather.count, loads } });
+  }
+  const counts = [
+    ["road_chain_law", conditions.chainLaw],
+    ["road_work_zones", conditions.workZones],
+    ["road_scales", conditions.scales],
+    ["road_inspections", conditions.inspections],
+  ] as const;
+  for (const [kind, count] of counts) {
+    if (count > 0) stories.push({ kind, driverIds: [], facts: { count, loads } });
+  }
+  return stories;
+}
 
 type Wording = { headline: string; body: string };
 type KindSpec = {
@@ -402,7 +455,7 @@ export function validatePaperPhrases(raw: unknown): PaperPhrases {
   };
   if (!data || typeof data !== "object" || !data.kinds || !data.sections) fail("needs kinds and sections");
   for (const kind of Object.keys(KIND_SLOTS)) {
-    if (!data.kinds[kind]) fail(`has no wording for the kind "${kind}"`);
+    if (!data.kinds[kind] && !KINDS_WORDED_LATER.has(kind)) fail(`has no wording for the kind "${kind}"`);
   }
   for (const [kind, spec] of Object.entries(data.kinds)) {
     const allowed = KIND_SLOTS[kind];
@@ -528,6 +581,8 @@ function factResolves(type: SlotType, value: FactValue | undefined) {
       return typeof value === "string" && knownCareerTitle(value);
     case "achievement":
       return isAchievementKey(value);
+    case "weather":
+      return typeof value === "string" && Object.hasOwn(WEATHER_LABELS, value);
     case "text":
       return typeof value === "string" && value.trim() !== "" && !/[{}]/.test(value);
     case "textList":
@@ -593,6 +648,8 @@ function slotText(type: SlotType, value: FactValue | undefined, driverIds: strin
       return value as string;
     case "achievement":
       return ALL_LINES.achievementLabels[value as string];
+    case "weather":
+      return WEATHER_LABELS[value as string];
     case "textList":
       return joinPaperList(value as string[]);
   }

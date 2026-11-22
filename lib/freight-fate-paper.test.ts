@@ -19,6 +19,7 @@ import {
   paperTextSegments,
   pickFrontPage,
   renderPaperStory,
+  roadReportStories,
   validatePaperBackPage,
   validatePaperPhrases,
   weekKeyOf,
@@ -268,5 +269,43 @@ describe("the front page", () => {
     ];
     const picked = pickFrontPage(stories, new Map([["ann", 4], ["bea", 2]])).map((story) => story.id);
     expect(picked).toEqual(["d", "b", "a"]);
+  });
+});
+
+describe("the Road report", () => {
+  const conditions = {
+    loads: 12, chainLaw: 3, workZones: 9, scales: 0, inspections: 2,
+    weather: [{ key: "clear", count: 12 }, { key: "rain", count: 4 }, { key: "snow", count: 4 }, { key: "fog", count: 1 }],
+  };
+
+  test("builds a story per tally that happened, and none for a week with no version 2 loads", () => {
+    const stories = roadReportStories(conditions);
+    expect(stories.map((story) => story.kind)).toEqual(["road_weather", "road_chain_law", "road_work_zones", "road_inspections"]);
+    expect(stories.every((story) => story.driverIds.length === 0)).toBe(true);
+    expect(stories[1].facts).toEqual({ count: 3, loads: 12 });
+    expect(roadReportStories({ ...conditions, loads: 0 })).toEqual([]);
+  });
+
+  test("names the remarkable weather the most loads met, never clear skies", () => {
+    expect(roadReportStories(conditions)[0].facts).toEqual({ weather: "rain", count: 4, loads: 12 });
+    const plain = roadReportStories({ ...conditions, weather: [{ key: "clear", count: 12 }, { key: "cloudy", count: 3 }] });
+    expect(plain.some((story) => story.kind === "road_weather")).toBe(false);
+  });
+
+  test("the phrases file may word the Road report later, and its wording is checked once it does", () => {
+    const worded = clone(PAPER_PHRASES);
+    worded.sections.road_report = "Road report";
+    worded.kinds.road_weather = {
+      section: "road_report", always: ["weather", "count"],
+      variants: [{ headline: "Loads in {weather}", body: "{count} loads ran in {weather} {when}." }],
+    };
+    expect(() => validatePaperPhrases(worded)).not.toThrow();
+    const story: PaperStory = {
+      id: "road_weather.all", section: "road_report", kind: "road_weather", driverIds: [],
+      facts: { weather: "heavy_rain", count: 2, loads: 5 }, variant: 0, rank: 10,
+    };
+    expect(renderPaperStory(story, new Map(), worded)?.body).toMatch(/^2 loads ran in heavy rain /);
+    worded.kinds.road_weather.variants![0].body = "{count} loads met {snowfall}.";
+    expect(() => validatePaperPhrases(worded)).toThrow(/snowfall/);
   });
 });

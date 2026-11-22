@@ -36,6 +36,7 @@ import {
   endorsementKeyFromLabel,
   knownCareerTitle,
   pickFrontPage,
+  roadReportStories,
   storyRank,
   truckKeyFromLabel,
   weekStartMs,
@@ -43,6 +44,7 @@ import {
   type FactValue,
   type PaperStory,
 } from "../lib/freight-fate-paper";
+import type { RoadConditions } from "../lib/freight-fate-paper";
 import {
   ensurePaperState,
   moveEdition,
@@ -572,6 +574,20 @@ export async function finishWeekRun(ctx: MutationCtx, now: number, release?: Pap
     const count = blotter[key as keyof typeof blotter];
     if (count > 0) stories.push({ kind, driverIds: [], facts: { count } });
   }
+
+  // Road report: what version 2 deliveries met, as totals.
+  const road: RoadConditions = { loads: 0, chainLaw: 0, workZones: 0, scales: 0, inspections: 0, weather: [] };
+  const roadWeather = new Map<string, number>();
+  for (const week of weeks) {
+    road.loads += week.conditions.loads;
+    road.chainLaw += week.conditions.chainLaw;
+    road.workZones += week.conditions.workZones;
+    road.scales += week.conditions.scales;
+    road.inspections += week.conditions.inspections;
+    for (const row of week.conditions.weather) roadWeather.set(row.key, (roadWeather.get(row.key) ?? 0) + row.count);
+  }
+  road.weather = [...roadWeather].map(([key, count]) => ({ key, count }));
+  stories.push(...roadReportStories(road));
 
   // On the dial: stations accepted in the period.
   const stationNews = await ctx.db.query("freightFateStationNews")
