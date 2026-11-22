@@ -228,10 +228,22 @@ export async function postFreightFateDriverEvent(input: {
   });
 }
 
+type FreightFateDeliveryText = {
+  cargo: string; weightPounds: number; origin: string;
+  destination: string; distanceMiles: number; onTime: boolean; notableCondition?: string;
+};
+
+/** Version 2 adds catalog keys and road conditions (convex/freightFate.ts). */
+export type FreightFateDeliveryPayload =
+  | ({ version: 1 } & FreightFateDeliveryText)
+  | ({
+    version: 2; cargoKey: string; originKey: string; destinationKey: string;
+    conditions?: { weather?: string[]; chainLaw?: boolean; workZones?: number; scales?: number; inspections?: number };
+  } & FreightFateDeliveryText);
+
 export async function postFreightFateDelivery(input: {
   driverId: string; driverToken: string; eventId: string; occurredAt: number;
-  payload: { version: 1; cargo: string; weightPounds: number; origin: string;
-    destination: string; distanceMiles: number; onTime: boolean; notableCondition?: string };
+  payload: FreightFateDeliveryPayload;
 }) {
   const client = getConvexClient();
   if (!client) return null;
@@ -307,6 +319,37 @@ export const getFreightFatePublicUpdates = unstable_cache(
     tags: [FREIGHT_FATE_UPDATES_SNAPSHOT_TAG],
   },
 );
+
+// The driver newspaper (convex/freightFatePaper.ts). An edition changes once
+// a week and its brief once a day, so five minutes costs nothing a reader
+// would notice. Both reads share one cache, keyed by what was asked for; the
+// backend answers null while FREIGHT_FATE_PAPER is off or nothing is
+// published. Signed-out reads only: a preview edition, which only the owner
+// may see, never goes through this cache.
+export const FREIGHT_FATE_PAPER_SNAPSHOT_SECONDS = 300;
+export const FREIGHT_FATE_PAPER_SNAPSHOT_TAG = "freight-fate-paper";
+
+const cachedFreightFatePaper = unstable_cache(
+  async (what: "edition" | "list", issue?: number) => {
+    const client = getConvexClient();
+    if (!client) return null;
+    return what === "list"
+      ? client.query(anyApi.freightFatePaper.listEditions, {})
+      : client.query(anyApi.freightFatePaper.getEdition, issue === undefined ? {} : { issue });
+  },
+  [FREIGHT_FATE_PAPER_SNAPSHOT_TAG],
+  { revalidate: FREIGHT_FATE_PAPER_SNAPSHOT_SECONDS, tags: [FREIGHT_FATE_PAPER_SNAPSHOT_TAG] },
+);
+
+/** The latest published edition, or one by issue number, rendered; null when none. */
+export function getFreightFatePaperEdition(issue?: number) {
+  return cachedFreightFatePaper("edition", issue);
+}
+
+/** Every published issue's number and dates, newest first; null when the paper is off. */
+export function getFreightFatePaperEditions() {
+  return cachedFreightFatePaper("list");
+}
 
 // Defined in lib/freight-fate-presence.ts, which the browser can import and
 // this module cannot be (node:crypto, above). Re-exported here so the

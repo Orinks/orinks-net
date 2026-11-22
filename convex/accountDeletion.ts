@@ -20,6 +20,7 @@ import { sameText } from "./freightFateReview";
 import { getPlayerBySubject } from "./triviaRuntime";
 import { purgeGamesPlayer } from "./games";
 import { purgeDispatchForDriver } from "./freightFateDispatch";
+import { purgePaperDriver } from "./freightFatePaper";
 
 /**
  * Every row keyed by this driverId, the driver row included. Two tables are
@@ -32,6 +33,9 @@ export async function purgeDriver(ctx: MutationCtx, driverId: string) {
   // Live dispatch first: a carrier this driver ran has to release its drivers
   // before the rows that name the owner go.
   const dispatchRows = await purgeDispatchForDriver(ctx, driverId, Date.now());
+  // The newspaper's ledger and tallies; a city this driver was first into
+  // stays visited, without them.
+  const paperRows = await purgePaperDriver(ctx, driverId);
   const owned = await Promise.all([
     ctx.db.query("freightFateDeviceTokens").withIndex("by_driver_id", (q) => q.eq("driverId", driverId)).collect(),
     ctx.db.query("freightFatePresence").withIndex("by_driver_id", (q) => q.eq("driverId", driverId)).collect(),
@@ -57,7 +61,7 @@ export async function purgeDriver(ctx: MutationCtx, driverId: string) {
   for (const id of doomed) {
     await ctx.db.delete(id);
   }
-  return doomed.length + dispatchRows;
+  return doomed.length + dispatchRows + paperRows;
 }
 
 /** The trivia player this account claimed, with its runs and achievements. */

@@ -15,6 +15,7 @@ import {
 } from "./freightFateProfileCatalog";
 import { readCatalogAchievements } from "./freightFateProfileAchievements";
 import { foldHeartbeatIntoDispatch, truckStateValidator } from "./freightFateDispatchTruck";
+import { deliveryV2Problem } from "../lib/freight-fate-paper";
 
 const visibility = v.union(v.literal("public"), v.literal("private"), v.literal("unlisted"));
 
@@ -1187,17 +1188,38 @@ export const setProfileSharing = mutation({
   },
 });
 
+const deliveryFields = {
+  cargo: v.string(), weightPounds: v.number(),
+  origin: v.string(), destination: v.string(), distanceMiles: v.number(),
+  onTime: v.boolean(), notableCondition: v.optional(v.string()),
+};
+
+// Version 2 adds the catalog keys behind the spoken text, and what the
+// driver met on the road, for the newspaper (convex/freightFatePaper.ts).
+// Each key is checked against the catalog; an unknown one refuses the event.
+const deliveryV2 = v.object({
+  version: v.literal(2), ...deliveryFields,
+  cargoKey: v.string(), originKey: v.string(), destinationKey: v.string(),
+  conditions: v.optional(v.object({
+    weather: v.optional(v.array(v.string())),
+    chainLaw: v.optional(v.boolean()),
+    workZones: v.optional(v.number()),
+    scales: v.optional(v.number()),
+    inspections: v.optional(v.number()),
+  })),
+});
+
 export const publishDeliveryCompleted = mutation({
   args: {
     driverId: v.string(), driverTokenHash: v.string(), eventId: v.string(),
     occurredAt: v.number(), now: v.number(),
-    payload: v.object({
-      version: v.literal(1), cargo: v.string(), weightPounds: v.number(),
-      origin: v.string(), destination: v.string(), distanceMiles: v.number(),
-      onTime: v.boolean(), notableCondition: v.optional(v.string()),
-    }),
+    payload: v.union(v.object({ version: v.literal(1), ...deliveryFields }), deliveryV2),
   },
   handler: async (ctx, args) => {
+    if (args.payload.version === 2) {
+      const problem = deliveryV2Problem(args.payload);
+      if (problem) return { ok: false as const, reason: "invalid_payload" as const, detail: problem };
+    }
     const auth = await authenticatedSharingDriver(ctx, {
       ...args, scope: "driver-event", limit: DRIVER_EVENT_WRITE_LIMIT,
     });
@@ -1208,7 +1230,7 @@ export const publishDeliveryCompleted = mutation({
     await ctx.db.insert("freightFateDriverEvents", {
       driverId: args.driverId, eventId: cleanFact(args.eventId, 96),
       eventType: "delivery_completed", summary: deliverySummary(args.payload),
-      payloadVersion: 1, payload: args.payload,
+      payloadVersion: args.payload.version, payload: args.payload,
       occurredAt: clampOccurredAt(args.occurredAt, args.now), createdAt: args.now,
     });
     await pruneDriverEvents(ctx, args.driverId);

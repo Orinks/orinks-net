@@ -68,7 +68,10 @@ export const sendReviewDigest = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: boolean; reason?: string; careers?: number }> => {
     const rows: DigestRow[] = await ctx.runQuery(internal.freightFateReview.listReviewDigest, {});
-    if (rows.length === 0) return { sent: false, reason: "nothing_new" };
+    // A newspaper build that failed is reported even on a day with nothing
+    // else to say.
+    const paperLines: string[] = await ctx.runQuery(internal.freightFatePaper.unreportedFailures, {});
+    if (rows.length === 0 && paperLines.length === 0) return { sent: false, reason: "nothing_new" };
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.CONTACT_FROM_EMAIL;
     const to = process.env.CONTACT_TO_EMAIL;
@@ -122,7 +125,13 @@ export const sendReviewDigest = internalAction({
       html.push(`<h2>Computer moves</h2><p>${escapeHtml(lead)}</p><ul>` +
         lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("") + "</ul>");
     }
-    const intro = waiting.length === 0
+    if (paperLines.length > 0) {
+      text.push(paperLines.join("\n"));
+      html.push(`<h2>The paper</h2>` + paperLines.map((line) => `<p>${escapeHtml(line)}</p>`).join(""));
+    }
+    const intro = rows.length === 0
+      ? "No Freight Fate careers are waiting for review, but the paper needs a look."
+      : waiting.length === 0
       ? "No Freight Fate careers are waiting for review."
       : `${waiting.length} Freight Fate career${waiting.length === 1 ? " is" : "s are"} waiting for review. ` +
       "Each was marked as changed outside the game, which also happens when a player copies a career " +
@@ -131,7 +140,9 @@ export const sendReviewDigest = internalAction({
       "expire in 14 days; the next digest carries fresh ones.";
     const subject = waiting.length > 0
       ? `Freight Fate: ${waiting.length} career${waiting.length === 1 ? "" : "s"} waiting for review`
-      : `Freight Fate: ${moved.length} computer move${moved.length === 1 ? "" : "s"} accepted`;
+      : moved.length > 0
+        ? `Freight Fate: ${moved.length} computer move${moved.length === 1 ? "" : "s"} accepted`
+        : "Freight Fate: the paper did not publish";
     const response = await fetch(RESEND_SEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -151,6 +162,7 @@ export const sendReviewDigest = internalAction({
       ids: rows.map((row) => row.id),
       now,
     });
+    if (paperLines.length > 0) await ctx.runMutation(internal.freightFatePaper.markFailuresReported, {});
     return { sent: true, careers: rows.length };
   },
 });
