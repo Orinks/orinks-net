@@ -23,6 +23,8 @@ import {
   validatePaperPhrases,
   weekKeyOf,
   weekStartMs,
+  weeksCovered,
+  whenPhrase,
   type EditionEvent,
   type EditionState,
   type PaperStory,
@@ -46,6 +48,18 @@ describe("the data files", () => {
     const bad = clone(phrases) as typeof phrases;
     bad.kinds.promotion.variants[0].body = "{driver} reached {cash}.";
     expect(() => validatePaperPhrases(bad)).toThrow(/cash/);
+  });
+
+  test("{when} is accepted in any body and refused in a headline", () => {
+    const ok = clone(phrases) as typeof phrases;
+    ok.kinds.tons_total.variants[0].body = "{tons} tons {when}.";
+    expect(() => validatePaperPhrases(ok)).not.toThrow();
+    const bad = clone(phrases) as typeof phrases;
+    bad.kinds.tons_total.variants[0].headline = "{tons} tons {when}";
+    expect(() => validatePaperPhrases(bad)).toThrow(/headline/);
+    const listed = clone(phrases) as typeof phrases;
+    listed.kinds.tons_total.always = ["tons", "when"];
+    expect(() => validatePaperPhrases(listed)).toThrow(/when/);
   });
 
   test("an empty headline is refused", () => {
@@ -134,6 +148,19 @@ describe("Eastern weeks", () => {
   });
 });
 
+describe("the period", () => {
+  test("weeks covered and the words for them", () => {
+    expect(weeksCovered(Date.UTC(2026, 10, 9, 5), Date.UTC(2026, 10, 16, 5))).toBe(1);
+    expect(weeksCovered(Date.UTC(2026, 10, 2, 5), Date.UTC(2026, 10, 16, 5))).toBe(2);
+    // Across the November change.
+    expect(weeksCovered(Date.UTC(2026, 9, 26, 4), Date.UTC(2026, 10, 9, 5))).toBe(2);
+    expect(whenPhrase(1)).toBe("this week");
+    expect(whenPhrase(2)).toBe("in the last two weeks");
+    expect(whenPhrase(12)).toBe("in the last twelve weeks");
+    expect(whenPhrase(13)).toBe("in the last 13 weeks");
+  });
+});
+
 describe("catalog matching", () => {
   test("exact labels and unique city names only", () => {
     expect(cityKeyFromText("Chicago, Illinois")).toBe("chicago_il_us");
@@ -168,10 +195,12 @@ describe("rendering", () => {
 
   test("names stay markers; missing facts fall back to the plain wording", () => {
     const rendered = renderPaperStory(story({ variant: 1 }), names)!;
-    expect(rendered.body).toBe("{@bob-1} ran the week's longest single load, 2,400 miles.");
-    expect(paperTextPlain(rendered.body, rendered.drivers)).toBe("Bob {Freight} ran the week's longest single load, 2,400 miles.");
+    expect(rendered.body).toBe("{@bob-1} ran the longest single load this week, 2,400 miles.");
+    expect(paperTextPlain(rendered.body, rendered.drivers)).toBe("Bob {Freight} ran the longest single load this week, 2,400 miles.");
+    const folded = renderPaperStory(story({}), names, PAPER_PHRASES, whenPhrase(3))!;
+    expect(folded.body).toBe("{@bob-1} ran the longest single load in the last three weeks, 2,400 miles.");
     expect(paperTextSegments(rendered.headline, rendered.drivers)).toEqual([
-      { text: "Longest haul of the week: " },
+      { text: "Longest haul: " },
       { driverId: "bob-1", displayName: "Bob {Freight}" },
       { text: ", 2,400 miles" },
     ]);

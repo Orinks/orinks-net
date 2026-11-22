@@ -38,6 +38,8 @@ import {
   renderPaperStory,
   weekKeyOf,
   weekStartMs,
+  weeksCovered,
+  whenPhrase,
   type EditionEvent,
   type EditionState,
   type PaperStory,
@@ -554,8 +556,9 @@ export async function renderEdition(ctx: QueryCtx, edition: Doc<"freightFatePape
       .withIndex("by_driver_id", (q) => q.eq("driverId", driverId)).unique();
     if (paperNameable(driver)) names.set(driverId, driver.displayName);
   }
+  const when = whenPhrase(weeksCovered(edition.periodStart, edition.periodEnd));
   const stories = edition.stories
-    .map((story) => renderPaperStory(story as PaperStory, names))
+    .map((story) => renderPaperStory(story as PaperStory, names, PAPER_PHRASES, when))
     .filter((story) => story !== null);
   const recordLabels = PAPER_PHRASES.tables.records.rows as Record<string, string>;
   return {

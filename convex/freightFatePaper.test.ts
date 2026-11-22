@@ -281,7 +281,8 @@ describe("a full week", () => {
     // The longest haul lost its unmatched origin, not the story.
     const paper = await edition(t);
     const longest = paper!.stories.find((story) => story.kind === "longest_haul")!;
-    expect(longest.body).toBe("{@bob} ran the week's longest single load, 2,400 miles.");
+    // Issue 1 folds in the thin week before it.
+    expect(longest.body).toBe("{@bob} ran the longest single load in the last two weeks, 2,400 miles.");
   });
 
   test("a driver who turns sharing off leaves the edition, and comes back", async () => {
@@ -339,6 +340,52 @@ describe("a full week", () => {
     await run(t, WEEK3 + DAY);
     const paper = await edition(t);
     expect(paper!.sinceMonday).toMatchObject({ weekKey: "2026-11-16", loads: 1, miles: 1_500, tons: 10, drivers: 1 });
+  });
+});
+
+describe("the period an edition covers", () => {
+  // Hank alone makes three named stories a week: most miles, most
+  // deliveries, every one on time.
+  async function hankWeek(t: T, snapAt: number, deliveries: number, miles: number, monday: number) {
+    await setSnapshot(t, "hank", snapAt, { deliveries, milesDriven: miles, onTimeDeliveries: deliveries });
+    return run(t, monday);
+  }
+
+  test("one week reads this week; the record week waits for one-week editions", async () => {
+    const { t } = await buildWorld();
+    const two = await edition(t);
+    expect(two!.stories.every((story) => !story.body.includes("this week"))).toBe(true);
+    expect(two!.stories.find((story) => story.kind === "most_miles")!.body).toContain("in the last two weeks");
+    let state = (await dump(t)).freightFatePaperState[0] as Doc<"freightFatePaperState">;
+    expect(state.bestWeekMiles).toBeUndefined();
+
+    // Issue 2 covers one week: it sets the paper's best, with no record story.
+    expect((await hankWeek(t, SNAP3, 26, 10_000, MON3)).weekly).toMatchObject({ status: "published", issue: 2 });
+    const one = await edition(t);
+    expect(one!.stories.find((story) => story.kind === "most_miles")!.body).toContain("this week");
+    expect(one!.stories.some((story) => story.kind === "record_week_miles")).toBe(false);
+    state = (await dump(t)).freightFatePaperState[0] as Doc<"freightFatePaperState">;
+    expect(state.bestWeekMiles).toMatchObject({ driverId: "hank", miles: 2_000, issue: 2 });
+
+    // Issue 3 beats it in one week: the record runs on the front page.
+    await hankWeek(t, SNAP3 + 7 * DAY, 32, 13_000, MON3 + 7 * DAY);
+    const record = (await edition(t))!.stories.find((story) => story.kind === "record_week_miles")!;
+    expect(record.section).toBe("front_page");
+    expect(record.headline).toBe("{@hank} sets the paper's record week: 3,000 miles");
+  });
+
+  test("a two-week edition never runs a record week, even past the best", async () => {
+    const { t } = await buildWorld();
+    await hankWeek(t, SNAP3, 26, 10_000, MON3); // best: 2,000
+    // A thin week: nothing changed.
+    expect((await run(t, MON3 + 7 * DAY)).weekly).toMatchObject({ status: "thin" });
+    await hankWeek(t, SNAP3 + 14 * DAY, 32, 20_000, MON3 + 14 * DAY);
+    const paper = await edition(t);
+    expect(paper!.issue).toBe(3);
+    expect(paper!.stories.some((story) => story.kind === "record_week_miles")).toBe(false);
+    expect(paper!.stories.find((story) => story.kind === "most_miles")!.body).toContain("in the last two weeks");
+    const state = (await dump(t)).freightFatePaperState[0] as Doc<"freightFatePaperState">;
+    expect(state.bestWeekMiles).toMatchObject({ miles: 2_000, issue: 2 });
   });
 });
 

@@ -106,6 +106,27 @@ export function nextWeekStartMs(weekStart: number) {
   return weekStartMs(weekStart + WEEK_MS + 12 * HOUR_MS);
 }
 
+/** How many paper weeks run from periodStart up to periodEnd. */
+export function weeksCovered(periodStart: number, periodEnd: number) {
+  let weeks = 0;
+  for (let start = weekStartMs(periodStart); start < periodEnd; start = nextWeekStartMs(start)) weeks += 1;
+  return Math.max(1, weeks);
+}
+
+const SPELLED = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+
+/**
+ * The {when} slot: "this week" for an edition covering one week, otherwise
+ * "in the last two weeks" and so on, spelled out up to twelve. The "since
+ * Monday" brief always reads "this week".
+ */
+export function whenPhrase(weeks: number) {
+  if (weeks <= 1) return "this week";
+  return `in the last ${weeks <= 12 ? SPELLED[weeks] : String(weeks)} weeks`;
+}
+
+export const SINCE_MONDAY_WHEN = whenPhrase(1);
+
 /** The week's Monday as YYYY-MM-DD, Eastern. */
 export function weekKeyOf(utcMs: number) {
   return easternDateKey(weekStartMs(utcMs));
@@ -340,8 +361,12 @@ export function slotsOf(text: string) {
   return [...text.matchAll(/\{([a-z_]+)\}/g)].map((match) => match[1]);
 }
 
+// Every story has {when}; no kind lists it, and it fills from the edition.
+export const WHEN_SLOT = "when";
+
+/** The slots a wording needs from the story's facts ({when} is never one). */
 function wordingSlots(wording: Wording) {
-  return new Set([...slotsOf(wording.headline), ...slotsOf(wording.body)]);
+  return new Set([...slotsOf(wording.headline), ...slotsOf(wording.body)].filter((slot) => slot !== WHEN_SLOT));
 }
 
 /** Throws on wording the jobs could not fill. Run at build and in the tests. */
@@ -360,7 +385,7 @@ export function validatePaperPhrases(raw: unknown): PaperPhrases {
     if (!data.sections[spec.section]) fail(`kind "${kind}" is in an unknown section "${spec.section}"`);
     if (!Array.isArray(spec.always)) fail(`kind "${kind}" needs an always list`);
     for (const slot of spec.always) {
-      if (!allowed[slot]) fail(`kind "${kind}" always has "${slot}", which it cannot have`);
+      if (!allowed[slot] || slot === WHEN_SLOT) fail(`kind "${kind}" always has "${slot}", which it cannot have`);
     }
     const always = new Set(spec.always);
     const wordings: Wording[] = spec.variants ?? [];
@@ -375,6 +400,7 @@ export function validatePaperPhrases(raw: unknown): PaperPhrases {
     for (const wording of wordings) {
       if (!wording.headline?.trim()) fail(`kind "${kind}" has an empty headline`);
       if (!wording.body?.trim()) fail(`kind "${kind}" has an empty body`);
+      if (slotsOf(wording.headline).includes(WHEN_SLOT)) fail(`kind "${kind}" has {when} in a headline`);
       const slots = wordingSlots(wording);
       for (const slot of slots) {
         if (!allowed[slot]) fail(`kind "${kind}" names the slot "${slot}", which it cannot have`);
@@ -570,6 +596,7 @@ export function renderPaperStory(
   story: PaperStory,
   names: ReadonlyMap<string, string>,
   phrases: PaperPhrases = PAPER_PHRASES,
+  when: string = SINCE_MONDAY_WHEN,
 ): RenderedStory | null {
   const spec = phrases.kinds[story.kind];
   const slots = KIND_SLOTS[story.kind];
@@ -595,7 +622,7 @@ export function renderPaperStory(
     wording = fits(chosen) ? chosen : wordings.find((candidate) => fits(candidate))!;
   }
   const fill = (text: string) => text.replace(/\{([a-z_]+)\}/g, (_, slot: string) =>
-    slotText(slots[slot], facts[slot], driverIds));
+    slot === WHEN_SLOT ? when : slotText(slots[slot], facts[slot], driverIds));
   return {
     id: story.id,
     section: story.section,

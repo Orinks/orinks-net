@@ -37,6 +37,7 @@ import {
   storyRank,
   truckKeyFromLabel,
   weekStartMs,
+  weeksCovered,
   type FactValue,
   type PaperStory,
 } from "../lib/freight-fate-paper";
@@ -441,10 +442,13 @@ export async function finishWeekRun(ctx: MutationCtx, now: number) {
   const tie = (draft: Doc<"freightFatePaperDrafts">) => draft.driverId;
   const records: Array<{ record: string; driverId: string; value: number }> = [];
   let bestWeekMiles = state.bestWeekMiles;
+  const oneWeek = weeksCovered(build.periodStart, build.periodEnd) === 1;
   const mostMiles = topBy(ranked, (draft) => draft.week.miles, tie);
   if (mostMiles) {
     records.push({ record: "most_miles", driverId: mostMiles.driverId, value: mostMiles.week.miles });
-    if (bestWeekMiles && mostMiles.week.miles > bestWeekMiles.miles) {
+    // A record week is a one-week measure: an edition that folds in a thin
+    // week neither prints one nor sets the paper's best.
+    if (oneWeek && bestWeekMiles && mostMiles.week.miles > bestWeekMiles.miles) {
       stories.push({ kind: "record_week_miles", driverIds: [mostMiles.driverId], facts: { miles: mostMiles.week.miles } });
     } else {
       stories.push({
@@ -452,7 +456,7 @@ export async function finishWeekRun(ctx: MutationCtx, now: number) {
         facts: { miles: mostMiles.week.miles, deliveries: mostMiles.week.deliveries },
       });
     }
-    if (!bestWeekMiles || mostMiles.week.miles > bestWeekMiles.miles) {
+    if (oneWeek && (!bestWeekMiles || mostMiles.week.miles > bestWeekMiles.miles)) {
       bestWeekMiles = { miles: mostMiles.week.miles, driverId: mostMiles.driverId, issue };
     }
   }
