@@ -1,6 +1,6 @@
 {
   "note": "Story wording for the Freight Fate paper, written by the director thread on 2026-11-22. The site keeps a copy at data/freight-fate-paper-phrases.json in orinks-net. A slot is a word in braces. 'always' lists the slots a story of that kind always has. The renderer may use a variant only when every slot it names is present, and every kind has at least one variant that needs only its 'always' slots. A headline states the whole fact. A body holds only what its headline does not say, and an empty body means the story is its headline alone: the page prints no paragraph for it. The slot 'when' is present on every story and is never listed ('this week', or 'in the last two weeks' and so on when an edition covers more than one); no wording uses it today, because the page gives the edition's dates. No heading or caption names the week except the record_week_miles headline, and that kind runs only in an edition that covers one week. Numbers arrive already formatted (1,412). A kind with 'one' and 'other' picks by its count slot. The standings columns are in the order the page prints them. Do not reword without the director: this is player-facing text.",
-  "version": 3,
+  "version": 4,
   "kinds": {
     "first_delivery": {
       "section": "driver_news",
@@ -402,6 +402,77 @@
         }
       ]
     },
+    "road_weather": {
+      "section": "road_report",
+      "always": [
+        "weather",
+        "count"
+      ],
+      "one": {
+        "headline": "Weather drivers met most: {weather}",
+        "body": "One load drove through it."
+      },
+      "other": {
+        "headline": "Weather drivers met most: {weather}",
+        "body": "{count} loads drove through it."
+      }
+    },
+    "road_chain_law": {
+      "section": "road_report",
+      "always": [
+        "count"
+      ],
+      "one": {
+        "headline": "One load ran under a chain law",
+        "body": ""
+      },
+      "other": {
+        "headline": "{count} loads ran under a chain law",
+        "body": ""
+      }
+    },
+    "road_work_zones": {
+      "section": "road_report",
+      "always": [
+        "count"
+      ],
+      "one": {
+        "headline": "Drivers passed one work zone",
+        "body": ""
+      },
+      "other": {
+        "headline": "Drivers passed {count} work zones",
+        "body": ""
+      }
+    },
+    "road_scales": {
+      "section": "road_report",
+      "always": [
+        "count"
+      ],
+      "one": {
+        "headline": "Drivers passed one open scale",
+        "body": ""
+      },
+      "other": {
+        "headline": "Drivers passed {count} open scales",
+        "body": ""
+      }
+    },
+    "road_inspections": {
+      "section": "road_report",
+      "always": [
+        "count"
+      ],
+      "one": {
+        "headline": "One inspection passed clean",
+        "body": ""
+      },
+      "other": {
+        "headline": "{count} inspections passed clean",
+        "body": ""
+      }
+    },
     "blotter_citations": {
       "section": "blotter",
       "always": [
@@ -494,6 +565,7 @@
     "records": "Records",
     "carrier_standings": "Carrier standings",
     "freight": "Freight",
+    "road_report": "Road report",
     "blotter": "Blotter",
     "achievements": "Achievements",
     "on_the_dial": "On the dial",

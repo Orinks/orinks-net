@@ -365,15 +365,6 @@ export const KIND_SLOTS: Record<string, Record<string, SlotType>> = {
   road_inspections: { count: n, loads: n },
 };
 
-/**
- * Kinds the jobs can build before the phrases file words them. A story of a
- * kind with no wording is left out of the edition, so the Road report starts
- * printing the week its wording lands.
- */
-export const KINDS_WORDED_LATER = new Set([
-  "road_weather", "road_chain_law", "road_work_zones", "road_scales", "road_inspections",
-]);
-
 /** Weather too ordinary to report. */
 export const UNREMARKABLE_WEATHER = new Set(["clear", "cloudy"]);
 
@@ -455,7 +446,7 @@ export function validatePaperPhrases(raw: unknown): PaperPhrases {
   };
   if (!data || typeof data !== "object" || !data.kinds || !data.sections) fail("needs kinds and sections");
   for (const kind of Object.keys(KIND_SLOTS)) {
-    if (!data.kinds[kind] && !KINDS_WORDED_LATER.has(kind)) fail(`has no wording for the kind "${kind}"`);
+    if (!data.kinds[kind]) fail(`has no wording for the kind "${kind}"`);
   }
   for (const [kind, spec] of Object.entries(data.kinds)) {
     const allowed = KIND_SLOTS[kind];

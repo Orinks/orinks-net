@@ -292,20 +292,24 @@ describe("the Road report", () => {
     expect(plain.some((story) => story.kind === "road_weather")).toBe(false);
   });
 
-  test("the phrases file may word the Road report later, and its wording is checked once it does", () => {
-    const worded = clone(PAPER_PHRASES);
-    worded.sections.road_report = "Road report";
-    worded.kinds.road_weather = {
-      section: "road_report", always: ["weather", "count"],
-      variants: [{ headline: "Loads in {weather}", body: "{count} loads ran in {weather} {when}." }],
-    };
-    expect(() => validatePaperPhrases(worded)).not.toThrow();
+  test("the Road report is worded, prints the weather's name, and a bad slot fails the check", () => {
     const story: PaperStory = {
       id: "road_weather.all", section: "road_report", kind: "road_weather", driverIds: [],
       facts: { weather: "heavy_rain", count: 2, loads: 5 }, variant: 0, rank: 10,
     };
-    expect(renderPaperStory(story, new Map(), worded)?.body).toMatch(/^2 loads ran in heavy rain /);
-    worded.kinds.road_weather.variants![0].body = "{count} loads met {snowfall}.";
-    expect(() => validatePaperPhrases(worded)).toThrow(/snowfall/);
+    expect(renderPaperStory(story, new Map(), PAPER_PHRASES)).toMatchObject({
+      headline: "Weather drivers met most: heavy rain", body: "2 loads drove through it.",
+    });
+    const missing = clone(PAPER_PHRASES);
+    delete missing.kinds.road_scales;
+    expect(() => validatePaperPhrases(missing)).toThrow(/road_scales/);
+    const bad = clone(PAPER_PHRASES);
+    bad.kinds.road_weather.other!.body = "{count} loads met {snowfall}.";
+    expect(() => validatePaperPhrases(bad)).toThrow(/snowfall/);
+  });
+
+  test("the Road report follows Freight", () => {
+    const order = Object.keys(PAPER_PHRASES.sections);
+    expect(order.indexOf("road_report")).toBe(order.indexOf("freight") + 1);
   });
 });

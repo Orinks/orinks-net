@@ -228,6 +228,17 @@ test("the latest edition leads with Since Monday; a past one has none and links 
     .toHaveAttribute("href", "/freight-fate/news");
 });
 
+test("the Road report prints after Freight, its headline-only stories with no paragraph", async ({ page }) => {
+  await page.goto("/freight-fate/news");
+  const h2s = await page.locator("main h2").allTextContents();
+  expect(h2s.indexOf("Road report")).toBe(h2s.indexOf("Freight") + 1);
+  const section = page.locator("main section").filter({ has: page.getByRole("heading", { level: 2, name: "Road report" }) });
+  await expect(section.getByRole("heading", { level: 3, name: "Weather drivers met most: heavy rain" })).toBeVisible();
+  await expect(section.getByRole("heading", { level: 3, name: "One load ran under a chain law" })).toBeVisible();
+  await expect(section.getByRole("heading", { level: 3, name: "Drivers passed 14 open scales" })).toBeVisible();
+  await expect(section.locator("p")).toHaveCount(1);
+});
+
 test("the standings table is a scrolling stop only while it overflows", async ({ page }) => {
   await page.goto("/freight-fate/news");
   await expect(page.locator("main [role=region]")).toHaveCount(0);

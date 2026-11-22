@@ -192,6 +192,43 @@
         "rank": 10
       },
       {
+        "id": "road_weather.all",
+        "section": "road_report",
+        "kind": "road_weather",
+        "driverIds": [],
+        "facts": {
+          "weather": "heavy_rain",
+          "count": 9,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "road_chain_law.all",
+        "section": "road_report",
+        "kind": "road_chain_law",
+        "driverIds": [],
+        "facts": {
+          "count": 1,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "road_scales.all",
+        "section": "road_report",
+        "kind": "road_scales",
+        "driverIds": [],
+        "facts": {
+          "count": 14,
+          "loads": 38
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
         "id": "blotter_citations.all",
         "section": "blotter",
         "kind": "blotter_citations",
