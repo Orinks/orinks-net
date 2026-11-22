@@ -23,8 +23,6 @@ import {
   DAY_MS,
   MAX_EVENT_MILES,
   MAX_EVENT_POUNDS,
-  PAPER_BACK_PAGE,
-  PAPER_PHRASES,
   WEATHER_KEY,
   cargoKeyFromText,
   cityKeyFromPlace,
@@ -35,16 +33,12 @@ import {
   isCityKey,
   nextEditionState,
   paperMode,
-  renderPaperStory,
+  renderPaperEdition,
   weekKeyOf,
   weekStartMs,
-  weeksCovered,
-  whenPhrase,
   type EditionEvent,
   type EditionState,
-  type PaperStory,
 } from "../lib/freight-fate-paper";
-import { ALL_LINES } from "../lib/freight-fate-invariants";
 
 // The paper's own copy of the sharing consent version (freightFate.ts
 // SHARING_CONSENT_VERSION). Importing freightFate.ts here would pull the
@@ -467,6 +461,7 @@ export async function moveEdition(ctx: MutationCtx, edition: Doc<"freightFatePap
     .withIndex("by_issue", (q) => q.eq("issue", edition.issue)).unique();
   const row = {
     issue: edition.issue, weekKey: edition.weekKey, state,
+    periodStart: edition.periodStart, periodEnd: edition.periodEnd,
     publishedAt: state === "published" ? (edition.publishedAt ?? now) : edition.publishedAt,
   };
   if (listed) await ctx.db.replace(listed._id, row);
@@ -556,35 +551,7 @@ export async function renderEdition(ctx: QueryCtx, edition: Doc<"freightFatePape
       .withIndex("by_driver_id", (q) => q.eq("driverId", driverId)).unique();
     if (paperNameable(driver)) names.set(driverId, driver.displayName);
   }
-  const when = whenPhrase(weeksCovered(edition.periodStart, edition.periodEnd));
-  const stories = edition.stories
-    .map((story) => renderPaperStory(story as PaperStory, names, PAPER_PHRASES, when))
-    .filter((story) => story !== null);
-  const recordLabels = PAPER_PHRASES.tables.records.rows as Record<string, string>;
-  return {
-    issue: edition.issue,
-    weekKey: edition.weekKey,
-    periodStart: edition.periodStart,
-    periodEnd: edition.periodEnd,
-    state: edition.state,
-    publishedAt: edition.publishedAt ?? null,
-    sections: PAPER_PHRASES.sections,
-    stories,
-    records: edition.records
-      .filter((row) => names.has(row.driverId) && recordLabels[row.record])
-      .map((row) => ({
-        record: row.record, label: recordLabels[row.record], value: row.value,
-        driverId: row.driverId, displayName: names.get(row.driverId)!,
-      })),
-    standings: edition.standings
-      .filter((row) => ALL_LINES.carrierLabels[row.carrierKey])
-      .map((row) => ({ ...row, carrier: ALL_LINES.carrierLabels[row.carrierKey] })),
-    backPage: edition.backPage
-      .map((id) => PAPER_BACK_PAGE.pieces.find((piece) => piece.id === id))
-      .filter((piece) => piece !== undefined)
-      .map((piece) => ({ ...piece, kindLabel: PAPER_BACK_PAGE.kinds[piece.kind] })),
-    sinceMonday: edition.sinceMonday ?? null,
-  };
+  return renderPaperEdition(edition, names);
 }
 
 /** The latest edition a reader may see, or one by number; null when there is none. */
@@ -612,7 +579,10 @@ export const listEditions = query({
     const rows = await ctx.db.query("freightFatePaperIssues").withIndex("by_issue").order("desc").take(1000);
     return rows
       .filter((row) => editionReadable(row.state, mode, admin))
-      .map((row) => ({ issue: row.issue, weekKey: row.weekKey, publishedAt: row.publishedAt ?? null, state: row.state }));
+      .map((row) => ({
+        issue: row.issue, weekKey: row.weekKey, publishedAt: row.publishedAt ?? null, state: row.state,
+        periodStart: row.periodStart ?? null, periodEnd: row.periodEnd ?? null,
+      }));
   },
 });
 

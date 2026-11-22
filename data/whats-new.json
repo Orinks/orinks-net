@@ -2,6 +2,20 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-22-the-mile-marker",
+      "date": "2026-11-22",
+      "project": "Site",
+      "title": "The Mile Marker, a weekly paper about Freight Fate drivers",
+      "body": [
+        "The Mile Marker comes out every Monday morning with the week on the road: promotions, mile clubs, first deliveries into a city, the week's records, carrier standings, the freight that moved, and a back page of fiction. Each driver it names links to their profile.",
+        "Drivers with Profile sharing on can be named. Citations, crashes and other trouble are counted, never named. Past issues stay readable, and a feed carries each new one."
+      ],
+      "link": {
+        "href": "/freight-fate/news",
+        "label": "Read the latest Mile Marker"
+      }
+    },
+    {
       "id": "2026-11-15-wickets-player-pages",
       "date": "2026-11-15",
       "project": "Wicket's",

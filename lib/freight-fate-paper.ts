@@ -20,6 +20,10 @@
 import phrasesData from "../data/freight-fate-paper-phrases.json";
 import backPageData from "../data/freight-fate-paper-back-page.json";
 import { ALL_LINES, CAREER_TWO_INVARIANTS, STABLE_INVARIANTS } from "./freight-fate-invariants";
+import { formatPaperNumber } from "./freight-fate-paper-text";
+
+// The text helpers have no data imports, so the browser can load them alone.
+export { formatPaperNumber, paperTextPlain, paperTextSegments, type PaperTextSegment } from "./freight-fate-paper-text";
 
 // --- The switch ---
 
@@ -533,13 +537,6 @@ export function chooseVariant(
   return usable[fnv1a(`${issue}:${driverIds[0] ?? kind}`) % usable.length].index;
 }
 
-export function formatPaperNumber(value: number) {
-  const rounded = Number.isInteger(value) ? value : Math.round(value * 10) / 10;
-  const [whole, fraction] = String(Math.abs(rounded)).split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `${rounded < 0 ? "-" : ""}${grouped}${fraction ? `.${fraction}` : ""}`;
-}
-
 export function joinPaperList(items: string[]) {
   if (items.length <= 1) return items.join("");
   return `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
@@ -633,31 +630,56 @@ export function renderPaperStory(
   };
 }
 
-export type PaperTextSegment = { text: string } | { driverId: string; displayName: string };
+/** An edition as stored, with the parts renderPaperEdition reads. */
+export type StoredPaperEdition = {
+  issue: number;
+  weekKey: string;
+  periodStart: number;
+  periodEnd: number;
+  state: EditionState;
+  publishedAt?: number;
+  stories: PaperStory[];
+  records: Array<{ record: string; driverId: string; value: number }>;
+  standings: Array<{ carrierKey: string; drivers: number; loads: number; miles: number; onTimeRate?: number }>;
+  backPage: string[];
+  sinceMonday?: { weekKey: string; asOf: number; drivers: number; loads: number; miles: number; tons: number };
+};
 
-/** A rendered headline or body as plain runs and named drivers, in order. */
-export function paperTextSegments(
-  text: string,
-  drivers: Array<{ driverId: string; displayName: string }>,
-): PaperTextSegment[] {
-  const names = new Map(drivers.map((driver) => [driver.driverId, driver.displayName]));
-  const segments: PaperTextSegment[] = [];
-  let last = 0;
-  for (const match of text.matchAll(/\{@([a-z0-9_-]+)\}/g)) {
-    if (match.index > last) segments.push({ text: text.slice(last, match.index) });
-    const displayName = names.get(match[1]);
-    segments.push(displayName === undefined ? { text: "" } : { driverId: match[1], displayName });
-    last = match.index + match[0].length;
-  }
-  if (last < text.length) segments.push({ text: text.slice(last) });
-  return segments.filter((segment) => !("text" in segment) || segment.text !== "");
-}
-
-/** The same text with each marker replaced by the driver's name. */
-export function paperTextPlain(text: string, drivers: Array<{ driverId: string; displayName: string }>) {
-  return paperTextSegments(text, drivers)
-    .map((segment) => ("text" in segment ? segment.text : segment.displayName))
-    .join("");
+/**
+ * The edition with its text. `names` holds the drivers who are nameable now
+ * (the backend reads them per request); a story, record row or carrier that
+ * no longer resolves is left out.
+ */
+export function renderPaperEdition(edition: StoredPaperEdition, names: ReadonlyMap<string, string>) {
+  const when = whenPhrase(weeksCovered(edition.periodStart, edition.periodEnd));
+  const stories = edition.stories
+    .map((story) => renderPaperStory(story, names, PAPER_PHRASES, when))
+    .filter((story) => story !== null);
+  const recordLabels = PAPER_PHRASES.tables.records.rows;
+  return {
+    issue: edition.issue,
+    weekKey: edition.weekKey,
+    periodStart: edition.periodStart,
+    periodEnd: edition.periodEnd,
+    state: edition.state,
+    publishedAt: edition.publishedAt ?? null,
+    sections: PAPER_PHRASES.sections,
+    stories,
+    records: edition.records
+      .filter((row) => names.has(row.driverId) && recordLabels[row.record])
+      .map((row) => ({
+        record: row.record, label: recordLabels[row.record], value: row.value,
+        driverId: row.driverId, displayName: names.get(row.driverId)!,
+      })),
+    standings: edition.standings
+      .filter((row) => ALL_LINES.carrierLabels[row.carrierKey])
+      .map((row) => ({ ...row, carrier: ALL_LINES.carrierLabels[row.carrierKey] })),
+    backPage: edition.backPage
+      .map((id) => PAPER_BACK_PAGE.pieces.find((piece) => piece.id === id))
+      .filter((piece) => piece !== undefined)
+      .map((piece) => ({ ...piece, kindLabel: PAPER_BACK_PAGE.kinds[piece.kind] })),
+    sinceMonday: edition.sinceMonday ?? null,
+  };
 }
 
 // --- Front page ---

@@ -1,6 +1,7 @@
 import { FreightFateDriversBoard } from "@/components/FreightFateDriversBoard";
 import { FreightFateUpdates } from "@/components/FreightFateUpdates";
 import { FreightFateIntro, FreightFatePitch } from "@/components/FreightFateLanding";
+import { paperLink } from "@/lib/freight-fate-paper-page";
 import { getGame } from "@/lib/site";
 
 export const metadata = {
@@ -22,14 +23,15 @@ export const metadata = {
 // that is the authoritative read, for deciding, not for showing.
 export const revalidate = 60;
 
-export default function FreightFatePage() {
+export default async function FreightFatePage() {
   const project = getGame("/freight-fate")!;
+  const paper = await paperLink();
   return (
     <>
       <FreightFateIntro project={project} />
       <FreightFateDriversBoard />
       <FreightFateUpdates compact limit={5} />
-      <FreightFatePitch project={project} />
+      <FreightFatePitch paperLink={paper} project={project} />
     </>
   );
 }

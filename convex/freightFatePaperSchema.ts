@@ -180,6 +180,10 @@ export const paperTables = {
     weekKey: v.string(),
     state: v.union(v.literal("building"), v.literal("preview"), v.literal("published"), v.literal("pulled")),
     publishedAt: v.optional(v.number()),
+    // The days the edition covers, so the earlier-issues list can name them
+    // without opening the edition.
+    periodStart: v.optional(v.number()),
+    periodEnd: v.optional(v.number()),
   }).index("by_issue", ["issue"]),
 
   // One row per city that has had a delivery. Seeded rows (the cities

@@ -5,6 +5,9 @@ for (const path of [
   "/freight-fate",
   "/freight-fate/updates",
   "/freight-fate/drivers/missing-driver-1234",
+  "/freight-fate/news",
+  "/freight-fate/news/24",
+  "/freight-fate/news/archive",
 ]) {
   test(`${path} has no automated WCAG A/AA violations`, async ({ page }) => {
     await page.goto(path);
@@ -169,4 +172,88 @@ test("global navigation, footer status, and game links remain unambiguous", asyn
   await expect(
     page.getByRole("link", { name: "Saltwake: Report an issue" }),
   ).toBeVisible();
+});
+
+// The driver newspaper, read from the fixture edition (playwright.config.ts).
+for (const path of ["/freight-fate/news", "/freight-fate/news/24"]) {
+  test(`${path} reads as a document: one h1, no skipped heading level, named tables and links`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("main")).toHaveCount(1);
+    await expect(page.locator("main article, main [aria-live], main [role=status]")).toHaveCount(0);
+
+    const levels = await page.locator("main h1, main h2, main h3, main h4, main h5, main h6")
+      .evaluateAll((headings) => headings.map((heading) => Number(heading.tagName.slice(1))));
+    expect(levels[0]).toBe(1);
+    for (let index = 1; index < levels.length; index += 1) {
+      expect(levels[index] - levels[index - 1]).toBeLessThanOrEqual(1);
+    }
+
+    const tables = page.locator("main table");
+    expect(await tables.count()).toBeGreaterThan(0);
+    for (const table of await tables.all()) {
+      await expect(table.locator("caption")).toHaveCount(1);
+      await expect(table.locator("caption")).not.toHaveText("");
+      const rows = await table.locator("tbody tr").count();
+      await expect(table.locator("tbody th[scope=row]")).toHaveCount(rows);
+      await expect(table.locator("thead th:not([scope=col])")).toHaveCount(0);
+    }
+
+    for (const link of await page.locator("main a").all()) {
+      await expect(link).toHaveAttribute("href", /.+/);
+      expect((await link.innerText()).trim()).not.toBe("");
+    }
+
+    const ids = await page.locator("[id]").evaluateAll((nodes) => nodes.map((node) => node.id));
+    expect(new Set(ids).size).toBe(ids.length);
+
+    await expect(page.getByRole("navigation", { name: "Earlier issues" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Back page: fiction" })).toBeVisible();
+  });
+}
+
+test("the latest edition leads with Since Monday; a past one has none and links back", async ({ page }) => {
+  await page.goto("/freight-fate/news");
+  await expect(page.getByRole("heading", { level: 1, name: "The Mile Marker, issue 25" })).toBeVisible();
+  const h2s = await page.locator("main h2").allTextContents();
+  expect(h2s[0]).toMatch(/^Since Monday, /);
+  // One link per driver per story: the headline links, the body does not.
+  const story = page.locator("main h3").first();
+  await expect(story.getByRole("link")).toHaveCount(1);
+  await expect(story.locator("xpath=following-sibling::p[1]").getByRole("link")).toHaveCount(0);
+
+  await page.goto("/freight-fate/news/24");
+  expect((await page.locator("main h2").allTextContents()).some((text) => text.startsWith("Since Monday"))).toBe(false);
+  await expect(page.getByRole("navigation", { name: "Earlier issues" }).getByRole("link", { name: "Latest issue" }))
+    .toHaveAttribute("href", "/freight-fate/news");
+});
+
+test("only the wide standings table is a scrolling stop for the keyboard", async ({ page }) => {
+  await page.goto("/freight-fate/news");
+  await expect(page.locator("main [role=region][tabindex='0']")).toHaveCount(1);
+  await expect(page.getByRole("region", { name: /^Carriers/ })).toBeVisible();
+});
+
+test("earlier issues page through with named titles", async ({ page }) => {
+  await page.goto("/freight-fate/news");
+  await page.getByRole("link", { name: "Older issues" }).click();
+  await expect(page).toHaveURL(/archive\?before=5$/);
+  await expect(page).toHaveTitle(/^The Mile Marker, issues 1 to 4/);
+  await expect(page.getByRole("heading", { level: 1, name: "The Mile Marker, issues 1 to 4" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Older issues" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Newer issues" })).toBeVisible();
+});
+
+test("the paper's feed lists editions with their front-page headlines", async ({ request }) => {
+  const response = await request.get("/freight-fate/news/feed.xml");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("application/rss+xml");
+  const xml = await response.text();
+  expect(xml).toContain("<title>The Mile Marker, issue 25</title>");
+  expect(xml).not.toContain("{@");
+});
+
+test("an issue that does not exist answers 404", async ({ request }) => {
+  expect((await request.get("/freight-fate/news/999")).status()).toBe(404);
+  expect((await request.get("/freight-fate/news/012")).status()).toBe(404);
 });
