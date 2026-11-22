@@ -1,29 +1,22 @@
 // The paper's pages on the server: the masthead, the fixed words from the
-// wording files, the game news story built from the releases the site already
-// reads, the reads themselves (or the local fixture), and the feed.
+// wording files, the reads themselves (or the local fixture), and the feed.
 //
 // Importing lib/freight-fate-paper.ts here means a bad wording file fails
 // `next build`, since every news route imports this module.
-import { unstable_cache } from "next/cache";
 import {
   PAPER_BACK_PAGE,
   PAPER_PHRASES,
   renderPaperEdition,
-  renderPaperStory,
   weekStartMs,
-  weeksCovered,
-  whenPhrase,
   type StoredPaperEdition,
 } from "./freight-fate-paper";
 import { getFreightFatePaperEdition, getFreightFatePaperEditions } from "./freight-fate-online";
-import { getLatestStableRelease, getReleases, type GitHubRelease } from "./github";
 import {
   frontPageHeadlines,
   paperIssueDay,
   paperIssueHref,
   type PaperChrome,
   type PaperEditionData,
-  type PaperGameNews,
   type PaperIssueListing,
 } from "./freight-fate-paper-view";
 import fixture from "../test-fixtures/freight-fate-paper-edition.json";
@@ -42,66 +35,6 @@ export const PAPER_CHROME: PaperChrome = {
   },
 };
 
-// --- Game news ---
-
-const FREIGHT_FATE_REPO = "Freight-Fate";
-
-function isStableRelease(release: GitHubRelease) {
-  return !release.prerelease && !release.tag_name.toLowerCase().startsWith("nightly");
-}
-
-/** "1.9.7" from a tag such as "v1.9.7". */
-export function releaseVersion(release: Pick<GitHubRelease, "tag_name">) {
-  return release.tag_name.trim().replace(/^v(?=\d)/i, "");
-}
-
-/**
- * One game_release story per stable release, worded from the phrases file
- * with the edition's {when} ("this week", "in the last two weeks"). The page
- * keeps the ones inside the edition's period.
- */
-export function gameNewsFromReleases(releases: GitHubRelease[], when = whenPhrase(1)): PaperGameNews[] {
-  const seen = new Set<string>();
-  const news: PaperGameNews[] = [];
-  for (const release of releases) {
-    if (!isStableRelease(release) || !release.published_at || seen.has(release.tag_name)) continue;
-    seen.add(release.tag_name);
-    const version = releaseVersion(release);
-    const story = renderPaperStory({
-      id: `game_release.${version}`, section: "game_news", kind: "game_release",
-      driverIds: [], facts: { version }, variant: 0, rank: 0,
-    }, new Map(), PAPER_PHRASES, when);
-    if (!story) continue;
-    news.push({
-      id: story.id,
-      publishedAt: Date.parse(release.published_at),
-      headline: story.headline,
-      body: story.body,
-      link: { href: release.html_url, label: `Release notes for Freight Fate ${version}` },
-    });
-  }
-  return news;
-}
-
-/** Stable releases the site already reads, as game news. Empty when GitHub cannot be reached. */
-/** The {when} wording for an edition's period. */
-export function paperWhen(periodStart: number, periodEnd: number) {
-  return whenPhrase(weeksCovered(periodStart, periodEnd));
-}
-
-export async function getPaperGameNews(when?: string): Promise<PaperGameNews[]> {
-  if (paperFixtureEnabled()) return gameNewsFromReleases([FIXTURE_RELEASE], when);
-  try {
-    const [releases, latest] = await Promise.all([
-      getReleases(FREIGHT_FATE_REPO),
-      getLatestStableRelease(FREIGHT_FATE_REPO),
-    ]);
-    return gameNewsFromReleases([...(latest ? [latest] : []), ...releases], when);
-  } catch {
-    return [];
-  }
-}
-
 // --- Reads ---
 
 /**
@@ -117,16 +50,6 @@ type PaperFixture = {
   latestIssue: number;
   drivers: Record<string, string>;
   edition: StoredPaperEdition;
-};
-
-const FIXTURE_RELEASE: GitHubRelease = {
-  tag_name: "v1.9.7",
-  name: "Freight Fate 1.9.7",
-  body: null,
-  html_url: "https://github.com/orinks-games/Freight-Fate/releases/tag/v1.9.7",
-  published_at: "2026-11-21T22:29:00Z",
-  prerelease: false,
-  assets: [],
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60_000;
@@ -207,16 +130,11 @@ export async function paperLink() {
 
 export const PAPER_FEED_ITEMS = 10;
 
-// Older editions change only when a driver's name or sharing does, so the
-// feed reads them through a six-hour cache: ten editions at about 7 KB each,
-// four times a day, is well under a megabyte of backend reads a day. The
-// newest edition comes through the page's own five-minute cache.
-const cachedFeedEdition = unstable_cache(
-  async (issue: number) => getFreightFatePaperEdition(issue),
-  ["freight-fate-paper-feed"],
-  { revalidate: 6 * 60 * 60, tags: ["freight-fate-paper"] },
-);
-
+// Only the newest item carries its headlines, read through the same
+// five-minute cache as /freight-fate/news, so the feed costs no reads of its
+// own. Older items are a title and a link. Giving them headlines would mean
+// either a long cache, which would keep printing a driver who has since
+// turned sharing off, or a read of every edition every five minutes.
 export type PaperFeedItem = { issue: number; publishedAt: number | null; weekKey: string; headlines: string[] };
 
 export async function readPaperFeedItems(): Promise<PaperFeedItem[] | null> {
@@ -224,19 +142,15 @@ export async function readPaperFeedItems(): Promise<PaperFeedItem[] | null> {
   if (!listings.ok || !listings.value) return null;
   const published = listings.value.filter((row) => row.state === "published")
     .sort((a, b) => b.issue - a.issue).slice(0, PAPER_FEED_ITEMS);
-  const items: PaperFeedItem[] = [];
-  for (const [index, row] of published.entries()) {
-    let edition: PaperEditionData | null = null;
-    try {
-      edition = paperFixtureEnabled()
-        ? fixtureEdition(row.issue)
-        : (await (index === 0 ? getFreightFatePaperEdition(row.issue) : cachedFeedEdition(row.issue))) as PaperEditionData | null;
-    } catch {
-      edition = null;
-    }
-    items.push({ issue: row.issue, publishedAt: row.publishedAt, weekKey: row.weekKey, headlines: edition ? frontPageHeadlines(edition) : [] });
-  }
-  return items;
+  if (published.length === 0) return [];
+  const latest = await readPaperEdition();
+  const newest = latest.ok && latest.value?.issue === published[0].issue ? latest.value : null;
+  return published.map((row, index) => ({
+    issue: row.issue,
+    publishedAt: row.publishedAt,
+    weekKey: row.weekKey,
+    headlines: index === 0 && newest ? frontPageHeadlines(newest) : [],
+  }));
 }
 
 function escapeXml(value: string) {

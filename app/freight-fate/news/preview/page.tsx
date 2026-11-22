@@ -1,5 +1,5 @@
 import { FreightFateOnlineProviders } from "../../online/providers";
-import { PAPER_CHROME, PAPER_NAME, getPaperGameNews } from "@/lib/freight-fate-paper-page";
+import { PAPER_CHROME, PAPER_NAME } from "@/lib/freight-fate-paper-page";
 import { site } from "@/lib/site";
 import { PaperPreviewClient } from "./preview-client";
 
@@ -14,11 +14,10 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function FreightFateNewsPreviewPage() {
-  const gameNews = await getPaperGameNews();
+export default function FreightFateNewsPreviewPage() {
   return (
     <FreightFateOnlineProviders>
-      <PaperPreviewClient chrome={PAPER_CHROME} gameNews={gameNews} siteName={site.name} />
+      <PaperPreviewClient chrome={PAPER_CHROME} siteName={site.name} />
     </FreightFateOnlineProviders>
   );
 }

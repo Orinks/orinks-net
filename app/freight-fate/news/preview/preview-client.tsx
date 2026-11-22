@@ -8,18 +8,13 @@ import {
   buildPaperView,
   type PaperChrome,
   type PaperEditionData,
-  type PaperGameNews,
 } from "@/lib/freight-fate-paper-view";
 
 // Nothing is said until the sign-in check and the read have both finished,
 // so the owner never hears "No edition to preview" before the edition
 // arrives. The edition then replaces the heading in one render; there is no
 // live region (accessibility review, 2026-11-22).
-export function PaperPreviewClient({ chrome, gameNews, siteName }: {
-  chrome: PaperChrome;
-  gameNews: PaperGameNews[];
-  siteName: string;
-}) {
+export function PaperPreviewClient({ chrome, siteName }: { chrome: PaperChrome; siteName: string }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const edition = useQuery(
     anyApi.freightFatePaper.getEdition,
@@ -33,7 +28,7 @@ export function PaperPreviewClient({ chrome, gameNews, siteName }: {
   }, [title, siteName]);
 
   if (edition) {
-    return <FreightFatePaperEdition title={title} view={buildPaperView(edition, chrome, { latest: true, gameNews })} />;
+    return <FreightFatePaperEdition title={title} view={buildPaperView(edition, chrome, { latest: true })} />;
   }
   const finished = !isLoading && (!isAuthenticated || edition === null);
   return (

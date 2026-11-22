@@ -194,16 +194,32 @@ describe("rendering", () => {
   const names = new Map([["bob-1", "Bob {Freight}"], ["ann", "Ann"]]);
 
   test("names stay markers; missing facts fall back to the plain wording", () => {
+    // Variant 1 needs the cargo and cities; without them the story takes
+    // the wording whose body is empty.
     const rendered = renderPaperStory(story({ variant: 1 }), names)!;
-    expect(rendered.body).toBe("{@bob-1} ran the longest single load this week, 2,400 miles.");
-    expect(paperTextPlain(rendered.body, rendered.drivers)).toBe("Bob {Freight} ran the longest single load this week, 2,400 miles.");
-    const folded = renderPaperStory(story({}), names, PAPER_PHRASES, whenPhrase(3))!;
-    expect(folded.body).toBe("{@bob-1} ran the longest single load in the last three weeks, 2,400 miles.");
+    expect(rendered.body).toBe("");
+    expect(paperTextPlain(rendered.headline, rendered.drivers)).toBe("Longest haul: Bob {Freight}, 2,400 miles");
     expect(paperTextSegments(rendered.headline, rendered.drivers)).toEqual([
       { text: "Longest haul: " },
       { driverId: "bob-1", displayName: "Bob {Freight}" },
       { text: ", 2,400 miles" },
     ]);
+  });
+
+  test("the {when} slot still fills, for wording that uses it", () => {
+    const phrases = structuredClone(PAPER_PHRASES);
+    phrases.kinds.longest_haul.variants![0].body = "{driver} ran it {when}.";
+    expect(renderPaperStory(story({}), names, phrases, whenPhrase(3))!.body).toBe("{@bob-1} ran it in the last three weeks.");
+    expect(renderPaperStory(story({}), names, phrases)!.body).toBe("{@bob-1} ran it this week.");
+  });
+
+  test("an empty body is allowed and a blank one is refused", () => {
+    const empty = structuredClone(phrases);
+    empty.kinds.tons_total.variants[0].body = "";
+    expect(() => validatePaperPhrases(empty)).not.toThrow();
+    const blank = structuredClone(phrases);
+    blank.kinds.tons_total.variants[0].body = "  ";
+    expect(() => validatePaperPhrases(blank)).toThrow(/blank body/);
   });
 
   test("a story about a driver who is not nameable is dropped", () => {
@@ -215,7 +231,7 @@ describe("rendering", () => {
     const hires = story({ kind: "new_hires", section: "new_hires", driverIds: ["ann", "gone", "bob-1"], facts: { count: 3 } });
     const rendered = renderPaperStory(hires, names)!;
     expect(rendered.headline).toBe("2 new drivers sign on");
-    expect(rendered.body).toBe("New this week: {@ann} and {@bob-1}.");
+    expect(rendered.body).toBe("{@ann} and {@bob-1}.");
     const one = renderPaperStory({ ...hires, driverIds: ["ann", "gone"] }, names)!;
     expect(one.headline).toBe("One new driver signs on");
     expect(renderPaperStory({ ...hires, driverIds: ["gone"] }, names)).toBeNull();

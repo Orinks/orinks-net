@@ -4,8 +4,6 @@ import { FreightFatePaperEdition, PaperEarlierIssues } from "@/components/Freigh
 import {
   PAPER_CHROME,
   PAPER_NAME,
-  getPaperGameNews,
-  paperWhen,
   readPaperEdition,
   readPaperListings,
 } from "@/lib/freight-fate-paper-page";
@@ -50,8 +48,7 @@ export async function PaperEditionPage({ issue }: { issue?: number }) {
   const latestIssue = published.filter((row) => row.state === "published")
     .reduce((top, row) => Math.max(top, row.issue), edition.issue);
   const latest = issue === undefined || edition.issue === latestIssue;
-  const gameNews = await getPaperGameNews(paperWhen(edition.periodStart, edition.periodEnd));
-  const view = buildPaperView(edition, PAPER_CHROME, { latest: issue === undefined, gameNews });
+  const view = buildPaperView(edition, PAPER_CHROME, { latest: issue === undefined });
   const earlier = earlierIssues(published, edition.issue);
   return (
     <FreightFatePaperEdition title={`${PAPER_NAME}, issue ${edition.issue}`} view={view}>

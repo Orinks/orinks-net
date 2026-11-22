@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { PaperEditionPage, paperMetadata, parseIssue } from "../paper-route";
 
-export const revalidate = 300;
+// Per request, over the five-minute cached read; see ../page.tsx.
+export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ issue: string }> };
 

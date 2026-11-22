@@ -33,6 +33,7 @@ import {
   isCityKey,
   nextEditionState,
   paperMode,
+  paperReleaseFrom,
   renderPaperEdition,
   weekKeyOf,
   weekStartMs,
@@ -367,6 +368,25 @@ export const refreshSinceMondayNow = internalMutation({
 
 // --- The schedule ---
 
+const LATEST_RELEASE_URL = "https://api.github.com/repos/orinks-games/Freight-Fate/releases/latest";
+
+/**
+ * The latest stable Freight Fate release, read once per weekly build. A
+ * failed or odd answer means no game news that week, never a failed build.
+ */
+async function latestStableRelease() {
+  try {
+    const response = await fetch(LATEST_RELEASE_URL, {
+      headers: { Accept: "application/vnd.github+json", "User-Agent": "orinks-net-paper" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return null;
+    return paperReleaseFrom(await response.json());
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Every day at noon UTC (7:00 AM Eastern, 8:00 in summer): seed the firsts
  * on the first run ever, read the day's events, refresh the brief, and on a
@@ -397,7 +417,10 @@ export const runPaperSchedule = internalAction({
         for (let page = 0; page < 500; page += 1) {
           if ((await ctx.runMutation(internal.freightFatePaperWeekly.scanDrivers, { now })).done) break;
         }
-        weekly = await ctx.runMutation(internal.freightFatePaperWeekly.finishWeek, { now });
+        const release = await latestStableRelease();
+        weekly = await ctx.runMutation(internal.freightFatePaperWeekly.finishWeek, {
+          now, ...(release ? { release } : {}),
+        });
       } else {
         weekly = begun;
       }

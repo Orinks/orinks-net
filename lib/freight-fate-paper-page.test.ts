@@ -6,15 +6,13 @@ vi.mock("next/cache", () => ({
 }));
 vi.mock("@/lib/convex", () => ({ getConvexClient: () => null }));
 
-import { renderPaperStory, type PaperStory } from "./freight-fate-paper";
+import { paperReleaseFrom, renderPaperStory, type PaperStory } from "./freight-fate-paper";
 import {
   PAPER_CHROME,
   PAPER_NAME,
   fixtureEdition,
   fixtureListings,
-  gameNewsFromReleases,
   paperFeedXml,
-  releaseVersion,
 } from "./freight-fate-paper-page";
 import {
   buildPaperView,
@@ -26,19 +24,11 @@ import {
   sinceMondaySentence,
   storySegments,
 } from "./freight-fate-paper-view";
-import type { GitHubRelease } from "./github";
 
 const names = new Map([["dana-rig", "Dana Rig"], ["lee-ann", "Lee Ann"]]);
 
 function story(kind: string, driverIds: string[], facts: PaperStory["facts"], variant = 0): PaperStory {
   return { id: `${kind}.test`, section: "driver_news", kind, driverIds, facts, variant, rank: 10 };
-}
-
-function release(tag: string, published: string, prerelease = false): GitHubRelease {
-  return {
-    tag_name: tag, name: null, body: null, prerelease, assets: [],
-    html_url: `https://github.com/orinks-games/Freight-Fate/releases/tag/${tag}`, published_at: published,
-  };
 }
 
 afterEach(() => {
@@ -56,7 +46,6 @@ describe("a story on the page", () => {
     expect(headline).toContainEqual({ driverId: "lee-ann", displayName: "Lee Ann" });
     // The name is linked once per story: the body names the driver as text.
     expect(body.some((segment) => "driverId" in segment)).toBe(false);
-    expect(body.map((segment) => ("text" in segment ? segment.text : "")).join("")).toContain("Lee Ann");
   });
 
   test("a first delivery without its optional facts still prints, in the plain wording", () => {
@@ -81,9 +70,7 @@ describe("a story on the page", () => {
 
 describe("the edition view", () => {
   const edition = fixtureEdition()!;
-  const view = buildPaperView(edition, PAPER_CHROME, {
-    latest: true, gameNews: gameNewsFromReleases([release("v1.9.7", "2026-11-21T22:29:00Z")]),
-  });
+  const view = buildPaperView(edition, PAPER_CHROME, { latest: true });
 
   test("sections follow the wording file, Since Monday first, empty ones left out", () => {
     const keys = view.sections.map((section) => section.key);
@@ -104,7 +91,7 @@ describe("the edition view", () => {
   });
 
   test("an archive page has no Since Monday", () => {
-    const archive = buildPaperView(fixtureEdition(24)!, PAPER_CHROME, { latest: false, gameNews: [] });
+    const archive = buildPaperView(fixtureEdition(24)!, PAPER_CHROME, { latest: false });
     expect(archive.sections.map((section) => section.key)).not.toContain("since_monday");
   });
 
@@ -118,25 +105,41 @@ describe("the edition view", () => {
     ]);
   });
 
-  test("carrier standings give the on-time rate, or say it is not recorded", () => {
+  test("carrier standings follow the column order and give the on-time rate, or say it is not recorded", () => {
     const standings = view.sections.find((section) => section.key === "carrier_standings")!.table!;
+    expect(standings.columns).toEqual(["Carrier", "Miles", "Loads", "Drivers on the road", "On time"]);
+    expect(standings.rows[0].cells).toEqual([{ text: "26,400" }, { text: "58" }, { text: "12" }, { text: "96.5%" }]);
     expect(standings.rows[0].cells.at(-1)).toEqual({ text: "96.5%" });
     expect(standings.rows.at(-1)!.cells.at(-1)).toEqual({ text: "Not recorded" });
   });
 
-  test("game news holds only stable releases inside the period", () => {
-    const news = gameNewsFromReleases([
-      release("v1.9.7", "2026-11-21T22:29:00Z"),
-      release("v1.9.8-dev", "2026-11-22T10:00:00Z", true),
-      release("nightly-2026-11-20", "2026-11-20T10:00:00Z"),
-      release("v1.9.6", "2026-11-13T07:55:00Z"),
-    ]);
-    const built = buildPaperView(edition, PAPER_CHROME, { latest: false, gameNews: news });
-    const section = built.sections.find((entry) => entry.key === "game_news")!;
-    expect(section.stories.map((entry) => entry.headline)).toEqual([[{ text: "Freight Fate 1.9.7 is out" }]]);
-    expect(section.stories[0].link!.label).toBe("Release notes for Freight Fate 1.9.7");
-    const none = buildPaperView(edition, PAPER_CHROME, { latest: false, gameNews: [] });
-    expect(none.sections.map((entry) => entry.key)).not.toContain("game_news");
+  test("game news is the stored story with its release notes as the body", () => {
+    const section = view.sections.find((entry) => entry.key === "game_news")!;
+    expect(section.stories).toEqual([{
+      id: "game_release.all",
+      headline: [{ text: "Freight Fate 1.9.7 is out" }],
+      body: [],
+      link: { href: "https://github.com/orinks-games/Freight-Fate/releases/tag/v1.9.7", label: "Release notes for Freight Fate 1.9.7" },
+    }]);
+  });
+
+  test("a story whose body is empty prints as its headline alone", () => {
+    const blotter = view.sections.find((entry) => entry.key === "blotter")!;
+    expect(blotter.stories.every((story) => story.body.length === 0 && !story.link)).toBe(true);
+  });
+
+  test("more than four new hires print as a list of links, with no sentence", () => {
+    const hires = view.sections.find((entry) => entry.key === "new_hires")!.stories[0];
+    expect(hires.body).toEqual([]);
+    expect(hires.list!.map((driver) => driver.displayName)).toEqual(["Ike T", "Lee Ann", "Nan B", "Rosa M", "Tomas V"]);
+    const few = renderPaperStory({
+      id: "new_hires.all", section: "new_hires", kind: "new_hires", driverIds: ["lee-ann", "dana-rig"],
+      facts: { count: 2 }, variant: 0, rank: 10,
+    }, names)!;
+    const built = buildPaperView({ ...edition, stories: [few] }, PAPER_CHROME, { latest: false });
+    const story = built.sections.find((entry) => entry.key === "new_hires")!.stories[0];
+    expect(story.list).toBeUndefined();
+    expect(story.body.filter((segment) => "driverId" in segment)).toHaveLength(2);
   });
 
   test("the period runs from its first day to the day before it closed, Eastern", () => {
@@ -164,8 +167,12 @@ describe("wording the page owns", () => {
     expect(sinceMondaySentence({ weekKey: "w", asOf: 0, drivers: 0, loads: 0, miles: 0, tons: 0 })).toBeNull();
   });
 
-  test("a release tag loses its v", () => {
-    expect(releaseVersion({ tag_name: "v1.9.7" })).toBe("1.9.7");
+  test("a release answer gives its version and nothing else, and only for a plain tag", () => {
+    expect(paperReleaseFrom({ tag_name: "v1.9.7", published_at: "2026-11-21T22:29:00Z", html_url: "x" }))
+      .toEqual({ version: "1.9.7", publishedAt: Date.parse("2026-11-21T22:29:00Z") });
+    expect(paperReleaseFrom({ tag_name: "v1.9.8-beta", published_at: "2026-11-21T22:29:00Z" })).toBeNull();
+    expect(paperReleaseFrom({ tag_name: "v1.9.7", published_at: "2026-11-21T22:29:00Z", prerelease: true })).toBeNull();
+    expect(paperReleaseFrom("nope")).toBeNull();
   });
 });
 

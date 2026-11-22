@@ -8,7 +8,10 @@
     "lee-ann": "Lee Ann",
     "jo-ray": "Jo Ray",
     "pat-q": "Pat Q",
-    "tomas-v": "Tomas V"
+    "tomas-v": "Tomas V",
+    "rosa-m": "Rosa M",
+    "ike-t": "Ike T",
+    "nan-b": "Nan B"
   },
   "edition": {
     "issue": 25,
@@ -123,12 +126,15 @@
         "section": "new_hires",
         "kind": "new_hires",
         "driverIds": [
+          "ike-t",
           "lee-ann",
           "gone-driver",
+          "nan-b",
+          "rosa-m",
           "tomas-v"
         ],
         "facts": {
-          "count": 3
+          "count": 6
         },
         "variant": 0,
         "rank": 10
@@ -232,6 +238,17 @@
         "facts": {
           "title": "Solo Company Driver",
           "level": 6
+        },
+        "variant": 0,
+        "rank": 10
+      },
+      {
+        "id": "game_release.all",
+        "section": "game_news",
+        "kind": "game_release",
+        "driverIds": [],
+        "facts": {
+          "version": "1.9.7"
         },
         "variant": 0,
         "rank": 10

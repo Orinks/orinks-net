@@ -143,6 +143,27 @@ export const DELIVERY_MARKS = [100, 500, 1_000] as const;
 export const STATE_MARKS = [10, 25, 48] as const;
 export const BEST_ON_TIME_MIN_LOADS = 5;
 export const LANE_MIN_LOADS = 3;
+export const TOP_CARGO_MIN_LOADS = 2;
+/** A Freight Fate release version the paper will print: "1.9.7". */
+export const RELEASE_VERSION = /^\d+\.\d+\.\d+$/;
+
+/** The release notes for a version, built here rather than taken from GitHub. */
+export function releaseNotesHref(version: string) {
+  return `https://github.com/orinks-games/Freight-Fate/releases/tag/v${version}`;
+}
+
+/**
+ * The version and date of a GitHub "latest release" answer, or null. Only a
+ * plain vN.N.N tag counts; nothing else from the answer is kept.
+ */
+export function paperReleaseFrom(raw: unknown): { version: string; publishedAt: number } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { tag_name: tag, published_at: published, prerelease, draft } = raw as Record<string, unknown>;
+  if (prerelease === true || draft === true || typeof tag !== "string" || typeof published !== "string") return null;
+  const version = tag.trim().replace(/^v/, "");
+  const publishedAt = Date.parse(published);
+  return RELEASE_VERSION.test(version) && Number.isFinite(publishedAt) ? { version, publishedAt } : null;
+}
 export const MIN_NAMED_STORIES = 3;
 // Single-load caps: a delivery past either is left out of every record and
 // total, as publicDriverEvent already does for miles.
@@ -403,7 +424,10 @@ export function validatePaperPhrases(raw: unknown): PaperPhrases {
     let plain = false;
     for (const wording of wordings) {
       if (!wording.headline?.trim()) fail(`kind "${kind}" has an empty headline`);
-      if (!wording.body?.trim()) fail(`kind "${kind}" has an empty body`);
+      // An empty body is allowed: the headline says it all and the story
+      // prints as its headline alone. Blank space is a typo, not a choice.
+      if (typeof wording.body !== "string") fail(`kind "${kind}" has no body`);
+      if (wording.body !== "" && !wording.body.trim()) fail(`kind "${kind}" has a blank body`);
       if (slotsOf(wording.headline).includes(WHEN_SLOT)) fail(`kind "${kind}" has {when} in a headline`);
       const slots = wordingSlots(wording);
       for (const slot of slots) {
@@ -581,6 +605,8 @@ export type RenderedStory = {
   headline: string;
   body: string;
   drivers: Array<{ driverId: string; displayName: string }>;
+  /** Game news: the release notes, built from the stored version. */
+  link?: { href: string; label: string };
 };
 
 /**
@@ -653,7 +679,14 @@ export type StoredPaperEdition = {
 export function renderPaperEdition(edition: StoredPaperEdition, names: ReadonlyMap<string, string>) {
   const when = whenPhrase(weeksCovered(edition.periodStart, edition.periodEnd));
   const stories = edition.stories
-    .map((story) => renderPaperStory(story, names, PAPER_PHRASES, when))
+    .map((story) => {
+      const rendered = renderPaperStory(story, names, PAPER_PHRASES, when);
+      const version = story.facts.version;
+      if (rendered && story.kind === "game_release" && typeof version === "string" && RELEASE_VERSION.test(version)) {
+        rendered.link = { href: releaseNotesHref(version), label: `Release notes for Freight Fate ${version}` };
+      }
+      return rendered;
+    })
     .filter((story) => story !== null);
   const recordLabels = PAPER_PHRASES.tables.records.rows;
   return {

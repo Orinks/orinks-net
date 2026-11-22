@@ -3,7 +3,7 @@
 // data is imported here: the server passes the chrome (masthead, table
 // captions, the back page heading) in, so the owner's preview can build the
 // same view in the browser. lib/freight-fate-paper-page.ts builds the chrome
-// and the game news on the server.
+// on the server.
 import { formatPaperNumber, paperTextSegments, type PaperTextSegment } from "./freight-fate-paper-text";
 
 export type PaperDriverName = { driverId: string; displayName: string };
@@ -15,6 +15,7 @@ export type PaperRenderedStory = {
   headline: string;
   body: string;
   drivers: PaperDriverName[];
+  link?: { href: string; label: string };
 };
 
 /** renderEdition's answer, as the site's reads return it. */
@@ -54,21 +55,17 @@ export type PaperChrome = {
   standings: PaperTableSpec;
 };
 
-/** A stable release, already worded from the game_release kind. */
-export type PaperGameNews = {
-  id: string;
-  publishedAt: number;
-  headline: string;
-  body: string;
-  link: { href: string; label: string };
-};
-
 export type PaperViewStory = {
   id: string;
   headline: PaperTextSegment[];
+  /** Empty when the headline says it all: the story prints as its h3 alone. */
   body: PaperTextSegment[];
   link?: { href: string; label: string };
+  /** New hires past NEW_HIRES_AS_LIST names: one link per driver, no body. */
+  list?: PaperDriverName[];
 };
+
+export const NEW_HIRES_AS_LIST = 4;
 
 export type PaperViewTable = {
   id: string;
@@ -251,17 +248,17 @@ export const PAPER_PAGE_SIZE = 20;
 
 // --- The view ---
 
-/** Game news inside the edition's period, oldest first. */
-export function gameNewsInPeriod(news: PaperGameNews[], periodStart: number, periodEnd: number) {
-  return news
-    .filter((item) => item.publishedAt >= periodStart && item.publishedAt < periodEnd)
-    .sort((a, b) => a.publishedAt - b.publishedAt);
+function viewStory(story: PaperRenderedStory): PaperViewStory {
+  if (story.kind === "new_hires" && story.drivers.length > NEW_HIRES_AS_LIST) {
+    return { id: story.id, headline: storySegments(story).headline, body: [], list: story.drivers };
+  }
+  return { id: story.id, ...storySegments(story), ...(story.link ? { link: story.link } : {}) };
 }
 
 export function buildPaperView(
   edition: PaperEditionData,
   chrome: PaperChrome,
-  options: { latest: boolean; gameNews: PaperGameNews[] },
+  options: { latest: boolean },
 ): PaperView {
   const sections: PaperViewSection[] = [];
 
@@ -281,7 +278,6 @@ export function buildPaperView(
     }
   }
 
-  const gameNews = gameNewsInPeriod(options.gameNews, edition.periodStart, edition.periodEnd);
   for (const [key, heading] of Object.entries(edition.sections)) {
     if (key === "back_page") continue;
     if (key === "records") {
@@ -314,10 +310,12 @@ export function buildPaperView(
             columns: chrome.standings.columns,
             rows: edition.standings.map((row) => ({
               header: row.carrier,
+              // In the order of the wording file's columns: Carrier, Miles,
+              // Loads, Drivers on the road, On time.
               cells: [
-                { text: formatPaperNumber(row.drivers) },
-                { text: formatPaperNumber(row.loads) },
                 { text: formatPaperNumber(row.miles) },
+                { text: formatPaperNumber(row.loads) },
+                { text: formatPaperNumber(row.drivers) },
                 { text: paperOnTime(row.onTimeRate) },
               ],
             })),
@@ -326,12 +324,8 @@ export function buildPaperView(
       }
       continue;
     }
-    const stories: PaperViewStory[] = key === "game_news"
-      ? gameNews.map((item) => ({
-        id: item.id, headline: [{ text: item.headline }], body: [{ text: item.body }], link: item.link,
-      }))
-      : edition.stories.filter((story) => story.section === key)
-        .map((story) => ({ id: story.id, ...storySegments(story) }));
+    const stories: PaperViewStory[] = edition.stories.filter((story) => story.section === key)
+      .map((story) => viewStory(story));
     if (stories.length > 0) sections.push({ key, heading, stories });
   }
 

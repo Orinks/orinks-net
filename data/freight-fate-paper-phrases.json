@@ -1,6 +1,6 @@
 {
-  "note": "Story wording for the Freight Fate paper, written by the director thread on 2026-11-22. Task N1 copies this to data/freight-fate-paper-phrases.json in orinks-net. A slot is a word in braces. 'always' lists the slots a story of that kind always has. The renderer may use a variant only when every slot it names is present, and every kind has at least one variant that needs only its 'always' slots. The slot 'when' is present on every story and is never listed: it reads 'this week' in an edition that covers one week, and 'in the last two weeks' (three, four and so on, the number spelled out up to twelve) in an edition that also covers weeks with no edition of their own. No section heading or table caption names the week, and the only headline that does is record_week_miles, which runs only in an edition that covers one week. Numbers arrive already formatted (1,412). A kind with 'one' and 'other' picks by its count slot. Do not reword without the director: this is player-facing text.",
-  "version": 2,
+  "note": "Story wording for the Freight Fate paper, written by the director thread on 2026-11-22. The site keeps a copy at data/freight-fate-paper-phrases.json in orinks-net. A slot is a word in braces. 'always' lists the slots a story of that kind always has. The renderer may use a variant only when every slot it names is present, and every kind has at least one variant that needs only its 'always' slots. A headline states the whole fact. A body holds only what its headline does not say, and an empty body means the story is its headline alone: the page prints no paragraph for it. The slot 'when' is present on every story and is never listed ('this week', or 'in the last two weeks' and so on when an edition covers more than one); no wording uses it today, because the page gives the edition's dates. No heading or caption names the week except the record_week_miles headline, and that kind runs only in an edition that covers one week. Numbers arrive already formatted (1,412). A kind with 'one' and 'other' picks by its count slot. The standings columns are in the order the page prints them. Do not reword without the director: this is player-facing text.",
+  "version": 3,
   "kinds": {
     "first_delivery": {
       "section": "driver_news",
@@ -10,19 +10,19 @@
       "variants": [
         {
           "headline": "{driver} delivers a first load",
-          "body": "{driver} finished a first delivery {when}."
+          "body": ""
         },
         {
           "headline": "{driver} delivers a first load",
-          "body": "{driver} finished a first delivery {when}: {cargo}, {origin} to {destination}, {miles} miles."
+          "body": "{cargo}, {origin} to {destination}, {miles} miles."
         },
         {
           "headline": "First load in for {driver}",
-          "body": "{driver} is on the board with a first delivery, {miles} miles from {origin} to {destination}."
+          "body": "{miles} miles, {origin} to {destination}."
         },
         {
           "headline": "First load in for {driver}",
-          "body": "{driver}, driving for {carrier}, has a first delivery in the book."
+          "body": "Driving for {carrier}."
         }
       ]
     },
@@ -36,15 +36,15 @@
       "variants": [
         {
           "headline": "{driver} makes {title}",
-          "body": "{driver} reached level {level} {when} and now holds the title {title}."
+          "body": "Level {level}."
         },
         {
           "headline": "{driver} promoted to {title}",
-          "body": "{carrier} moved {driver} up to {title} at level {level}."
+          "body": "Level {level}, at {carrier}."
         },
         {
-          "headline": "{driver} makes {title}",
-          "body": "Level {level} came for {driver}, and the title {title} with it."
+          "headline": "{driver} reaches level {level}",
+          "body": "The new title is {title}."
         }
       ]
     },
@@ -57,15 +57,15 @@
       "variants": [
         {
           "headline": "{driver} passes {mark} miles",
-          "body": "{driver} crossed {mark} career miles {when}."
+          "body": ""
         },
         {
           "headline": "{mark} miles for {driver}",
-          "body": "{driver} has now driven more than {mark} miles, over {deliveries} deliveries."
+          "body": "Over {deliveries} deliveries."
         },
         {
           "headline": "{driver} passes {mark} miles",
-          "body": "The odometer on {driver}'s career turned past {mark} miles {when}."
+          "body": "It took {deliveries} deliveries."
         }
       ]
     },
@@ -78,11 +78,11 @@
       "variants": [
         {
           "headline": "{driver} delivers load number {mark}",
-          "body": "{driver} finished career delivery number {mark} {when}."
+          "body": ""
         },
         {
           "headline": "{mark} deliveries for {driver}",
-          "body": "{driver} has {mark} deliveries in the book, {rate} percent of them on time."
+          "body": "{rate} percent of them on time."
         }
       ]
     },
@@ -95,11 +95,11 @@
       "variants": [
         {
           "headline": "{driver} adds {endorsement}",
-          "body": "{driver} is now cleared for {endorsement} loads."
+          "body": ""
         },
         {
-          "headline": "{driver} adds {endorsement}",
-          "body": "{driver} picked up {endorsement} {when}."
+          "headline": "{driver} is cleared for {endorsement} loads",
+          "body": ""
         }
       ]
     },
@@ -112,11 +112,11 @@
       "variants": [
         {
           "headline": "{driver} buys a truck: {truck}",
-          "body": "{driver} now owns the truck they drive: {truck}."
+          "body": ""
         },
         {
           "headline": "New truck for {driver}: {truck}",
-          "body": "{driver} bought a truck {when}: {truck}."
+          "body": ""
         }
       ]
     },
@@ -129,8 +129,8 @@
       ],
       "variants": [
         {
-          "headline": "{carrier} gives {driver} a new truck: {truck}",
-          "body": "{carrier} assigned {driver} a different truck {when}: {truck}."
+          "headline": "{carrier} assigns {driver} a different truck: {truck}",
+          "body": ""
         }
       ]
     },
@@ -143,11 +143,11 @@
       "variants": [
         {
           "headline": "{driver} leases on with {carrier}",
-          "body": "{driver} bought a truck and leased it on with {carrier}."
+          "body": "Their own truck, under {carrier}'s authority."
         },
         {
           "headline": "{driver} goes owner-operator",
-          "body": "{driver} now runs their own truck under {carrier}'s authority."
+          "body": "Leased on with {carrier}."
         }
       ]
     },
@@ -159,11 +159,11 @@
       "variants": [
         {
           "headline": "{driver} gets their own authority",
-          "body": "{driver} now books freight under their own authority."
+          "body": ""
         },
         {
           "headline": "{driver} gets their own authority",
-          "body": "{driver} left {from_carrier} {when} to run under their own authority."
+          "body": "They left {from_carrier} to do it."
         }
       ]
     },
@@ -176,11 +176,11 @@
       "variants": [
         {
           "headline": "{driver} moves to {carrier}",
-          "body": "{driver} started at {carrier} {when}."
+          "body": ""
         },
         {
-          "headline": "{driver} moves to {carrier}",
-          "body": "{carrier} hired {driver} away from {from_carrier}."
+          "headline": "{driver} leaves {from_carrier} for {carrier}",
+          "body": ""
         }
       ]
     },
@@ -193,7 +193,7 @@
       "variants": [
         {
           "headline": "{driver} has delivered in {mark} states",
-          "body": "{driver} delivered in state number {mark} {when}."
+          "body": ""
         }
       ]
     },
@@ -205,11 +205,11 @@
       ],
       "one": {
         "headline": "One new driver signs on",
-        "body": "New {when}: {drivers}."
+        "body": "{drivers}."
       },
       "other": {
         "headline": "{count} new drivers sign on",
-        "body": "New {when}: {drivers}."
+        "body": "{drivers}."
       }
     },
     "record_week_miles": {
@@ -221,7 +221,7 @@
       "variants": [
         {
           "headline": "{driver} sets the paper's record week: {miles} miles",
-          "body": "{driver} drove {miles} miles {when}, the most any driver has logged in one week since this paper began."
+          "body": ""
         }
       ]
     },
@@ -233,12 +233,12 @@
       ],
       "variants": [
         {
-          "headline": "{driver} leads with {miles} miles",
-          "body": "{driver} drove {miles} miles {when}, more than any other driver."
+          "headline": "Most miles: {driver}, {miles}",
+          "body": ""
         },
         {
-          "headline": "{driver} leads with {miles} miles",
-          "body": "{driver} drove {miles} miles over {deliveries} deliveries, the most of any driver {when}."
+          "headline": "Most miles: {driver}, {miles}",
+          "body": "Over {deliveries} deliveries."
         }
       ]
     },
@@ -250,8 +250,8 @@
       ],
       "variants": [
         {
-          "headline": "{driver} delivers {count} loads",
-          "body": "{driver} finished {count} deliveries {when}, the most of any driver."
+          "headline": "Most deliveries: {driver}, {count}",
+          "body": ""
         }
       ]
     },
@@ -264,7 +264,7 @@
       "variants": [
         {
           "headline": "{driver} goes {count} for {count} on time",
-          "body": "{driver} delivered {count} loads {when} and every one was on time."
+          "body": ""
         }
       ]
     },
@@ -277,11 +277,11 @@
       "variants": [
         {
           "headline": "Longest haul: {driver}, {miles} miles",
-          "body": "{driver} ran the longest single load {when}, {miles} miles."
+          "body": ""
         },
         {
           "headline": "Longest haul: {driver}, {miles} miles",
-          "body": "{driver} ran the longest single load {when}: {cargo}, {origin} to {destination}, {miles} miles."
+          "body": "{cargo}, {origin} to {destination}."
         }
       ]
     },
@@ -294,11 +294,11 @@
       "variants": [
         {
           "headline": "Heaviest load: {driver}, {weight} pounds",
-          "body": "{driver} hauled the heaviest load {when}, {weight} pounds."
+          "body": ""
         },
         {
           "headline": "Heaviest load: {driver}, {weight} pounds",
-          "body": "{driver} hauled the heaviest load {when}: {weight} pounds of {cargo} from {origin} to {destination}."
+          "body": "{cargo}, {origin} to {destination}."
         }
       ]
     },
@@ -310,8 +310,8 @@
       ],
       "variants": [
         {
-          "headline": "{driver} delivers to {count} new cities",
-          "body": "{driver} delivered to {count} cities {when} that they had never delivered to before."
+          "headline": "{driver} delivers to {count} cities for the first time",
+          "body": ""
         }
       ]
     },
@@ -324,11 +324,11 @@
       "variants": [
         {
           "headline": "{driver} is first into {city}",
-          "body": "{driver} made the first delivery to {city} that this paper has on record."
+          "body": "The first delivery there on this paper's record."
         },
         {
           "headline": "{driver} is first into {city}",
-          "body": "{driver} made the first delivery to {city} that this paper has on record: {cargo} from {origin}, {miles} miles."
+          "body": "The first delivery there on this paper's record: {cargo} from {origin}, {miles} miles."
         }
       ]
     },
@@ -341,11 +341,11 @@
       "variants": [
         {
           "headline": "{driver} earns {achievement}",
-          "body": "{driver} earned {achievement} {when}."
+          "body": ""
         },
         {
           "headline": "{driver} earns {achievement}",
-          "body": "{driver} earned {achievement} {when}. {holders} drivers hold it."
+          "body": "Drivers who hold it: {holders}."
         }
       ]
     },
@@ -359,7 +359,7 @@
       "variants": [
         {
           "headline": "{loads} loads, {miles} miles",
-          "body": "{drivers} drivers delivered {loads} loads and drove {miles} miles {when}."
+          "body": "Drivers who delivered: {drivers}."
         }
       ]
     },
@@ -373,7 +373,7 @@
       "variants": [
         {
           "headline": "Busiest lane: {origin} to {destination}",
-          "body": "{count} loads ran from {origin} to {destination} {when}, more than on any other lane."
+          "body": "{count} loads, more than any other lane."
         }
       ]
     },
@@ -386,7 +386,7 @@
       "variants": [
         {
           "headline": "Most-hauled freight: {cargo}",
-          "body": "Drivers delivered {count} loads of {cargo} {when}."
+          "body": "{count} loads."
         }
       ]
     },
@@ -398,7 +398,7 @@
       "variants": [
         {
           "headline": "{tons} tons delivered",
-          "body": "The loads delivered {when} came to {tons} tons of freight."
+          "body": ""
         }
       ]
     },
@@ -408,12 +408,12 @@
         "count"
       ],
       "one": {
-        "headline": "One citation written",
-        "body": "Troopers wrote one citation {when}."
+        "headline": "Troopers write one citation",
+        "body": ""
       },
       "other": {
-        "headline": "{count} citations written",
-        "body": "Troopers wrote {count} citations {when}."
+        "headline": "Troopers write {count} citations",
+        "body": ""
       }
     },
     "blotter_out_of_service": {
@@ -422,12 +422,12 @@
         "count"
       ],
       "one": {
-        "headline": "One truck put out of service",
-        "body": "Inspectors put one truck out of service {when}."
+        "headline": "Inspectors put one truck out of service",
+        "body": ""
       },
       "other": {
-        "headline": "{count} trucks put out of service",
-        "body": "Inspectors put {count} trucks out of service {when}."
+        "headline": "Inspectors put {count} trucks out of service",
+        "body": ""
       }
     },
     "blotter_crashes": {
@@ -436,12 +436,12 @@
         "count"
       ],
       "one": {
-        "headline": "One crash reported",
-        "body": "One crash went on the accident register {when}."
+        "headline": "One crash on the accident register",
+        "body": ""
       },
       "other": {
-        "headline": "{count} crashes reported",
-        "body": "{count} crashes went on the accident register {when}."
+        "headline": "{count} crashes on the accident register",
+        "body": ""
       }
     },
     "blotter_cargo_claims": {
@@ -450,12 +450,12 @@
         "count"
       ],
       "one": {
-        "headline": "One cargo claim filed",
-        "body": "Shippers filed one claim for damaged cargo {when}."
+        "headline": "One claim filed for damaged cargo",
+        "body": ""
       },
       "other": {
-        "headline": "{count} cargo claims filed",
-        "body": "Shippers filed {count} claims for damaged cargo {when}."
+        "headline": "{count} claims filed for damaged cargo",
+        "body": ""
       }
     },
     "stations_added": {
@@ -466,11 +466,11 @@
       ],
       "one": {
         "headline": "One station joins the dial",
-        "body": "New on the radio {when}: {stations}."
+        "body": "{stations}."
       },
       "other": {
         "headline": "{count} stations join the dial",
-        "body": "New on the radio {when}: {stations}."
+        "body": "{stations}."
       }
     },
     "game_release": {
@@ -481,7 +481,7 @@
       "variants": [
         {
           "headline": "Freight Fate {version} is out",
-          "body": "Freight Fate {version} was released {when}."
+          "body": ""
         }
       ]
     }
@@ -502,7 +502,7 @@
   },
   "tables": {
     "records": {
-      "caption": "Record leaders",
+      "caption": "Leading driver for each record",
       "columns": [
         "Record",
         "Driver",
@@ -521,9 +521,9 @@
       "caption": "Carriers by miles",
       "columns": [
         "Carrier",
-        "Drivers on the road",
-        "Loads",
         "Miles",
+        "Loads",
+        "Drivers on the road",
         "On time"
       ]
     }

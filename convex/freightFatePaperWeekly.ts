@@ -21,6 +21,8 @@ import {
   DELIVERY_MARKS,
   KIND_SLOTS,
   LANE_MIN_LOADS,
+  RELEASE_VERSION,
+  TOP_CARGO_MIN_LOADS,
   MILE_MARKS,
   MIN_NAMED_STORIES,
   PAPER_PHRASES,
@@ -414,7 +416,10 @@ function topBy<T>(rows: T[], value: (row: T) => number, tie: (row: T) => string)
   return best;
 }
 
-export async function finishWeekRun(ctx: MutationCtx, now: number) {
+/** The latest stable release, as the weekly action read it: the version only. */
+export type PaperRelease = { version: string; publishedAt: number };
+
+export async function finishWeekRun(ctx: MutationCtx, now: number, release?: PaperRelease) {
   const mode = paperModeNow();
   if (mode === "off") return { status: "off" as const };
   const state = await ensurePaperState(ctx, now);
@@ -543,7 +548,9 @@ export async function finishWeekRun(ctx: MutationCtx, now: number) {
       facts: { origin: busiest.originKey, destination: busiest.destinationKey, count: busiest.count },
     });
   }
-  const topCargo = topBy([...cargo.entries()], ([, count]) => count, ([key]) => key);
+  // The body prints the count ("7 loads"); one load is not the week's freight.
+  const topCargo = topBy([...cargo.entries()].filter(([, count]) => count >= TOP_CARGO_MIN_LOADS),
+    ([, count]) => count, ([key]) => key);
   if (topCargo) stories.push({ kind: "top_cargo", driverIds: [], facts: { cargo: topCargo[0], count: topCargo[1] } });
   const tons = Math.round(pounds / 2000);
   if (tons > 0) stories.push({ kind: "tons_total", driverIds: [], facts: { tons } });
@@ -574,6 +581,13 @@ export async function finishWeekRun(ctx: MutationCtx, now: number) {
     .map((name) => name.replace(/[{}]/g, "").trim()).filter(Boolean).slice(0, 40);
   if (stationNames.length > 0) {
     stories.push({ kind: "stations_added", driverIds: [], facts: { count: stationNames.length, stations: stationNames } });
+  }
+
+  // Game news: the latest stable release, when it came out inside the period.
+  // The version is the only fact; the page builds the release notes link.
+  if (release && RELEASE_VERSION.test(release.version)
+    && release.publishedAt >= build.periodStart && release.publishedAt < build.periodEnd) {
+    stories.push({ kind: "game_release", driverIds: [], facts: { version: release.version } });
   }
 
   // Firsts into a city.
@@ -691,6 +705,6 @@ export async function finishWeekRun(ctx: MutationCtx, now: number) {
 }
 
 export const finishWeek = internalMutation({
-  args: { now: v.number() },
-  handler: (ctx, args) => finishWeekRun(ctx, args.now),
+  args: { now: v.number(), release: v.optional(v.object({ version: v.string(), publishedAt: v.number() })) },
+  handler: (ctx, args) => finishWeekRun(ctx, args.now, args.release),
 });

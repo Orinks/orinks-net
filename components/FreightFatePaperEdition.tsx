@@ -72,10 +72,15 @@ function PaperSection({ section }: { section: PaperViewSection }) {
         {section.stories.map((story) => (
           <div key={story.id}>
             <h3><PaperSegments segments={story.headline} /></h3>
-            <p>
-              <PaperSegments segments={story.body} />
-              {story.link ? <> <a href={story.link.href}>{story.link.label}</a></> : null}
-            </p>
+            {story.body.length > 0 || story.link ? (
+              <p>
+                <PaperSegments segments={story.body} />
+                {story.link ? <>{story.body.length > 0 ? " " : null}<a href={story.link.href}>{story.link.label}</a></> : null}
+              </p>
+            ) : null}
+            {story.list ? (
+              <ul>{story.list.map((driver) => <li key={driver.driverId}><PaperSegments segments={[driver]} /></li>)}</ul>
+            ) : null}
           </div>
         ))}
       </div>

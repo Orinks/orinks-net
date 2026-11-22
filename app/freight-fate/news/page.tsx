@@ -1,8 +1,9 @@
 import { PaperEditionPage, paperMetadata } from "./paper-route";
 
-// The edition and its list come through five-minute caches
-// (lib/freight-fate-online.ts), and the page is rebuilt on the same beat.
-export const revalidate = 300;
+// Rendered per request over the paper's five-minute cached reads
+// (lib/freight-fate-online.ts). A page cache on top would keep a driver who
+// turned sharing off in print for up to twice that.
+export const dynamic = "force-dynamic";
 
 export function generateMetadata() {
   return paperMetadata();
