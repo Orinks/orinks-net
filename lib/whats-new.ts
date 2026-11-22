@@ -9,6 +9,12 @@ export type WhatsNewEntry = {
   title: string;
   body: string[];
   link?: { href: string; label: string };
+  /**
+   * A draft is checked like any entry and shown nowhere: not on the page,
+   * not in the feed. An entry for a feature behind a switch stays a draft
+   * until the switch is on; at launch, remove `draft` and set the date.
+   */
+  draft?: boolean;
 };
 
 function validateEntry(entry: WhatsNewEntry, seen: Set<string>) {
@@ -26,6 +32,9 @@ function validateEntry(entry: WhatsNewEntry, seen: Set<string>) {
   }
   if (!Array.isArray(entry.body) || entry.body.length === 0 || entry.body.some((p) => !p.trim())) {
     throw new Error(`whats-new.json: entry "${entry.id}" needs non-empty body paragraphs`);
+  }
+  if (entry.draft !== undefined && typeof entry.draft !== "boolean") {
+    throw new Error(`whats-new.json: entry "${entry.id}" has a draft flag that is not true or false`);
   }
   if (entry.link) {
     if (!entry.link.href?.trim() || !entry.link.label?.trim()) {
@@ -48,13 +57,17 @@ function validateEntry(entry: WhatsNewEntry, seen: Set<string>) {
  * step too, with a readable message.
  */
 export function getWhatsNewEntries(): WhatsNewEntry[] {
-  const entries = (whatsNewData as { entries: WhatsNewEntry[] }).entries;
+  return publishedWhatsNewEntries((whatsNewData as { entries: WhatsNewEntry[] }).entries);
+}
+
+/** Every entry validated, drafts included; the drafts are then left out. */
+export function publishedWhatsNewEntries(entries: WhatsNewEntry[]): WhatsNewEntry[] {
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new Error("whats-new.json: entries must be a non-empty array");
   }
   const seen = new Set<string>();
   for (const entry of entries) validateEntry(entry, seen);
-  return newestFirst(entries);
+  return newestFirst(entries.filter((entry) => entry.draft !== true));
 }
 
 function newestFirst(entries: WhatsNewEntry[]) {

@@ -42,6 +42,9 @@ When you ship a feature, add an entry to `data/whats-new.json`:
 - `body`: array of non-empty plain-prose paragraphs
 - optional `link`: `href` + `label`; the label must be descriptive and at
   least 15 characters ("Read more" and friends fail the build)
+- optional `draft: true`: an entry for a feature behind a switch is a draft
+  until the switch is on. A draft is validated but left off the page and the
+  feed; at launch, remove `draft` and set `date` to that day.
 
 The entry format is validated twice — by `lib/whats-new.test.ts` in the
 Test step and by `lib/whats-new.ts` during `next build` — and it feeds

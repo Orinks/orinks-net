@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { formatAnnouncementDate, getWhatsNewEntries, whatsNewFeedXml } from "./whats-new";
+import whatsNewData from "../data/whats-new.json";
+import {
+  formatAnnouncementDate,
+  getWhatsNewEntries,
+  publishedWhatsNewEntries,
+  whatsNewFeedXml,
+  type WhatsNewEntry,
+} from "./whats-new";
 
 // The deploy gate for curated announcements: a malformed entry fails this
 // suite (and the build) on every dev and main push, before any deploy.
@@ -42,5 +49,24 @@ describe("whats-new announcements", () => {
         expect(entry.link.label.trim().length).toBeGreaterThanOrEqual(15);
       }
     }
+  });
+
+  test("a draft is validated but left off the page and the feed", () => {
+    const entry = (id: string, extra: Partial<WhatsNewEntry> = {}): WhatsNewEntry => ({
+      id, date: "2026-11-22", project: "Site", title: "A title", body: ["A paragraph."], ...extra,
+    });
+    const shown = publishedWhatsNewEntries([entry("2026-11-22-live"), entry("2026-11-22-held", { draft: true })]);
+    expect(shown.map((item) => item.id)).toEqual(["2026-11-22-live"]);
+    expect(() => publishedWhatsNewEntries([entry("2026-11-22-live"), entry("2026-11-22-held", { draft: true, body: [" "] })]))
+      .toThrow(/non-empty body/);
+    expect(() => publishedWhatsNewEntries([entry("2026-11-22-held", { draft: "yes" as unknown as boolean })]))
+      .toThrow(/draft flag/);
+  });
+
+  test("the Mile Marker entry is held until the paper launches", () => {
+    const all = (whatsNewData as { entries: WhatsNewEntry[] }).entries;
+    expect(all.find((item) => item.id === "2026-11-22-the-mile-marker")?.draft).toBe(true);
+    expect(getWhatsNewEntries().some((item) => item.id === "2026-11-22-the-mile-marker")).toBe(false);
+    expect(whatsNewFeedXml("Test Site", "https://example.com")).not.toContain("the-mile-marker");
   });
 });
