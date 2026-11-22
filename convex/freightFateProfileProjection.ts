@@ -1,6 +1,11 @@
 import type { Doc } from "./_generated/dataModel";
 import { splitFreightFateSaveSlotName } from "../lib/freight-fate-save-name";
-import invariants from "../data/freight-fate-profile-invariants.json";
+import {
+  ALL_LINES,
+  type FreightFateInvariants,
+  invariantsForLine,
+  STABLE_INVARIANTS as invariants,
+} from "../lib/freight-fate-invariants";
 import {
   FREIGHT_FATE_ACHIEVEMENT_LABELS,
   freightFateAchievementDetail,
@@ -45,8 +50,8 @@ export function placesByState(cities: string[], cityLabels: Record<string, strin
     .map(([state, names]) => ({ state, cities: names.sort((a, b) => a.localeCompare(b, "en-US")) }));
 }
 
-export function levelForXp(xp: number) {
-  const thresholds = invariants.levelXp as number[];
+export function levelForXp(xp: number, line: FreightFateInvariants = invariants) {
+  const thresholds = line.levelXp as number[];
   let level = 1;
   for (let index = 1; index < thresholds.length; index += 1) {
     if (xp >= thresholds[index]) level = index + 1;
@@ -62,11 +67,16 @@ function businessStatusOf(value: unknown): BusinessStatus | undefined {
 
 // The game's display_rank_for_level: a driver still on carrier wages takes
 // the company ladder once they declined the buy-in or reached the fork.
-function careerTitle(level: number, businessStatus: BusinessStatus, declined: boolean) {
+function careerTitle(
+  level: number,
+  businessStatus: BusinessStatus,
+  declined: boolean,
+  line: FreightFateInvariants,
+) {
   const titles = businessStatus === "company_driver"
-    && (declined || level >= invariants.companyRankForkLevel)
-    ? invariants.companyCareerTitles
-    : FREIGHT_FATE_CAREER_TITLES;
+    && (declined || level >= line.companyRankForkLevel)
+    ? line.companyCareerTitles
+    : line === invariants ? FREIGHT_FATE_CAREER_TITLES : line.careerTitles;
   return titles[Math.min(level, titles.length) - 1];
 }
 
@@ -112,7 +122,7 @@ function netWorthProjection(payload: JsonObject, businessStatus?: BusinessStatus
   if (!businessStatus || !Array.isArray(payload.owned_trucks)
     || !Array.isArray(payload.owned_trailers)) return {};
 
-  const truckPrices = invariants.truckPrices as Record<string, number>;
+  const truckPrices = ALL_LINES.truckPrices;
   const activeTruck = payload.truck as string;
   const assignedTruck = businessStatus === "company_driver" ? activeTruck : undefined;
   const ownedTrucks = (payload.owned_trucks as string[])
@@ -130,7 +140,7 @@ function netWorthProjection(payload: JsonObject, businessStatus?: BusinessStatus
   // upgrades are not the player's asset; owned active equipment gets every
   // paid tier included in its catalog value.
   if (ownedTrucks.includes(activeTruck)) {
-    const upgradePrices = invariants.upgradePrices as Record<string, number[]>;
+    const upgradePrices = ALL_LINES.upgradePrices;
     for (const [key, tier] of Object.entries(payload.upgrades as JsonObject)) {
       equipmentValue += (upgradePrices[key] ?? []).slice(0, tier as number)
         .reduce((total, price) => total + price, 0);
@@ -153,7 +163,10 @@ export function buildVerifiedProfileSnapshot(args: {
 }) {
   const career = args.payload.career as JsonObject;
   const stats = args.payload.achievement_stats as JsonObject;
-  const level = levelForXp(career.xp as number);
+  // The career's own line decides its level table, title ladder and the
+  // credentials each level brings; see lib/freight-fate-invariants.ts.
+  const line = invariantsForLine(args.payload.created_line);
+  const level = levelForXp(career.xp as number, line);
   const businessStatus = businessStatusOf(args.payload.business_status);
   const employmentStatus = businessStatus
     ? EMPLOYMENT_LABELS[businessStatus]
@@ -177,17 +190,17 @@ export function buildVerifiedProfileSnapshot(args: {
   const cities = Array.isArray(stats.cities_delivered)
     ? stats.cities_delivered as string[]
     : undefined;
-  const cityLabels = invariants.cityLabels as Record<string, string>;
+  const cityLabels = ALL_LINES.cityLabels;
   const knownCities = cities?.filter((city) => cityLabels[city] !== undefined);
   const states = knownCities
     ? new Set(knownCities.map((city) => cityLabels[city].split(", ").at(-1)))
     : undefined;
   const visitedPlaces = knownCities ? placesByState(knownCities, cityLabels) : undefined;
-  const fleetTiers = invariants.fleetTiers as Array<{ minLevel: number; label: string }>;
+  const fleetTiers = line.fleetTiers as Array<{ minLevel: number; label: string }>;
   const fleetTier = businessStatus === "company_driver"
     ? fleetTiers.filter((tier) => level >= tier.minLevel).at(-1)?.label
     : undefined;
-  const endorsementDefs = invariants.endorsements as Record<
+  const endorsementDefs = line.endorsements as Record<
     string,
     { level?: number; label: string }
   >;
@@ -203,7 +216,7 @@ export function buildVerifiedProfileSnapshot(args: {
       return aLevel === bLevel ? a.label.localeCompare(b.label) : aLevel - bLevel;
     })
     .map(([, def]) => def.label);
-  const truckLabels = invariants.truckLabels as Record<string, string>;
+  const truckLabels = ALL_LINES.truckLabels;
   const safety = safetyRecord(args.payload);
   // A second major offense disqualifies the CDL for life (49 CFR 383.51),
   // and the game keeps the career readable rather than deleting it. The
@@ -221,7 +234,7 @@ export function buildVerifiedProfileSnapshot(args: {
     ...(carrierName ? { carrierName } : {}),
     level,
     careerTitle: businessStatus
-      ? careerTitle(level, businessStatus, args.payload.owner_operator_declined === true)
+      ? careerTitle(level, businessStatus, args.payload.owner_operator_declined === true, line)
       : `Level ${level} driver`,
     lastSavedCity: cityLabels[args.payload.current_city as string],
     deliveries,

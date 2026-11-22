@@ -78,6 +78,7 @@ describe("ReleaseDownloads", () => {
           asset("FreightFate-v1.9.3-macos-arm64.zip", 5),
           asset("FreightFate-v1.9.3-macos.zip", 7),
           asset("FreightFate-v1.9.3-windows-portable.zip", 10),
+          asset("FreightFate-v1.9.3-translation-kit.zip", 0),
         ],
         body: "",
         body_html: null,
@@ -97,6 +98,8 @@ describe("ReleaseDownloads", () => {
     expect(markup).toContain("FreightFate-v1.9.3-macos-arm64.zip");
     expect(markup).not.toContain("FreightFate-v1.9.3-macos.zip");
     expect(markup.match(/macOS ZIP archive/g)).toHaveLength(1);
+    expect(markup).not.toContain("translation-kit");
+    expect(markup).not.toContain(">ZIP archive<");
     expect(markup).toContain("Total downloads: 22");
   });
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import invariants from "../data/freight-fate-profile-invariants.json";
+import careerTwo from "../data/freight-fate-profile-invariants-career-2.json";
 import {
   FREIGHT_FATE_ACHIEVEMENT_CATEGORIES,
   FREIGHT_FATE_ACHIEVEMENT_DETAILS,
@@ -37,9 +38,19 @@ describe("Freight Fate public profile catalogs", () => {
     }
 
     expect(FREIGHT_FATE_CAREER_TITLES).toBe(invariants.careerTitles);
-    expect(FREIGHT_FATE_CARRIER_LABELS).toBe(invariants.carrierLabels);
-    expect(FREIGHT_FATE_TRAILER_CATALOG).toBe(invariants.trailerCatalog);
-    expect(FREIGHT_FATE_ACHIEVEMENT_LABELS).toBe(invariants.achievementLabels);
+    // Labels cover both career lines: every stable key keeps its stable name,
+    // and a Career 2.0 key a 2.0 save can hold gets its name too.
+    expect(FREIGHT_FATE_CARRIER_LABELS).toMatchObject(invariants.carrierLabels);
+    expect(FREIGHT_FATE_TRAILER_CATALOG).toMatchObject(invariants.trailerCatalog);
+    expect(FREIGHT_FATE_ACHIEVEMENT_LABELS).toMatchObject(invariants.achievementLabels);
+    expect(FREIGHT_FATE_CARRIER_LABELS).toMatchObject(careerTwo.carrierLabels);
+    expect(FREIGHT_FATE_TRAILER_CATALOG).toMatchObject(careerTwo.trailerCatalog);
+  });
+
+  test("names the Career 2.0 regional and local carriers", () => {
+    expect(FREIGHT_FATE_CARRIER_LABELS.chatanika_freight).toBe("Chatanika Freight Lines");
+    expect(FREIGHT_FATE_CARRIER_LABELS.knik_arm_cartage).toBe("Knik Arm Cartage");
+    expect(FREIGHT_FATE_TRAILER_PRICES.livestock).toBe(careerTwo.trailerCatalog.livestock.purchasePrice);
   });
 
   test("does not invent values for unknown catalog keys", () => {

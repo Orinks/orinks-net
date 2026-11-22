@@ -426,12 +426,15 @@ export function selectedDownloadAssets(assets: GitHubAsset[]) {
 // Freight Fate releases carry the Apple Silicon zip twice: once as
 // `-macos-arm64.zip` and once, byte for byte, as `-macos.zip`, the name its
 // in-game updaters look for. Two macOS links for one app read as a choice the
-// player has to make, so the page lists only the arm64 one.
+// player has to make, so the page lists only the arm64 one. The release's
+// translation kit is for translators, not a copy of the game, so it is left
+// out too.
 export function listedDownloadAssets(assets: GitHubAsset[]) {
   const names = new Set(assets.map((asset) => asset.name));
 
   return assets.filter(
     (asset) =>
+      !/-translation-kit\.zip$/i.test(asset.name) &&
       !(/-macos\.zip$/i.test(asset.name) && names.has(asset.name.replace(/-macos\.zip$/i, "-macos-arm64.zip"))),
   );
 }
