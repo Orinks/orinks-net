@@ -22,6 +22,9 @@ export function parseIssue(raw: string) {
 
 export async function paperMetadata(issue?: number): Promise<Metadata> {
   const read = await readPaperEdition(issue);
+  // No edition (the paper is off, or no such issue): the page is a 404 and
+  // its head names no paper, so nothing gives the paper away before launch.
+  if (read.ok && !read.value) return {};
   const edition = read.ok ? read.value : null;
   return {
     title: edition ? `${PAPER_NAME}, issue ${edition.issue}` : PAPER_NAME,

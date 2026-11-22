@@ -30,7 +30,9 @@ function rangeTitle(range: { newest: number; oldest: number }) {
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const page = await archivePage(searchParams);
-  return { title: page?.range ? rangeTitle(page.range) : PAPER_NAME, alternates: PAPER_FEED_ALTERNATE };
+  // A 404 names no paper (see ../paper-route.tsx).
+  if (!page?.range) return {};
+  return { title: rangeTitle(page.range), alternates: PAPER_FEED_ALTERNATE };
 }
 
 export default async function FreightFateNewsArchivePage({ searchParams }: Props) {
