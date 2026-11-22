@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 
 import FreightFatePrivacyPage from "./page";
+import { ProfileSharing } from "./profile-sharing";
 
 test("explains profile selection, private cloud retention, and operational privacy independently", () => {
   const parsed = document.implementation.createHTMLDocument();
@@ -16,7 +17,31 @@ test("explains profile selection, private cloud retention, and operational priva
   expect(copy).toContain("Cloud Backup remains private");
   expect(copy).toContain("up to ten careers");
   expect(copy).toContain("never deletes a career stored on your computer");
-  // The newspaper (decided 2026-11-22): what it may print, and that sharing off takes it back.
+  // Until the paper is announced the page says nothing about it.
+  expect(copy.toLowerCase()).not.toContain("newspaper");
+  for (const privateDetail of [
+    "current cash", "available credit", "precise location", "exact cargo",
+    "customer", "cargo value", "destination", "fatigue", "exact hours-of-service state",
+    "dispatcher standing",
+  ]) expect(copy.toLowerCase()).toContain(privateDetail);
+  expect(copy.toLowerCase()).not.toMatch(/this is (?:a )?(?:fiction|game)|fictional/);
+});
+
+function text(announced: boolean) {
+  const parsed = document.implementation.createHTMLDocument();
+  parsed.body.innerHTML = renderToStaticMarkup(<ProfileSharing announced={announced} />);
+  return parsed.body.textContent ?? "";
+}
+
+test("before the paper is announced, Profile sharing keeps the wording from before it", () => {
+  const copy = text(false);
+  expect(copy).toContain("Turning Profile sharing off removes them from public pages.");
+  expect(copy).toContain("precise location, exact cargo, customer, cargo value, destination, fatigue");
+  expect(copy.toLowerCase()).not.toContain("newspaper");
+});
+
+test("once announced, it says what the paper may print and that sharing off takes it back", () => {
+  const copy = text(true);
   expect(copy).toContain("including the cargo type and the cities of deliveries you finished");
   expect(copy).toContain("the newspaper's past issues included");
   for (const privateDetail of [
@@ -25,5 +50,4 @@ test("explains profile selection, private cloud retention, and operational priva
     "customer", "cargo value", "fatigue", "exact hours-of-service state",
     "dispatcher standing",
   ]) expect(copy.toLowerCase()).toContain(privateDetail);
-  expect(copy.toLowerCase()).not.toMatch(/this is (?:a )?(?:fiction|game)|fictional/);
 });

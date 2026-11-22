@@ -20,8 +20,7 @@ export function PaperPreviewClient({ chrome, siteName }: { chrome: PaperChrome; 
     anyApi.freightFatePaper.getEdition,
     isLoading || !isAuthenticated ? "skip" : {},
   ) as PaperEditionData | null | undefined;
-  const heading = `${chrome.masthead} preview`;
-  const title = edition ? `${heading}, issue ${edition.issue}` : heading;
+  const title = edition ? `${chrome.masthead} preview, issue ${edition.issue}` : "Edition preview";
 
   useEffect(() => {
     document.title = `${title} - ${siteName}`;
@@ -34,7 +33,7 @@ export function PaperPreviewClient({ chrome, siteName }: { chrome: PaperChrome; 
   return (
     <>
       <header className="border-b border-line pb-8">
-        <h1 className="max-w-4xl text-4xl font-bold text-ink sm:text-5xl" tabIndex={-1}>{heading}</h1>
+        <h1 className="max-w-4xl text-4xl font-bold text-ink sm:text-5xl" tabIndex={-1}>{title}</h1>
       </header>
       {finished ? <p className="py-8 text-lg">No edition to preview.</p> : null}
     </>
