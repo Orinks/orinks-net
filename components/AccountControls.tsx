@@ -3,7 +3,7 @@
 import { Show, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ComponentProps } from "react";
-import { signInHref, signUpHref } from "@/lib/account-hrefs";
+import { forgotPasswordHref, signInHref, signUpHref } from "@/lib/account-hrefs";
 import { useReturnPath } from "@/lib/use-return-path";
 import { userDisplayName } from "@/lib/user-name";
 
@@ -53,7 +53,7 @@ export function AccountControls({
         <Link className={signUpClassName ?? defaultSignUp} href={signUpHref(returnPath)}>
           Create account
         </Link>
-        <Link className={forgotClassName ?? defaultForgot} href={signInHref(returnPath)}>
+        <Link className={forgotClassName ?? defaultForgot} href={forgotPasswordHref(returnPath)}>
           Forgot password?
         </Link>
       </Show>

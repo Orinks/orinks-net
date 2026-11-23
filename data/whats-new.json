@@ -2,12 +2,25 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-23-forgot-password",
+      "date": "2026-11-23",
+      "project": "Site",
+      "title": "Reset a password from Forgot password?",
+      "body": [
+        "Forgot password? in the Account menu, and on the sign-in page, now opens a page where you can reset your password. Enter your email, then the code we send you, then a new password."
+      ],
+      "link": {
+        "href": "/forgot-password",
+        "label": "Open the forgot password page"
+      }
+    },
+    {
       "id": "2026-11-22-sign-in-pages",
       "date": "2026-11-22",
       "project": "Site",
       "title": "Sign in, create an account, or reset a password on their own pages",
       "body": [
-        "Sign in and Create account, in the Account menu in the header, now open as pages instead of dialogs. To reset a password, go to Sign in, enter your email and continue, then choose Forgot password?"
+        "Sign in and Create account, in the Account menu in the header, now open as pages instead of dialogs."
       ],
       "link": {
         "href": "/sign-in",

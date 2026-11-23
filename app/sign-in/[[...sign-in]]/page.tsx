@@ -2,6 +2,7 @@ import { SignIn } from "@clerk/nextjs";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/account-hrefs";
+import { SignInForgotPasswordLink } from "../forgot-password-link";
 
 export const metadata = {
   title: "Sign in",
@@ -16,6 +17,7 @@ export default function SignInPage() {
     <>
       <PageHeader title="Sign in" />
       <section className="py-8">
+        <SignInForgotPasswordLink />
         <Suspense fallback={loading}>
           <SignIn fallback={loading} path={SIGN_IN_PATH} routing="path" signUpUrl={SIGN_UP_PATH} />
         </Suspense>

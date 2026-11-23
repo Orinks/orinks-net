@@ -19,6 +19,7 @@ export const config = {
   matcher: [
     "/sign-in/:path*",
     "/sign-up/:path*",
+    "/forgot-password/:path*",
     "/activate/:path*",
     "/games/connect/:path*",
     "/games/testers/:path*",
