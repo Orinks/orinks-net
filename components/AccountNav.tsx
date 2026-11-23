@@ -1,7 +1,10 @@
 "use client";
 
-import { Show, SignInButton, SignOutButton, SignUpButton, useClerk, useUser } from "@clerk/nextjs";
+import { Show, SignOutButton, useClerk, useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { signInHref, signUpHref } from "@/lib/account-hrefs";
 import { userDisplayName } from "@/lib/user-name";
 
 // Matches the Projects/Games/Game Mods disclosures in Header.tsx.
@@ -12,24 +15,25 @@ const itemClass =
 
 /**
  * "Account" disclosure for the primary nav — the header's account entry
- * point. Signed out it offers sign in / create account (Clerk modals);
- * signed in the summary carries the username and the panel offers manage
- * account / sign out. Native details/summary on purpose: it matches the
- * other nav disclosures and announces honest expanded/collapsed state
- * (accessibility-lead reviewed; no ARIA menu roles).
+ * point. Signed out it offers sign in, create account, and forgot password
+ * (links to the Clerk pages); signed in the summary carries the username and
+ * the panel offers manage account / sign out. Native details/summary on
+ * purpose: it matches the other nav disclosures and announces honest
+ * expanded/collapsed state (accessibility-lead reviewed; no ARIA menu roles).
  */
 export function AccountNav() {
   const { user, isLoaded, isSignedIn } = useUser();
   const clerk = useClerk();
+  const pathname = usePathname();
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const summaryRef = useRef<HTMLElement>(null);
 
-  // Both auth transitions unmount the panel item that held focus (sign-in:
-  // the modal trigger; sign-out: the "Sign out" button), which would drop
-  // focus to <body> and make a screen reader restart at the top of the
-  // page. Close the disclosure and move focus to the persistent summary —
-  // whose label just changed, giving implicit confirmation of the new
-  // state. The activeElement guard keeps cross-tab auth syncs from
+  // Auth transitions can unmount the panel item that held focus (sign-out:
+  // the "Sign out" button; a cross-tab sign-in: the sign-in links), which
+  // would drop focus to <body> and make a screen reader restart at the top
+  // of the page. Close the disclosure and move focus to the persistent
+  // summary — whose label just changed, giving implicit confirmation of the
+  // new state. The activeElement guard keeps cross-tab auth syncs from
   // yanking focus while the user is reading elsewhere; the undefined init
   // step keeps the initial cookie-restored sign-in from stealing focus on
   // page load.
@@ -80,16 +84,15 @@ export function AccountNav() {
         ) : (
           <>
             <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button aria-haspopup="dialog" className={itemClass} type="button">
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button aria-haspopup="dialog" className={itemClass} type="button">
-                  Create account
-                </button>
-              </SignUpButton>
+              <Link className={itemClass} href={signInHref(pathname)}>
+                Sign in
+              </Link>
+              <Link className={itemClass} href={signUpHref(pathname)}>
+                Create account
+              </Link>
+              <Link className={itemClass} href={signInHref(pathname)}>
+                Forgot password?
+              </Link>
             </Show>
             <Show when="signed-in">
               <button aria-haspopup="dialog" className={itemClass} onClick={() => clerk.openUserProfile()} type="button">

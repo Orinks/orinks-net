@@ -17,6 +17,8 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
+    "/sign-in/:path*",
+    "/sign-up/:path*",
     "/activate/:path*",
     "/games/connect/:path*",
     "/games/testers/:path*",

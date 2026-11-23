@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/account-hrefs";
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { Footer } from "@/components/Footer";
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider signInUrl={SIGN_IN_PATH} signUpUrl={SIGN_UP_PATH}>
       <html lang="en">
         <body className="font-sans">
           <Suspense fallback={null}>

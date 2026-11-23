@@ -117,6 +117,7 @@ export function TitleScreen(props: TitleScreenProps) {
         </Show>
         <div className="mt-3">
           <AccountControls
+            forgotClassName={secondaryButton}
             nameClassName="text-sm font-semibold text-amber-100"
             signInClassName={primaryButton}
             signUpClassName={secondaryButton}
