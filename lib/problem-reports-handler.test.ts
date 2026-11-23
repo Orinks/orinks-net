@@ -7,6 +7,7 @@ const report = {
   version: "1.9.6",
   os: "windows x86_64",
   description: "The dock menu is empty.",
+  reply_to: "driver@example.com",
   crashed: false,
   attachments: [{ name: "session.log", text: "12:00 INFO started\n" }],
 };
@@ -75,11 +76,13 @@ describe("POST /api/problem-reports", () => {
     expect(mail.text).toContain("App: Freight Fate 1.9.6");
   });
 
-  it("takes a plain JSON body too, and leaves out what the report does not have", async () => {
+  it("takes a plain JSON body too, and refuses a report with no reply address", async () => {
     const d = deps();
     const response = await createHandler(d)(post(report));
     expect(response.status).toBe(202);
-    expect(d.sent[0]).not.toHaveProperty("reply_to");
+    expect(d.sent[0]).toMatchObject({ reply_to: "driver@example.com" });
+    const { reply_to: _dropped, ...noAddress } = report;
+    expect((await createHandler(deps())(post(noAddress))).status).toBe(400);
   });
 
   it("refuses a malformed report and a game it does not take, without emailing", async () => {
@@ -245,7 +248,7 @@ describe("POST /api/problem-reports/<code>", () => {
     expect((d.sent[0] as { text: string }).text).toContain("What happened:\nIt closed.");
     expect((d.sent[0] as { attachments: { filename: string }[] }).attachments.map((a) => a.filename)).toEqual(["game.log"]);
     // The link is spent.
-    const again = await send(submit({ description: "It closed.", omit: [] }), code);
+    const again = await send(submit({ description: "It closed.", reply_to: "me@example.com", omit: [] }), code);
     expect(again.status).toBe(404);
     expect(d.sent).toHaveLength(1);
   });
@@ -253,17 +256,21 @@ describe("POST /api/problem-reports/<code>", () => {
   it("refuses a code the site did not give out, and one with no draft, as 404", async () => {
     const d = withDraft();
     const send = createSendHandler(d);
-    expect((await send(submit({ description: "x", omit: [] }), "../contact")).status).toBe(404);
-    expect((await send(submit({ description: "x", omit: [] }), "ef".repeat(20))).status).toBe(404);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), "../contact")).status).toBe(404);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), "ef".repeat(20))).status).toBe(404);
     expect(d.sent).toHaveLength(0);
   });
 
   it("names the field of a refusal and leaves the draft unspent", async () => {
-    const d = withDraft({ takesMail: async () => false });
+    const d = withDraft({ takesMail: async (domain) => domain !== "nowhere.invalid" });
     const send = createSendHandler(d);
     expect(await (await send(submit({ description: " ", omit: [] }), code)).json()).toEqual({
       error: "Say what happened.",
       field: "description",
+    });
+    expect(await (await send(submit({ description: "x", reply_to: "", omit: [] }), code)).json()).toEqual({
+      error: "Enter your email address so a reply can reach you.",
+      field: "reply_to",
     });
     expect(await (await send(submit({ description: "x", reply_to: "nobody", omit: [] }), code)).json()).toMatchObject({
       field: "reply_to",
@@ -273,15 +280,15 @@ describe("POST /api/problem-reports/<code>", () => {
     expect(await noMail.json()).toMatchObject({ field: "reply_to" });
     expect((await send(new Request(`https://orinks.net/api/problem-reports/${code}`, { method: "POST", body: "{" }), code)).status).toBe(400);
     // Every refusal above left the draft for the next try.
-    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(202);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(202);
   });
 
   it("answers 503 when mail is not set up, before spending the draft", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
     const d = withDraft();
-    expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(503);
+    expect((await createSendHandler(d)(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(503);
     vi.stubEnv("RESEND_API_KEY", "re_test");
-    expect((await createSendHandler(d)(submit({ description: "x", omit: [] }), code)).status).toBe(202);
+    expect((await createSendHandler(d)(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(202);
   });
 
   it("keeps the draft when the email does not go out, so the player can try again", async () => {
@@ -293,9 +300,9 @@ describe("POST /api/problem-reports/<code>", () => {
       },
     });
     const send = createSendHandler(d);
-    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(502);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(502);
     fail = false;
-    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(202);
-    expect((await send(submit({ description: "x", omit: [] }), code)).status).toBe(404);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(202);
+    expect((await send(submit({ description: "x", reply_to: "me@example.com", omit: [] }), code)).status).toBe(404);
   });
 });

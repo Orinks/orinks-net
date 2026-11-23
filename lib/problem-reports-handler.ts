@@ -347,7 +347,7 @@ export function createSendHandler(deps: Deps) {
       const domain = parsed.submission.reply_to.slice(parsed.submission.reply_to.lastIndexOf("@") + 1);
       if ((await deps.takesMail(domain)) === false) {
         return Response.json(
-          { error: "Email cannot be delivered to that address. Check it, or leave it blank.", field: "reply_to" },
+          { error: "Email cannot be delivered to that address. Check it.", field: "reply_to" },
           { status: 422 },
         );
       }

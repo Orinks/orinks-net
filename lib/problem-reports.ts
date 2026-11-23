@@ -70,6 +70,19 @@ export function looksLikeAddress(text: string): boolean {
   return domain.includes(".") && !/\s/.test(text);
 }
 
+const REPLY_TO_MISSING = "Enter your email address so a reply can reach you.";
+const REPLY_TO_INVALID = "Enter an email address like name@example.com.";
+
+/** The error for a reply address, or null when it is fine. */
+export function describeReplyTo(email: string): string | null {
+  const value = email.trim();
+  if (value === "") return REPLY_TO_MISSING;
+  if ([...value].length > 254 || CONTROL.test(value) || !looksLikeAddress(value)) {
+    return REPLY_TO_INVALID;
+  }
+  return null;
+}
+
 /** A report held for the web form: what the game sent ahead, without a description. */
 export type StoredDraft = {
   app: string;
@@ -82,7 +95,7 @@ export type StoredDraft = {
 };
 
 /** What the report page sends: the description, a reply address, and logs to leave out. */
-export type FormSubmission = { description: string; reply_to?: string; omit: string[] };
+export type FormSubmission = { description: string; reply_to: string; omit: string[] };
 
 export type ParsedForm =
   | { ok: true; submission: FormSubmission }
@@ -120,7 +133,16 @@ export function parseReport(body: unknown, options: ParseOptions = {}): Parsed {
     return { ok: false, status: 413, error: "description is too long" };
   }
   let reply_to: string | undefined;
-  if (source.reply_to !== undefined && source.reply_to !== null) {
+  // A report opened for the web form has no address yet; a finished report
+  // needs one, or a reply goes to the sending address and never arrives.
+  if (options.emptyDescription) {
+    if (source.reply_to !== undefined && source.reply_to !== null) {
+      const value = line(source, "reply_to", 254);
+      if (typeof value !== "string") return { ok: false, status: 400, error: value.error };
+      if (!looksLikeAddress(value)) return { ok: false, status: 400, error: "reply_to is not an email address" };
+      reply_to = value;
+    }
+  } else {
     const value = line(source, "reply_to", 254);
     if (typeof value !== "string") return { ok: false, status: 400, error: value.error };
     if (!looksLikeAddress(value)) return { ok: false, status: 400, error: "reply_to is not an email address" };
@@ -190,23 +212,16 @@ export function parseFormSubmission(body: unknown): ParsedForm {
       field: "description",
     };
   }
-  let reply_to: string | undefined;
-  if (typeof source.reply_to === "string" && source.reply_to.trim() !== "") {
-    const value = source.reply_to.trim();
-    if ([...value].length > 254 || CONTROL.test(value) || !looksLikeAddress(value)) {
-      return {
-        ok: false,
-        status: 400,
-        error: "Enter an email address like name@example.com, or leave it blank.",
-        field: "reply_to",
-      };
-    }
-    reply_to = value;
+  const address = typeof source.reply_to === "string" ? source.reply_to : "";
+  const replyProblem = describeReplyTo(address);
+  if (replyProblem) {
+    return { ok: false, status: 400, error: replyProblem, field: "reply_to" };
   }
+  const reply_to = address.trim();
   const omit = Array.isArray(source.omit)
     ? source.omit.filter((name): name is string => typeof name === "string")
     : [];
-  return { ok: true, submission: { description, ...(reply_to ? { reply_to } : {}), omit } };
+  return { ok: true, submission: { description, reply_to, omit } };
 }
 
 /** The report the page's submission makes with the draft the game sent ahead. */
@@ -217,7 +232,7 @@ export function reportFromDraft(draft: StoredDraft, submission: FormSubmission):
     ...(draft.commit ? { commit: draft.commit } : {}),
     os: draft.os,
     description: submission.description,
-    ...(submission.reply_to ? { reply_to: submission.reply_to } : {}),
+    reply_to: submission.reply_to,
     crashed: draft.crashed,
     ...(draft.details && draft.details.length > 0 ? { details: draft.details } : {}),
     attachments: draft.logs.filter((log) => !submission.omit.includes(log.name)),

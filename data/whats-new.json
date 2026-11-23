@@ -2,6 +2,15 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-23-problem-report-email",
+      "date": "2026-11-23",
+      "project": "Site",
+      "title": "Problem reports need an email address",
+      "body": [
+        "When you report a problem from a game on the orinks.net form, you now need to enter an email address so a reply can reach you."
+      ]
+    },
+    {
       "id": "2026-11-23-forgot-password",
       "date": "2026-11-23",
       "project": "Site",

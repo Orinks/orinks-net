@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { MAX_DESCRIPTION_CHARS } from "@/lib/problem-reports";
+import { describeReplyTo, MAX_DESCRIPTION_CHARS } from "@/lib/problem-reports";
 
 // The web form a game opens for a problem report. The game already sent its
 // logs; they are listed here with a box each, so a player can leave one out.
@@ -72,10 +72,13 @@ export function ProblemReportForm({ code, version, crashed, details, logs }: Pro
     setFormError("");
     setLinkExpired(false);
 
+    const found: Partial<Record<Field, string>> = {};
     const problem = describeProblem(description);
-    const found: Partial<Record<Field, string>> = problem ? { description: problem } : {};
+    if (problem) found.description = problem;
+    const replyProblem = describeReplyTo(replyTo);
+    if (replyProblem) found.reply_to = replyProblem;
     setErrors(found);
-    if (problem) {
+    if (Object.keys(found).length > 0) {
       setSummaryFocus((n) => n + 1);
       return;
     }
@@ -123,7 +126,7 @@ export function ProblemReportForm({ code, version, crashed, details, logs }: Pro
       >
         <h2 className="text-2xl font-bold text-ink">Your report was sent</h2>
         <p className="mt-3 text-slate-700">
-          {address ? `Any reply will go to ${address}. ` : ""}You can close this tab.
+          Any reply will go to {address}. You can close this tab.
         </p>
       </div>
     );
@@ -242,7 +245,8 @@ export function ProblemReportForm({ code, version, crashed, details, logs }: Pro
             Your email address
           </label>
           <p className="mt-1 text-sm text-slate-700" id={hintId("reply_to")}>
-            Optional. Only used to reply to you.
+            <span aria-hidden="true">Required. </span>
+            Only used to reply to you.
           </p>
           <input
             aria-describedby={[errors.reply_to ? errorId("reply_to") : null, hintId("reply_to")]
@@ -257,6 +261,7 @@ export function ProblemReportForm({ code, version, crashed, details, logs }: Pro
               setReplyTo(event.target.value);
               if (errors.reply_to) setErrors((e) => ({ ...e, reply_to: undefined }));
             }}
+            required
             type="email"
             value={replyTo}
           />

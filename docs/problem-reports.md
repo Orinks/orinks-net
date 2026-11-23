@@ -18,12 +18,13 @@ What the route does, in order:
    when `GAMES_SERVER_SECRET` is set on both the Worker and the Convex
    deployment, so every instance shares them; without it, each Worker
    isolate counts on its own.
-5. Looks up the reply address's domain in DNS and refuses one with no mail
-   exchanger (422), so a typo is caught while the player can still fix it.
-   A lookup that fails is not held against the player.
+5. Requires a reply address, then looks up its domain in DNS and refuses
+   one with no mail exchanger (422), so a typo is caught while the player
+   can still fix it. A lookup that fails is not held against the player.
 6. Sends the email through Resend, from `CONTACT_FROM_EMAIL` to
-   `CONTACT_TO_EMAIL`, with the player's address on Reply-To (502 when it
-   does not go out, 503 when mail is not configured). The subject reads
+   `CONTACT_TO_EMAIL`, with the player's address on Reply-To (400 when the
+   address is missing, 502 when the mail does not go out, 503 when mail is
+   not configured). The subject reads
    `[Freight Fate 1.9.6] crash: The window closed`. A report that says
    where the player was (`details`, up to eight name and value pairs such
    as `Game: Tightrope`; Hearken's `Game::report_details`) lists them in
@@ -38,7 +39,7 @@ password.
 A game can open the report in the browser instead of taking the text in
 its own window. The player sees one form at `/report/<code>` with the game
 and version filled in, the game's logs listed as attached (a checkbox each,
-so one can be left out), an email field and a box for what happened. What
+so one can be left out), a required email field and a box for what happened. What
 makes that work:
 
 1. `POST /api/problem-reports/open` takes the same report with an empty

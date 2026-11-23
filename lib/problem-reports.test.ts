@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bodyOf,
   composeEmail,
+  describeReplyTo,
   isBlocked,
   MAX_DESCRIPTION_CHARS,
   MAX_LOG_BYTES,
@@ -18,6 +19,7 @@ const good = {
   version: "1.9.6",
   os: "windows x86_64",
   description: "The dock menu is empty.\nIt happens at every warehouse.",
+  reply_to: "driver@example.com",
   crashed: false,
   attachments: [{ name: "session.log", text: "12:00 INFO started\n" }],
 };
@@ -44,6 +46,9 @@ describe("parseReport", () => {
       ok: false,
       error: "reply_to is not an email address",
     });
+    expect(parseReport({ ...good, reply_to: "" })).toMatchObject({ ok: false, error: "reply_to is empty" });
+    const { reply_to: _dropped, ...noAddress } = good;
+    expect(parseReport(noAddress)).toMatchObject({ ok: false, error: "reply_to is empty" });
     expect(parseReport({ ...good, attachments: [{ name: "../secrets", text: "x" }] })).toMatchObject({
       ok: false,
       status: 400,
@@ -115,7 +120,7 @@ describe("the email", () => {
     if (!parsed.ok) throw new Error(parsed.error);
     expect(subjectOf(parsed.report)).toBe("[Wicket's 1.6.0, Tightrope] The dock menu is empty.");
     expect(bodyOf(parsed.report)).toBe(
-      "What happened:\nThe dock menu is empty.\nIt happens at every warehouse.\n\nApp: Wicket's 1.6.0\nGame: Tightrope\nMode: challenge\nSystem: windows x86_64\nCrashed on its last run: no\n",
+      "What happened:\nThe dock menu is empty.\nIt happens at every warehouse.\n\nApp: Wicket's 1.6.0\nGame: Tightrope\nMode: challenge\nSystem: windows x86_64\nCrashed on its last run: no\nReply to: driver@example.com\n",
     );
   });
 });
@@ -157,9 +162,16 @@ describe("parseFormSubmission", () => {
       ok: true,
       submission: { description: "It froze.", reply_to: "me@example.com", omit: ["a.log"] },
     });
-    expect(parseFormSubmission({ description: "It froze.", reply_to: "" })).toEqual({
-      ok: true,
-      submission: { description: "It froze.", omit: [] },
+    expect(parseFormSubmission({ description: "It froze.", reply_to: "" })).toMatchObject({
+      ok: false,
+      status: 400,
+      field: "reply_to",
+      error: "Enter your email address so a reply can reach you.",
+    });
+    expect(parseFormSubmission({ description: "It froze." })).toMatchObject({
+      ok: false,
+      status: 400,
+      field: "reply_to",
     });
     expect(parseFormSubmission({ description: "  " })).toMatchObject({ ok: false, status: 400, field: "description" });
     expect(parseFormSubmission({ description: "x".repeat(MAX_DESCRIPTION_CHARS + 1) })).toMatchObject({
@@ -171,6 +183,7 @@ describe("parseFormSubmission", () => {
       ok: false,
       status: 400,
       field: "reply_to",
+      error: "Enter an email address like name@example.com.",
     });
     expect(parseFormSubmission(null)).toMatchObject({ ok: false, status: 400 });
   });
@@ -200,6 +213,8 @@ describe("reportFromDraft", () => {
       details: [{ name: "Game", value: "Belfry" }],
       attachments: [{ name: "game.log", text: "a\n" }],
     });
-    expect(reportFromDraft(draft, { description: "It closed.", omit: [] }).reply_to).toBeUndefined();
+    expect(describeReplyTo("")).toBe("Enter your email address so a reply can reach you.");
+    expect(describeReplyTo("  me@example.com  ")).toBeNull();
+    expect(describeReplyTo("nobody")).toBe("Enter an email address like name@example.com.");
   });
 });
