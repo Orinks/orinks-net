@@ -246,6 +246,23 @@ describe("validateSharedProfile", () => {
     }
   });
 
+  test("accepts what a Career 2.0 buy-in paid, within the catalog's prices", () => {
+    const owner = {
+      ...validProfile(),
+      created_line: "2.0",
+      business_status: "leased_owner_operator",
+      buy_in_paid: 78_000,
+    };
+    expect(validateSharedProfile(owner, "Road Star (Career 2)")).toMatchObject({ ok: true });
+    expect(validateSharedProfile({ ...owner, buy_in_paid: 0 }, "Road Star (Career 2)"))
+      .toMatchObject({ ok: true });
+    expect(REQUIRED_FIELDS).not.toContain("buy_in_paid");
+    for (const bad of [-1, 10_000_000, "78000"]) {
+      expect(validateSharedProfile({ ...owner, buy_in_paid: bad }, "Road Star (Career 2)"))
+        .toMatchObject({ ok: false, reason: "invalid_range" });
+    }
+  });
+
   test("accepts the 1.9 created-on line marker without demanding it", () => {
     // 1.9 careers stamp the release line they were created on into every
     // save (Freight Fate's created_line field, part of its cutover gate on
