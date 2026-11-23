@@ -2,9 +2,9 @@
 
 import { Show, SignOutButton, useClerk, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { signInHref, signUpHref } from "@/lib/account-hrefs";
+import { useReturnPath } from "@/lib/use-return-path";
 import { userDisplayName } from "@/lib/user-name";
 
 // Matches the Projects/Games/Game Mods disclosures in Header.tsx.
@@ -24,19 +24,20 @@ const itemClass =
 export function AccountNav() {
   const { user, isLoaded, isSignedIn } = useUser();
   const clerk = useClerk();
-  const pathname = usePathname();
+  const returnPath = useReturnPath();
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const summaryRef = useRef<HTMLElement>(null);
 
-  // Auth transitions can unmount the panel item that held focus (sign-out:
-  // the "Sign out" button; a cross-tab sign-in: the sign-in links), which
-  // would drop focus to <body> and make a screen reader restart at the top
-  // of the page. Close the disclosure and move focus to the persistent
-  // summary — whose label just changed, giving implicit confirmation of the
-  // new state. The activeElement guard keeps cross-tab auth syncs from
-  // yanking focus while the user is reading elsewhere; the undefined init
-  // step keeps the initial cookie-restored sign-in from stealing focus on
-  // page load.
+  // Signing out unmounts the "Sign out" button that held focus, which would
+  // drop focus to <body> and make a screen reader restart at the top of the
+  // page. Close the disclosure and move focus to the persistent summary —
+  // whose label just changed, giving implicit confirmation of the new state.
+  // The activeElement guard keeps cross-tab auth syncs from yanking focus
+  // while the user is reading elsewhere. Signing in only closes the
+  // disclosure: it happens on the sign-in page, and the redirect back puts
+  // focus on the destination heading (RouteFocusManager), which a focus move
+  // here would cancel. The undefined init step keeps the initial
+  // cookie-restored sign-in from being treated as a transition.
   const wasSignedIn = useRef<boolean | undefined>(undefined);
   useEffect(() => {
     if (!isLoaded) {
@@ -53,7 +54,7 @@ export function AccountNav() {
       if (detailsRef.current) {
         detailsRef.current.open = false;
       }
-      if (focusWasLost || isSignedIn) {
+      if (focusWasLost && !isSignedIn) {
         summaryRef.current?.focus();
       }
     }
@@ -84,13 +85,13 @@ export function AccountNav() {
         ) : (
           <>
             <Show when="signed-out">
-              <Link className={itemClass} href={signInHref(pathname)}>
+              <Link className={itemClass} href={signInHref(returnPath)}>
                 Sign in
               </Link>
-              <Link className={itemClass} href={signUpHref(pathname)}>
+              <Link className={itemClass} href={signUpHref(returnPath)}>
                 Create account
               </Link>
-              <Link className={itemClass} href={signInHref(pathname)}>
+              <Link className={itemClass} href={signInHref(returnPath)}>
                 Forgot password?
               </Link>
             </Show>

@@ -46,14 +46,27 @@ a {
   text-underline-offset: 0.18em;
 }
 
-.prose a {
+/* not-prose opts a link out: button-styled links (AccountControls) keep
+   their own colours instead of blue text on a blue fill. */
+.prose a:where(:not(.not-prose)) {
   color: #075985;
   font-weight: 600;
   text-decoration-line: underline;
 }
 
-.prose a:hover {
+.prose a:where(:not(.not-prose)):hover {
   text-decoration-thickness: 0.14em;
+}
+
+/* Sign-in and create-account pages: the site PageHeader is the heading on
+   the first card, so Clerk's own title and welcome line are hidden there
+   only. Later steps (password, emailed code, reset) keep theirs — it is the
+   only text that names the step and says a code was sent. */
+.cl-signIn-start .cl-headerTitle,
+.cl-signIn-start .cl-headerSubtitle,
+.cl-signUp-start .cl-headerTitle,
+.cl-signUp-start .cl-headerSubtitle {
+  display: none;
 }
 
 :focus-visible {

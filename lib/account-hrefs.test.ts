@@ -9,10 +9,16 @@ describe("account hrefs", () => {
     expect(signUpHref("/activate")).toBe("/sign-up?redirect_url=%2Factivate");
   });
 
-  test("leave off redirect_url when already on that page", () => {
+  test("keep the query string, so /activate?code= comes back with its code", () => {
+    expect(signInHref("/activate?code=ABCD-1234")).toBe("/sign-in?redirect_url=%2Factivate%3Fcode%3DABCD-1234");
+  });
+
+  test("leave off redirect_url on either account page", () => {
     expect(signInHref("/sign-in")).toBe("/sign-in");
     expect(signInHref("/sign-in/factor-one")).toBe("/sign-in");
     expect(signInHref(null)).toBe("/sign-in");
     expect(signUpHref("/sign-up")).toBe("/sign-up");
+    expect(signInHref("/sign-up")).toBe("/sign-in");
+    expect(signUpHref("/sign-in?redirect_url=%2Factivate")).toBe("/sign-up");
   });
 });

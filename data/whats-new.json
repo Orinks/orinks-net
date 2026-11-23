@@ -7,7 +7,7 @@
       "project": "Site",
       "title": "Sign in, create an account, or reset a password on their own pages",
       "body": [
-        "Sign in, create an account, and reset a password now have pages of their own. Open Account in the header, or go to Sign in and choose Forgot password? after you enter your email."
+        "Sign in and Create account, in the Account menu in the header, now open as pages instead of dialogs. To reset a password, go to Sign in, enter your email and continue, then choose Forgot password?"
       ],
       "link": {
         "href": "/sign-in",

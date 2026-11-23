@@ -2,9 +2,9 @@
 
 import { Show, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { signInHref, signUpHref } from "@/lib/account-hrefs";
+import { useReturnPath } from "@/lib/use-return-path";
 import { userDisplayName } from "@/lib/user-name";
 
 type AccountControlsProps = {
@@ -18,12 +18,14 @@ type AccountControlsProps = {
   userButtonAppearance?: ComponentProps<typeof UserButton>["appearance"];
 };
 
+// not-prose: most hosts sit inside <Section>, whose `.prose a` colour would
+// otherwise paint the Sign in label the same blue as its background.
 const defaultSignIn =
-  "inline-flex min-h-10 items-center rounded-md bg-action px-3 py-2 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2";
+  "not-prose inline-flex min-h-10 items-center rounded-md bg-action px-3 py-2 font-semibold text-white hover:bg-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600 focus:ring-offset-2";
 const defaultSignUp =
-  "inline-flex min-h-10 items-center rounded-md border border-line px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-600";
+  "not-prose inline-flex min-h-10 items-center rounded-md border border-line px-3 py-2 font-semibold text-slate-800 hover:bg-sky-50 hover:text-action focus:outline-none focus:ring-4 focus:ring-sky-600";
 const defaultForgot =
-  "inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-action underline hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600";
+  "not-prose inline-flex min-h-10 items-center rounded-md px-3 py-2 font-semibold text-action underline hover:text-action-dark focus:outline-none focus:ring-4 focus:ring-sky-600";
 
 /**
  * The site's single shared account flow (Clerk): links to the sign-in and
@@ -37,49 +39,26 @@ export function AccountControls({
   nameClassName,
   userButtonAppearance,
 }: AccountControlsProps) {
-  const { user, isLoaded, isSignedIn } = useUser();
-  const pathname = usePathname();
-
-  // When sign-in completes on this page (for example after a redirect back,
-  // or a sign-in in another tab), the signed-out links unmount, so focus
-  // would drop to <body> and a screen reader restarts at the top of the page.
-  // Move focus to the signed-in name instead. The undefined init step keeps
-  // a cookie-restored session from stealing focus on first load.
-  const signedInRef = useRef<HTMLSpanElement>(null);
-  const wasSignedIn = useRef<boolean | undefined>(undefined);
-  useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
-    if (wasSignedIn.current === undefined) {
-      wasSignedIn.current = isSignedIn;
-      return;
-    }
-    if (isSignedIn === true && wasSignedIn.current === false) {
-      signedInRef.current?.focus();
-    }
-    wasSignedIn.current = isSignedIn;
-  }, [isLoaded, isSignedIn]);
+  // Sign-in happens on its own page, and the redirect back lands on this
+  // page's heading (RouteFocusManager), so there is no focus to manage here.
+  const { user } = useUser();
+  const returnPath = useReturnPath();
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Show when="signed-out">
-        <Link className={signInClassName ?? defaultSignIn} href={signInHref(pathname)}>
+        <Link className={signInClassName ?? defaultSignIn} href={signInHref(returnPath)}>
           Sign in
         </Link>
-        <Link className={signUpClassName ?? defaultSignUp} href={signUpHref(pathname)}>
+        <Link className={signUpClassName ?? defaultSignUp} href={signUpHref(returnPath)}>
           Create account
         </Link>
-        <Link className={forgotClassName ?? defaultForgot} href={signInHref(pathname)}>
+        <Link className={forgotClassName ?? defaultForgot} href={signInHref(returnPath)}>
           Forgot password?
         </Link>
       </Show>
       <Show when="signed-in">
-        <span
-          className={nameClassName ?? "text-sm font-semibold text-slate-700"}
-          ref={signedInRef}
-          tabIndex={-1}
-        >
+        <span className={nameClassName ?? "text-sm font-semibold text-slate-700"}>
           <span className="sr-only">Signed in as </span>
           {userDisplayName(user, "your account")}
         </span>

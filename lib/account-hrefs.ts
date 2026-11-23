@@ -9,8 +9,16 @@
 export const SIGN_IN_PATH = "/sign-in";
 export const SIGN_UP_PATH = "/sign-up";
 
+function isAccountPath(path: string): boolean {
+  const pathname = path.split(/[?#]/)[0];
+  return [SIGN_IN_PATH, SIGN_UP_PATH].some((page) => pathname === page || pathname.startsWith(`${page}/`));
+}
+
+// currentPath may carry a query string (/activate?code=...), which has to
+// survive the round trip. Neither account page is ever a return target:
+// signing in from /sign-up would bounce back to /sign-up.
 function withRedirect(target: string, currentPath: string | null | undefined): string {
-  if (!currentPath || currentPath === target || currentPath.startsWith(`${target}/`)) {
+  if (!currentPath || isAccountPath(currentPath)) {
     return target;
   }
   return `${target}?redirect_url=${encodeURIComponent(currentPath)}`;
