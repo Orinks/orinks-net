@@ -420,6 +420,16 @@ export function validateSharedProfile(value: unknown, saveName: string): SharedP
     || new Set(owned).size !== owned.length) {
     return failure("invalid_possession", "The cloud backup has no truck recorded.");
   }
+  // What the 2.0 owner-operator buy-in paid for the first tractor: a catalog
+  // price, so never more than the dearest tractor on the career's line. 1.9
+  // saves do not carry it, and 0 means no buy-in price is on record.
+  if ("buy_in_paid" in payload) {
+    const prices = Object.values(invariantsForLine(payload.created_line).truckPrices);
+    const dearest = prices.length > 0 ? Math.max(...prices) : 0;
+    if (!finite(payload.buy_in_paid, 0, dearest)) {
+      return failure("invalid_range", "The cloud backup has a value outside its allowed range.");
+    }
+  }
   // Same reasoning for upgrades. The tier ceiling now bounds the number
   // rather than indexing a per-upgrade price table, so an upgrade that grows
   // a tier -- or one this export has never seen -- is not a refusal.
