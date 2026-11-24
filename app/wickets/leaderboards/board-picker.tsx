@@ -3,8 +3,10 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import type { BoardPace, Period, WicketsBoard } from "@/lib/wickets-leaderboards";
 import { periodEnd } from "@/lib/wickets-leaderboards/periods";
-import type { Choice } from "@/lib/wickets-leaderboards/choice";
+import { ALL_GAMES, type Choice } from "@/lib/wickets-leaderboards/choice";
+import { overview } from "@/lib/wickets-leaderboards/overview";
 import { BoardTable } from "./board-table";
+import { OverviewTable } from "./overview-table";
 
 /** A game and the boards the page has already read: every one on the
  * preview's sample boards, only the one shown on the live site. */
@@ -52,34 +54,61 @@ function kindOf(game: string, period: Period, pace: BoardPace) {
 export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: Choice }) {
   const [choice, setChoice] = useState(initial);
   const [read, setRead] = useState<Record<string, Read>>({});
-  const game = games.find((g) => g.id === choice.game) ?? games[0];
-  const pace = game.pace ? choice.pace : "main";
-  const kind = kindOf(game.id, choice.period, pace);
-  const board = game.boards[choice.period][pace] ?? read[kind]?.board;
-  const failed = read[kind]?.failed;
+  const all = choice.game === ALL_GAMES;
+  const game = all ? undefined : (games.find((g) => g.id === choice.game) ?? games[0]);
+  const pace = game?.pace ? choice.pace : "main";
+  // The boards shown: one game's, or every game's main board for the overview.
+  const shown = (game ? [game] : games).map((g) => {
+    const kind = kindOf(g.id, choice.period, pace);
+    return { game: g, kind, board: g.boards[choice.period][pace] ?? read[kind]?.board, failed: read[kind]?.failed };
+  });
+  const missing = shown.filter((s) => !s.board && !s.failed).map((s) => s.kind);
+  const failed = shown.some((s) => s.failed);
+  const missingKey = missing.join(" ");
 
   // A board the page did not bring is read from the service, once.
   useEffect(() => {
-    if (board || failed) return;
+    if (!missingKey) return;
     let gone = false;
-    fetch(`/api/games/wickets/${kind}/top`)
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((answer: { key: string; entries: WicketsBoard["entries"]; of: number }) => {
-        if (gone) return;
-        const endsAt = periodEnd(choice.period, Date.now());
-        setRead((r) => ({ ...r, [kind]: { board: { key: answer.key, endsAt, entries: answer.entries, of: answer.of } } }));
-      })
-      .catch(() => {
-        if (!gone) setRead((r) => ({ ...r, [kind]: { failed: true } }));
-      });
+    for (const kind of missingKey.split(" ")) {
+      fetch(`/api/games/wickets/${kind}/top`)
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+        .then((answer: { key: string; entries: WicketsBoard["entries"]; of: number }) => {
+          if (gone) return;
+          const endsAt = periodEnd(choice.period, Date.now());
+          setRead((r) => ({ ...r, [kind]: { board: { key: answer.key, endsAt, entries: answer.entries, of: answer.of } } }));
+        })
+        .catch(() => {
+          if (!gone) setRead((r) => ({ ...r, [kind]: { failed: true } }));
+        });
+    }
     return () => {
       gone = true;
     };
-  }, [board, failed, kind, choice.period]);
+  }, [missingKey, choice.period]);
+
+  const title = game ? boardTitle(game, choice.period, pace) : `All games, ${PERIOD_LABELS[choice.period].toLowerCase()}`;
+  let body;
+  if (failed) {
+    body = <p>The scores could not be read. Try again later.</p>;
+  } else if (missing.length > 0) {
+    body = <p>Reading the scores…</p>;
+  } else if (game) {
+    body = <BoardTable board={shown[0].board!} labelledBy="leaderboard-title" />;
+  } else {
+    body = (
+      <OverviewTable
+        endsAt={shown[0].board!.endsAt}
+        labelledBy="leaderboard-title"
+        names={Object.fromEntries(games.map((g) => [g.id, g.name]))}
+        overview={overview(shown.map((s) => ({ game: s.game.id, board: s.board! })))}
+      />
+    );
+  }
 
   function choose(next: Choice) {
     setChoice(next);
-    const params = new URLSearchParams({ game: next.game, board: next.period });
+    const params = new URLSearchParams(next.game === ALL_GAMES ? { board: next.period } : { game: next.game, board: next.period });
     const nextGame = games.find((g) => g.id === next.game);
     if (nextGame?.pace && next.pace === "relaxed") params.set("pace", "relaxed");
     window.history.replaceState(null, "", `?${params}`);
@@ -102,8 +131,9 @@ export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: 
             id="leaderboard-game"
             name="game"
             onChange={(event) => choose({ ...choice, game: event.target.value })}
-            value={game.id}
+            value={game?.id ?? ALL_GAMES}
           >
+            <option value={ALL_GAMES}>All games</option>
             {games.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
@@ -121,7 +151,7 @@ export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: 
               className={choice.period === period ? pressedButton : button}
               key={period}
               name="board"
-              onClick={(event) => press(event, { ...choice, game: game.id, period })}
+              onClick={(event) => press(event, { ...choice, game: game?.id ?? ALL_GAMES, period })}
               type="submit"
               value={period}
             >
@@ -129,7 +159,7 @@ export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: 
             </button>
           ))}
         </div>
-        {game.pace ? (
+        {game?.pace ? (
           <div aria-label="Pace" className="flex flex-wrap gap-3" role="group">
             <input name="pace" type="hidden" value={pace} />
             {PACES.map((p) => (
@@ -149,15 +179,9 @@ export function BoardPicker({ games, initial }: { games: PickerGame[]; initial: 
         ) : null}
       </div>
       <h2 className="mb-4 mt-8 text-2xl font-bold text-ink" id="leaderboard-title">
-        {boardTitle(game, choice.period, pace)}
+        {title}
       </h2>
-      {board ? (
-        <BoardTable board={board} labelledBy="leaderboard-title" />
-      ) : failed ? (
-        <p>The scores could not be read. Try again later.</p>
-      ) : (
-        <p>Reading the scores…</p>
-      )}
+      {body}
     </form>
   );
 }
