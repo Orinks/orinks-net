@@ -12,7 +12,7 @@ export const maxDuration = 30;
 
 type RoomsNamespace = {
   idFromName(name: string): unknown;
-  get(id: unknown): { fetch(request: Request): Promise<Response> };
+  get(id: unknown): { fetch(url: string, init: RequestInit): Promise<Response> };
 };
 
 /** The GameRooms Durable Object binding, on Cloudflare Workers only. */
@@ -40,7 +40,14 @@ async function handle(request: Request, context: { params: Promise<{ game: strin
   // answer 404 as before.
   if (path?.[0] === "rooms") {
     const rooms = await roomsBinding();
-    if (rooms) return rooms.get(rooms.idFromName(game)).fetch(request);
+    if (rooms) {
+      // The route's Request is the framework's own object, which a Durable
+      // Object stub cannot take: pass it on as a plain URL and init.
+      const body = request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer();
+      return rooms
+        .get(rooms.idFromName(game))
+        .fetch(request.url, { method: request.method, headers: request.headers, body });
+    }
   }
   const service = serviceFor(game, new URL(request.url).origin);
   if (!service) {
