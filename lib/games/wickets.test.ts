@@ -97,7 +97,9 @@ describe("Wicket's", () => {
     // Safecracker and Sonar Dive also keep relaxed boards.
     expect(kinds).toContain("safecracker-daily-relaxed");
     expect(kinds).toContain("sonar-dive-monthly-relaxed");
-    expect(kinds).toHaveLength(21);
+    // And one room kind, for matches between players.
+    expect(kinds).toContain("pebbles");
+    expect(kinds).toHaveLength(22);
   });
 
   test("cannot be built without its seed secret", () => {

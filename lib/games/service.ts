@@ -2,8 +2,8 @@
 // the life of the function instance.
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createService, publishedRules, refuse } from "@/lib/hearken-online";
-import type { Handler, Player, PublishedRules } from "@/lib/hearken-online";
+import { createService, memoryLimiter, publishedRules, refuse } from "@/lib/hearken-online";
+import type { Handler, Player, PublishedRules, RoomStore } from "@/lib/hearken-online";
 import { getConvexClient } from "@/lib/convex";
 import { site } from "@/lib/site";
 import { clientIp } from "@/lib/client-ip";
@@ -46,6 +46,8 @@ export function rulesFolder(game: string, root = process.cwd()): PublishedRules 
   return {
     get: async (build) => (await load()).get(build),
     builds: async () => (await load()).builds(),
+    // The build a new match in a room is played with (lib/hearken-online/rules.js).
+    forRules: async (name) => (await load()).forRules?.(name) ?? null,
   };
 }
 
@@ -85,7 +87,15 @@ export const testerHandler: Handler = {
 
 export function buildService(
   game: GameDefinition,
-  parts: { rules: PublishedRules; stores: GameStores; records: Parameters<GameDefinition["handlers"]>[0] },
+  parts: {
+    rules: PublishedRules;
+    stores: GameStores;
+    records: Parameters<GameDefinition["handlers"]>[0];
+    /** Matches and chat between players (lib/games/rooms-object.js). */
+    rooms?: RoomStore;
+    /** A secret mixed into every player's handle in rooms. */
+    handleKey?: string;
+  },
 ): Service {
   const guests = game.guests?.(parts.records);
   const { createGuest, renameGuest, ...accounts } = parts.stores.accounts;
@@ -107,6 +117,8 @@ export function buildService(
     saves: saveStore && game.saves ? game.saves(parts.records, saveStore) : null,
     onLink: guests?.linked,
     handlers: withTester(game.handlers(parts.records)),
+    rooms: parts.rooms ?? null,
+    handleKey: parts.handleKey,
     basePath: `/api/games/${game.id}`,
     // The address the platform's edge saw (lib/client-ip.ts), as the Freight
     // Fate routes read it.
@@ -160,4 +172,69 @@ function build(
     },
     records: convexRecords(client, secret, id),
   });
+}
+
+/**
+ * The service for `id` with rooms: matches and chat between players, kept
+ * in `rooms` (the GameRooms Durable Object's SQLite). A player's token is
+ * looked up in Convex once and then remembered for a few minutes, since a
+ * match polls every couple of seconds; rate limits are counted in memory,
+ * as one Durable Object serves all of a game's rooms. Null when there is no
+ * such game or no backend, as for `serviceFor`.
+ */
+export function roomsServiceFor(
+  id: string,
+  origin: string,
+  rooms: RoomStore,
+): (Service & { warm(token: string): Promise<unknown> }) | null {
+  if (!Object.hasOwn(GAMES, id)) return null;
+  const client = getConvexClient();
+  const secret = gamesServerSecret();
+  if (!client || !secret) return null;
+  const game = GAMES[id];
+  const stores = convexStores({
+    client,
+    secret,
+    game: id,
+    connectUrl: `${process.env.VERCEL_ENV === "production" ? site.url : origin}/games/connect`,
+  });
+  const accounts = rememberedAccounts(stores.accounts);
+  try {
+    const service = buildService(game, {
+      rules: rulesFolder(id),
+      stores: { ...stores, accounts, limiter: memoryLimiter() },
+      records: convexRecords(client, secret, id),
+      rooms,
+      handleKey: `rooms:${secret}`,
+    });
+    // Looks the player up ahead of the request (lib/games/rooms-object.js).
+    return { fetch: (request) => service.fetch(request), warm: (token) => accounts.player(token) };
+  } catch (error) {
+    console.warn("games", id, "rooms unavailable", String(error));
+    return null;
+  }
+}
+
+/** How long a token's player is remembered by the rooms service. */
+export const REMEMBER_PLAYER_MS = 5 * 60_000;
+
+/** `accounts` with `player(token)` remembered for a while; the rest as is. */
+export function rememberedAccounts(
+  accounts: GameStores["accounts"],
+  { ttlMs = REMEMBER_PLAYER_MS, now = () => Date.now(), max = 5_000 } = {},
+): GameStores["accounts"] {
+  const known = new Map<string, { player: Player | null; until: number }>();
+  return {
+    ...accounts,
+    async player(token) {
+      const t = now();
+      const hit = known.get(token);
+      if (hit && hit.until > t) return hit.player;
+      const player = await accounts.player(token);
+      if (known.size >= max) known.clear();
+      // A token that answers no one is asked about again sooner.
+      known.set(token, { player, until: t + (player ? ttlMs : 10_000) });
+      return player;
+    },
+  };
 }

@@ -1,5 +1,6 @@
 // Every Hearken game's verified runs: /api/games/<game>/runs, /start,
-// /activate/start, /activate/poll and the game's own read routes. The
+// /activate/start, /activate/poll and the game's own read routes, and its
+// rooms (/api/games/<game>/rooms...), which go to its Durable Object. The
 // protocol is Hearken's (docs/online.md in orinks-games/hearken); the game
 // itself is in lib/games/registry.ts.
 import { GAMES } from "@/lib/games/registry";
@@ -9,10 +10,37 @@ export const runtime = "nodejs";
 // A replay is bounded by the game's own MAX_TICKS; this is the ceiling.
 export const maxDuration = 30;
 
-async function handle(request: Request, context: { params: Promise<{ game: string }> }) {
-  const { game } = await context.params;
+type RoomsNamespace = {
+  idFromName(name: string): unknown;
+  get(id: unknown): { fetch(request: Request): Promise<Response> };
+};
+
+/** The GameRooms Durable Object binding, on Cloudflare Workers only. */
+async function roomsBinding(): Promise<RoomsNamespace | null> {
+  try {
+    // A variable specifier keeps next build and vitest from resolving the
+    // Workers-only module (as lib/spotify-cache.ts does).
+    const specifier = "cloudflare:workers";
+    const mod = (await import(/* webpackIgnore: true */ /* @vite-ignore */ specifier)) as {
+      env?: { GAME_ROOMS?: RoomsNamespace };
+    };
+    return mod.env?.GAME_ROOMS ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function handle(request: Request, context: { params: Promise<{ game: string; path?: string[] }> }) {
+  const { game, path } = await context.params;
   if (!Object.hasOwn(GAMES, game)) {
     return Response.json({ error: "not-found" }, { status: 404 });
+  }
+  // Matches and chat between players live in the game's own Durable
+  // Object (lib/games/rooms-object.js). Without one, the rooms routes
+  // answer 404 as before.
+  if (path?.[0] === "rooms") {
+    const rooms = await roomsBinding();
+    if (rooms) return rooms.get(rooms.idFromName(game)).fetch(request);
   }
   const service = serviceFor(game, new URL(request.url).origin);
   if (!service) {
