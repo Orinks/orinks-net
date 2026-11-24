@@ -125,6 +125,15 @@ describe("Wicket's", () => {
     expect(top).toMatchObject({ key: plan.key, current: true, entries: [], of: 0, you: null });
   });
 
+  test("a player not online reads the current challenge, the same seed start gives", async () => {
+    const { service } = wickets();
+    const read = await (await get(service, "belfry-weekly/seed")).json();
+    const { token } = await (await post(service, "activate/guest")).json();
+    const plan = await (await post(service, "start?kind=belfry-weekly", token)).json();
+    expect(read).toMatchObject({ ok: true, seed: plan.seed, key: plan.key, context: { period: "weekly" } });
+    expect((await get(service, `belfry-weekly/seed/${plan.key}`)).status).toBe(404);
+  });
+
   test("a guest's entries follow it when it connects an account", async () => {
     const { service, records } = wickets();
     const guest = await (await post(service, "activate/guest")).json();

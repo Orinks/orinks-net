@@ -95,6 +95,38 @@ describe("on the live site", () => {
     expect(document.body.textContent).toContain("2 players. Ends Monday, November 16, 00:00 UTC.");
   });
 
+  test("the overview reads every game's main board and ranks players by place", async () => {
+    const scores: Record<string, { name: string; score: number }[]> = {
+      safecracker: [
+        { name: "Copper Fox 12", score: 12000 },
+        { name: "TinLantern", score: 9000 },
+      ],
+      belfry: [{ name: "TinLantern", score: 300 }],
+    };
+    live.source = {
+      async board(game, period, pace) {
+        live.asked.push(`${game}-${period}-${pace}`);
+        const entries = (scores[game] ?? []).map((e, i) => ({ rank: i + 1, ...e }));
+        return { key: "2026-11-13", endsAt: Date.UTC(2026, 10, 14), entries, of: entries.length };
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 503 })));
+    await page();
+    expect(live.asked).toEqual([
+      "safecracker-daily-main",
+      "belfry-daily-main",
+      "fireside-patience-daily-main",
+      "riverboat-dice-daily-main",
+      "sonar-dive-daily-main",
+    ]);
+    const rows = within(screen.getByRole("table", { name: "All games, today" })).getAllByRole("row").slice(1);
+    expect(rows.map((r) => r.textContent)).toEqual([
+      "1TinLantern191st in Belfry, 2nd in Safecracker",
+      "2Copper Fox 12101st in Safecracker",
+    ]);
+    expect(document.body.textContent).toContain("2 players. Ends Saturday, November 14, 00:00 UTC.");
+  });
+
   test("a board the service cannot answer says so", async () => {
     live.source = {
       async board() {
@@ -112,11 +144,35 @@ describe("on the live site", () => {
 describe("on the preview", () => {
   beforeEach(() => vi.stubEnv("VERCEL_ENV", "preview"));
 
-  test("one page: a game picker, board buttons, and the first game's daily board", async () => {
+  test("opens on today's overview of all games", async () => {
     await page();
     expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Wicket's Leaderboards"]);
     const select = screen.getByRole("combobox", { name: "Game" });
+    expect(select).toHaveValue("all");
+    expect(pressed("Board")).toEqual(["Today"]);
+    expect(screen.queryByRole("group", { name: "Pace" })).toBeNull();
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("All games, today");
+    const table = screen.getByRole("table", { name: "All games, today" });
+    expect(within(table).getAllByRole("columnheader").map((c) => c.textContent)).toEqual([
+      "Rank",
+      "Player",
+      "Points",
+      "Places",
+    ]);
+    expect(document.body.textContent).toContain("Points for each game's place: 10 for first, down to 1 for tenth.");
+    expect(within(table).getAllByRole("row")).toHaveLength(11);
+    expect(document.body.textContent).toMatch(/Top 10 of \d+ players\. Ends Saturday, November 14, 00:00 UTC\./);
+    const first = within(table).getAllByRole("row")[1];
+    expect(within(first).getAllByRole("cell")[0]).toHaveTextContent("1");
+    expect(within(first).getAllByRole("cell")[2].textContent).toMatch(/^(1st|2nd|3rd|\d+th) in /);
+  });
+
+  test("one page: a game picker, board buttons, and a game's daily board", async () => {
+    await page({ game: "safecracker" });
+    expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Wicket's Leaderboards"]);
+    const select = screen.getByRole("combobox", { name: "Game" });
     expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "All games",
       "Safecracker",
       "Belfry",
       "Fireside Patience",
@@ -146,7 +202,7 @@ describe("on the preview", () => {
       pace: "main",
     });
     expect(choiceFrom({ game: "lantern-lake", board: "yearly" })).toEqual({
-      game: "safecracker",
+      game: "all",
       period: "daily",
       pace: "main",
     });
@@ -156,7 +212,7 @@ describe("on the preview", () => {
   });
 
   test("the buttons and the picker change the board in place, and the address follows", async () => {
-    await page();
+    await page({ game: "safecracker" });
     fireEvent.click(screen.getByRole("button", { name: "This week" }));
     expect(pressed("Board")).toEqual(["This week"]);
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Safecracker, this week");
@@ -167,6 +223,9 @@ describe("on the preview", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Fireside Patience, this week");
     expect(screen.queryByRole("group", { name: "Pace" })).toBeNull();
     expect(window.location.search).toBe("?game=fireside-patience&board=weekly");
+    fireEvent.change(screen.getByRole("combobox", { name: "Game" }), { target: { value: "all" } });
+    expect(screen.getByRole("table", { name: "All games, this week" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?board=weekly");
   });
 
   test("an empty board says so in one sentence instead of a table", async () => {

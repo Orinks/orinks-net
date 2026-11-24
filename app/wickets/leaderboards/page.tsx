@@ -11,7 +11,7 @@ import {
   type BoardPace,
 } from "@/lib/wickets-leaderboards";
 import { liveBoards } from "@/lib/wickets-leaderboards/live";
-import { choiceFrom } from "@/lib/wickets-leaderboards/choice";
+import { ALL_GAMES, choiceFrom } from "@/lib/wickets-leaderboards/choice";
 import { BoardPicker, type PickerGame } from "./board-picker";
 
 export const metadata: Metadata = {
@@ -29,8 +29,9 @@ export default async function WicketsLeaderboardsPage({ searchParams }: PageProp
   const initial = choiceFrom((await searchParams) ?? {});
   const now = Date.now();
   const live = onLiveSite();
-  // The live site reads the board shown, and the page reads others as they
-  // are chosen; the preview has no backend and shows every sample board.
+  // The live site reads the board shown (every game's main board for the
+  // overview), and the page reads others as they are chosen; the preview
+  // has no backend and shows every sample board.
   const source = live ? liveBoards() : wicketsBoardSource;
 
   if (!source) {
@@ -54,7 +55,12 @@ export default async function WicketsLeaderboardsPage({ searchParams }: PageProp
             Object.fromEntries(
               await Promise.all(
                 paces
-                  .filter((pace) => !live || (game.id === initial.game && period === initial.period && pace === initial.pace))
+                  .filter(
+                    (pace) =>
+                      !live ||
+                      (period === initial.period &&
+                        (initial.game === ALL_GAMES ? pace === "main" : game.id === initial.game && pace === initial.pace)),
+                  )
                   .map(async (pace) => [pace, await source.board(game.id, period, pace, now)]),
               ),
             ),

@@ -2,6 +2,19 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-24-wickets-leaderboards-all-games",
+      "date": "2026-11-24",
+      "project": "Wicket's",
+      "title": "All games on one leaderboard",
+      "body": [
+        "The Wicket's leaderboards page now opens on all games together. Each game's board gives 10 points for first place, down to 1 for tenth, and the points add up across games. Choose a game to see its own board."
+      ],
+      "link": {
+        "href": "/wickets/leaderboards",
+        "label": "See the Wicket's leaderboards"
+      }
+    },
+    {
       "id": "2026-11-23-problem-report-email",
       "date": "2026-11-23",
       "project": "Site",
