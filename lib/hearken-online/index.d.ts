@@ -31,6 +31,8 @@ export function loadRules(bytes: Uint8Array, options?: { build?: string }): Prom
 export interface PublishedRules {
   get(build: string): Promise<Rules | null>;
   builds(): Promise<string[]>;
+  /** The first published module that has these rules and plays matches. */
+  forRules?(name: string): Promise<Rules | null>;
 }
 
 export function publishedRules(
@@ -141,6 +143,10 @@ export interface ServiceOptions {
   onLink?: (input: { guest: string; player: Player | null }) => Promise<void>;
   /** Synced files: a sealed copy of each player's save (saves.js). */
   saves?: SavesOptions | null;
+  /** Matches and chat between players (rooms.js). Without it the rooms routes answer 404. */
+  rooms?: RoomStore | null;
+  /** A secret mixed into every player's handle in rooms. */
+  handleKey?: string;
   limits?: Partial<{
     runsPerMinute: number;
     activationsPerMinute: number;
@@ -189,3 +195,33 @@ export function memorySaves(options?: { keep?: number }): SaveStore & {
   revisions(player: string, name: string): Promise<number[]>;
   purge(player: string): Promise<void>;
 };
+
+/**
+ * Where rooms and their events live (rooms.js, memoryRooms, and
+ * lib/games/rooms-store.js). Rooms are plain records the service reads,
+ * changes and saves.
+ */
+export interface RoomStore {
+  create(room: object): Promise<any>;
+  get(id: string): Promise<any | null>;
+  save(room: object): Promise<void>;
+  byCode(code: string): Promise<any | null>;
+  byName(kind: string, name: string): Promise<any | null>;
+  directBetween(kind: string, a: string, b: string): Promise<any | null>;
+  listFor(playerId: string): Promise<any[]>;
+  openRooms(kind: string): Promise<any[]>;
+  append(id: string, event: object): Promise<number>;
+  eventsAfter(id: string, seq: number, limit?: number): Promise<any[]>;
+  eventsBefore(id: string, seq: number | null, limit?: number): Promise<any[]>;
+  prune(id: string, beforeAt: number): Promise<void>;
+  rememberPlayer(player: object): Promise<void>;
+  playerByHandle(handle: string): Promise<any | null>;
+  relations(playerId: string): Promise<{ muted: Set<string>; blocked: Set<string>; blockedBy: Set<string> }>;
+  setMute(player: object, handle: string, mode: string, them?: object | null): Promise<void>;
+}
+
+export function memoryRooms(): RoomStore;
+export function memoryLimiter(options?: { now?: () => number }): Limiter;
+export const FINAL_PHASES: string[];
+export const PHASES: string[];
+export function mintRoomCode(): string;

@@ -1,4 +1,4 @@
-import { bindings, defineConfig, defineWorker } from "cf/config";
+import { bindings, defineConfig, defineWorker, exports } from "cf/config";
 
 // Runtime configuration for the Worker. Only names declared under `env` reach
 // the Worker (as `env.X` and, with nodejs_compat, as `process.env.X`).
@@ -38,7 +38,13 @@ export default defineConfig(({ mode }) => {
   return {
     worker: defineWorker({
       name: production ? "orinks-net" : "orinks-net-preview",
-      entrypoint: "vinext/server/fetch-handler",
+      // The site (vinext) and the Durable Object classes it exports.
+      entrypoint: "./worker/index.js",
+      exports: {
+        // Hearken games' rooms: matches and chat between players, one
+        // object per game, in SQLite (lib/games/rooms-object.js).
+        GameRooms: exports.durableObject({ storage: "sqlite" }),
+      },
       // Keep this at or below the date the installed workerd supports.
       compatibilityDate: "2026-10-23",
       compatibilityFlags: ["nodejs_compat"],
@@ -58,6 +64,11 @@ export default defineConfig(({ mode }) => {
         ASSETS: bindings.assets(),
         // Backs unstable_cache / ISR (vinext's KV data cache).
         VINEXT_KV_CACHE: bindings.kv(),
+        // The rooms of each Hearken game (lib/games/rooms-object.js).
+        GAME_ROOMS: bindings.durableObject({
+          worker: production ? "orinks-net" : "orinks-net-preview",
+          exportName: "GameRooms",
+        }),
 
         // Plain, non-secret runtime values.
         // The site reads VERCEL_ENV for robots.txt (only "production" is

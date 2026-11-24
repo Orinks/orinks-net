@@ -2,7 +2,8 @@
 
 The handlers behind `/api/games/wickets/`: daily, weekly and monthly
 challenge boards for Safecracker, Belfry, Fireside Patience, Riverboat Dice
-and Sonar Dive. Copied from `server/src/` in Wicket's private repository;
+and Sonar Dive, and the kinds of match played between players in rooms
+(`rooms.js`). Copied from `server/src/` in Wicket's private repository;
 the one change is `index.js` importing `../hearken-online/index.js` in
 place of `@hearken/online`. Update by copying those files again.
 `index.d.ts` is written here, for TypeScript.

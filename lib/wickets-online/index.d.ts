@@ -22,6 +22,8 @@ export interface Boards {
 }
 
 export const GAMES: Record<string, unknown>;
+/** The room kinds: matches between players, by kind. */
+export const ROOM_KINDS: Record<string, unknown>;
 export const GRACE_MS: number;
 export const TOP: number;
 export function recordsBoards(records: GameRecords): Boards;

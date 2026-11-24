@@ -34,10 +34,33 @@ entered it becomes the account: its tokens stop working, and the game's
 `guests().linked` moves its records. Guests are kept in `gamesGuests`, for
 one game each.
 
+## Rooms
+
+Rooms are matches and chat between players (Hearken's `rooms.js`). A game
+opts in by giving its handlers a room kind (`seats`, the `rules` name its
+published module replays, `start`, `accept`); Wicket's kinds are in
+`lib/wickets-online/rooms.js`.
+
+On Workers the rooms live in the `GameRooms` Durable Object
+(`lib/games/rooms-object.js`), one per game, in its own SQLite
+(`lib/games/rooms-store.js`). The games route hands every
+`/api/games/<id>/rooms` request to it. The object runs the game's whole
+service and takes one request at a time, so a read, change and save of a
+room is never interleaved. Each player's token is looked up before the
+request joins that line, and remembered for 5 minutes, so a poll does not
+ask Convex every time. Players, runs and boards stay in Convex.
+
+`worker/index.js` is the Worker's entry: vinext's handler and the
+`GameRooms` class. `cloudflare.config.ts` declares the class with SQLite
+storage and binds it as `GAME_ROOMS`. Without the binding (Vercel, `next
+dev`), `/rooms` falls through to the ordinary service, which has no rooms
+store and answers 404.
+
 ## Setup
 
 Set `GAMES_SERVER_SECRET` to the same random value, 32 characters or more, in
-two places: the Convex deployment's environment variables, and Vercel's. Every
+two places: the Convex deployment's environment variables, and Vercel's (or
+the Worker's, on Cloudflare). Every
 Convex function that writes a verified result checks it. Without it, the games
 route answers 503.
 
