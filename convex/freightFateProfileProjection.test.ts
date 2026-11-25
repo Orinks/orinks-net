@@ -155,6 +155,20 @@ describe("a Career 2.0 profile", () => {
     expect(snapshot.visitedPlaces?.map((place) => place.state)).toHaveLength(2);
   });
 
+  test("names the towns the missing roads pass added", () => {
+    const snapshot = snapshotOf({
+      created_line: "2.0",
+      current_city: "sikeston_mo_us",
+      achievement_stats: { cities_delivered: ["cape_may_nj_us", "galveston_tx_us", "joliet_il_us"] },
+    });
+    expect(snapshot.lastSavedCity).toBe("Sikeston, Missouri");
+    expect(snapshot.visitedPlaces).toEqual([
+      { state: "Illinois", cities: ["Joliet"] },
+      { state: "New Jersey", cities: ["Cape May"] },
+      { state: "Texas", cities: ["Galveston"] },
+    ]);
+  });
+
   test("a company driver with no carrier near home shows no carrier", () => {
     const snapshot = snapshotOf({
       created_line: "2.0", business_status: "company_driver", carrier_key: "", carrier_name: "",
