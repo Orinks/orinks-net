@@ -147,6 +147,12 @@ export interface ServiceOptions {
   rooms?: RoomStore | null;
   /** A secret mixed into every player's handle in rooms. */
   handleKey?: string;
+  /** Checks a chat line before it is stored: false or a line refuses it. */
+  screen?: (input: ChatScreenInput) => Promise<ChatVerdict> | ChatVerdict;
+  /** Takes a player's report of another (rooms.js, reportPlayer). */
+  report?: (report: ChatReport) => Promise<void> | void;
+  /** The player's chat standing, carried on each pulse. */
+  standing?: (player: Player) => Promise<ChatStanding | null> | ChatStanding | null;
   limits?: Partial<{
     runsPerMinute: number;
     activationsPerMinute: number;
@@ -156,6 +162,59 @@ export interface ServiceOptions {
     savesPerHour: number;
     saveReadsPerHour: number;
   }>;
+}
+
+/** A room member or player as a report names them. */
+export interface ReportedPlayer {
+  id: string;
+  name: string;
+  handle: string;
+  guest: boolean;
+}
+
+/** A chat event as a reader gets it. */
+export interface ChatEvent {
+  seq: number;
+  type: string;
+  at: number;
+  seat?: number;
+  name?: string;
+  handle?: string;
+  text?: string;
+  quick?: string;
+  tag?: string;
+}
+
+export interface ChatScreenInput {
+  text: string;
+  tag: string | null;
+  /** The ready line's id, for a ready line. */
+  quick: string | null;
+  player: Player;
+  room: { id: string; kind: string; name?: string | null; [key: string]: unknown };
+}
+
+/** true or undefined lets the line through. */
+export type ChatVerdict = boolean | string | { code: string; message?: string } | null | undefined;
+
+export interface ChatReport {
+  reporter: ReportedPlayer;
+  about: ReportedPlayer;
+  room: { id: string; kind: string; name?: string | null; [key: string]: unknown } | null;
+  lines: ChatEvent[];
+  context: ChatEvent[];
+  marked: ChatEvent | null;
+  note: string | null;
+  at: number;
+}
+
+export interface ChatStanding {
+  /** "open" or "off". */
+  chat?: string;
+  /** When chat comes back, in milliseconds since 1970; absent for good. */
+  until?: number;
+  /** Heard once; the host clears it once carried. */
+  message?: string;
 }
 
 export function createService(options: ServiceOptions): { fetch(request: Request): Promise<Response> };

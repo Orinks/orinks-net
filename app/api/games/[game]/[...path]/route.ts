@@ -1,6 +1,7 @@
 // Every Hearken game's verified runs: /api/games/<game>/runs, /start,
 // /activate/start, /activate/poll and the game's own read routes, and its
-// rooms (/api/games/<game>/rooms...), which go to its Durable Object. The
+// rooms (/api/games/<game>/rooms...) and chat moderation
+// (/api/games/<game>/moderation), which go to its Durable Object. The
 // protocol is Hearken's (docs/online.md in orinks-games/hearken); the game
 // itself is in lib/games/registry.ts.
 import { GAMES } from "@/lib/games/registry";
@@ -38,7 +39,9 @@ async function handle(request: Request, context: { params: Promise<{ game: strin
   // Matches and chat between players live in the game's own Durable
   // Object (lib/games/rooms-object.js). Without one, the rooms routes
   // answer 404 as before.
-  if (path?.[0] === "rooms") {
+  // The owner's chat moderation (lib/games/moderation-route.js) lives in
+  // the same object; it checks the server secret itself.
+  if (path?.[0] === "rooms" || (path?.[0] === "moderation" && path.length === 1)) {
     const rooms = await roomsBinding();
     if (rooms) {
       // The route's Request is the framework's own object, which a Durable

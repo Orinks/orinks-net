@@ -23,6 +23,7 @@ export const config = {
     "/activate/:path*",
     "/games/connect/:path*",
     "/games/testers/:path*",
+    "/games/moderation/:path*",
     "/freight-fate/online/setup/:path*",
     "/freight-fate/suggest-a-station/:path*",
   ],

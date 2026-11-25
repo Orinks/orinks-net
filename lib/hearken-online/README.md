@@ -7,4 +7,4 @@ run in the game's published WebAssembly rules and hand the result to the game's
 handler. `index.d.ts` is written here, for TypeScript.
 
 To update, copy those files from that folder again (`index.js` here
-re-exports only what the site uses). Copied at hearken commit ad1f1d5 (with rooms, text chat and the lobby).
+re-exports only what the site uses). Copied at hearken commit c48e079 (with rooms, text chat, the lobby, and chat safety: blocks, reports, ready lines and channels).

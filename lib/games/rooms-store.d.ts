@@ -7,7 +7,10 @@ export interface Sql {
   exec(query: string, ...bindings: unknown[]): { toArray(): Record<string, unknown>[] };
 }
 
-export function sqlRooms(sql: Sql): RoomStore & { forget(): void };
+/** How often a poll alone writes a room's row. */
+export const SEEN_EVERY_MS: number;
+
+export function sqlRooms(sql: Sql, options?: { now?: () => number; seenEveryMs?: number }): RoomStore & { forget(): void };
 
 export function oneAtATime(
   store: RoomStore & { forget(): void },

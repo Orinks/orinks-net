@@ -43,6 +43,7 @@ import type * as freightFateStationRules from "../freightFateStationRules.js";
 import type * as freightFateStationVetting from "../freightFateStationVetting.js";
 import type * as freightFateStations from "../freightFateStations.js";
 import type * as games from "../games.js";
+import type * as gamesModeration from "../gamesModeration.js";
 import type * as gamesSaves from "../gamesSaves.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
@@ -109,6 +110,7 @@ declare const fullApi: ApiFromModules<{
   freightFateStationVetting: typeof freightFateStationVetting;
   freightFateStations: typeof freightFateStations;
   games: typeof games;
+  gamesModeration: typeof gamesModeration;
   gamesSaves: typeof gamesSaves;
   http: typeof http;
   moderation: typeof moderation;
