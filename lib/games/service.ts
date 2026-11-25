@@ -3,7 +3,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createService, memoryLimiter, publishedRules, refuse } from "@/lib/hearken-online";
-import type { Handler, Player, PublishedRules, RoomStore } from "@/lib/hearken-online";
+import type { Handler, Player, PublishedRules, RoomStore, ServiceOptions } from "@/lib/hearken-online";
 import { getConvexClient } from "@/lib/convex";
 import { site } from "@/lib/site";
 import { clientIp } from "@/lib/client-ip";
@@ -95,6 +95,8 @@ export function buildService(
     rooms?: RoomStore;
     /** A secret mixed into every player's handle in rooms. */
     handleKey?: string;
+    /** Chat screening, reports and standing (lib/games/chat-moderation.js). */
+    moderation?: Pick<ServiceOptions, "screen" | "report" | "standing">;
   },
 ): Service {
   const guests = game.guests?.(parts.records);
@@ -119,6 +121,7 @@ export function buildService(
     handlers: withTester(game.handlers(parts.records)),
     rooms: parts.rooms ?? null,
     handleKey: parts.handleKey,
+    ...(parts.moderation ?? {}),
     basePath: `/api/games/${game.id}`,
     // The address the platform's edge saw (lib/client-ip.ts), as the Freight
     // Fate routes read it.
@@ -186,6 +189,7 @@ export function roomsServiceFor(
   id: string,
   origin: string,
   rooms: RoomStore,
+  moderation?: Pick<ServiceOptions, "screen" | "report" | "standing">,
 ): (Service & { warm(token: string): Promise<unknown> }) | null {
   if (!Object.hasOwn(GAMES, id)) return null;
   const client = getConvexClient();
@@ -206,6 +210,7 @@ export function roomsServiceFor(
       records: convexRecords(client, secret, id),
       rooms,
       handleKey: `rooms:${secret}`,
+      moderation,
     });
     // Looks the player up ahead of the request (lib/games/rooms-object.js).
     return { fetch: (request) => service.fetch(request), warm: (token) => accounts.player(token) };

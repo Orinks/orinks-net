@@ -2,6 +2,17 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-25-wickets-chat",
+      "date": "2026-11-25",
+      "project": "Wicket's",
+      "title": "Chat at the table and in the Parlor",
+      "body": [
+        "Players at a Wicket's table can send each other a line, or pick a ready line such as Good luck or Good game. The Parlor is a room for everyone signed in, opened from Play online.",
+        "Block hides a player from you everywhere, and you from them. Report sends their lines here for a look and mutes them. Chat rules: be kind, no personal details, 16 and over."
+      ],
+      "draft": true
+    },
+    {
       "id": "2026-11-24-wickets-leaderboards-all-games",
       "date": "2026-11-24",
       "project": "Wicket's",

@@ -169,6 +169,15 @@ describe("a Career 2.0 profile", () => {
     ]);
   });
 
+  test("names a Canadian carrier and the Canadian owner-operator start", () => {
+    const company = snapshotOf({
+      created_line: "2.0", business_status: "company_driver", carrier_key: "lachine_cartage",
+    });
+    expect(company.carrierName).toBe("Lachine Cartage");
+    expect(company.businessIdentity).toBe("Company driver for Lachine Cartage");
+    expect(careerTwo.carrierLabels.longspur_owner_operator).toBe("Longspur Transport");
+  });
+
   test("a company driver with no carrier near home shows no carrier", () => {
     const snapshot = snapshotOf({
       created_line: "2.0", business_status: "company_driver", carrier_key: "", carrier_name: "",
