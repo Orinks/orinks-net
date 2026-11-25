@@ -429,14 +429,27 @@ export function selectedDownloadAssets(assets: GitHubAsset[]) {
 // player has to make, so the page lists only the arm64 one. The release's
 // translation kit is for translators, not a copy of the game, so it is left
 // out too.
+//
+// A Wicket's release also carries a copy of each platform's package built for
+// each less steady update channel (`wickets-1.8.3-windows-x64-for-beta.zip`),
+// which only the in-game updater downloads. Those are left out whenever the
+// plain package is there, so each platform is listed once.
 export function listedDownloadAssets(assets: GitHubAsset[]) {
   const names = new Set(assets.map((asset) => asset.name));
 
   return assets.filter(
     (asset) =>
       !/-translation-kit\.zip$/i.test(asset.name) &&
+      !channelCopyOfListedAsset(asset.name, names) &&
       !(/-macos\.zip$/i.test(asset.name) && names.has(asset.name.replace(/-macos\.zip$/i, "-macos-arm64.zip"))),
   );
+}
+
+const CHANNEL_COPY = /-for-(?:alpha|beta)(\.(?:zip|tar\.gz))$/i;
+
+function channelCopyOfListedAsset(name: string, names: Set<string>) {
+  const match = CHANNEL_COPY.exec(name);
+  return match !== null && names.has(name.slice(0, match.index) + match[1]);
 }
 
 export function downloadAssetLabel(assetName: string) {
