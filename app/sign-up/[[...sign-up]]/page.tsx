@@ -16,6 +16,11 @@ export default function SignUpPage() {
     <>
       <PageHeader title="Create account" />
       <section className="py-8">
+        <ul className="mb-6 max-w-2xl list-disc space-y-1 pl-5 text-slate-700">
+          <li>Usernames are shared across orinks.net. You pick your player name in each game later.</li>
+          <li>Passwords that have shown up in a data leak on any site can&apos;t be used, so choose a new one.</li>
+          <li>With Google or Apple, you still choose your own username.</li>
+        </ul>
         <Suspense fallback={loading}>
           <SignUp fallback={loading} path={SIGN_UP_PATH} routing="path" signInUrl={SIGN_IN_PATH} />
         </Suspense>
