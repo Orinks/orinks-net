@@ -102,6 +102,28 @@ describe("sqlRooms", () => {
     await store.setMute(ann, "bo-2", "none");
     expect([...(await store.relations("p2")).blockedBy]).toEqual([]);
   });
+
+  test("keeps invites and one-sided friends", async () => {
+    const store = sqlRooms(memorySql());
+    const invite = { id: "i1", from: { id: "p1" }, to: { id: "p2" }, kind: "pebbles", state: "sent", at: 5 };
+    await store.saveInvite(invite);
+    await store.saveInvite({ id: "i2", from: { id: "p3" }, to: { id: "p1" }, kind: "pebbles", state: "sent", at: 9 });
+    await store.saveInvite({ ...invite, state: "heard" });
+    expect((await store.getInvite("i1"))?.state).toBe("heard");
+    expect((await store.invitesFor("p1")).map((i: { id: string }) => i.id)).toEqual(["i2", "i1"]);
+    expect((await store.invitesFor("p2")).map((i: { id: string }) => i.id)).toEqual(["i1"]);
+    await store.dropInvite("i1");
+    expect(await store.getInvite("i1")).toBeNull();
+    expect(await store.invitesFor("p2")).toEqual([]);
+
+    await store.setFriend("p1", "bo-2", true);
+    await store.setFriend("p1", "bo-2", true);
+    await store.setFriend("p1", "al-3", true);
+    expect(await store.friendsOf("p1")).toEqual(["al-3", "bo-2"]);
+    expect(await store.friendsOf("p2")).toEqual([]);
+    await store.setFriend("p1", "bo-2", false);
+    expect(await store.friendsOf("p1")).toEqual(["al-3"]);
+  });
 });
 
 describe("oneAtATime", () => {

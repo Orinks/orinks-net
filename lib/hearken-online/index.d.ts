@@ -218,9 +218,21 @@ export interface RoomStore {
   playerByHandle(handle: string): Promise<any | null>;
   relations(playerId: string): Promise<{ muted: Set<string>; blocked: Set<string>; blockedBy: Set<string> }>;
   setMute(player: object, handle: string, mode: string, them?: object | null): Promise<void>;
+  saveInvite(invite: object): Promise<void>;
+  getInvite(id: string): Promise<any | null>;
+  invitesFor(playerId: string): Promise<any[]>;
+  dropInvite(id: string): Promise<void>;
+  setFriend(playerId: string, handle: string, on: boolean): Promise<void>;
+  friendsOf(playerId: string): Promise<string[]>;
 }
 
 export function memoryRooms(): RoomStore;
+/** Who is here, in memory (lobby.js): rebuilt from pulses, never stored. */
+export function memoryPresence(): object;
+export const LOBBY_LIMITS: Record<string, number>;
+export const PRESENCE: string[];
+export const VISIBILITY: string[];
+export const INVITE_STATES: string[];
 export function memoryLimiter(options?: { now?: () => number }): Limiter;
 export const FINAL_PHASES: string[];
 export const PHASES: string[];
