@@ -103,6 +103,49 @@ describe("ReleaseDownloads", () => {
     expect(markup).toContain("Total downloads: 22");
   });
 
+  test("lists each Wicket's platform once, leaving out the copies built for other update channels", async () => {
+    const asset = (name: string, download_count: number) => ({
+      name,
+      download_count,
+      browser_download_url: `https://github.com/orinks-games/wickets/releases/download/v1.8.3/${name}`,
+    });
+
+    getReleaseGroupsMock.mockResolvedValue({
+      stable: {
+        assets: [
+          asset("update-beta-windows-x64.json", 0),
+          asset("update-stable-windows-x64.json", 0),
+          asset("wickets-1.8.3-linux-x64-for-beta.tar.gz", 1),
+          asset("wickets-1.8.3-linux-x64.tar.gz", 2),
+          asset("wickets-1.8.3-macos-arm64-for-beta.index.json", 0),
+          asset("wickets-1.8.3-macos-arm64-for-beta.zip", 3),
+          asset("wickets-1.8.3-macos-arm64.zip", 4),
+          asset("wickets-1.8.3-windows-x64-for-alpha.zip", 5),
+          asset("wickets-1.8.3-windows-x64-for-beta.zip", 6),
+          asset("wickets-1.8.3-windows-x64.zip", 7),
+        ],
+        body: "",
+        body_html: null,
+        html_url: "https://github.com/orinks-games/wickets/releases/tag/v1.8.3",
+        name: "Wicket's 1.8.3",
+        prerelease: false,
+        published_at: "2026-11-25T00:00:00Z",
+        tag_name: "v1.8.3",
+      },
+      nightlies: [],
+    });
+
+    const markup = renderToStaticMarkup(
+      await ReleaseDownloads({ productName: "Wicket's", repo: "wickets" }),
+    );
+
+    expect(markup).not.toContain("-for-");
+    expect(markup.match(/Linux tarball x64/g)).toHaveLength(1);
+    expect(markup.match(/macOS ZIP archive ARM64/g)).toHaveLength(1);
+    expect(markup.match(/Windows ZIP archive x64/g)).toHaveLength(1);
+    expect(markup).toContain("wickets-1.8.3-windows-x64.zip");
+  });
+
   test("sends PortkeyDrop's fallback link to its new maintainer's releases", async () => {
     getReleaseGroupsMock.mockRejectedValue(new Error("GitHub releases request failed: 404"));
 
