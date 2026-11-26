@@ -17,11 +17,13 @@ test("explains profile selection, private cloud retention, and operational priva
   expect(copy).toContain("Cloud Backup remains private");
   expect(copy).toContain("up to ten careers");
   expect(copy).toContain("never deletes a career stored on your computer");
-  // Until the paper is announced the page says nothing about it.
-  expect(copy.toLowerCase()).not.toContain("newspaper");
+  // The paper is announced (lib/freight-fate-paper-launch.ts), so the page
+  // says what it may print.
+  expect(copy).toContain("The weekly driver newspaper on orinks.net can write about your career");
   for (const privateDetail of [
-    "current cash", "available credit", "precise location", "exact cargo",
-    "customer", "cargo value", "destination", "fatigue", "exact hours-of-service state",
+    "current cash", "available credit", "precise location",
+    "the cargo and destination of a load you are still hauling",
+    "customer", "cargo value", "fatigue", "exact hours-of-service state",
     "dispatcher standing",
   ]) expect(copy.toLowerCase()).toContain(privateDetail);
   expect(copy.toLowerCase()).not.toMatch(/this is (?:a )?(?:fiction|game)|fictional/);
