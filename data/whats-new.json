@@ -2,6 +2,15 @@
   "note": "Curated announcements for the /whats-new page, newest first by date. Validated by lib/whats-new.test.ts and at build time by lib/whats-new.ts — a malformed entry fails CI before any deploy.",
   "entries": [
     {
+      "id": "2026-11-27-suggest-canadian-stations",
+      "date": "2026-11-27",
+      "project": "Freight Fate",
+      "title": "Suggest a station takes Canadian stations",
+      "body": [
+        "The station suggestion form now accepts AM and FM stations in Canada. Choose the province the station broadcasts from, and give its call sign as usual."
+      ]
+    },
+    {
       "id": "2026-11-25-wickets-chat",
       "date": "2026-11-25",
       "project": "Wicket's",

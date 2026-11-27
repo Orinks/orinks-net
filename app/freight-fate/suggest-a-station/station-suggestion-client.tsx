@@ -7,7 +7,12 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AccountControls } from "@/components/AccountControls";
 import { loadTurnstileScript } from "@/components/turnstile";
 import { api } from "@/convex/_generated/api";
-import { STATE_OPTIONS, validateSuggestion, type ListedStation } from "@/convex/freightFateStationRules";
+import {
+  PROVINCE_OPTIONS,
+  STATE_OPTIONS,
+  validateSuggestion,
+  type ListedStation,
+} from "@/convex/freightFateStationRules";
 import type { ListedOutcome } from "@/convex/freightFateStationVetting";
 import { StationListPicker, stationLabel } from "./station-list-picker";
 
@@ -50,7 +55,7 @@ const LABELS: Record<Exclude<Field, "kind">, string> = {
   name: "Station name",
   streamUrl: "Stream address",
   callSign: "Call sign",
-  state: "State",
+  state: "State or province",
   city: "City",
   frequency: "Frequency",
   genre: "Format",
@@ -502,12 +507,21 @@ function StationSuggestionForm({ siteKey }: { siteKey?: string }) {
                 required
                 value={values.state}
               >
-                <option value="">Choose a state</option>
-                {STATE_OPTIONS.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.name}
-                  </option>
-                ))}
+                <option value="">Choose a state or province</option>
+                <optgroup label="United States">
+                  {STATE_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Canada">
+                  {PROVINCE_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.name}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
               {stateInvalid ? (
                 <p className="mt-2 font-semibold text-red-900" id={`${fieldId("state")}-error`}>
