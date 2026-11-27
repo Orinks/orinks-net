@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  CANADIAN_TRANSMITTERS,
+  findCanadianTransmitter,
+  isCanadian,
   parseFccRow,
   pickTransmitter,
   placementFor,
@@ -101,5 +104,65 @@ describe("choosing the transmitter", () => {
     expect(servicesFor("91.9 FM")).toEqual(["FM"]);
     expect(servicesFor(undefined)).toEqual(["FM", "AM"]);
     expect(queryUrl("AM", "KAAY")).toContain("amq?call=KAAY&");
+  });
+});
+
+describe("placing a Canadian station from ISED's table", () => {
+  test("the table holds every province's operating stations, inside Canada", () => {
+    expect(CANADIAN_TRANSMITTERS.length).toBeGreaterThan(1500);
+    const provinces = new Set(CANADIAN_TRANSMITTERS.map((row) => row.state));
+    for (const code of ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]) {
+      expect(provinces.has(code), code).toBe(true);
+    }
+    for (const row of CANADIAN_TRANSMITTERS) {
+      expect(row.lat).toBeGreaterThan(41.6);
+      expect(row.lat).toBeLessThan(84);
+      expect(row.lon).toBeGreaterThan(-141.1);
+      expect(row.lon).toBeLessThan(-52.5);
+    }
+  });
+
+  test("a C or VO call sign, or a province, is Canadian; a US one is not", () => {
+    expect(isCanadian({ callSign: "CHFI-FM", state: "ON" })).toBe(true);
+    expect(isCanadian({ callSign: "VOCM" })).toBe(true);
+    expect(isCanadian({ callSign: "KXYZ", state: "BC" })).toBe(true);
+    expect(isCanadian({ callSign: "WKSC-FM", state: "IL" })).toBe(false);
+  });
+
+  test("finds the licensed transmitter and derives its range from power", () => {
+    const chfi = findCanadianTransmitter({ callSign: "CHFI-FM", state: "ON" });
+    expect(chfi).toMatchObject({ callSign: "CHFI-FM", service: "FM", state: "ON", community: "Toronto" });
+    expect(placementFor(chfi!)).toMatchObject({ rangeMiles: 42, frequencyMhz: 98.1, community: "Toronto" });
+    // One call sign on both bands: the frequency the player gave picks the band.
+    expect(findCanadianTransmitter({ callSign: "VOCM", frequency: "590 AM" })).toMatchObject({
+      service: "AM",
+      community: "St. John's",
+    });
+    expect(findCanadianTransmitter({ callSign: "VOCM", frequency: "97.5 FM" })).toMatchObject({
+      service: "FM",
+      frequency: 97.5,
+    });
+    expect(placementFor(findCanadianTransmitter({ callSign: "CFRB", frequency: "1010 AM" })!).rangeMiles).toBe(25);
+  });
+
+  test("without a frequency, the -FM suffix picks the band", () => {
+    expect(findCanadianTransmitter({ callSign: "CHUM" })).toMatchObject({ service: "AM", frequency: 1050 });
+    expect(findCanadianTransmitter({ callSign: "CHUM-FM" })).toMatchObject({ service: "FM", frequency: 104.5 });
+    expect(findCanadianTransmitter({ callSign: "CISN" })).toMatchObject({ callSign: "CISN-FM", service: "FM" });
+    expect(findCanadianTransmitter({ callSign: "CHUM", frequency: "104.5 FM" })).toMatchObject({ service: "FM" });
+  });
+
+  test("an AM station ISED places only at its second site is in the table", () => {
+    // CHIN, CJAD and CFTR give no first site in ISED's AM table.
+    expect(findCanadianTransmitter({ callSign: "CHIN", frequency: "1540 AM" })).toMatchObject({
+      service: "AM",
+      frequency: 1540,
+    });
+    expect(findCanadianTransmitter({ callSign: "CJAD" })).toMatchObject({ service: "AM", frequency: 800 });
+    expect(findCanadianTransmitter({ callSign: "CFTR" })).toMatchObject({ service: "AM", frequency: 680 });
+  });
+
+  test("a call sign ISED does not list stays unplaced", () => {
+    expect(findCanadianTransmitter({ callSign: "CZZZ", state: "ON" })).toBeNull();
   });
 });

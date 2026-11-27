@@ -1,12 +1,16 @@
 import { describe, expect, test } from "vitest";
 import {
   callSignBase,
+  isProvince,
   isPublicAddress,
   judgeProbe,
   normalizeCallSign,
   normalizeFrequency,
   normalizeState,
   normalizeStreamUrl,
+  PROVINCE_OPTIONS,
+  STATE_OPTIONS,
+  stateName,
   validateSuggestion,
 } from "./freightFateStationRules";
 
@@ -79,6 +83,48 @@ describe("the form", () => {
     });
   });
 
+  test("a Canadian station gives its province or territory", () => {
+    for (const [typed, code] of [
+      ["ON", "ON"],
+      ["Ontario", "ON"],
+      [" british  columbia ", "BC"],
+      ["Quebec", "QC"],
+      ["Québec", "QC"],
+      ["qc", "QC"],
+      ["Newfoundland", "NL"],
+      ["Newfoundland and Labrador", "NL"],
+      ["Yukon", "YT"],
+      ["Nunavut", "NU"],
+      ["PEI", "PE"],
+    ]) {
+      expect(normalizeState(typed), typed).toBe(code);
+    }
+    // The US codes keep their meaning: CA is California.
+    expect(normalizeState("CA")).toBe("CA");
+    expect(isProvince("ON")).toBe(true);
+    expect(isProvince("OH")).toBe(false);
+    expect(stateName("QC")).toBe("Quebec");
+    expect(stateName("OH")).toBe("Ohio");
+    expect(STATE_OPTIONS).toHaveLength(52);
+    expect(PROVINCE_OPTIONS.map((option) => option.code)).toEqual([
+      "AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT",
+    ]);
+    expect(normalizeCallSign("vocm")).toBe("VOCM");
+    expect(normalizeCallSign("VOCM-FM")).toBe("VOCM-FM");
+    expect(normalizeCallSign("cbla fm")).toBe("CBLA-FM");
+    expect(normalizeCallSign("VOC")).toBeNull();
+    const result = validateSuggestion({
+      kind: "terrestrial",
+      name: "VOCM",
+      streamUrl: "https://s.example/vocm",
+      callSign: "VOCM",
+      state: "Newfoundland",
+    });
+    expect(result).toMatchObject({ ok: true, value: { callSign: "VOCM", state: "NL" } });
+    expect(validateSuggestion({ kind: "terrestrial", name: "The Cat", streamUrl: "https://s.example/cat", callSign: "CHFI" }))
+      .toMatchObject({ message: "A broadcast station needs the state or province it broadcasts from." });
+  });
+
   test("over-long text is refused, never cut short", () => {
     const form = { kind: "web", name: "Night Owl", streamUrl: "https://s.example" };
     expect(validateSuggestion({ ...form, note: "x".repeat(281) })).toMatchObject({ reason: "note_too_long" });
@@ -95,7 +141,7 @@ describe("the form", () => {
   test("the small parsers", () => {
     expect(normalizeState("OH")).toBe("OH");
     expect(normalizeState(" new york ")).toBe("NY");
-    expect(normalizeState("Ontario")).toBeNull();
+    expect(normalizeState("Oz")).toBeNull();
     expect(normalizeCallSign("W1XYZ")).toBeNull();
     expect(normalizeCallSign("kabc-am")).toBe("KABC-AM");
     expect(callSignBase("WNYC-FM")).toBe("WNYC");

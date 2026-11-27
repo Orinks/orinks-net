@@ -25,7 +25,7 @@ import {
   sameText,
   type ReviewDecision,
 } from "./freightFateReview";
-import { PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
+import { isCanadian, PLACEMENT_RETRY_MS } from "./freightFateStationPlacement";
 import { recordStationNews } from "./freightFateStationNews";
 import { changeStreamUrl, makeWeb } from "./freightFateStationAdmin";
 import { turnstileSecret } from "./turnstile";
@@ -758,7 +758,7 @@ export function stationFacts(row: StationDigestRow) {
     facts.push([
       "Call sign",
       row.callSignUnlicensed
-        ? `${row.callSign}. The FCC lists no station with this call sign.`
+        ? `${row.callSign}. ${isCanadian({ callSign: row.callSign, state: row.state ?? undefined }) ? "Canada's licence record" : "The FCC"} lists no station with this call sign.`
         : row.callSign,
     ]);
   }
@@ -831,7 +831,7 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     if ("held" in result) {
       return page(
         `Not accepted: ${result.name}`,
-        "<p>The FCC lists no station with its call sign. Decline it, or make it web radio from the review page in the latest station digest.</p>",
+        "<p>No licence record lists its call sign. Decline it, or make it web radio from the review page in the latest station digest.</p>",
       );
     }
     return page("Already decided", "<p>This suggestion is no longer waiting for review.</p>");
@@ -840,7 +840,7 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     return page(`Declined: ${result.name}`, "<p>It stays off the dial.</p>");
   }
   const next = result.kind === "terrestrial"
-    ? "<p>It is on the dial from players' next launch. Its transmitter is being looked up in the FCC's licence records; once found, it plays on the AM and FM band near home. If the FCC does not list it, it plays everywhere, the way web radio does.</p>"
+    ? "<p>It is on the dial from players' next launch. Its transmitter is being looked up in the licence records (the FCC's, or Canada's for a Canadian station); once found, it plays on the AM and FM band near home. If the record does not list it, it plays everywhere, the way web radio does.</p>"
     : "<p>It is on the dial from players' next launch.</p>";
   return page(`Accepted: ${result.name}`, next);
 });

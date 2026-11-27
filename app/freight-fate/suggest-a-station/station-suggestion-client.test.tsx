@@ -60,6 +60,25 @@ test("a signed-in driver gets the form with no human check", () => {
   expect(screen.getByRole("button", { name: "Send suggestion" })).toBeInTheDocument();
 });
 
+test("a broadcast station's state or province is one select, US states first, then Canada", () => {
+  state.signedIn = true;
+  state.driver = { driverId: "road-star-1234" };
+  render(<StationSuggestionClient siteKey="site-key" />);
+  fireEvent.click(screen.getByRole("radio", { name: "On AM or FM, and online" }));
+  const select = screen.getByLabelText("State or province");
+  expect(select).toBeRequired();
+  const first = select.firstElementChild as HTMLOptionElement;
+  expect(first.tagName).toBe("OPTION");
+  expect(first).toHaveValue("");
+  expect(first).toHaveTextContent("Choose a state or province");
+  const groups = Array.from(select.querySelectorAll("optgroup"));
+  expect(groups.map((group) => group.label)).toEqual(["United States", "Canada"]);
+  expect(groups[0].querySelectorAll("option")).toHaveLength(52);
+  expect(Array.from(groups[1].querySelectorAll("option")).map((option) => option.textContent)).toContain("Ontario");
+  fireEvent.change(select, { target: { value: "QC" } });
+  expect(select).toHaveValue("QC");
+});
+
 test("until the human check is configured, a visitor is asked to sign in", () => {
   state.open = false;
   render(<StationSuggestionClient siteKey="site-key" />);

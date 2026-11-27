@@ -9,10 +9,20 @@
 // (tools/import_radio_catalog.py range_for, which this ports). A call sign the
 // FCC does not list stays on the web band, and the nightly re-check asks again
 // each week in case the licence appears or the query was down.
+//
+// The FCC does not stand in for Canada: its query lists only some border
+// stations, and Canadian AM rows there are construction permits. A Canadian
+// call sign (C, or VO in Newfoundland) or a Canadian province is looked up in
+// a checked-in table of ISED's licence record instead
+// (data/freight-fate-ised-transmitters.json, written by the game's
+// `cargo tools import-canada-stations --transmitters`; its header names the
+// ISED export date). A call sign the table does not list stays on the web
+// band, as a US one the FCC does not list does.
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { callSignBase } from "./freightFateStationRules";
+import iseds from "../data/freight-fate-ised-transmitters.json";
+import { callSignBase, isProvince } from "./freightFateStationRules";
 
 const FM_QUERY = "https://transition.fcc.gov/fcc-bin/fmq";
 const AM_QUERY = "https://transition.fcc.gov/fcc-bin/amq";
@@ -191,7 +201,60 @@ async function queryFcc(service: Service, callSign: string): Promise<Transmitter
   return text.split(/\r?\n/).flatMap((line) => parseFccRow(line) ?? []);
 }
 
+type IsedRow = {
+  call_sign: string;
+  band: string;
+  frequency: number;
+  province: string;
+  community: string;
+  lat: number;
+  lon: number;
+  erp_kw: number | null;
+};
+
+/** Every operating Canadian station's main transmitter, from ISED. */
+export const CANADIAN_TRANSMITTERS: Transmitter[] = (iseds.transmitters as IsedRow[]).map((row) => ({
+  callSign: row.band === "FM" ? `${row.call_sign}-FM` : row.call_sign,
+  service: row.band,
+  frequency: row.frequency,
+  state: row.province,
+  community: row.community,
+  lat: row.lat,
+  lon: row.lon,
+  erpKw: row.erp_kw,
+}));
+
+/** A suggestion for a Canadian station: a C or VO call sign, or a province. */
+export function isCanadian(wanted: { callSign: string; state?: string }) {
+  return /^(?:C|VO)/i.test(wanted.callSign) || (wanted.state !== undefined && isProvince(wanted.state.toUpperCase()));
+}
+
+/**
+ * Which bands to ask for a Canadian station. A stated frequency decides, as
+ * for a US one. Without one, the call sign does: a Canadian FM licence
+ * carries the -FM suffix, so CHUM-FM asks FM first and a bare CHUM asks AM
+ * first (CHUM 1050, not CHUM-FM's tower), then the other band, which finds
+ * CISN-FM for "CISN".
+ */
+export function canadianServicesFor(wanted: { callSign: string; frequency?: string }): Service[] {
+  if (/\b(AM|FM)$/i.test(wanted.frequency ?? "")) return servicesFor(wanted.frequency);
+  return /-FM$/i.test(wanted.callSign.trim()) ? ["FM", "AM"] : ["AM", "FM"];
+}
+
+/** The Canadian transmitter a suggestion means, from the ISED table, or null. */
+export function findCanadianTransmitter(wanted: { callSign: string; state?: string; frequency?: string }) {
+  for (const service of canadianServicesFor(wanted)) {
+    const site = pickTransmitter(
+      CANADIAN_TRANSMITTERS.filter((row) => row.service === service),
+      wanted,
+    );
+    if (site) return site;
+  }
+  return null;
+}
+
 async function findTransmitter(wanted: { callSign: string; state?: string; frequency?: string }) {
+  if (isCanadian(wanted)) return findCanadianTransmitter(wanted);
   for (const service of servicesFor(wanted.frequency)) {
     const site = pickTransmitter(await queryFcc(service, callSignBase(wanted.callSign)), wanted);
     if (site) return site;
@@ -200,9 +263,10 @@ async function findTransmitter(wanted: { callSign: string; state?: string; frequ
 }
 
 /**
- * Whether the FCC licenses a station with this call sign, asked when an AM or
- * FM station is suggested so a made-up one waits for the owner. Null when the
- * query is down, which says nothing either way.
+ * Whether the FCC (or, for a Canadian station, ISED) licenses a station with
+ * this call sign, asked when an AM or FM station is suggested so a made-up
+ * one waits for the owner. Null when the query is down, which says nothing
+ * either way.
  */
 export async function fccLicenses(wanted: { callSign: string; state?: string; frequency?: string }) {
   try {
@@ -213,7 +277,7 @@ export async function fccLicenses(wanted: { callSign: string; state?: string; fr
   }
 }
 
-/** Ask the FCC where one accepted station's transmitter is, and record it. */
+/** Ask the FCC (or ISED's table) where one accepted station's transmitter is, and record it. */
 export const placeStation = internalAction({
   args: { id: v.id("freightFateStationSuggestions") },
   handler: async (ctx, args) => {

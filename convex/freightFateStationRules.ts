@@ -66,7 +66,7 @@ export const REFUSALS = {
   invalid_stream_url: "The stream address should start with http or https.",
   invalid_call_sign: "A broadcast station needs its call sign, like WXYZ or KABC-FM.",
   invalid_frequency: "The frequency should be a number on the AM or FM dial, like 101.5 or 1090.",
-  invalid_state: "A broadcast station needs the state it broadcasts from.",
+  invalid_state: "A broadcast station needs the state or province it broadcasts from.",
   stream_address_blocked: "That stream address can't be checked from here.",
   stream_unreachable: "That stream didn't answer. Check the address and try again.",
   stream_web_page: "That address is a web page, not a stream. Look for the station's direct stream link.",
@@ -167,28 +167,66 @@ const STATES: Record<string, string> = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-/** "OH" reads as Ohio; an unknown code comes back as it was given. */
-export function stateName(code: string) {
-  return STATES[code] ?? code;
+// The ten provinces and three territories, by the codes ISED's licence
+// record uses. None of them is also a US code.
+const PROVINCES: Record<string, string> = {
+  AB: "Alberta", BC: "British Columbia", MB: "Manitoba", NB: "New Brunswick",
+  NL: "Newfoundland and Labrador", NS: "Nova Scotia", NT: "Northwest Territories",
+  NU: "Nunavut", ON: "Ontario", PE: "Prince Edward Island", QC: "Quebec",
+  SK: "Saskatchewan", YT: "Yukon",
+};
+
+// Other names a player may type for a province.
+const PROVINCE_ALIASES: Record<string, string> = {
+  QUÉBEC: "QC",
+  NEWFOUNDLAND: "NL",
+  "YUKON TERRITORY": "YT",
+  PEI: "PE",
+};
+
+/** Whether a state code is a Canadian province or territory. */
+export function isProvince(code: string) {
+  return Object.hasOwn(PROVINCES, code);
 }
 
-export const STATE_OPTIONS = Object.entries(STATES)
-  .map(([code, name]) => ({ code, name }))
-  .sort((a, b) => a.name.localeCompare(b.name));
+/** "OH" reads as Ohio and "ON" as Ontario; an unknown code comes back as it was given. */
+export function stateName(code: string) {
+  return STATES[code] ?? PROVINCES[code] ?? code;
+}
 
-/** "OH", "oh", "Ohio" and " ohio " all read as OH; anything else is null. */
+const byName = (table: Record<string, string>) =>
+  Object.entries(table)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+/** The US states, DC and Puerto Rico, by name. */
+export const STATE_OPTIONS = byName(STATES);
+/** The Canadian provinces and territories, by name. */
+export const PROVINCE_OPTIONS = byName(PROVINCES);
+
+/**
+ * "OH", "oh", "Ohio" and " ohio " all read as OH; "ON", "Ontario", "Quebec",
+ * "Québec" and "Newfoundland" read as ON, QC and NL; anything else is null.
+ */
 export function normalizeState(value: string) {
   const text = value.trim().replace(/\.$/, "").replace(/\s+/g, " ");
   const upper = text.toUpperCase();
   if (STATES[upper]) return upper;
-  const byName = Object.entries(STATES).find(([, name]) => name.toUpperCase() === upper);
-  return byName ? byName[0] : null;
+  const usByName = Object.entries(STATES).find(([, name]) => name.toUpperCase() === upper);
+  if (usByName) return usByName[0];
+  if (PROVINCES[upper]) return upper;
+  const provinceByName = Object.entries(PROVINCES).find(([, name]) => name.toUpperCase() === upper);
+  if (provinceByName) return provinceByName[0];
+  return PROVINCE_ALIASES[upper] ?? null;
 }
 
-/** "WXYZ", "wxyz fm" and "KABC-FM" read as WXYZ, WXYZ-FM and KABC-FM. */
+/**
+ * "WXYZ", "wxyz fm" and "KABC-FM" read as WXYZ, WXYZ-FM and KABC-FM; a
+ * Canadian call sign starts with C, or with VO in Newfoundland (VOCM).
+ */
 export function normalizeCallSign(value: string) {
   const compact = value.trim().toUpperCase().replace(/[\s-]+/g, "-");
-  const match = /^([KWC][A-Z]{2,3})(?:-(FM|AM|LP|LPFM|HD[1-9]))?$/.exec(compact);
+  const match = /^([KWC][A-Z]{2,3}|VO[A-Z]{2})(?:-(FM|AM|LP|LPFM|HD[1-9]))?$/.exec(compact);
   if (!match) return null;
   return match[2] ? `${match[1]}-${match[2]}` : match[1];
 }
