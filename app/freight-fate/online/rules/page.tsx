@@ -15,7 +15,11 @@ export default function FreightFateOnlineRulesPage() {
           <li>No slurs or hate speech.</li>
           <li>No names of hate figures, and no hate symbols or their number codes.</li>
           <li>No profanity or sexual content.</li>
-          <li>No impersonating other people.</li>
+          <li>
+            No impersonating real people, other players, or Freight Fate staff. A famous name on its
+            own is fine, but a driver can&apos;t claim to be that person or use the name to mislead
+            anyone.
+          </li>
           <li>No harassment or targeting of other players.</li>
           <li>Names must include at least three letters.</li>
         </ul>
@@ -32,6 +36,13 @@ export default function FreightFateOnlineRulesPage() {
           we consider abusive, at our discretion and without notice. If a moderator resets your
           name, the setup page will ask you to choose a new one before your driver appears publicly
           again.
+        </p>
+        <p>
+          To report a name, including one that impersonates you or someone else, use the{" "}
+          <a className="font-semibold text-action underline hover:no-underline" href="/contact">
+            contact page
+          </a>
+          . A reported name may be changed or removed.
         </p>
       </Section>
     </div>
