@@ -152,6 +152,16 @@ describe("placing a Canadian station from ISED's table", () => {
     expect(findCanadianTransmitter({ callSign: "CHUM", frequency: "104.5 FM" })).toMatchObject({ service: "FM" });
   });
 
+  test("an AM station ISED places only at its second site is in the table", () => {
+    // CHIN, CJAD and CFTR give no first site in ISED's AM table.
+    expect(findCanadianTransmitter({ callSign: "CHIN", frequency: "1540 AM" })).toMatchObject({
+      service: "AM",
+      frequency: 1540,
+    });
+    expect(findCanadianTransmitter({ callSign: "CJAD" })).toMatchObject({ service: "AM", frequency: 800 });
+    expect(findCanadianTransmitter({ callSign: "CFTR" })).toMatchObject({ service: "AM", frequency: 680 });
+  });
+
   test("a call sign ISED does not list stays unplaced", () => {
     expect(findCanadianTransmitter({ callSign: "CZZZ", state: "ON" })).toBeNull();
   });

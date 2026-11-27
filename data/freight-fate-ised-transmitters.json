@@ -6534,6 +6534,16 @@
    "province": "ON"
   },
   {
+   "band": "AM",
+   "call_sign": "CFTR",
+   "community": "Toronto",
+   "erp_kw": null,
+   "frequency": 680.0,
+   "lat": 43.21389,
+   "lon": -79.60806,
+   "province": "ON"
+  },
+  {
    "band": "FM",
    "call_sign": "CFTX",
    "community": "Gatineau",
@@ -7641,6 +7651,16 @@
    "frequency": 102.3,
    "lat": 48.44944,
    "lon": -81.29917,
+   "province": "ON"
+  },
+  {
+   "band": "AM",
+   "call_sign": "CHIN",
+   "community": "Toronto",
+   "erp_kw": null,
+   "frequency": 1540.0,
+   "lat": 43.59056,
+   "lon": -79.88917,
    "province": "ON"
   },
   {
@@ -11281,6 +11301,16 @@
    "frequency": 94.5,
    "lat": 48.60111,
    "lon": -70.82889,
+   "province": "QC"
+  },
+  {
+   "band": "AM",
+   "call_sign": "CJAD",
+   "community": "Montréal",
+   "erp_kw": null,
+   "frequency": 800.0,
+   "lat": 45.24722,
+   "lon": -73.52306,
    "province": "QC"
   },
   {
