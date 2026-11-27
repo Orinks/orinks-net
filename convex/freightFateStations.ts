@@ -758,7 +758,7 @@ export function stationFacts(row: StationDigestRow) {
     facts.push([
       "Call sign",
       row.callSignUnlicensed
-        ? `${row.callSign}. ${isCanadian({ callSign: row.callSign, state: row.state ?? undefined }) ? "ISED" : "The FCC"} lists no station with this call sign.`
+        ? `${row.callSign}. ${isCanadian({ callSign: row.callSign, state: row.state ?? undefined }) ? "Canada's licence record" : "The FCC"} lists no station with this call sign.`
         : row.callSign,
     ]);
   }
@@ -840,7 +840,7 @@ export const decideStationFromPage = httpAction(async (ctx, request) => {
     return page(`Declined: ${result.name}`, "<p>It stays off the dial.</p>");
   }
   const next = result.kind === "terrestrial"
-    ? "<p>It is on the dial from players' next launch. Its transmitter is being looked up in the licence records (the FCC's, or ISED's for a Canadian station); once found, it plays on the AM and FM band near home. If the record does not list it, it plays everywhere, the way web radio does.</p>"
+    ? "<p>It is on the dial from players' next launch. Its transmitter is being looked up in the licence records (the FCC's, or Canada's for a Canadian station); once found, it plays on the AM and FM band near home. If the record does not list it, it plays everywhere, the way web radio does.</p>"
     : "<p>It is on the dial from players' next launch.</p>";
   return page(`Accepted: ${result.name}`, next);
 });

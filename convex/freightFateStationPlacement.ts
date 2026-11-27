@@ -229,9 +229,21 @@ export function isCanadian(wanted: { callSign: string; state?: string }) {
   return /^(?:C|VO)/i.test(wanted.callSign) || (wanted.state !== undefined && isProvince(wanted.state.toUpperCase()));
 }
 
+/**
+ * Which bands to ask for a Canadian station. A stated frequency decides, as
+ * for a US one. Without one, the call sign does: a Canadian FM licence
+ * carries the -FM suffix, so CHUM-FM asks FM first and a bare CHUM asks AM
+ * first (CHUM 1050, not CHUM-FM's tower), then the other band, which finds
+ * CISN-FM for "CISN".
+ */
+export function canadianServicesFor(wanted: { callSign: string; frequency?: string }): Service[] {
+  if (/\b(AM|FM)$/i.test(wanted.frequency ?? "")) return servicesFor(wanted.frequency);
+  return /-FM$/i.test(wanted.callSign.trim()) ? ["FM", "AM"] : ["AM", "FM"];
+}
+
 /** The Canadian transmitter a suggestion means, from the ISED table, or null. */
 export function findCanadianTransmitter(wanted: { callSign: string; state?: string; frequency?: string }) {
-  for (const service of servicesFor(wanted.frequency)) {
+  for (const service of canadianServicesFor(wanted)) {
     const site = pickTransmitter(
       CANADIAN_TRANSMITTERS.filter((row) => row.service === service),
       wanted,

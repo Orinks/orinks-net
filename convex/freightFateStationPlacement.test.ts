@@ -145,6 +145,13 @@ describe("placing a Canadian station from ISED's table", () => {
     expect(placementFor(findCanadianTransmitter({ callSign: "CFRB", frequency: "1010 AM" })!).rangeMiles).toBe(25);
   });
 
+  test("without a frequency, the -FM suffix picks the band", () => {
+    expect(findCanadianTransmitter({ callSign: "CHUM" })).toMatchObject({ service: "AM", frequency: 1050 });
+    expect(findCanadianTransmitter({ callSign: "CHUM-FM" })).toMatchObject({ service: "FM", frequency: 104.5 });
+    expect(findCanadianTransmitter({ callSign: "CISN" })).toMatchObject({ callSign: "CISN-FM", service: "FM" });
+    expect(findCanadianTransmitter({ callSign: "CHUM", frequency: "104.5 FM" })).toMatchObject({ service: "FM" });
+  });
+
   test("a call sign ISED does not list stays unplaced", () => {
     expect(findCanadianTransmitter({ callSign: "CZZZ", state: "ON" })).toBeNull();
   });
